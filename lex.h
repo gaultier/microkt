@@ -13,6 +13,17 @@ typedef enum {
     LEX_TOKEN_ID_INVALID,
 } lex_token_id_t;
 
+const u8 lex_token_id_t_to_str[][30] = {
+    [LEX_TOKEN_ID_BUILTIN_PRINT] = "print",
+    [LEX_TOKEN_ID_LPAREN] = "(",
+    [LEX_TOKEN_ID_RPAREN] = ")",
+    [LEX_TOKEN_ID_TRUE] = "true",
+    [LEX_TOKEN_ID_FALSE] = "false",
+    [LEX_TOKEN_ID_EOF] = "EOF",
+    [LEX_TOKEN_ID_INVALID] = "INVALID",
+
+};
+
 typedef struct {
     usize loc_start, loc_end;
 } loc_t;
@@ -35,17 +46,19 @@ static const keyword_t keywords[] = {
 
 typedef struct {
     const u8* lex_source;
+    const usize lex_source_len;
     usize lex_index;
 } lex_t;
 
 typedef enum {
     LEX_STATE_START,
-    LEX_STATE_IDENTIFIER,
+    /* LEX_STATE_IDENTIFIER, */
 } lex_state_t;
 
-lex_t lex_init(const u8* source);
-lex_t lex_init(const u8* source) {
-    return (lex_t){.lex_source = source, .lex_index = 0};
+lex_t lex_init(const u8* source, const usize lex_source_len);
+lex_t lex_init(const u8* source, const usize source_len) {
+    return (lex_t){
+        .lex_source = source, .lex_source_len = source_len, .lex_index = 0};
 }
 
 token_t lex_next(lex_t* lex) {
@@ -53,10 +66,45 @@ token_t lex_next(lex_t* lex) {
         .tok_id = LEX_TOKEN_ID_EOF,
         .tok_loc = {.loc_start = lex->lex_index, .loc_end = 0xAA}};
 
+    lex_state_t state = LEX_STATE_START;
+
+    while (lex->lex_index < lex->lex_source_len) {
+        const u8 c = lex->lex_source[lex->lex_index];
+
+        switch (state) {
+            case LEX_STATE_START: {
+                switch (c) {
+                    case ' ':
+                    case '\n':
+                    case '\r':
+                    case '\t': {
+                        result.tok_loc.loc_start = lex->lex_index + 1;
+                        break;
+                    }
+                    case '(': {
+                        result.tok_id = LEX_TOKEN_ID_LPAREN;
+                        lex->lex_index += 1;
+                        break;
+                    }
+                    case ')': {
+                        result.tok_id = LEX_TOKEN_ID_RPAREN;
+                        lex->lex_index += 1;
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+
+        lex->lex_index += 1;
+    }
+    result.tok_loc.loc_end = lex->lex_index;
+
     return result;
 }
 
 void token_dump(const token_t* t) {
-    printf("tok_id=%u tok_loc_start=%llu tok_loc_end=%llu\n", t->tok_id,
-           t->tok_loc.loc_start, t->tok_loc.loc_end);
+    printf("tok_id=%s tok_loc_start=%llu tok_loc_end=%llu\n",
+           lex_token_id_t_to_str[t->tok_id], t->tok_loc.loc_start,
+           t->tok_loc.loc_end);
 }

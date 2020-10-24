@@ -1,7 +1,7 @@
 #pragma once
 
 typedef unsigned long long int usize;
-typedef unsigned char u8;
+typedef char u8;
 
 typedef u8 res_t;
 #define RES_OK ((res_t)0)
