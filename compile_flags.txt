@@ -1,1 +1,1 @@
--Wall -Wextra -Wpedantic
+-Wall -Wextra -Wpedantic -std=c99
