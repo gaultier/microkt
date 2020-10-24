@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string.h>
+
 #include "common.h"
 #include "stdio.h"
 
@@ -9,6 +11,7 @@ typedef enum {
     LEX_TOKEN_ID_RPAREN,
     LEX_TOKEN_ID_TRUE,
     LEX_TOKEN_ID_FALSE,
+    LEX_TOKEN_ID_IDENTIFIER,
     LEX_TOKEN_ID_EOF,
     LEX_TOKEN_ID_INVALID,
 } lex_token_id_t;
@@ -19,6 +22,7 @@ const u8 lex_token_id_t_to_str[][30] = {
     [LEX_TOKEN_ID_RPAREN] = ")",
     [LEX_TOKEN_ID_TRUE] = "true",
     [LEX_TOKEN_ID_FALSE] = "false",
+    [LEX_TOKEN_ID_IDENTIFIER] = "Identifier",
     [LEX_TOKEN_ID_EOF] = "EOF",
     [LEX_TOKEN_ID_INVALID] = "INVALID",
 
@@ -52,8 +56,19 @@ typedef struct {
 
 typedef enum {
     LEX_STATE_START,
-    /* LEX_STATE_IDENTIFIER, */
+    LEX_STATE_IDENTIFIER,
 } lex_state_t;
+
+const lex_token_id_t* token_get_keyword(const u8* source_start, usize len) {
+    const usize keywords_len = sizeof(keywords) / sizeof(keywords[0]);
+    for (usize i = 0; i < keywords_len; i++) {
+        const keyword_t* k = &keywords[i];
+        if (memcmp(source_start, k->key_str, MIN(len, sizeof(k->key_str))) == 0)
+            return &k->key_id;
+    }
+
+    return NULL;
+}
 
 lex_t lex_init(const u8* source, const usize lex_source_len);
 lex_t lex_init(const u8* source, const usize source_len) {
@@ -90,6 +105,36 @@ token_t lex_next(lex_t* lex) {
                         result.tok_id = LEX_TOKEN_ID_RPAREN;
                         lex->lex_index += 1;
                         break;
+                    }
+                    case '_':
+                    case 't':
+                    case 'r':
+                    case 'u':
+                    case 'e': {  // TODO: add more
+                        state = LEX_STATE_IDENTIFIER;
+                        result.tok_id = LEX_TOKEN_ID_IDENTIFIER;
+                        break;
+                    }
+                }
+                break;
+            }
+            case LEX_STATE_IDENTIFIER: {
+                switch (c) {
+                    case '_':
+                    case 't':
+                    case 'r':
+                    case 'u':
+                    case 'e': {  // TODO: add more
+                        break;
+                    }
+                    default: {
+                        const lex_token_id_t* id = NULL;
+                        if ((id = token_get_keyword(
+                                 lex->lex_source + result.tok_loc.loc_start,
+                                 result.tok_loc.loc_end -
+                                     result.tok_loc.loc_end))) {
+                            result.tok_id = *id;
+                        }
                     }
                 }
                 break;
