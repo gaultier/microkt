@@ -1,9 +1,10 @@
 .PHONY: clean
 
-SRC:=$(wildcard *.{h,c})
+SRC:=$(wildcard *.c)
+HEADERS:=$(wildcard *.h)
 CFLAGS+=-Wall -Wextra -Wpedantic -g -O2
 
-microktc: $(SRC)
+microktc: $(SRC) $(HEADERS)
 	$(CC) $(CFLAGS) $(SRC) -o $@
 
 clean:

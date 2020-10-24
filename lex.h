@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common.h"
+#include "stdio.h"
 
 typedef enum {
     LEX_TOKEN_ID_BUILTIN_PRINT,
@@ -53,4 +54,9 @@ token_t lex_next(lex_t* lex) {
         .tok_loc = {.loc_start = lex->lex_index, .loc_end = 0xAA}};
 
     return result;
+}
+
+void token_dump(const token_t* t) {
+    printf("tok_id=%u tok_loc_start=%llu tok_loc_end=%llu\n", t->tok_id,
+           t->tok_loc.loc_start, t->tok_loc.loc_end);
 }
