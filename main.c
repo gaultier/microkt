@@ -1,8 +1,10 @@
-#include "lex.h"
+#include "driver.h"
 
-int main() {
-    const u8 source[] = " true \t";
-    lex_t lex = lex_init(source, sizeof(source));
-    token_t t = lex_next(&lex);
-    token_dump(&t);
+int main(int argc, char* argv[]) {
+    if (argc != 2) {
+        printf("Usage: %s <file>\n", argv[0]);
+        return 0;
+    };
+
+    driver_run(argv[1]);
 }
