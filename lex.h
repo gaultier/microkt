@@ -13,9 +13,9 @@ typedef enum {
     LEX_TOKEN_ID_IDENTIFIER,
     LEX_TOKEN_ID_EOF,
     LEX_TOKEN_ID_INVALID,
-} lex_token_id_t;
+} token_id_t;
 
-const u8 lex_token_id_t_to_str[][30] = {
+const u8 token_id_t_to_str[][30] = {
     [LEX_TOKEN_ID_BUILTIN_PRINT] = "print",
     [LEX_TOKEN_ID_LPAREN] = "(",
     [LEX_TOKEN_ID_RPAREN] = ")",
@@ -32,12 +32,12 @@ typedef struct {
 } loc_t;
 
 typedef struct {
-    lex_token_id_t tok_id;
+    token_id_t tok_id;
     loc_t tok_loc;
 } token_t;
 
 typedef struct {
-    lex_token_id_t key_id;
+    token_id_t key_id;
     const u8 key_str[20];
 } keyword_t;
 
@@ -59,7 +59,7 @@ typedef enum {
 } lex_state_t;
 
 // TODO: trie
-const lex_token_id_t* token_get_keyword(const u8* source_start, usize len) {
+const token_id_t* token_get_keyword(const u8* source_start, usize len) {
     const usize keywords_len = sizeof(keywords) / sizeof(keywords[0]);
     for (usize i = 0; i < keywords_len; i++) {
         const keyword_t* k = &keywords[i];
@@ -237,14 +237,14 @@ token_t lex_next(lex_t* lex) {
                         PG_ASSERT_COND(lex->lex_index, >=,
                                        result.tok_loc.loc_start, "%llu");
 
-                        const lex_token_id_t* id = NULL;
+                        const token_id_t* id = NULL;
 
                         if ((id = token_get_keyword(
                                  lex->lex_source + result.tok_loc.loc_start,
                                  lex->lex_index - result.tok_loc.loc_start))) {
                             result.tok_id = *id;
                             printf("[debug] lex keyword=%s\n",
-                                   lex_token_id_t_to_str[*id]);
+                                   token_id_t_to_str[*id]);
                         }
                         goto outer;
                     }
@@ -263,6 +263,6 @@ outer:
 
 void token_dump(const token_t* t) {
     printf("tok_id=%s tok_loc_start=%llu tok_loc_end=%llu\n",
-           lex_token_id_t_to_str[t->tok_id], t->tok_loc.loc_start,
+           token_id_t_to_str[t->tok_id], t->tok_loc.loc_start,
            t->tok_loc.loc_end);
 }

@@ -5,7 +5,7 @@
 #include "lex.h"
 
 typedef struct {
-    lex_token_id_t* par_token_ids;
+    token_id_t* par_token_ids;
     usize par_token_ids_len;
     const u8* par_source;
     const usize par_source_len;
@@ -23,8 +23,8 @@ parser_t parser_init(const u8* file_name0, const u8* source, usize source_len) {
 
     usize token_ids_len = 0;
     usize token_ids_capacity = source_len / 8;  // Estimate
-    lex_token_id_t* token_ids =
-        realloc(NULL, token_ids_capacity * sizeof(lex_token_id_t));
+    token_id_t* token_ids =
+        realloc(NULL, token_ids_capacity * sizeof(token_id_t));
     PG_ASSERT_COND(token_ids, !=, NULL, "%p");
 
     while (1) {
@@ -35,7 +35,7 @@ parser_t parser_init(const u8* file_name0, const u8* source, usize source_len) {
         if (token_ids_len == token_ids_capacity) {
             token_ids_capacity = token_ids_capacity * 2 + 1;
             token_ids =
-                realloc(token_ids, token_ids_capacity * sizeof(lex_token_id_t));
+                realloc(token_ids, token_ids_capacity * sizeof(token_id_t));
             PG_ASSERT_COND(token_ids, !=, NULL, "%p");
         }
         token_ids[token_ids_len++] = token.tok_id;
@@ -65,7 +65,7 @@ token_index_t parser_next_token(parser_t* parser) {
     return res;
 }
 
-res_t parser_eat_token(parser_t* parser, lex_token_id_t id,
+res_t parser_eat_token(parser_t* parser, token_id_t id,
                        token_index_t* return_token_index) {
     PG_ASSERT_COND(parser, !=, NULL, "%p");
     PG_ASSERT_COND(parser->par_token_ids, !=, NULL, "%p");
