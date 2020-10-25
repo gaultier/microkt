@@ -40,5 +40,8 @@ res_t driver_run(const u8* file_name0) {
 
     parser_t parser = parser_init(file_name0, source, file_size);
 
+    munmap((void*)source, file_size);
+    fclose(file);
+
     return RES_OK;
 }
