@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ast.h"
 #include "common.h"
 #include "lex.h"
 
@@ -11,6 +12,8 @@ typedef struct {
     const u8* par_file_name0;
     usize par_tok_i;
 } parser_t;
+
+typedef usize token_index_t;
 
 parser_t parser_init(const u8* file_name0, const u8* source, usize source_len) {
     PG_ASSERT_COND(file_name0, !=, NULL, "%p");
@@ -46,3 +49,62 @@ parser_t parser_init(const u8* file_name0, const u8* source, usize source_len) {
                       .par_token_ids_len = token_ids_len,
                       .par_tok_i = 0};
 }
+
+token_index_t parser_next_token(parser_t* parser) {
+    PG_ASSERT_COND(parser, !=, NULL, "%p");
+    PG_ASSERT_COND(parser->par_token_ids, !=, NULL, "%p");
+    PG_ASSERT_COND(parser->par_token_ids_len, >, (usize)0, "%llu");
+    PG_ASSERT_COND(parser->par_token_ids_len, >, parser->par_tok_i, "%llu");
+
+    // TODO: skip comments
+
+    const token_index_t res = parser->par_tok_i;
+    parser->par_tok_i += 1;
+
+    return res;
+}
+
+res_t parser_eat_token(parser_t* parser, lex_token_id_t id,
+                       token_index_t* return_token_index) {
+    PG_ASSERT_COND(parser, !=, NULL, "%p");
+    PG_ASSERT_COND(parser->par_token_ids, !=, NULL, "%p");
+    PG_ASSERT_COND(parser->par_token_ids_len, >, (usize)0, "%llu");
+    PG_ASSERT_COND(parser->par_token_ids_len, >, parser->par_tok_i, "%llu");
+    PG_ASSERT_COND(return_token_index, !=, NULL, "%p");
+
+    if (parser->par_token_ids[parser->par_tok_i] == id) {
+        *return_token_index = parser_next_token(parser);
+        return RES_OK;
+    } else
+        return RES_NONE;
+}
+
+ast_node_t* parser_create_literal(parser_t* parser, ast_node_kind_t kind) {
+    (void)parser;  // TODO: arena
+
+    ast_node_t* node = realloc(NULL, sizeof(ast_node_t));
+    PG_ASSERT_COND(node, !=, NULL, "%p");
+
+    node->node_kind = kind;
+
+    return node;
+}
+
+res_t parser_parse_primary(parser_t* parser, ast_node_t** return_node) {
+    PG_ASSERT_COND(parser, !=, NULL, "%p");
+
+    token_index_t token = 0;
+    if (parser_eat_token(parser, LEX_TOKEN_ID_TRUE, &token) == RES_OK) {
+        *return_node = parser_create_literal(parser, NODE_KEYWORD_BOOL);
+        (*return_node)->node_n.node_boolean = 1;
+        return RES_OK;
+    }
+    if (parser_eat_token(parser, LEX_TOKEN_ID_FALSE, &token) == RES_OK) {
+        *return_node = parser_create_literal(parser, NODE_KEYWORD_BOOL);
+        (*return_node)->node_n.node_boolean = 0;
+        return RES_OK;
+    }
+
+    return RES_NONE;
+}
+
