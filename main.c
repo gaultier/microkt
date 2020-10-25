@@ -6,5 +6,5 @@ int main(int argc, char* argv[]) {
         return 0;
     };
 
-    driver_run(argv[1]);
+    if (driver_run(argv[1]) == RES_ERR) return 1;
 }

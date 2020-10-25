@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ast.h"
-#include "common.h"
 #include "lex.h"
 
 typedef struct {

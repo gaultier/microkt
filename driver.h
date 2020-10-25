@@ -2,7 +2,6 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#include <string.h>
 #include <sys/mman.h>
 
 #include "ast.h"
@@ -44,7 +43,10 @@ res_t driver_run(const u8* file_name0) {
 
     ast_node_t** nodes = NULL;
     usize nodes_len = 0;
-    if (parser_parse(&parser, &nodes, &nodes_len) == RES_ERR) exit(1);
+    if (parser_parse(&parser, &nodes, &nodes_len) == RES_ERR) {
+        fprintf(stderr, "%s: error\n", file_name0);
+        return RES_ERR;
+    }
 
     for (usize i = 0; i < nodes_len; i++) ast_node_dump(nodes[i], 0);
 

@@ -70,7 +70,6 @@ const token_id_t* token_get_keyword(const u8* source_start, usize len) {
     return NULL;
 }
 
-lex_t lex_init(const u8* source, const usize source_len);
 lex_t lex_init(const u8* source, const usize source_len) {
     return (lex_t){
         .lex_source = source, .lex_source_len = source_len, .lex_index = 0};
