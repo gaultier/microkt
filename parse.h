@@ -31,8 +31,9 @@ parser_t parser_init(const u8* file_name0, const u8* source, usize source_len) {
         const token_t token = lex_next(&lex);
         token_dump(&token);
 
+        PG_ASSERT_COND(token_ids_len, <=, token_ids_capacity, "%llu");
         if (token_ids_len == token_ids_capacity) {
-            token_ids_capacity *= 2;
+            token_ids_capacity = token_ids_capacity * 2 + 1;
             token_ids =
                 realloc(token_ids, token_ids_capacity * sizeof(lex_token_id_t));
             PG_ASSERT_COND(token_ids, !=, NULL, "%p");
@@ -108,3 +109,36 @@ res_t parser_parse_primary(parser_t* parser, ast_node_t** return_node) {
     return RES_NONE;
 }
 
+res_t parser_parse(parser_t* parser, ast_node_t*** nodes, usize* nodes_len) {
+    PG_ASSERT_COND(parser, !=, NULL, "%p");
+    PG_ASSERT_COND(parser->par_token_ids, !=, NULL, "%p");
+    PG_ASSERT_COND(parser->par_token_ids_len, >, (usize)0, "%llu");
+    PG_ASSERT_COND(parser->par_token_ids_len, >, parser->par_tok_i, "%llu");
+    PG_ASSERT_COND(nodes, !=, NULL, "%p");
+    PG_ASSERT_COND(nodes_len, !=, NULL, "%p");
+
+    usize nodes_capacity = 0;
+
+    while (1) {
+        ast_node_t* node = NULL;
+        if (parser_parse_primary(parser, &node) == RES_OK) {
+            PG_ASSERT_COND(*nodes_len, <=, nodes_capacity, "%llu");
+            if (*nodes_len == nodes_capacity) {
+                nodes_capacity = nodes_capacity * 2 + 1;
+                *nodes = realloc(*nodes, nodes_capacity * sizeof(ast_node_t));
+                PG_ASSERT_COND(*nodes, !=, NULL, "%p");
+            }
+            (*nodes)[(*nodes_len)++] = node;
+        }
+
+        const token_index_t next = parser->par_token_ids[parser->par_tok_i];
+
+        if (next == LEX_TOKEN_ID_EOF)
+            break;
+        else {
+            // TODO: errors
+            return RES_ERR;
+        }
+    }
+    return RES_OK;
+}

@@ -5,6 +5,7 @@
 #include <string.h>
 #include <sys/mman.h>
 
+#include "ast.h"
 #include "common.h"
 #include "lex.h"
 #include "parse.h"
@@ -40,8 +41,14 @@ res_t driver_run(const u8* file_name0) {
     }
 
     parser_t parser = parser_init(file_name0, source, file_size);
-    PG_ASSERT_COND(parser.par_token_ids_len, >, (usize)0, "%llu");
-    PG_ASSERT_COND(parser.par_token_ids, !=, NULL, "%p");
+
+    ast_node_t** nodes = NULL;
+    usize nodes_len = 0;
+    if (parser_parse(&parser, &nodes, &nodes_len) == RES_ERR) exit(1);
+
+    for (usize i = 0; i < nodes_len; i++) {
+        ast_node_dump(nodes[i], 0);
+    }
 
     munmap((void*)source, file_size);
     fclose(file);

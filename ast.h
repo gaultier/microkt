@@ -1,5 +1,7 @@
 #pragma once
 
+#include "common.h"
+
 struct ast_node;
 typedef struct ast_node ast_node_t;
 
@@ -12,6 +14,11 @@ typedef enum {
     NODE_KEYWORD_BOOL,
 } ast_node_kind_t;
 
+const u8 ast_node_kind_t_to_str[][30] = {
+    [NODE_BUILTIN_PRINT] = "print",
+    [NODE_KEYWORD_BOOL] = "bool",
+};
+
 struct ast_node {
     ast_node_kind_t node_kind;
     union {
@@ -19,3 +26,12 @@ struct ast_node {
         int node_boolean;
     } node_n;
 };
+
+void ast_node_dump(const ast_node_t* node, usize indent) {
+    PG_ASSERT_COND(node, !=, NULL, "%p");
+
+    for (usize i = 0; i < indent; i++) printf(" ");
+
+    printf("[debug] ast_node %s\n", ast_node_kind_t_to_str[node->node_kind]);
+    // TODO: rec
+}
