@@ -59,6 +59,7 @@ typedef enum {
     LEX_STATE_IDENTIFIER,
 } lex_state_t;
 
+// TODO: trie
 const lex_token_id_t* token_get_keyword(const u8* source_start, usize len) {
     const usize keywords_len = sizeof(keywords) / sizeof(keywords[0]);
     for (usize i = 0; i < keywords_len; i++) {
