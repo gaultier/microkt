@@ -2,7 +2,7 @@
 
 SRC:=$(wildcard *.c)
 HEADERS:=$(wildcard *.h)
-CFLAGS+=-Wall -Wextra -Wpedantic -g -std=c99
+CFLAGS+=-Wall -Wextra -Wpedantic -Wno-format-pedantic -g -std=c99
 
 microktc: $(SRC) $(HEADERS)
 	$(CC) $(CFLAGS) -O2 $(SRC) -o $@

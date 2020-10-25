@@ -77,6 +77,9 @@ lex_t lex_init(const u8* source, const usize source_len) {
 }
 
 token_t lex_next(lex_t* lex) {
+    PG_ASSERT_COND(lex, !=, NULL, "%p");
+    PG_ASSERT_COND(lex->lex_source, !=, NULL, "%p");
+
     token_t result = {
         .tok_id = LEX_TOKEN_ID_EOF,
         .tok_loc = {.loc_start = lex->lex_index, .loc_end = 0xAA}};
@@ -163,6 +166,11 @@ token_t lex_next(lex_t* lex) {
                         result.tok_id = LEX_TOKEN_ID_IDENTIFIER;
                         break;
                     }
+                    default: {
+                        result.tok_id = LEX_TOKEN_ID_INVALID;
+                        lex->lex_index += 1;
+                        break;
+                    }
                 }
                 break;
             }
@@ -226,6 +234,8 @@ token_t lex_next(lex_t* lex) {
                     default: {
                         PG_ASSERT_COND(lex->lex_index, <, lex->lex_source_len,
                                        "%llu");
+                        PG_ASSERT_COND(lex->lex_index, >=,
+                                       result.tok_loc.loc_start, "%llu");
 
                         const lex_token_id_t* id = NULL;
 
