@@ -3,7 +3,6 @@
 #include <string.h>
 
 #include "common.h"
-#include "stdio.h"
 
 typedef enum {
     LEX_TOKEN_ID_BUILTIN_PRINT,
@@ -71,7 +70,7 @@ const lex_token_id_t* token_get_keyword(const u8* source_start, usize len) {
     return NULL;
 }
 
-lex_t lex_init(const u8* source, const usize lex_source_len);
+lex_t lex_init(const u8* source, const usize source_len);
 lex_t lex_init(const u8* source, const usize source_len) {
     return (lex_t){
         .lex_source = source, .lex_source_len = source_len, .lex_index = 0};
@@ -225,7 +224,11 @@ token_t lex_next(lex_t* lex) {
                         break;
                     }
                     default: {
+                        PG_ASSERT_COND(lex->lex_index, <, lex->lex_source_len,
+                                       "%llu");
+
                         const lex_token_id_t* id = NULL;
+
                         if ((id = token_get_keyword(
                                  lex->lex_source + result.tok_loc.loc_start,
                                  lex->lex_index - result.tok_loc.loc_start))) {
