@@ -6,6 +6,7 @@
 #include <sys/mman.h>
 
 #include "common.h"
+#include "lex.h"
 #include "parse.h"
 
 res_t driver_run(const u8* file_name0) {
@@ -39,6 +40,10 @@ res_t driver_run(const u8* file_name0) {
     }
 
     parser_t parser = parser_init(file_name0, source, file_size);
+    for (usize i = 0; i < parser.par_token_ids_len; i++) {
+        printf("[parser] token id=%s\n",
+               lex_token_id_t_to_str[parser.par_token_ids[i]]);
+    }
 
     munmap((void*)source, file_size);
     fclose(file);
