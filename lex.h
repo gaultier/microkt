@@ -102,12 +102,12 @@ token_t lex_next(lex_t* lex) {
                     case '(': {
                         result.tok_id = LEX_TOKEN_ID_LPAREN;
                         lex->lex_index += 1;
-                        break;
+                        goto outer;
                     }
                     case ')': {
                         result.tok_id = LEX_TOKEN_ID_RPAREN;
                         lex->lex_index += 1;
-                        break;
+                        goto outer;
                     }
                     case '_':
                     case 'a':
@@ -169,7 +169,7 @@ token_t lex_next(lex_t* lex) {
                     default: {
                         result.tok_id = LEX_TOKEN_ID_INVALID;
                         lex->lex_index += 1;
-                        break;
+                        goto outer;
                     }
                 }
                 break;
@@ -246,6 +246,7 @@ token_t lex_next(lex_t* lex) {
                             printf("[debug] lex keyword=%s\n",
                                    lex_token_id_t_to_str[*id]);
                         }
+                        goto outer;
                     }
                 }
                 break;
@@ -254,6 +255,7 @@ token_t lex_next(lex_t* lex) {
 
         lex->lex_index += 1;
     }
+outer:
     result.tok_loc.loc_end = lex->lex_index;
 
     return result;

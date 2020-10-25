@@ -43,11 +43,6 @@ res_t driver_run(const u8* file_name0) {
     PG_ASSERT_COND(parser.par_token_ids_len, >, (usize)0, "%llu");
     PG_ASSERT_COND(parser.par_token_ids, !=, NULL, "%p");
 
-    for (usize i = 0; i < parser.par_token_ids_len; i++) {
-        printf("[parser] token id=%s\n",
-               lex_token_id_t_to_str[parser.par_token_ids[i]]);
-    }
-
     munmap((void*)source, file_size);
     fclose(file);
 

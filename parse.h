@@ -26,6 +26,8 @@ parser_t parser_init(const u8* file_name0, const u8* source, usize source_len) {
 
     while (1) {
         const token_t token = lex_next(&lex);
+        token_dump(&token);
+
         if (token_ids_len == token_ids_capacity) {
             token_ids_capacity *= 2;
             token_ids =
