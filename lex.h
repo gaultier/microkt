@@ -108,10 +108,58 @@ token_t lex_next(lex_t* lex) {
                         break;
                     }
                     case '_':
-                    case 't':
+                    case 'a':
+                    case 'b':
+                    case 'c':
+                    case 'd':
+                    case 'e':
+                    case 'f':
+                    case 'g':
+                    case 'h':
+                    case 'i':
+                    case 'j':
+                    case 'k':
+                    case 'l':
+                    case 'm':
+                    case 'n':
+                    case 'o':
+                    case 'p':
+                    case 'q':
                     case 'r':
+                    case 's':
+                    case 't':
                     case 'u':
-                    case 'e': {  // TODO: add more
+                    case 'v':
+                    case 'w':
+                    case 'x':
+                    case 'y':
+                    case 'z':
+                    case 'A':
+                    case 'B':
+                    case 'C':
+                    case 'D':
+                    case 'E':
+                    case 'F':
+                    case 'G':
+                    case 'H':
+                    case 'I':
+                    case 'J':
+                    case 'K':
+                    case 'L':
+                    case 'M':
+                    case 'N':
+                    case 'O':
+                    case 'P':
+                    case 'Q':
+                    case 'R':
+                    case 'S':
+                    case 'T':
+                    case 'U':
+                    case 'V':
+                    case 'W':
+                    case 'X':
+                    case 'Y':
+                    case 'Z': {
                         state = LEX_STATE_IDENTIFIER;
                         result.tok_id = LEX_TOKEN_ID_IDENTIFIER;
                         break;
@@ -122,19 +170,68 @@ token_t lex_next(lex_t* lex) {
             case LEX_STATE_IDENTIFIER: {
                 switch (c) {
                     case '_':
-                    case 't':
+                    case 'a':
+                    case 'b':
+                    case 'c':
+                    case 'd':
+                    case 'e':
+                    case 'f':
+                    case 'g':
+                    case 'h':
+                    case 'i':
+                    case 'j':
+                    case 'k':
+                    case 'l':
+                    case 'm':
+                    case 'n':
+                    case 'o':
+                    case 'p':
+                    case 'q':
                     case 'r':
+                    case 's':
+                    case 't':
                     case 'u':
-                    case 'e': {  // TODO: add more
+                    case 'v':
+                    case 'w':
+                    case 'x':
+                    case 'y':
+                    case 'z':
+                    case 'A':
+                    case 'B':
+                    case 'C':
+                    case 'D':
+                    case 'E':
+                    case 'F':
+                    case 'G':
+                    case 'H':
+                    case 'I':
+                    case 'J':
+                    case 'K':
+                    case 'L':
+                    case 'M':
+                    case 'N':
+                    case 'O':
+                    case 'P':
+                    case 'Q':
+                    case 'R':
+                    case 'S':
+                    case 'T':
+                    case 'U':
+                    case 'V':
+                    case 'W':
+                    case 'X':
+                    case 'Y':
+                    case 'Z': {
                         break;
                     }
                     default: {
                         const lex_token_id_t* id = NULL;
                         if ((id = token_get_keyword(
                                  lex->lex_source + result.tok_loc.loc_start,
-                                 result.tok_loc.loc_end -
-                                     result.tok_loc.loc_end))) {
+                                 lex->lex_index - result.tok_loc.loc_start))) {
                             result.tok_id = *id;
+                            printf("[debug] lex keyword=%s\n",
+                                   lex_token_id_t_to_str[*id]);
                         }
                     }
                 }
