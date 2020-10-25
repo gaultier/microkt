@@ -40,6 +40,9 @@ res_t driver_run(const u8* file_name0) {
     }
 
     parser_t parser = parser_init(file_name0, source, file_size);
+    PG_ASSERT_COND(parser.par_token_ids_len, >, (usize)0, "%llu");
+    PG_ASSERT_COND(parser.par_token_ids, !=, NULL, "%p");
+
     for (usize i = 0; i < parser.par_token_ids_len; i++) {
         printf("[parser] token id=%s\n",
                lex_token_id_t_to_str[parser.par_token_ids[i]]);
