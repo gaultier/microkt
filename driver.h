@@ -82,6 +82,7 @@ res_t driver_run(const u8* file_name0) {
     fprintf(stderr, "[debug] writing asm output to %s\n", asm_file_name0);
 
     emit_asm_dump(&a, asm_file);
+    fflush(asm_file);
     fclose(file);
 
     // as
@@ -110,7 +111,7 @@ res_t driver_run(const u8* file_name0) {
     // ld
     {
         memset(argv, 0, argv_len);
-        snprintf(argv, argv_len, "/usr/bin/ld ./%s.o -o ./%s -lSystem",
+        snprintf(argv, argv_len, "/usr/bin/ld ./%s.o -lSystem -o ./%s",
                  base_file_name0, base_file_name0);
         fprintf(stderr, "[debug] %s\n", argv);
 
