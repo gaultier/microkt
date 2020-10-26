@@ -4,6 +4,7 @@
 
 typedef unsigned long long int usize;
 typedef char u8;
+typedef unsigned short u16;
 
 typedef u8 res_t;
 #define RES_OK ((res_t)0)
@@ -23,4 +24,10 @@ typedef u8 res_t;
                     __LINE__, a, b);                              \
             abort();                                              \
         }                                                         \
+    } while (0)
+
+#define UNIMPLEMENTED()                                            \
+    do {                                                           \
+        fprintf(stderr, __FILE__ ":%d:unimplemented\n", __LINE__); \
+        exit(1);                                                   \
     } while (0)
