@@ -91,7 +91,7 @@ res_t driver_run(const u8* file_name0) {
     u8* argv = calloc(argv_len, 1);
     PG_ASSERT_COND(argv, !=, NULL, "%p");
     {
-        snprintf(argv, argv_len, "/usr/bin/as ./%s -o ./%s.o", asm_file_name0,
+        snprintf(argv, argv_len, "/usr/bin/as %s -o %s.o", asm_file_name0,
                  base_file_name0);
         fprintf(stderr, "[debug] %s\n", argv);
 
@@ -111,7 +111,7 @@ res_t driver_run(const u8* file_name0) {
     // ld
     {
         memset(argv, 0, argv_len);
-        snprintf(argv, argv_len, "/usr/bin/ld ./%s.o -lSystem -o ./%s",
+        snprintf(argv, argv_len, "/usr/bin/ld %s.o -lSystem -o %s",
                  base_file_name0, base_file_name0);
         fprintf(stderr, "[debug] %s\n", argv);
 
@@ -127,6 +127,7 @@ res_t driver_run(const u8* file_name0) {
             return RES_ERR;
         }
     }
+    fprintf(stderr, "[debug] created executable %s\n", base_file_name0);
 
     return RES_OK;
 }
