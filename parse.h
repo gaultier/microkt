@@ -108,6 +108,46 @@ res_t parser_parse_primary(parser_t* parser, ast_node_t** return_node) {
     return RES_NONE;
 }
 
+res_t parser_expect_token(parser_t* parser, token_id_t id) {
+    PG_ASSERT_COND(parser, !=, NULL, "%p");
+    PG_ASSERT_COND(parser->par_token_ids, !=, NULL, "%p");
+    PG_ASSERT_COND(parser->par_token_ids_len, >, (usize)0, "%llu");
+
+    const token_index_t token = parser_next_token(parser);
+    if (parser->par_token_ids[token] != id) {
+        // TODO: errors
+        return RES_ERR;
+    }
+    return RES_OK;
+}
+
+res_t parser_parse_builtinprint(parser_t* parser, ast_node_t** return_node) {
+    PG_ASSERT_COND(parser, !=, NULL, "%p");
+    PG_ASSERT_COND(return_node, !=, NULL, "%p");
+
+    token_index_t token = 0;
+    if (parser_eat_token(parser, LEX_TOKEN_ID_BUILTIN_PRINT, &token) ==
+        RES_OK) {
+        if (parser_expect_token(parser, LEX_TOKEN_ID_LPAREN) != RES_OK)
+            return RES_ERR;
+
+        ast_node_t* primary = NULL;
+        if (parser_parse_primary(parser, &primary) != RES_OK) return RES_ERR;
+
+        if (parser_expect_token(parser, LEX_TOKEN_ID_RPAREN) != RES_OK)
+            return RES_ERR;
+
+        *return_node = realloc(NULL, sizeof(ast_node_t));
+        (*return_node)->node_kind = NODE_BUILTIN_PRINT;
+        (*return_node)->node_n.node_builtin_print = (ast_builtin_print_t){
+            .arg = primary,
+        };
+
+        return RES_OK;
+    }
+    return RES_NONE;
+}
+
 res_t parser_parse(parser_t* parser, ast_node_t*** nodes, usize* nodes_len) {
     PG_ASSERT_COND(parser, !=, NULL, "%p");
     PG_ASSERT_COND(parser->par_token_ids, !=, NULL, "%p");
@@ -120,7 +160,7 @@ res_t parser_parse(parser_t* parser, ast_node_t*** nodes, usize* nodes_len) {
 
     while (1) {
         ast_node_t* node = NULL;
-        if (parser_parse_primary(parser, &node) == RES_OK) {
+        if (parser_parse_builtinprint(parser, &node) == RES_OK) {
             PG_ASSERT_COND(*nodes_len, <=, nodes_capacity, "%llu");
             if (*nodes_len == nodes_capacity) {
                 nodes_capacity = nodes_capacity * 2 + 1;
