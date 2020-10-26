@@ -47,8 +47,7 @@ void ast_node_dump(const ast_node_t* nodes, token_index_t node_i,
             break;
         }
         case NODE_KEYWORD_BOOL: {
-            printf("ast_node %s %s\n", ast_node_kind_t_to_str[node->node_kind],
-                   (node->node_n.node_boolean == 0) ? "false" : "true");
+            printf("ast_node %s\n", ast_node_kind_t_to_str[node->node_kind]);
             break;
         }
     }

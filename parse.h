@@ -102,7 +102,7 @@ res_t parser_parse_primary(parser_t* parser, usize* new_primary_node_i) {
     token_index_t token = 0;
     if (parser_eat_token(parser, LEX_TOKEN_ID_TRUE, &token) == RES_OK) {
         const ast_node_t new_node = {.node_kind = NODE_KEYWORD_BOOL,
-                                     .node_n = {.node_boolean = 1}};
+                                     .node_n = {.node_boolean = token}};
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = buf_size(parser->par_nodes) - 1;
 
@@ -110,7 +110,7 @@ res_t parser_parse_primary(parser_t* parser, usize* new_primary_node_i) {
     }
     if (parser_eat_token(parser, LEX_TOKEN_ID_FALSE, &token) == RES_OK) {
         const ast_node_t new_node = {.node_kind = NODE_KEYWORD_BOOL,
-                                     .node_n = {.node_boolean = 0}};
+                                     .node_n = {.node_boolean = token}};
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = buf_size(parser->par_nodes) - 1;
 
@@ -147,9 +147,8 @@ res_t parser_parse_builtin_print(parser_t* parser, usize* new_node_i) {
         if (parser_expect_token(parser, LEX_TOKEN_ID_LPAREN, &lparen) != RES_OK)
             return RES_ERR;
 
-        usize primary_node_i = 0;
-        if (parser_parse_primary(parser, &primary_node_i) != RES_OK)
-            return RES_ERR;
+        usize arg_i = 0;
+        if (parser_parse_primary(parser, &arg_i) != RES_OK) return RES_ERR;
 
         token_index_t rparen = 0;
         if (parser_expect_token(parser, LEX_TOKEN_ID_RPAREN, &rparen) != RES_OK)
@@ -158,7 +157,7 @@ res_t parser_parse_builtin_print(parser_t* parser, usize* new_node_i) {
         const ast_node_t new_node = {
             .node_kind = NODE_BUILTIN_PRINT,
             .node_n = {
-                .node_builtin_print = {.bp_arg_i = primary_node_i,
+                .node_builtin_print = {.bp_arg_i = arg_i,
                                        .bp_keyword_print_i = keyword_print,
                                        .bp_rparen_i = rparen}}};
         buf_push(parser->par_nodes, new_node);
