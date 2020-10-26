@@ -36,18 +36,20 @@ void ast_node_dump(const ast_node_t* nodes, token_index_t node_i,
                    usize indent) {
     PG_ASSERT_COND(nodes, !=, NULL, "%p");
 
-    printf("[debug] ");
+    fprintf(stderr, "[debug] ");
     for (usize i = 0; i < indent; i++) printf(" ");
 
     const ast_node_t* node = &nodes[node_i];
     switch (node->node_kind) {
         case NODE_BUILTIN_PRINT: {
-            printf("ast_node %s\n", ast_node_kind_t_to_str[node->node_kind]);
+            fprintf(stderr, "ast_node %s\n",
+                    ast_node_kind_t_to_str[node->node_kind]);
             ast_node_dump(nodes, node->node_n.node_builtin_print.bp_arg_i, 2);
             break;
         }
         case NODE_KEYWORD_BOOL: {
-            printf("ast_node %s\n", ast_node_kind_t_to_str[node->node_kind]);
+            fprintf(stderr, "ast_node %s\n",
+                    ast_node_kind_t_to_str[node->node_kind]);
             break;
         }
     }

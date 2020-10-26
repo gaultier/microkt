@@ -189,7 +189,7 @@ void emit_asm_dump(emit_asm_t* a, FILE* file) {
     PG_ASSERT_COND(a, !=, NULL, "%p");
     PG_ASSERT_COND(file, !=, NULL, "%p");
 
-    fprintf(file, ".data\n");
+    fprintf(file, "\n.data\n");
 
     for (usize i = 0; i < buf_size(a->asm_data_section); i++) {
         const emit_op_t op = a->asm_data_section[i];
