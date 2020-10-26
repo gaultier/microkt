@@ -56,7 +56,6 @@ res_t driver_run(const u8* file_name0) {
     if (source == MAP_FAILED) {
         fprintf(stderr, "Failed to mmap the file %s: %s", file_name0,
                 strerror(errno));
-        fclose(file);
         return RES_OK;
     }
 
@@ -69,10 +68,21 @@ res_t driver_run(const u8* file_name0) {
 
     emit_asm_t a;
     emit_emit(&parser, &a);
-    emit_asm_dump(&a, stdout);
 
-    munmap((void*)source, file_size);
-    fclose(file);
+    /* const u8* const base_file_name0 =
+     * driver_base_source_file_name(file_name0); */
+    const usize file_name_len = strlen(file_name0);
+    u8* asm_file_name0 = strdup(file_name0);
+    asm_file_name0[file_name_len - 3] = 'a';
+    asm_file_name0[file_name_len - 2] = 's';
+    asm_file_name0[file_name_len - 1] = 'm';
+    FILE* asm_file = fopen(asm_file_name0, "w");
+    if (asm_file == NULL) return RES_ERR;
+
+    emit_asm_dump(&a, asm_file);
+
+    /* munmap((void*)source, file_size); */
+    /* fclose(file); */
 
     return RES_OK;
 }
