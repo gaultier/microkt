@@ -41,13 +41,10 @@ res_t driver_run(const u8* file_name0) {
 
     parser_t parser = parser_init(file_name0, source, file_size);
 
-    ast_node_t** nodes = NULL;
-    if (parser_parse(&parser, &nodes) == RES_ERR) {
+    if (parser_parse(&parser) == RES_ERR) {
         fprintf(stderr, "%s: error\n", file_name0);
         return RES_ERR;
     }
-
-    /* for (usize i = 0; i < nodes_len; i++) ast_node_dump(nodes[i], 0); */
 
     munmap((void*)source, file_size);
     fclose(file);

@@ -6,7 +6,7 @@ struct ast_node_t;
 typedef struct ast_node_t ast_node_t;
 
 typedef struct {
-    ast_node_t* arg;
+    usize bp_arg_i;  // Index of argument node
 } ast_builtin_print_t;
 
 typedef enum {
@@ -27,16 +27,17 @@ struct ast_node_t {
     } node_n;
 };
 
-void ast_node_dump(const ast_node_t* node, usize indent) {
-    PG_ASSERT_COND(node, !=, NULL, "%p");
+void ast_node_dump(const ast_node_t* nodes, usize node_i, usize indent) {
+    PG_ASSERT_COND(nodes, !=, NULL, "%p");
 
     printf("[debug] ");
     for (usize i = 0; i < indent; i++) printf(" ");
 
+    const ast_node_t* node = &nodes[node_i];
     switch (node->node_kind) {
         case NODE_BUILTIN_PRINT: {
             printf("ast_node %s\n", ast_node_kind_t_to_str[node->node_kind]);
-            ast_node_dump(node->node_n.node_builtin_print.arg, 2);
+            ast_node_dump(nodes, node->node_n.node_builtin_print.bp_arg_i, 2);
             break;
         }
         case NODE_KEYWORD_BOOL: {
