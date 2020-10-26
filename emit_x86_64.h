@@ -170,7 +170,7 @@ void emit_emit(parser_t* parser, emit_asm_t* a) {
     }
 
     emit_op_t* args = NULL;
-    buf_grow(args, 4);
+    buf_grow(args, 2);
     buf_push(args,
              ((emit_op_t){.op_kind = OP_KIND_INTEGER_LITERAL,
                           .op_o = {.op_integer_literal = syscall_exit_osx}}));
@@ -214,8 +214,8 @@ void emit_asm_dump(emit_asm_t* a, FILE* file) {
             case OP_KIND_SYSCALL: {
                 const emit_op_syscall_t syscall = op.op_o.op_syscall;
                 for (usize j = 0; j < buf_size(syscall.op_sys_args); j++) {
-                    const emit_op_t arg = syscall.op_sys_args[i];
-                    const reg_t reg = emit_fn_arg(i);
+                    const emit_op_t arg = syscall.op_sys_args[j];
+                    const reg_t reg = emit_fn_arg(j);
 
                     switch (arg.op_kind) {
                         case OP_KIND_INTEGER_LITERAL: {
@@ -240,7 +240,7 @@ void emit_asm_dump(emit_asm_t* a, FILE* file) {
 
                 // Zero all registers after syscall
                 for (usize j = 0; j < buf_size(syscall.op_sys_args); j++) {
-                    const reg_t reg = emit_fn_arg(i);
+                    const reg_t reg = emit_fn_arg(j);
                     fprintf(file, "\tmovq $0, %s\n", reg_t_to_str[reg]);
                 }
                 fprintf(file, "\n");  // For prettyness
