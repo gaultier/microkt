@@ -81,7 +81,7 @@ token_t lex_next(lexer_t* lexer) {
 
     token_t result = {
         .tok_id = LEX_TOKEN_ID_EOF,
-        .tok_loc = {.loc_start = lexer->lex_index, .loc_end = 0xAA}};
+        .tok_loc = {.loc_start = lexer->lex_index, .loc_end = 0xAAAAAAAA}};
 
     lex_state_t state = LEX_STATE_START;
 

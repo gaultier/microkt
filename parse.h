@@ -10,13 +10,12 @@ typedef struct {
     const usize par_source_len;
     const u8* par_file_name0;
     usize par_tok_i;
-    ast_node_t* par_nodes;  // Arena of all nodes
-    usize* par_stmt_nodes;  // Array of statements. Each statement is stored
-                            // as the node index which is the root of the
-                            // statement in the ast
+    ast_node_t* par_nodes;          // Arena of all nodes
+    token_index_t* par_stmt_nodes;  // Array of statements. Each statement is
+                                    // stored as the node index which is the
+                                    // root of the statement in the ast
+    loc_t* par_token_locs;
 } parser_t;
-
-typedef usize token_index_t;
 
 parser_t parser_init(const u8* file_name0, const u8* source, usize source_len) {
     PG_ASSERT_COND(file_name0, !=, NULL, "%p");
@@ -26,13 +25,16 @@ parser_t parser_init(const u8* file_name0, const u8* source, usize source_len) {
 
     token_id_t* token_ids = NULL;
     buf_grow(token_ids, source_len / 8);
-    PG_ASSERT_COND(token_ids, !=, NULL, "%p");
+
+    loc_t* token_locs = NULL;
+    buf_grow(token_locs, source_len / 8);
 
     while (1) {
         const token_t token = lex_next(&lexer);
         token_dump(&token);
 
         buf_push(token_ids, token.tok_id);
+        buf_push(token_locs, token.tok_loc);
 
         if (token.tok_id == LEX_TOKEN_ID_EOF) break;
     }
@@ -43,6 +45,7 @@ parser_t parser_init(const u8* file_name0, const u8* source, usize source_len) {
                       .par_token_ids = token_ids,
                       .par_nodes = NULL,
                       .par_stmt_nodes = NULL,
+                      .par_token_locs = token_locs,
                       .par_tok_i = 0};
 }
 
@@ -102,16 +105,19 @@ res_t parser_parse_primary(parser_t* parser, usize* new_primary_node_i) {
     return RES_NONE;
 }
 
-res_t parser_expect_token(parser_t* parser, token_id_t id) {
+res_t parser_expect_token(parser_t* parser, token_id_t id,
+                          token_index_t* token) {
     PG_ASSERT_COND(parser, !=, NULL, "%p");
     PG_ASSERT_COND(parser->par_token_ids, !=, NULL, "%p");
     PG_ASSERT_COND((usize)buf_size(parser->par_token_ids), >, (usize)0, "%llu");
+    PG_ASSERT_COND(token, !=, NULL, "%p");
 
-    const token_index_t token = parser_next_token(parser);
-    if (parser->par_token_ids[token] != id) {
+    const token_index_t tok = parser_next_token(parser);
+    if (parser->par_token_ids[tok] != id) {
         // TODO: errors
         return RES_ERR;
     }
+    *token = tok;
     return RES_OK;
 }
 
@@ -119,22 +125,27 @@ res_t parser_parse_builtin_print(parser_t* parser, usize* new_node_i) {
     PG_ASSERT_COND(parser, !=, NULL, "%p");
     PG_ASSERT_COND(new_node_i, !=, NULL, "%p");
 
-    token_index_t token = 0;
-    if (parser_eat_token(parser, LEX_TOKEN_ID_BUILTIN_PRINT, &token) ==
+    token_index_t keyword_print = 0;
+    if (parser_eat_token(parser, LEX_TOKEN_ID_BUILTIN_PRINT, &keyword_print) ==
         RES_OK) {
-        if (parser_expect_token(parser, LEX_TOKEN_ID_LPAREN) != RES_OK)
+        token_index_t lparen = 0;
+        if (parser_expect_token(parser, LEX_TOKEN_ID_LPAREN, &lparen) != RES_OK)
             return RES_ERR;
 
         usize primary_node_i = 0;
         if (parser_parse_primary(parser, &primary_node_i) != RES_OK)
             return RES_ERR;
 
-        if (parser_expect_token(parser, LEX_TOKEN_ID_RPAREN) != RES_OK)
+        token_index_t rparen = 0;
+        if (parser_expect_token(parser, LEX_TOKEN_ID_RPAREN, &rparen) != RES_OK)
             return RES_ERR;
 
         const ast_node_t new_node = {
             .node_kind = NODE_BUILTIN_PRINT,
-            .node_n = {.node_builtin_print = {.bp_arg_i = primary_node_i}}};
+            .node_n = {
+                .node_builtin_print = {.bp_arg_i = primary_node_i,
+                                       .bp_keyword_print_i = keyword_print,
+                                       .bp_rparen_i = rparen}}};
         buf_push(parser->par_nodes, new_node);
         *new_node_i = buf_size(parser->par_nodes) - 1;
 

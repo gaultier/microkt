@@ -1,12 +1,17 @@
 #pragma once
 
 #include "common.h"
+#include "lex.h"
+
+typedef usize token_index_t;
 
 struct ast_node_t;
 typedef struct ast_node_t ast_node_t;
 
 typedef struct {
-    usize bp_arg_i;  // Index of argument node
+    token_index_t bp_arg_i;  // Index of argument node
+    token_index_t bp_keyword_print_i;
+    token_index_t bp_rparen_i;
 } ast_builtin_print_t;
 
 typedef enum {
@@ -23,11 +28,12 @@ struct ast_node_t {
     ast_node_kind_t node_kind;
     union {
         ast_builtin_print_t node_builtin_print;
-        int node_boolean;
+        token_index_t node_boolean;
     } node_n;
 };
 
-void ast_node_dump(const ast_node_t* nodes, usize node_i, usize indent) {
+void ast_node_dump(const ast_node_t* nodes, token_index_t node_i,
+                   usize indent) {
     PG_ASSERT_COND(nodes, !=, NULL, "%p");
 
     printf("[debug] ");
@@ -47,3 +53,33 @@ void ast_node_dump(const ast_node_t* nodes, usize node_i, usize indent) {
         }
     }
 }
+
+token_index_t ast_node_first_token(const ast_node_t* node) {
+    switch (node->node_kind) {
+        case NODE_BUILTIN_PRINT:
+            return node->node_n.node_builtin_print.bp_keyword_print_i;
+        case NODE_KEYWORD_BOOL:
+            return node->node_n.node_boolean;
+    }
+}
+
+token_index_t ast_node_last_token(const ast_node_t* node) {
+    switch (node->node_kind) {
+        case NODE_BUILTIN_PRINT:
+            return node->node_n.node_builtin_print.bp_rparen_i;
+        case NODE_KEYWORD_BOOL:
+            return node->node_n.node_boolean;
+    }
+}
+
+/* void ast_node_source(const ast_node_t* node, parser_t* parser, u8** source,
+ */
+/*                      usize* source_len) { */
+/*     PG_ASSERT_COND(node, !=, NULL, "%p"); */
+/*     PG_ASSERT_COND(parser, !=, NULL, "%p"); */
+
+/*     const loc_t first_token = parser->par_token_locs[ast_node_first_token()];
+ */
+/*     const loc_t last_token = parser->par_token_locs[ast_node_last_token()];
+ */
+/* } */
