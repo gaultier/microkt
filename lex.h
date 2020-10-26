@@ -51,7 +51,7 @@ typedef struct {
     const u8* lex_source;
     const usize lex_source_len;
     usize lex_index;
-} lex_t;
+} lexer_t;
 
 typedef enum {
     LEX_STATE_START,
@@ -70,23 +70,23 @@ const token_id_t* token_get_keyword(const u8* source_start, usize len) {
     return NULL;
 }
 
-lex_t lex_init(const u8* source, const usize source_len) {
-    return (lex_t){
+lexer_t lex_init(const u8* source, const usize source_len) {
+    return (lexer_t){
         .lex_source = source, .lex_source_len = source_len, .lex_index = 0};
 }
 
-token_t lex_next(lex_t* lex) {
-    PG_ASSERT_COND(lex, !=, NULL, "%p");
-    PG_ASSERT_COND(lex->lex_source, !=, NULL, "%p");
+token_t lex_next(lexer_t* lexer) {
+    PG_ASSERT_COND(lexer, !=, NULL, "%p");
+    PG_ASSERT_COND(lexer->lex_source, !=, NULL, "%p");
 
     token_t result = {
         .tok_id = LEX_TOKEN_ID_EOF,
-        .tok_loc = {.loc_start = lex->lex_index, .loc_end = 0xAA}};
+        .tok_loc = {.loc_start = lexer->lex_index, .loc_end = 0xAA}};
 
     lex_state_t state = LEX_STATE_START;
 
-    while (lex->lex_index < lex->lex_source_len) {
-        const u8 c = lex->lex_source[lex->lex_index];
+    while (lexer->lex_index < lexer->lex_source_len) {
+        const u8 c = lexer->lex_source[lexer->lex_index];
 
         switch (state) {
             case LEX_STATE_START: {
@@ -95,17 +95,17 @@ token_t lex_next(lex_t* lex) {
                     case '\n':
                     case '\r':
                     case '\t': {
-                        result.tok_loc.loc_start = lex->lex_index + 1;
+                        result.tok_loc.loc_start = lexer->lex_index + 1;
                         break;
                     }
                     case '(': {
                         result.tok_id = LEX_TOKEN_ID_LPAREN;
-                        lex->lex_index += 1;
+                        lexer->lex_index += 1;
                         goto outer;
                     }
                     case ')': {
                         result.tok_id = LEX_TOKEN_ID_RPAREN;
-                        lex->lex_index += 1;
+                        lexer->lex_index += 1;
                         goto outer;
                     }
                     case '_':
@@ -167,7 +167,7 @@ token_t lex_next(lex_t* lex) {
                     }
                     default: {
                         result.tok_id = LEX_TOKEN_ID_INVALID;
-                        lex->lex_index += 1;
+                        lexer->lex_index += 1;
                         goto outer;
                     }
                 }
@@ -231,16 +231,17 @@ token_t lex_next(lex_t* lex) {
                         break;
                     }
                     default: {
-                        PG_ASSERT_COND(lex->lex_index, <, lex->lex_source_len,
-                                       "%llu");
-                        PG_ASSERT_COND(lex->lex_index, >=,
+                        PG_ASSERT_COND(lexer->lex_index, <,
+                                       lexer->lex_source_len, "%llu");
+                        PG_ASSERT_COND(lexer->lex_index, >=,
                                        result.tok_loc.loc_start, "%llu");
 
                         const token_id_t* id = NULL;
 
                         if ((id = token_get_keyword(
-                                 lex->lex_source + result.tok_loc.loc_start,
-                                 lex->lex_index - result.tok_loc.loc_start))) {
+                                 lexer->lex_source + result.tok_loc.loc_start,
+                                 lexer->lex_index -
+                                     result.tok_loc.loc_start))) {
                             result.tok_id = *id;
                         }
                         goto outer;
@@ -250,10 +251,10 @@ token_t lex_next(lex_t* lex) {
             }
         }
 
-        lex->lex_index += 1;
+        lexer->lex_index += 1;
     }
 outer:
-    result.tok_loc.loc_end = lex->lex_index;
+    result.tok_loc.loc_end = lexer->lex_index;
 
     return result;
 }

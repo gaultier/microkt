@@ -18,14 +18,14 @@ parser_t parser_init(const u8* file_name0, const u8* source, usize source_len) {
     PG_ASSERT_COND(file_name0, !=, NULL, "%p");
     PG_ASSERT_COND(source, !=, NULL, "%p");
 
-    lex_t lex = lex_init(source, source_len);
+    lexer_t lexer = lex_init(source, source_len);
 
     token_id_t* token_ids = NULL;
     buf_grow(token_ids, source_len / 8);
     PG_ASSERT_COND(token_ids, !=, NULL, "%p");
 
     while (1) {
-        const token_t token = lex_next(&lex);
+        const token_t token = lex_next(&lexer);
         token_dump(&token);
 
         buf_push(token_ids, token.tok_id);
