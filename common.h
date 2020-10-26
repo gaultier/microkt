@@ -1,4 +1,5 @@
 #pragma once
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -22,7 +23,7 @@ typedef u8 res_t;
                     __FILE__ ":%d:PG_ASSERT_COND failed: " fmt    \
                              " " STR(cond) " " fmt " is false\n", \
                     __LINE__, a, b);                              \
-            abort();                                              \
+            assert(0);                                            \
         }                                                         \
     } while (0)
 

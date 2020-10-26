@@ -165,7 +165,7 @@ void emit_emit(parser_t* parser, emit_asm_t* a) {
                 break;
             }
             default:
-                abort();  // Unreachable
+                assert(0);  // Unreachable
         }
     }
 
@@ -201,7 +201,7 @@ void emit_asm_dump(emit_asm_t* a, FILE* file) {
                 break;
             }
             default:
-                abort();  // Unreachable
+                assert(0);  // Unreachable
         }
     }
 
@@ -233,7 +233,7 @@ void emit_asm_dump(emit_asm_t* a, FILE* file) {
                             break;
                         }
                         default:
-                            abort();  // Unreachable
+                            assert(0);  // Unreachable
                     }
                 }
                 fprintf(file, "\tsyscall\n");
@@ -248,7 +248,7 @@ void emit_asm_dump(emit_asm_t* a, FILE* file) {
                 break;
             }
             default:
-                abort();  // Unreachable
+                assert(0);  // Unreachable
         }
     }
 }
