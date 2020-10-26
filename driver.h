@@ -5,7 +5,7 @@
 #include <sys/mman.h>
 
 #include "ast.h"
-#include "common.h"
+#include "emit_x86_64.h"
 #include "lex.h"
 #include "parse.h"
 
