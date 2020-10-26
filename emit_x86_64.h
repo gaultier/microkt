@@ -1,6 +1,5 @@
 #pragma once
 
-#include "ast.h"
 #include "parse.h"
 
 typedef enum {
@@ -23,7 +22,7 @@ typedef enum {
     REG_RIP,
 } reg_t;
 
-const u8 reg_t_to_str[][4] = {
+const u8 reg_t_to_str[][5] = {
     [REG_RAX] = "%rax", [REG_RBX] = "%rbx", [REG_RCX] = "%rcx",
     [REG_RDX] = "%rdx", [REG_RBP] = "%rbp", [REG_RSP] = "%rsp",
     [REG_RSI] = "%rsi", [REG_RDI] = "%rdi", [REG_R8] = "%r8",
@@ -206,5 +205,50 @@ void emit_asm_dump(emit_asm_t* a, FILE* file) {
         }
     }
 
-    fprintf(file, "\n.text");
+    // TODO: non hardcoded main
+    fprintf(file, "\n.text\n.globl _main\n_main:\n");
+
+    for (usize i = 0; i < buf_size(a->asm_text_section); i++) {
+        const emit_op_t op = a->asm_text_section[i];
+        switch (op.op_kind) {
+            case OP_KIND_SYSCALL: {
+                const emit_op_syscall_t syscall = op.op_o.op_syscall;
+                for (usize j = 0; j < buf_size(syscall.op_sys_args); j++) {
+                    const emit_op_t arg = syscall.op_sys_args[i];
+                    const reg_t reg = emit_fn_arg(i);
+
+                    switch (arg.op_kind) {
+                        case OP_KIND_INTEGER_LITERAL: {
+                            fprintf(file, "\tmovq $%llu, %s\n",
+                                    arg.op_o.op_integer_literal,
+                                    reg_t_to_str[reg]);
+                            break;
+                        }
+                        case OP_KIND_LABEL_ADDRESS: {
+                            fprintf(
+                                file, "\tleaq .L%llu(%s), %s\n",
+                                arg.op_o.op_label_address,
+                                reg_t_to_str[REG_RIP],  // TODO: understand why
+                                reg_t_to_str[reg]);
+                            break;
+                        }
+                        default:
+                            abort();  // Unreachable
+                    }
+                }
+                fprintf(file, "\tsyscall\n");
+
+                // Zero all registers after syscall
+                for (usize j = 0; j < buf_size(syscall.op_sys_args); j++) {
+                    const reg_t reg = emit_fn_arg(i);
+                    fprintf(file, "\tmovq $0, %s\n", reg_t_to_str[reg]);
+                }
+                fprintf(file, "\n");  // For prettyness
+
+                break;
+            }
+            default:
+                abort();  // Unreachable
+        }
+    }
 }
