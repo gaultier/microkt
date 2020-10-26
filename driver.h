@@ -80,6 +80,7 @@ res_t driver_run(const u8* file_name0) {
     if (asm_file == NULL) return RES_ERR;
 
     emit_asm_dump(&a, asm_file);
+    fclose(file);
 
     // as
     const u8* const base_file_name0 = driver_base_source_file_name(file_name0);
@@ -91,6 +92,8 @@ res_t driver_run(const u8* file_name0) {
                  base_file_name0);
         fprintf(stderr, "[debug] %s\n", argv);
 
+        fflush(stdout);
+        fflush(stderr);
         FILE* as_process = popen(argv, "w");
         if (as_process == NULL) {
             fprintf(stderr, "Failed to run `as`: `%s` %s\n", argv,
@@ -102,6 +105,8 @@ res_t driver_run(const u8* file_name0) {
                     strerror(errno));
             return RES_ERR;
         }
+        fflush(stdout);
+        fflush(stderr);
     }
 
     // ld
@@ -111,6 +116,8 @@ res_t driver_run(const u8* file_name0) {
                  base_file_name0, base_file_name0);
         fprintf(stderr, "[debug] %s\n", argv);
 
+        fflush(stdout);
+        fflush(stderr);
         FILE* ld_process = popen(argv, "w");
         if (ld_process == NULL) {
             fprintf(stderr, "Failed to run `ld`: `%s` %s\n", argv,
@@ -122,6 +129,8 @@ res_t driver_run(const u8* file_name0) {
                     strerror(errno));
             return RES_ERR;
         }
+        fflush(stdout);
+        fflush(stderr);
     }
 
     return RES_OK;
