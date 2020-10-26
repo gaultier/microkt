@@ -94,7 +94,7 @@ res_t driver_run(const u8* file_name0) {
 
         fflush(stdout);
         fflush(stderr);
-        FILE* as_process = popen(argv, "w");
+        FILE* as_process = popen(argv, "r");
         if (as_process == NULL) {
             fprintf(stderr, "Failed to run `as`: `%s` %s\n", argv,
                     strerror(errno));
@@ -118,7 +118,7 @@ res_t driver_run(const u8* file_name0) {
 
         fflush(stdout);
         fflush(stderr);
-        FILE* ld_process = popen(argv, "w");
+        FILE* ld_process = popen(argv, "r");
         if (ld_process == NULL) {
             fprintf(stderr, "Failed to run `ld`: `%s` %s\n", argv,
                     strerror(errno));
