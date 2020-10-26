@@ -60,13 +60,20 @@ typedef enum {
     OP_KIND_SYSCALL,
     OP_KIND_INTEGER_LITERAL,
     OP_KIND_LABEL_ADDRESS,
+    OP_KIND_STRING_LABEL,
 } emit_op_kind_t;
 
 typedef struct emit_op_t emit_op_t;
 
 typedef struct {
-    emit_op_t* args;
+    emit_op_t* op_sys_args;
 } emit_op_syscall_t;
+
+typedef struct {
+    usize op_sl_label_id;
+    const u8* op_sl_string;
+    usize op_sl_string_len;
+} emit_op_string_label_t;
 
 struct emit_op_t {
     emit_op_kind_t op_kind;
@@ -74,6 +81,7 @@ struct emit_op_t {
         emit_op_syscall_t op_syscall;
         usize op_integer_literal;
         usize op_label_address;
+        emit_op_string_label_t op_string_label;
     } op_o;
 };
 
@@ -88,6 +96,22 @@ const usize syscall_write_osx = (usize)0x2000004;
 const usize STIN = 0;
 const usize STDOUT = 1;
 const usize STDERR = 2;
+
+// TODO: if not exists
+usize emit_add_string_label(emit_op_t** data_section, const u8* string,
+                            usize string_len, usize* label_id) {
+    const usize new_label_id = *label_id;
+    *label_id += 1;
+
+    buf_push(*data_section,
+             ((emit_op_t){.op_kind = OP_KIND_STRING_LABEL,
+                          .op_o = {.op_string_label = {
+                                       .op_sl_string = string,
+                                       .op_sl_string_len = string_len,
+                                       .op_sl_label_id = new_label_id}}}));
+
+    return new_label_id;
+}
 
 void emit_emit(parser_t* parser, emit_asm_t* a) {
     PG_ASSERT_COND(parser, !=, NULL, "%p");
@@ -111,10 +135,12 @@ void emit_emit(parser_t* parser, emit_asm_t* a) {
                 const ast_node_t arg =
                     parser->par_nodes[builtin_print.bp_arg_i];
 
-                const u8* source = NULL;
-                usize source_len = 0;
-                parser_ast_node_source(parser, &arg, &source, &source_len);
-                const usize new_label_id = ++label_id;
+                const u8* string = NULL;
+                usize string_len = 0;
+                parser_ast_node_source(parser, &arg, &string, &string_len);
+
+                const usize new_label_id = emit_add_string_label(
+                    &data_section, string, string_len, &label_id);
 
                 emit_op_t* args = NULL;
                 buf_grow(args, 4);
@@ -131,11 +157,11 @@ void emit_emit(parser_t* parser, emit_asm_t* a) {
                 buf_push(
                     args,
                     ((emit_op_t){.op_kind = OP_KIND_INTEGER_LITERAL,
-                                 .op_o = {.op_integer_literal = source_len}}));
+                                 .op_o = {.op_integer_literal = string_len}}));
 
                 const emit_op_t syscall = {
                     .op_kind = OP_KIND_SYSCALL,
-                    .op_o = {.op_syscall = {.args = args}}};
+                    .op_o = {.op_syscall = {.op_sys_args = args}}};
                 buf_push(text_section, syscall);
                 break;
             }
@@ -153,7 +179,7 @@ void emit_emit(parser_t* parser, emit_asm_t* a) {
                                 .op_o = {.op_integer_literal = 0}}));
 
     const emit_op_t syscall = {.op_kind = OP_KIND_SYSCALL,
-                               .op_o = {.op_syscall = {.args = args}}};
+                               .op_o = {.op_syscall = {.op_sys_args = args}}};
     buf_push(text_section, syscall);
 
     *a = (emit_asm_t){.asm_text_section = text_section,
@@ -163,4 +189,22 @@ void emit_emit(parser_t* parser, emit_asm_t* a) {
 void emit_asm_dump(emit_asm_t* a, FILE* file) {
     PG_ASSERT_COND(a, !=, NULL, "%p");
     PG_ASSERT_COND(file, !=, NULL, "%p");
+
+    fprintf(file, ".data\n");
+
+    for (usize i = 0; i < buf_size(a->asm_data_section); i++) {
+        const emit_op_t op = a->asm_data_section[i];
+        switch (op.op_kind) {
+            case OP_KIND_STRING_LABEL: {
+                const emit_op_string_label_t s = op.op_o.op_string_label;
+                fprintf(file, ".L%llu: .asciz \"%.*s\"\n", s.op_sl_label_id,
+                        (int)s.op_sl_string_len, s.op_sl_string);
+                break;
+            }
+            default:
+                abort();  // Unreachable
+        }
+    }
+
+    fprintf(file, "\n.text");
 }
