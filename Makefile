@@ -11,4 +11,4 @@ microktc_debug: $(SRC) $(HEADERS)
 	$(CC) $(CFLAGS) -O0 -fsanitize=address $(SRC) -o $@
 
 clean:
-	rm -rf microktc microktc_debug ./*.dSYM
+	rm -rf microktc microktc_debug ./*.dSYM e2e/*.o e2e/*.asm

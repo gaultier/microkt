@@ -83,27 +83,46 @@ res_t driver_run(const u8* file_name0) {
 
     // as
     const u8* const base_file_name0 = driver_base_source_file_name(file_name0);
+    usize argv_len = 2 * strlen(file_name0) + 100;
+    u8* argv = calloc(argv_len, 1);
+    PG_ASSERT_COND(argv, !=, NULL, "%p");
     {
-        usize argv_len = 2 * strlen(file_name0) + 100;
-        u8* argv = calloc(argv_len, 1);
-        PG_ASSERT_COND(argv, !=, NULL, "%p");
         snprintf(argv, argv_len, "/usr/bin/as %s -o %s.o", asm_file_name0,
                  base_file_name0);
+        fprintf(stderr, "[debug] %s\n", argv);
 
-        FILE* as_process = popen(argv, "r");
+        FILE* as_process = popen(argv, "w");
         if (as_process == NULL) {
             fprintf(stderr, "Failed to run `as`: `%s` %s\n", argv,
                     strerror(errno));
             return RES_ERR;
         }
-        if (pclose(as_process) == -1) {
+        if (pclose(as_process) != 0) {
             fprintf(stderr, "Failed to run `as`: `%s` %s\n", argv,
                     strerror(errno));
             return RES_ERR;
         }
     }
-    /* munmap((void*)source, file_size); */
-    /* fclose(file); */
+
+    // ld
+    {
+        memset(argv, 0, argv_len);
+        snprintf(argv, argv_len, "/usr/bin/ld %s.o -o %s -lSystem",
+                 base_file_name0, base_file_name0);
+        fprintf(stderr, "[debug] %s\n", argv);
+
+        FILE* ld_process = popen(argv, "w");
+        if (ld_process == NULL) {
+            fprintf(stderr, "Failed to run `ld`: `%s` %s\n", argv,
+                    strerror(errno));
+            return RES_ERR;
+        }
+        if (pclose(ld_process) != 0) {
+            fprintf(stderr, "Failed to run `ld`: `%s` %s\n", argv,
+                    strerror(errno));
+            return RES_ERR;
+        }
+    }
 
     return RES_OK;
 }

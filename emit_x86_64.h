@@ -108,7 +108,7 @@ usize emit_add_string_label_if_not_exists(emit_op_t** data_section,
         const emit_op_string_label_t s = op.op_o.op_string_label;
         if (memcmp(s.op_sl_string, string,
                    MIN(s.op_sl_string_len, string_len)) == 0)
-            return new_label_id;
+            return s.op_sl_label_id;
     }
 
     *label_id += 1;
