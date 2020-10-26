@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ast.h"
 #include "parse.h"
 
 typedef enum {
@@ -58,6 +59,7 @@ reg_t emit_fn_arg(u16 position) {
 typedef enum {
     OP_KIND_SYSCALL,
     OP_KIND_INTEGER_LITERAL,
+    OP_KIND_LABEL_ADDRESS,
 } emit_op_kind_t;
 
 typedef struct emit_op_t emit_op_t;
@@ -71,21 +73,27 @@ struct emit_op_t {
     union {
         emit_op_syscall_t op_syscall;
         usize op_integer_literal;
-    } o;
+        usize op_label_address;
+    } op_o;
 };
 
 typedef struct {
-    emit_op_t* text_section;
-    emit_op_t* data_section;
+    emit_op_t* asm_text_section;
+    emit_op_t* asm_data_section;
 } emit_asm_t;
 
 const usize syscall_exit_osx = (usize)0x2000001;
 const usize syscall_write_osx = (usize)0x2000004;
 
-res_t emit_emit(parser_t* parser) {
+const usize STIN = 0;
+const usize STDOUT = 1;
+const usize STDERR = 2;
+
+void emit_emit(parser_t* parser, emit_asm_t* a) {
     PG_ASSERT_COND(parser, !=, NULL, "%p");
     PG_ASSERT_COND(parser->par_nodes, !=, NULL, "%p");
     PG_ASSERT_COND(parser->par_stmt_nodes, !=, NULL, "%p");
+    PG_ASSERT_COND(a, !=, NULL, "%p");
 
     emit_op_t* text_section = NULL;
     emit_op_t* data_section = NULL;
@@ -100,10 +108,35 @@ res_t emit_emit(parser_t* parser) {
             case NODE_BUILTIN_PRINT: {
                 const ast_builtin_print_t builtin_print =
                     stmt->node_n.node_builtin_print;
+                const ast_node_t arg =
+                    parser->par_nodes[builtin_print.bp_arg_i];
+
                 const u8* source = NULL;
                 usize source_len = 0;
-                parser_ast_node_source(parser, stmt, &source, &source_len);
+                parser_ast_node_source(parser, &arg, &source, &source_len);
+                const usize new_label_id = ++label_id;
 
+                emit_op_t* args = NULL;
+                buf_grow(args, 4);
+                buf_push(args, ((emit_op_t){.op_kind = OP_KIND_INTEGER_LITERAL,
+                                            .op_o = {.op_integer_literal =
+                                                         syscall_write_osx}}));
+                buf_push(args,
+                         ((emit_op_t){.op_kind = OP_KIND_INTEGER_LITERAL,
+                                      .op_o = {.op_integer_literal = STDOUT}}));
+                buf_push(
+                    args,
+                    ((emit_op_t){.op_kind = OP_KIND_LABEL_ADDRESS,
+                                 .op_o = {.op_label_address = new_label_id}}));
+                buf_push(
+                    args,
+                    ((emit_op_t){.op_kind = OP_KIND_INTEGER_LITERAL,
+                                 .op_o = {.op_integer_literal = source_len}}));
+
+                const emit_op_t syscall = {
+                    .op_kind = OP_KIND_SYSCALL,
+                    .op_o = {.op_syscall = {.args = args}}};
+                buf_push(text_section, syscall);
                 break;
             }
             default:
@@ -111,5 +144,23 @@ res_t emit_emit(parser_t* parser) {
         }
     }
 
-    return RES_OK;
+    emit_op_t* args = NULL;
+    buf_grow(args, 4);
+    buf_push(args,
+             ((emit_op_t){.op_kind = OP_KIND_INTEGER_LITERAL,
+                          .op_o = {.op_integer_literal = syscall_exit_osx}}));
+    buf_push(args, ((emit_op_t){.op_kind = OP_KIND_INTEGER_LITERAL,
+                                .op_o = {.op_integer_literal = 0}}));
+
+    const emit_op_t syscall = {.op_kind = OP_KIND_SYSCALL,
+                               .op_o = {.op_syscall = {.args = args}}};
+    buf_push(text_section, syscall);
+
+    *a = (emit_asm_t){.asm_text_section = text_section,
+                      .asm_data_section = data_section};
+}
+
+void emit_asm_dump(emit_asm_t* a, FILE* file) {
+    PG_ASSERT_COND(a, !=, NULL, "%p");
+    PG_ASSERT_COND(file, !=, NULL, "%p");
 }
