@@ -45,5 +45,4 @@ void ast_node_dump(const ast_node_t* node, usize indent) {
             break;
         }
     }
-    // TODO: rec
 }
