@@ -121,7 +121,7 @@ res_t parser_expect_token(parser_t* parser, token_id_t id) {
     return RES_OK;
 }
 
-res_t parser_parse_builtinprint(parser_t* parser, ast_node_t** return_node) {
+res_t parser_parse_builtin_print(parser_t* parser, ast_node_t** return_node) {
     PG_ASSERT_COND(parser, !=, NULL, "%p");
     PG_ASSERT_COND(return_node, !=, NULL, "%p");
 
@@ -160,7 +160,7 @@ res_t parser_parse(parser_t* parser, ast_node_t*** nodes, usize* nodes_len) {
 
     while (1) {
         ast_node_t* node = NULL;
-        if (parser_parse_builtinprint(parser, &node) == RES_OK) {
+        if (parser_parse_builtin_print(parser, &node) == RES_OK) {
             PG_ASSERT_COND(*nodes_len, <=, nodes_capacity, "%llu");
             if (*nodes_len == nodes_capacity) {
                 nodes_capacity = nodes_capacity * 2 + 1;
