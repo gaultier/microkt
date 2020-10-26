@@ -79,6 +79,8 @@ res_t driver_run(const u8* file_name0) {
     FILE* asm_file = fopen(asm_file_name0, "w");
     if (asm_file == NULL) return RES_ERR;
 
+    fprintf(stderr, "[debug] writing asm output to %s\n", asm_file_name0);
+
     emit_asm_dump(&a, asm_file);
     fclose(file);
 
@@ -88,12 +90,10 @@ res_t driver_run(const u8* file_name0) {
     u8* argv = calloc(argv_len, 1);
     PG_ASSERT_COND(argv, !=, NULL, "%p");
     {
-        snprintf(argv, argv_len, "/usr/bin/as %s -o %s.o", asm_file_name0,
+        snprintf(argv, argv_len, "/usr/bin/as ./%s -o ./%s.o", asm_file_name0,
                  base_file_name0);
         fprintf(stderr, "[debug] %s\n", argv);
 
-        fflush(stdout);
-        fflush(stderr);
         FILE* as_process = popen(argv, "r");
         if (as_process == NULL) {
             fprintf(stderr, "Failed to run `as`: `%s` %s\n", argv,
@@ -105,19 +105,15 @@ res_t driver_run(const u8* file_name0) {
                     strerror(errno));
             return RES_ERR;
         }
-        fflush(stdout);
-        fflush(stderr);
     }
 
     // ld
     {
         memset(argv, 0, argv_len);
-        snprintf(argv, argv_len, "/usr/bin/ld %s.o -o %s -lSystem",
+        snprintf(argv, argv_len, "/usr/bin/ld ./%s.o -o ./%s -lSystem",
                  base_file_name0, base_file_name0);
         fprintf(stderr, "[debug] %s\n", argv);
 
-        fflush(stdout);
-        fflush(stderr);
         FILE* ld_process = popen(argv, "r");
         if (ld_process == NULL) {
             fprintf(stderr, "Failed to run `ld`: `%s` %s\n", argv,
@@ -129,8 +125,6 @@ res_t driver_run(const u8* file_name0) {
                     strerror(errno));
             return RES_ERR;
         }
-        fflush(stdout);
-        fflush(stderr);
     }
 
     return RES_OK;
