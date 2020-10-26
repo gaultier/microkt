@@ -53,3 +53,14 @@ reg_t emit_fn_arg(u16 position) {
             UNIMPLEMENTED();
     }
 }
+
+typedef struct {
+    int fixme;
+} emit_asm_t;
+
+typedef struct {
+    int fixme;
+} emit_op_t;
+
+const usize syscall_exit_osx = (usize)0x2000001;
+const usize syscall_write_osx = (usize)0x2000004;
