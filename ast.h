@@ -2,8 +2,8 @@
 
 #include "common.h"
 
-struct ast_node;
-typedef struct ast_node ast_node_t;
+struct ast_node_t;
+typedef struct ast_node_t ast_node_t;
 
 typedef struct {
     ast_node_t* arg;
@@ -19,7 +19,7 @@ const u8 ast_node_kind_t_to_str[][30] = {
     [NODE_KEYWORD_BOOL] = "bool",
 };
 
-struct ast_node {
+struct ast_node_t {
     ast_node_kind_t node_kind;
     union {
         ast_builtin_print_t node_builtin_print;

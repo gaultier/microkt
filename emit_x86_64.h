@@ -1,5 +1,7 @@
 #pragma once
+#include "ast.h"
 #include "common.h"
+#include "parse.h"
 
 typedef enum {
     REG_RAX,
@@ -54,13 +56,31 @@ reg_t emit_fn_arg(u16 position) {
     }
 }
 
-typedef struct {
-    int fixme;
-} emit_asm_t;
+typedef enum {
+    OP_KIND_SYSCALL,
+    OP_KIND_INTEGER_LITERAL,
+} emit_op_kind_t;
+
+typedef struct emit_op_t emit_op_t;
 
 typedef struct {
-    int fixme;
-} emit_op_t;
+    emit_op_t* args;
+} emit_op_syscall_t;
+
+struct emit_op_t {
+    emit_op_kind_t op_kind;
+    union {
+        emit_op_syscall_t op_syscall;
+        usize op_integer_literal;
+    } o;
+};
+
+typedef struct {
+    emit_op_t* text_section;
+    emit_op_t* data_section;
+} emit_asm_t;
 
 const usize syscall_exit_osx = (usize)0x2000001;
 const usize syscall_write_osx = (usize)0x2000004;
+
+res_t emit_emit(ast_node_t* nodes, parser_t* parser) { return RES_OK; }
