@@ -2,7 +2,9 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <string.h>
 #include <sys/mman.h>
+#include <unistd.h>
 
 #include "ast.h"
 #include "common.h"
@@ -69,10 +71,8 @@ res_t driver_run(const u8* file_name0) {
     emit_asm_t a;
     emit_emit(&parser, &a);
 
-    /* const u8* const base_file_name0 =
-     * driver_base_source_file_name(file_name0); */
     const usize file_name_len = strlen(file_name0);
-    u8* asm_file_name0 = strdup(file_name0);
+    u8* const asm_file_name0 = strdup(file_name0);
     asm_file_name0[file_name_len - 3] = 'a';
     asm_file_name0[file_name_len - 2] = 's';
     asm_file_name0[file_name_len - 1] = 'm';
@@ -81,6 +81,27 @@ res_t driver_run(const u8* file_name0) {
 
     emit_asm_dump(&a, asm_file);
 
+    // as
+    const u8* const base_file_name0 = driver_base_source_file_name(file_name0);
+    {
+        usize argv_len = 2 * strlen(file_name0) + 100;
+        u8* argv = calloc(argv_len, 1);
+        PG_ASSERT_COND(argv, !=, NULL, "%p");
+        snprintf(argv, argv_len, "/usr/bin/as %s -o %s.o", asm_file_name0,
+                 base_file_name0);
+
+        FILE* as_process = popen(argv, "r");
+        if (as_process == NULL) {
+            fprintf(stderr, "Failed to run `as`: `%s` %s\n", argv,
+                    strerror(errno));
+            return RES_ERR;
+        }
+        if (pclose(as_process) == -1) {
+            fprintf(stderr, "Failed to run `as`: `%s` %s\n", argv,
+                    strerror(errno));
+            return RES_ERR;
+        }
+    }
     /* munmap((void*)source, file_size); */
     /* fclose(file); */
 
