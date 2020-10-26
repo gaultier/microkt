@@ -169,6 +169,8 @@ res_t parser_parse(parser_t* parser, ast_node_t*** nodes, usize* nodes_len) {
             }
             (*nodes)[(*nodes_len)++] = node;
             ast_node_dump(node, 0);
+
+            continue;
         }
 
         const token_index_t next = parser->par_token_ids[parser->par_tok_i];
