@@ -10,7 +10,10 @@ typedef struct {
     const usize par_source_len;
     const u8* par_file_name0;
     usize par_tok_i;
-    ast_node_t* par_nodes;
+    ast_node_t* par_nodes;  // Arena of all nodes
+    usize* par_stmt_nodes;  // Array of statements. Each statement is stored
+                            // as the node index which is the root of the
+                            // statement in the ast
 } parser_t;
 
 typedef usize token_index_t;
@@ -39,6 +42,7 @@ parser_t parser_init(const u8* file_name0, const u8* source, usize source_len) {
                       .par_source_len = source_len,
                       .par_token_ids = token_ids,
                       .par_nodes = NULL,
+                      .par_stmt_nodes = NULL,
                       .par_tok_i = 0};
 }
 
@@ -150,6 +154,7 @@ res_t parser_parse(parser_t* parser) {
         usize new_node_i = 0;
         if (parser_parse_builtin_print(parser, &new_node_i) == RES_OK) {
             ast_node_dump(parser->par_nodes, new_node_i, 0);
+            buf_push(parser->par_stmt_nodes, new_node_i);
 
             continue;
         }

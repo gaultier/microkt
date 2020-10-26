@@ -83,4 +83,31 @@ typedef struct {
 const usize syscall_exit_osx = (usize)0x2000001;
 const usize syscall_write_osx = (usize)0x2000004;
 
-res_t emit_emit(ast_node_t* nodes, parser_t* parser) { return RES_OK; }
+res_t emit_emit(parser_t* parser) {
+    PG_ASSERT_COND(parser, !=, NULL, "%p");
+    PG_ASSERT_COND(parser->par_nodes, !=, NULL, "%p");
+    PG_ASSERT_COND(parser->par_stmt_nodes, !=, NULL, "%p");
+
+    emit_op_t* text_section = NULL;
+    emit_op_t* data_section = NULL;
+
+    usize label_id = 0;
+
+    for (usize i = 0; i < buf_size(parser->par_stmt_nodes); i++) {
+        const usize stmt_i = parser->par_stmt_nodes[i];
+        const ast_node_t* stmt = &parser->par_nodes[stmt_i];
+
+        switch (stmt->node_kind) {
+            case NODE_BUILTIN_PRINT: {
+                const ast_builtin_print_t builtin_print =
+                    stmt->node_n.node_builtin_print;
+
+                break;
+            }
+            default:
+                abort();  // Unreachable
+        }
+    }
+
+    return RES_OK;
+}
