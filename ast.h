@@ -71,15 +71,3 @@ token_index_t ast_node_last_token(const ast_node_t* node) {
             return node->node_n.node_boolean;
     }
 }
-
-/* void ast_node_source(const ast_node_t* node, parser_t* parser, u8** source,
- */
-/*                      usize* source_len) { */
-/*     PG_ASSERT_COND(node, !=, NULL, "%p"); */
-/*     PG_ASSERT_COND(parser, !=, NULL, "%p"); */
-
-/*     const loc_t first_token = parser->par_token_locs[ast_node_first_token()];
- */
-/*     const loc_t last_token = parser->par_token_locs[ast_node_last_token()];
- */
-/* } */

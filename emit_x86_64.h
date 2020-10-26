@@ -1,6 +1,5 @@
 #pragma once
-#include "ast.h"
-#include "common.h"
+
 #include "parse.h"
 
 typedef enum {
@@ -101,6 +100,9 @@ res_t emit_emit(parser_t* parser) {
             case NODE_BUILTIN_PRINT: {
                 const ast_builtin_print_t builtin_print =
                     stmt->node_n.node_builtin_print;
+                const u8* source = NULL;
+                usize source_len = 0;
+                parser_ast_node_source(parser, stmt, &source, &source_len);
 
                 break;
             }

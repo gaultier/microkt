@@ -49,6 +49,21 @@ parser_t parser_init(const u8* file_name0, const u8* source, usize source_len) {
                       .par_tok_i = 0};
 }
 
+void parser_ast_node_source(parser_t* parser, const ast_node_t* node,
+                            const u8** source, usize* source_len) {
+    PG_ASSERT_COND(node, !=, NULL, "%p");
+    PG_ASSERT_COND(parser, !=, NULL, "%p");
+    PG_ASSERT_COND(source, !=, NULL, "%p");
+    PG_ASSERT_COND(source_len, !=, NULL, "%p");
+
+    const loc_t first_token =
+        parser->par_token_locs[ast_node_first_token(node)];
+    const loc_t last_token = parser->par_token_locs[ast_node_last_token(node)];
+
+    *source = &parser->par_source[first_token.loc_start];
+    *source_len = last_token.loc_end - first_token.loc_start;
+}
+
 token_index_t parser_next_token(parser_t* parser) {
     PG_ASSERT_COND(parser, !=, NULL, "%p");
     PG_ASSERT_COND(parser->par_token_ids, !=, NULL, "%p");
