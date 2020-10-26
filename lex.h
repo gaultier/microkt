@@ -242,8 +242,6 @@ token_t lex_next(lex_t* lex) {
                                  lex->lex_source + result.tok_loc.loc_start,
                                  lex->lex_index - result.tok_loc.loc_start))) {
                             result.tok_id = *id;
-                            printf("[debug] lex keyword=%s\n",
-                                   token_id_t_to_str[*id]);
                         }
                         goto outer;
                     }

@@ -168,16 +168,16 @@ res_t parser_parse(parser_t* parser, ast_node_t*** nodes, usize* nodes_len) {
                 PG_ASSERT_COND(*nodes, !=, NULL, "%p");
             }
             (*nodes)[(*nodes_len)++] = node;
+            ast_node_dump(node, 0);
         }
 
         const token_index_t next = parser->par_token_ids[parser->par_tok_i];
 
         if (next == LEX_TOKEN_ID_EOF)
-            break;
+            return RES_OK;
         else {
             // TODO: errors
             return RES_ERR;
         }
     }
-    return RES_OK;
 }

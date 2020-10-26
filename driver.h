@@ -48,7 +48,7 @@ res_t driver_run(const u8* file_name0) {
         return RES_ERR;
     }
 
-    for (usize i = 0; i < nodes_len; i++) ast_node_dump(nodes[i], 0);
+    /* for (usize i = 0; i < nodes_len; i++) ast_node_dump(nodes[i], 0); */
 
     munmap((void*)source, file_size);
     fclose(file);
