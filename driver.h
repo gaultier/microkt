@@ -12,7 +12,9 @@
 
 res_t driver_is_file_name_valid(const u8* file_name0) {
     const usize len = strlen(file_name0);
-    return len > (3 + 1) && memcmp(&file_name0[len - 4], ".kts", 3) == 0;
+    return (len > (3 + 1) && memcmp(&file_name0[len - 4], ".kts", 3) == 0)
+               ? RES_OK
+               : RES_ERR;
 }
 
 const u8* driver_base_source_file_name(const u8* file_name0) {
@@ -25,6 +27,11 @@ const u8* driver_base_source_file_name(const u8* file_name0) {
 
 res_t driver_run(const u8* file_name0) {
     PG_ASSERT_COND(file_name0, !=, NULL, "%p");
+
+    if (driver_is_file_name_valid(file_name0) != RES_OK) {
+        fprintf(stderr, "Invalid file name: %s\n", file_name0);
+        return RES_ERR;
+    }
 
     FILE* file = NULL;
     if ((file = fopen(file_name0, "r")) == NULL) {
