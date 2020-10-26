@@ -9,6 +9,8 @@
 #include "lex.h"
 #include "parse.h"
 
+res_t driver_is_file_name_valid(const u8* file_name0) { return RES_OK; }
+
 res_t driver_run(const u8* file_name0) {
     PG_ASSERT_COND(file_name0, !=, NULL, "%p");
 
