@@ -30,8 +30,20 @@ struct ast_node {
 void ast_node_dump(const ast_node_t* node, usize indent) {
     PG_ASSERT_COND(node, !=, NULL, "%p");
 
+    printf("[debug] ");
     for (usize i = 0; i < indent; i++) printf(" ");
 
-    printf("[debug] ast_node %s\n", ast_node_kind_t_to_str[node->node_kind]);
+    switch (node->node_kind) {
+        case NODE_BUILTIN_PRINT: {
+            printf("ast_node %s\n", ast_node_kind_t_to_str[node->node_kind]);
+            ast_node_dump(node->node_n.node_builtin_print.arg, 2);
+            break;
+        }
+        case NODE_KEYWORD_BOOL: {
+            printf("ast_node %s %s\n", ast_node_kind_t_to_str[node->node_kind],
+                   (node->node_n.node_boolean == 0) ? "false" : "true");
+            break;
+        }
+    }
     // TODO: rec
 }
