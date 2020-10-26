@@ -140,27 +140,18 @@ res_t parser_parse_builtin_print(parser_t* parser, ast_node_t** return_node) {
     return RES_NONE;
 }
 
-res_t parser_parse(parser_t* parser, ast_node_t*** nodes, usize* nodes_len) {
+res_t parser_parse(parser_t* parser, ast_node_t*** nodes) {
     PG_ASSERT_COND(parser, !=, NULL, "%p");
     PG_ASSERT_COND(parser->par_token_ids, !=, NULL, "%p");
     PG_ASSERT_COND((usize)buf_size(parser->par_token_ids), >, (usize)0, "%llu");
     PG_ASSERT_COND((usize)buf_size(parser->par_token_ids), >, parser->par_tok_i,
                    "%llu");
     PG_ASSERT_COND(nodes, !=, NULL, "%p");
-    PG_ASSERT_COND(nodes_len, !=, NULL, "%p");
-
-    usize nodes_capacity = 0;
 
     while (1) {
         ast_node_t* node = NULL;
         if (parser_parse_builtin_print(parser, &node) == RES_OK) {
-            PG_ASSERT_COND(*nodes_len, <=, nodes_capacity, "%llu");
-            if (*nodes_len == nodes_capacity) {
-                nodes_capacity = nodes_capacity * 2 + 1;
-                *nodes = realloc(*nodes, nodes_capacity * sizeof(ast_node_t));
-                PG_ASSERT_COND(*nodes, !=, NULL, "%p");
-            }
-            (*nodes)[(*nodes_len)++] = node;
+            buf_push(*nodes, node);
             ast_node_dump(node, 0);
 
             continue;

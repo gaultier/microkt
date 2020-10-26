@@ -42,8 +42,7 @@ res_t driver_run(const u8* file_name0) {
     parser_t parser = parser_init(file_name0, source, file_size);
 
     ast_node_t** nodes = NULL;
-    usize nodes_len = 0;
-    if (parser_parse(&parser, &nodes, &nodes_len) == RES_ERR) {
+    if (parser_parse(&parser, &nodes) == RES_ERR) {
         fprintf(stderr, "%s: error\n", file_name0);
         return RES_ERR;
     }
