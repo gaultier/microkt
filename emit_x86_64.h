@@ -96,10 +96,21 @@ const usize STIN = 0;
 const usize STDOUT = 1;
 const usize STDERR = 2;
 
-// TODO: if not exists
-usize emit_add_string_label(emit_op_t** data_section, const u8* string,
-                            usize string_len, usize* label_id) {
+usize emit_add_string_label_if_not_exists(emit_op_t** data_section,
+                                          const u8* string, usize string_len,
+                                          usize* label_id) {
     const usize new_label_id = *label_id;
+
+    for (usize i = 0; i < buf_size(*data_section); i++) {
+        const emit_op_t op = (*data_section)[i];
+        if (op.op_kind != OP_KIND_STRING_LABEL) continue;
+
+        const emit_op_string_label_t s = op.op_o.op_string_label;
+        if (memcmp(s.op_sl_string, string,
+                   MIN(s.op_sl_string_len, string_len)) == 0)
+            return new_label_id;
+    }
+
     *label_id += 1;
 
     buf_push(*data_section,
@@ -138,7 +149,7 @@ void emit_emit(parser_t* parser, emit_asm_t* a) {
                 usize string_len = 0;
                 parser_ast_node_source(parser, &arg, &string, &string_len);
 
-                const usize new_label_id = emit_add_string_label(
+                const usize new_label_id = emit_add_string_label_if_not_exists(
                     &data_section, string, string_len, &label_id);
 
                 emit_op_t* args = NULL;
