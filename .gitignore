@@ -1,3 +1,5 @@
 microktc
 microktc_debug
 *.dSYM
+e2e/*
+!e2e/*.kts
