@@ -11,6 +11,7 @@ typedef enum {
     LEX_TOKEN_ID_TRUE,
     LEX_TOKEN_ID_FALSE,
     LEX_TOKEN_ID_IDENTIFIER,
+    LEX_TOKEN_ID_STRING_LITERAL,
     LEX_TOKEN_ID_EOF,
     LEX_TOKEN_ID_INVALID,
 } token_id_t;
@@ -22,6 +23,7 @@ const u8 token_id_t_to_str[][30] = {
     [LEX_TOKEN_ID_TRUE] = "true",
     [LEX_TOKEN_ID_FALSE] = "false",
     [LEX_TOKEN_ID_IDENTIFIER] = "Identifier",
+    [LEX_TOKEN_ID_STRING_LITERAL] = "StringLiteral",
     [LEX_TOKEN_ID_EOF] = "EOF",
     [LEX_TOKEN_ID_INVALID] = "INVALID",
 
@@ -56,6 +58,7 @@ typedef struct {
 typedef enum {
     LEX_STATE_START,
     LEX_STATE_IDENTIFIER,
+    LEX_STATE_STRING_LITERAL,
 } lex_state_t;
 
 // TODO: trie
@@ -107,6 +110,11 @@ token_t lex_next(lexer_t* lexer) {
                         result.tok_id = LEX_TOKEN_ID_RPAREN;
                         lexer->lex_index += 1;
                         goto outer;
+                    }
+                    case '"': {
+                        result.tok_id = LEX_TOKEN_ID_STRING_LITERAL;
+                        state = LEX_STATE_STRING_LITERAL;
+                        break;
                     }
                     case '_':
                     case 'a':
@@ -248,6 +256,28 @@ token_t lex_next(lexer_t* lexer) {
                     }
                 }
                 break;
+            }
+            case LEX_STATE_STRING_LITERAL: {
+                switch (c) {
+                    case '"': {
+                        lexer->lex_index += 1;
+                        goto outer;
+                    }
+                    default: {
+                    }
+                }
+
+                break;
+            }
+        }
+        if (lexer->lex_index == lexer->lex_source_len) {
+            switch (state) {
+                case LEX_STATE_STRING_LITERAL: {
+                    result.tok_id = LEX_TOKEN_ID_INVALID;
+                    break;
+                }
+                default: {
+                }
             }
         }
 
