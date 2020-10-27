@@ -24,6 +24,9 @@ const u8* driver_base_source_file_name(const u8* file_name0) {
 
     u8* base_file_name0 = strdup(file_name0);
     base_file_name0[strlen(file_name0) - 4] = 0;
+    base_file_name0[strlen(file_name0) - 3] = 0;
+    base_file_name0[strlen(file_name0) - 2] = 0;
+    base_file_name0[strlen(file_name0) - 1] = 0;
     return base_file_name0;
 }
 
@@ -79,7 +82,7 @@ res_t driver_run(const u8* file_name0) {
     FILE* asm_file = fopen(asm_file_name0, "w");
     if (asm_file == NULL) return RES_ERR;
 
-    fprintf(stderr, "[debug] writing asm output to %s\n", asm_file_name0);
+    log_debug("writing asm output to `%s`", asm_file_name0);
 
     emit_asm_dump(&a, asm_file);
     fflush(asm_file);
@@ -93,8 +96,10 @@ res_t driver_run(const u8* file_name0) {
     {
         snprintf(argv, argv_len, "/usr/bin/as %s -o %s.o", asm_file_name0,
                  base_file_name0);
-        fprintf(stderr, "[debug] %s\n", argv);
+        log_debug("%s", argv);
 
+        fflush(stdout);
+        fflush(stderr);
         FILE* as_process = popen(argv, "r");
         if (as_process == NULL) {
             fprintf(stderr, "Failed to run `as`: `%s` %s\n", argv,
@@ -106,6 +111,8 @@ res_t driver_run(const u8* file_name0) {
                     strerror(errno));
             return RES_ERR;
         }
+        fflush(stdout);
+        fflush(stderr);
     }
 
     // ld
@@ -113,8 +120,10 @@ res_t driver_run(const u8* file_name0) {
         memset(argv, 0, argv_len);
         snprintf(argv, argv_len, "/usr/bin/ld %s.o -lSystem -o %s",
                  base_file_name0, base_file_name0);
-        fprintf(stderr, "[debug] %s\n", argv);
+        log_debug("%s", argv);
 
+        fflush(stdout);
+        fflush(stderr);
         FILE* ld_process = popen(argv, "r");
         if (ld_process == NULL) {
             fprintf(stderr, "Failed to run `ld`: `%s` %s\n", argv,
@@ -126,8 +135,10 @@ res_t driver_run(const u8* file_name0) {
                     strerror(errno));
             return RES_ERR;
         }
+        fflush(stdout);
+        fflush(stderr);
     }
-    fprintf(stderr, "[debug] created executable %s\n", base_file_name0);
+    log_debug("created executable `%s`", base_file_name0);
 
     return RES_OK;
 }

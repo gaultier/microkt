@@ -290,7 +290,7 @@ outer:
 }
 
 void token_dump(const token_t* t) {
-    fprintf(stderr, "[debug tok_id=%s tok_loc_start=%llu tok_loc_end=%llu\n",
-            token_id_t_to_str[t->tok_id], t->tok_loc.loc_start,
-            t->tok_loc.loc_end);
+    log_debug("tok_id=%s tok_loc_start=%llu tok_loc_end=%llu",
+              token_id_t_to_str[t->tok_id], t->tok_loc.loc_start,
+              t->tok_loc.loc_end);
 }

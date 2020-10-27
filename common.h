@@ -32,3 +32,16 @@ typedef u8 res_t;
         fprintf(stderr, __FILE__ ":%d:unimplemented\n", __LINE__); \
         exit(1);                                                   \
     } while (0)
+
+#define log_debug(fmt, ...)                                          \
+    do {                                                             \
+        fprintf(stderr, "\n[debug] %s:%d: " fmt, __func__, __LINE__, \
+                __VA_ARGS__);                                        \
+    } while (0)
+
+#define log_debug_with_indent(indent, fmt, ...)                   \
+    do {                                                          \
+        fprintf(stderr, "\n[debug] %s:%d: ", __func__, __LINE__); \
+        for (usize i = 0; i < indent; i++) fprintf(stderr, " ");  \
+        fprintf(stderr, fmt, __VA_ARGS__);                        \
+    } while (0)
