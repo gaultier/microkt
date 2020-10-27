@@ -145,6 +145,7 @@ void emit_emit(parser_t* parser, emit_asm_t* a) {
                 const ast_node_t arg =
                     parser->par_nodes[builtin_print.bp_arg_i];
 
+                // TODO: real to_string()
                 const u8* string = NULL;
                 usize string_len = 0;
                 parser_ast_node_source(parser, &arg, &string, &string_len);
