@@ -80,8 +80,8 @@ lexer_t lex_init(const u8* source, const usize source_len) {
 }
 
 token_t lex_next(lexer_t* lexer) {
-    PG_ASSERT_COND(lexer, !=, NULL, "%p");
-    PG_ASSERT_COND(lexer->lex_source, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
 
     token_t result = {
         .tok_id = LEX_TOKEN_ID_EOF,

@@ -124,10 +124,10 @@ usize emit_add_string_label_if_not_exists(emit_op_t** data_section,
 }
 
 void emit_emit(parser_t* parser, emit_asm_t* a) {
-    PG_ASSERT_COND(parser, !=, NULL, "%p");
-    PG_ASSERT_COND(parser->par_nodes, !=, NULL, "%p");
-    PG_ASSERT_COND(parser->par_stmt_nodes, !=, NULL, "%p");
-    PG_ASSERT_COND(a, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)parser->par_nodes, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)parser->par_stmt_nodes, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)a, !=, NULL, "%p");
 
     emit_op_t* text_section = NULL;
     emit_op_t* data_section = NULL;
@@ -197,8 +197,8 @@ void emit_emit(parser_t* parser, emit_asm_t* a) {
 }
 
 void emit_asm_dump(emit_asm_t* a, FILE* file) {
-    PG_ASSERT_COND(a, !=, NULL, "%p");
-    PG_ASSERT_COND(file, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)a, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)file, !=, NULL, "%p");
 
     fprintf(file, "\n.data\n");
 

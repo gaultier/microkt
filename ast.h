@@ -36,7 +36,7 @@ struct ast_node_t {
 
 void ast_node_dump(const ast_node_t* nodes, token_index_t node_i,
                    usize indent) {
-    PG_ASSERT_COND(nodes, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)nodes, !=, NULL, "%p");
 
     const ast_node_t* node = &nodes[node_i];
     switch (node->node_kind) {

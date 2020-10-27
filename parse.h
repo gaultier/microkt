@@ -18,8 +18,8 @@ typedef struct {
 } parser_t;
 
 parser_t parser_init(const u8* file_name0, const u8* source, usize source_len) {
-    PG_ASSERT_COND(file_name0, !=, NULL, "%p");
-    PG_ASSERT_COND(source, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)file_name0, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)source, !=, NULL, "%p");
 
     lexer_t lexer = lex_init(source, source_len);
 
@@ -51,10 +51,10 @@ parser_t parser_init(const u8* file_name0, const u8* source, usize source_len) {
 
 void parser_ast_node_source(parser_t* parser, const ast_node_t* node,
                             const u8** source, usize* source_len) {
-    PG_ASSERT_COND(node, !=, NULL, "%p");
-    PG_ASSERT_COND(parser, !=, NULL, "%p");
-    PG_ASSERT_COND(source, !=, NULL, "%p");
-    PG_ASSERT_COND(source_len, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)node, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)source, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)source_len, !=, NULL, "%p");
 
     const loc_t first_token =
         parser->par_token_locs[ast_node_first_token(node)];
@@ -69,8 +69,8 @@ void parser_ast_node_source(parser_t* parser, const ast_node_t* node,
 }
 
 token_index_t parser_next_token(parser_t* parser) {
-    PG_ASSERT_COND(parser, !=, NULL, "%p");
-    PG_ASSERT_COND(parser->par_token_ids, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)parser->par_token_ids, !=, NULL, "%p");
     PG_ASSERT_COND((usize)buf_size(parser->par_token_ids), >, (usize)0, "%llu");
     PG_ASSERT_COND((usize)buf_size(parser->par_token_ids), >, parser->par_tok_i,
                    "%llu");
@@ -85,12 +85,12 @@ token_index_t parser_next_token(parser_t* parser) {
 
 res_t parser_eat_token(parser_t* parser, token_id_t id,
                        token_index_t* return_token_index) {
-    PG_ASSERT_COND(parser, !=, NULL, "%p");
-    PG_ASSERT_COND(parser->par_token_ids, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)parser->par_token_ids, !=, NULL, "%p");
     PG_ASSERT_COND((usize)buf_size(parser->par_token_ids), >, (usize)0, "%llu");
     PG_ASSERT_COND((usize)buf_size(parser->par_token_ids), >, parser->par_tok_i,
                    "%llu");
-    PG_ASSERT_COND(return_token_index, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)return_token_index, !=, NULL, "%p");
 
     if (parser->par_token_ids[parser->par_tok_i] == id) {
         *return_token_index = parser_next_token(parser);
@@ -100,8 +100,8 @@ res_t parser_eat_token(parser_t* parser, token_id_t id,
 }
 
 res_t parser_parse_primary(parser_t* parser, usize* new_primary_node_i) {
-    PG_ASSERT_COND(parser, !=, NULL, "%p");
-    PG_ASSERT_COND(new_primary_node_i, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_primary_node_i, !=, NULL, "%p");
 
     token_index_t token = 0;
     if (parser_eat_token(parser, LEX_TOKEN_ID_TRUE, &token) == RES_OK) {
@@ -135,10 +135,10 @@ res_t parser_parse_primary(parser_t* parser, usize* new_primary_node_i) {
 
 res_t parser_expect_token(parser_t* parser, token_id_t id,
                           token_index_t* token) {
-    PG_ASSERT_COND(parser, !=, NULL, "%p");
-    PG_ASSERT_COND(parser->par_token_ids, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)parser->par_token_ids, !=, NULL, "%p");
     PG_ASSERT_COND((usize)buf_size(parser->par_token_ids), >, (usize)0, "%llu");
-    PG_ASSERT_COND(token, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)token, !=, NULL, "%p");
 
     const token_index_t tok = parser_next_token(parser);
     if (parser->par_token_ids[tok] != id) {
@@ -150,8 +150,8 @@ res_t parser_expect_token(parser_t* parser, token_id_t id,
 }
 
 res_t parser_parse_builtin_print(parser_t* parser, usize* new_node_i) {
-    PG_ASSERT_COND(parser, !=, NULL, "%p");
-    PG_ASSERT_COND(new_node_i, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
     token_index_t keyword_print = 0;
     if (parser_eat_token(parser, LEX_TOKEN_ID_BUILTIN_PRINT, &keyword_print) ==
@@ -182,8 +182,8 @@ res_t parser_parse_builtin_print(parser_t* parser, usize* new_node_i) {
 }
 
 res_t parser_parse(parser_t* parser) {
-    PG_ASSERT_COND(parser, !=, NULL, "%p");
-    PG_ASSERT_COND(parser->par_token_ids, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)parser->par_token_ids, !=, NULL, "%p");
     PG_ASSERT_COND((usize)buf_size(parser->par_token_ids), >, (usize)0, "%llu");
     PG_ASSERT_COND((usize)buf_size(parser->par_token_ids), >, parser->par_tok_i,
                    "%llu");
