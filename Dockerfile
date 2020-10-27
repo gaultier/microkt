@@ -1,13 +1,14 @@
 FROM alpine as builder
 
-RUN apk add --no-cache make clang
+RUN apk add --no-cache make clang musl-dev
 
 WORKDIR /microktc
 
-COPY *.{h,c} .
+COPY *.c .
+COPY *.h .
 COPY Makefile .
 
-RUN make
+RUN make CC=clang LD=ldd
 
-FROM alpine
-COPY --from=builder /microktc /usr/local/bin/
+# FROM alpine
+# COPY --from=builder /microktc /usr/local/bin/
