@@ -2,15 +2,10 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
 
-#include "ast.h"
-#include "common.h"
 #include "emit_x86_64.h"
-#include "lex.h"
-#include "parse.h"
 
 res_t driver_is_file_name_valid(const u8* file_name0) {
     const usize len = strlen(file_name0);
