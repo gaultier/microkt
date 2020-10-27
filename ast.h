@@ -17,12 +17,14 @@ typedef enum {
     NODE_BUILTIN_PRINT,
     NODE_KEYWORD_BOOL,
     NODE_STRING_LITERAL,
+    NODE_INT_LITERAL,
 } ast_node_kind_t;
 
 const u8 ast_node_kind_t_to_str[][30] = {
     [NODE_BUILTIN_PRINT] = "print",
     [NODE_KEYWORD_BOOL] = "bool",
     [NODE_STRING_LITERAL] = "String",
+    [NODE_INT_LITERAL] = "Int",
 };
 
 struct ast_node_t {
@@ -31,6 +33,7 @@ struct ast_node_t {
         ast_builtin_print_t node_builtin_print;
         token_index_t node_boolean;
         token_index_t node_string_literal;
+        token_index_t node_int_literal;
     } node_n;
 };
 
@@ -46,11 +49,8 @@ void ast_node_dump(const ast_node_t* nodes, token_index_t node_i,
             ast_node_dump(nodes, node->node_n.node_builtin_print.bp_arg_i, 2);
             break;
         }
-        case NODE_KEYWORD_BOOL: {
-            log_debug_with_indent(indent, "ast_node %s",
-                                  ast_node_kind_t_to_str[node->node_kind]);
-            break;
-        }
+        case NODE_KEYWORD_BOOL:
+        case NODE_INT_LITERAL:
         case NODE_STRING_LITERAL: {
             log_debug_with_indent(indent, "ast_node %s",
                                   ast_node_kind_t_to_str[node->node_kind]);
@@ -67,6 +67,8 @@ token_index_t ast_node_first_token(const ast_node_t* node) {
             return node->node_n.node_boolean;
         case NODE_STRING_LITERAL:
             return node->node_n.node_string_literal;
+        case NODE_INT_LITERAL:
+            return node->node_n.node_int_literal;
     }
 }
 
@@ -78,5 +80,7 @@ token_index_t ast_node_last_token(const ast_node_t* node) {
             return node->node_n.node_boolean;
         case NODE_STRING_LITERAL:
             return node->node_n.node_string_literal;
+        case NODE_INT_LITERAL:
+            return node->node_n.node_int_literal;
     }
 }
