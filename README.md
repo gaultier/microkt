@@ -5,5 +5,8 @@ A WIP tiny compiler for a subset of the Kotlin language, with zero dependencies.
 ```sh
 # Only requires a C99 compiler
 make
-./microktc e2e/print_string.kts
+./microktc e2e/hello_world.kts
+./e2e/hello_world
+hello, world!
+
 ```
