@@ -49,7 +49,7 @@ parser_t parser_init(const u8* file_name0, const u8* source, usize source_len) {
                       .par_tok_i = 0};
 }
 
-void parser_ast_node_source(parser_t* parser, const ast_node_t* node,
+void parser_ast_node_source(const parser_t* parser, const ast_node_t* node,
                             const u8** source, usize* source_len) {
     PG_ASSERT_COND((void*)node, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");

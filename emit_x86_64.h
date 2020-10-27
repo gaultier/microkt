@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ast.h"
 #include "parse.h"
 
 typedef enum {
@@ -99,6 +100,10 @@ const usize STDERR = 2;
 usize emit_add_string_label_if_not_exists(emit_op_t** data_section,
                                           const u8* string, usize string_len,
                                           usize* label_id) {
+    PG_ASSERT_COND((void*)data_section, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)string, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)label_id, !=, NULL, "%p");
+
     const usize new_label_id = *label_id;
 
     for (usize i = 0; i < buf_size(*data_section); i++) {
@@ -123,6 +128,35 @@ usize emit_add_string_label_if_not_exists(emit_op_t** data_section,
     return new_label_id;
 }
 
+usize emit_node_to_string_label(const parser_t* parser,
+                                emit_op_t** data_section,
+                                const ast_node_t* node, usize* label_id,
+                                usize* string_len) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)data_section, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)node, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)label_id, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)string_len, !=, NULL, "%p");
+
+    switch (node->node_kind) {
+        case NODE_STRING_LITERAL:
+        case NODE_KEYWORD_BOOL: {
+            const u8* string = NULL;
+            parser_ast_node_source(parser, node, &string, string_len);
+
+            const usize new_label_id = emit_add_string_label_if_not_exists(
+                data_section, string, *string_len, label_id);
+            return new_label_id;
+        }
+        case NODE_INT_LITERAL: {
+            // TODO
+            return 0;
+        }
+        case NODE_BUILTIN_PRINT:
+            assert(0 && "Unreachable");
+    }
+}
+
 void emit_emit(parser_t* parser, emit_asm_t* a) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_nodes, !=, NULL, "%p");
@@ -145,13 +179,9 @@ void emit_emit(parser_t* parser, emit_asm_t* a) {
                 const ast_node_t arg =
                     parser->par_nodes[builtin_print.bp_arg_i];
 
-                // TODO: real to_string()
-                const u8* string = NULL;
                 usize string_len = 0;
-                parser_ast_node_source(parser, &arg, &string, &string_len);
-
-                const usize new_label_id = emit_add_string_label_if_not_exists(
-                    &data_section, string, string_len, &label_id);
+                const usize new_label_id = emit_node_to_string_label(
+                    parser, &data_section, &arg, &label_id, &string_len);
 
                 emit_op_t* args = NULL;
                 buf_grow(args, 4);
