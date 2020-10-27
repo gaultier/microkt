@@ -13,6 +13,7 @@ typedef enum {
     LEX_TOKEN_ID_FALSE,
     LEX_TOKEN_ID_IDENTIFIER,
     LEX_TOKEN_ID_STRING_LITERAL,
+    LEX_TOKEN_ID_INT_LITERAL,
     LEX_TOKEN_ID_EOF,
     LEX_TOKEN_ID_INVALID,
 } token_id_t;
@@ -25,6 +26,7 @@ const u8 token_id_t_to_str[][30] = {
     [LEX_TOKEN_ID_FALSE] = "false",
     [LEX_TOKEN_ID_IDENTIFIER] = "Identifier",
     [LEX_TOKEN_ID_STRING_LITERAL] = "StringLiteral",
+    [LEX_TOKEN_ID_INT_LITERAL] = "IntLiteral",
     [LEX_TOKEN_ID_EOF] = "EOF",
     [LEX_TOKEN_ID_INVALID] = "INVALID",
 
@@ -60,9 +62,10 @@ typedef enum {
     LEX_STATE_START,
     LEX_STATE_IDENTIFIER,
     LEX_STATE_STRING_LITERAL,
+    LEX_STATE_INT_LITERAL,
 } lex_state_t;
 
-// TODO: trie
+// TODO: trie?
 const token_id_t* token_get_keyword(const u8* source_start, usize len) {
     const usize keywords_len = sizeof(keywords) / sizeof(keywords[0]);
     for (usize i = 0; i < keywords_len; i++) {
@@ -72,6 +75,12 @@ const token_id_t* token_get_keyword(const u8* source_start, usize len) {
     }
 
     return NULL;
+}
+
+// TODO: unicode
+res_t lex_is_identifier_char(u8 c) {
+    return ('0' <= c && c <= '9') || ('a' <= c && c <= 'z') ||
+           ('A' <= c && c <= 'Z') || c == '_';
 }
 
 lexer_t lex_init(const u8* source, const usize source_len) {
@@ -174,9 +183,48 @@ token_t lex_next(lexer_t* lexer) {
                         result.tok_id = LEX_TOKEN_ID_IDENTIFIER;
                         break;
                     }
+                    case '1':
+                    case '2':
+                    case '3':
+                    case '4':
+                    case '5':
+                    case '6':
+                    case '7':
+                    case '8':
+                    case '9': {
+                        state = LEX_STATE_INT_LITERAL;
+                        result.tok_id = LEX_TOKEN_ID_INT_LITERAL;
+                        break;
+                    }
                     default: {
                         result.tok_id = LEX_TOKEN_ID_INVALID;
                         lexer->lex_index += 1;
+                        goto outer;
+                    }
+                }
+                break;
+            }
+            case LEX_STATE_INT_LITERAL: {
+                switch (c) {
+                    case '_': {
+                        break;
+                    }
+                    case '0':
+                    case '1':
+                    case '2':
+                    case '3':
+                    case '4':
+                    case '5':
+                    case '6':
+                    case '7':
+                    case '8':
+                    case '9': {
+                        break;
+                    }
+                    default: {
+                        if (lex_is_identifier_char(c)) {
+                            result.tok_id = LEX_TOKEN_ID_INVALID;
+                        }
                         goto outer;
                     }
                 }
