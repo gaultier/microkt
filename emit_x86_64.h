@@ -341,6 +341,11 @@ void emit_asm_dump_op(const emit_op_t* op, FILE* file) {
 
             break;
         }
+        case OP_KIND_REGISTER:
+        case OP_KIND_INT_LITERAL:
+        case OP_KIND_STRING_LABEL:
+        case OP_KIND_LABEL_ADDRESS:
+            assert(0 && "Unreachable");
     }
 }
 
