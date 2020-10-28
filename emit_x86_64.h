@@ -207,7 +207,8 @@ usize emit_add_string_label_if_not_exists(emit_emitter_t* emitter,
         if (op.op_kind != OP_KIND_STRING_LABEL) continue;
 
         const emit_op_string_label_t s = op.op_o.op_string_label;
-        if (memcmp(s.sl_string, string, MIN(s.sl_string_len, string_len)) == 0)
+        if (memcmp(s.sl_string, string, MIN(s.sl_string_len, string_len)) ==
+            0)  // Found
             return s.sl_label_id;
     }
 
@@ -265,7 +266,7 @@ usize emit_node_to_string_label(const parser_t* parser, emit_emitter_t* emitter,
 //                                    }}}));
 // }
 
-void emit_emit(emit_emitter_t* emitter, parser_t* parser) {
+void emit_emit(emit_emitter_t* emitter, const parser_t* parser) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_nodes, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_stmt_nodes, !=, NULL, "%p");
