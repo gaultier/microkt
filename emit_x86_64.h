@@ -176,9 +176,9 @@ emit_op_id_t emit_op_make_syscall(emit_emitter_t* emitter, int count, ...) {
     va_end(args);
 
     const emit_op_id_t syscall_op_id = emit_emitter_make_op(emitter);
-    emit_op_t* const syscall = emit_emitter_op_get(emitter, syscall_op_id);
-    syscall->op_kind = OP_KIND_SYSCALL;
-    syscall->op_o.op_syscall = (emit_op_syscall_t){.op_sys_args = syscall_args};
+    *(emit_emitter_op_get(emitter, syscall_op_id)) = (emit_op_t){
+        .op_kind = OP_KIND_SYSCALL,
+        .op_o.op_syscall = (emit_op_syscall_t){.op_sys_args = syscall_args}};
 
     return syscall_op_id;
 }
