@@ -227,14 +227,28 @@ emit_op_id_t emit_op_make_syscall(emit_emitter_t* emitter, int count, ...) {
         const emit_op_id_t src = emit_emitter_make_op_with(emitter, o);
         const emit_op_id_t dest =
             emit_emitter_make_op_with(emitter, OP_REGISTER(emit_fn_arg(i)));
-
         const emit_op_id_t assign =
             emit_emitter_make_op_with(emitter, OP_ASSIGN(src, dest));
         buf_push(syscall_args, assign);
     }
     va_end(args);
 
-    return emit_emitter_make_op_with(emitter, OP_SYSCALL(syscall_args));
+    const emit_op_id_t syscall =
+        emit_emitter_make_op_with(emitter, OP_SYSCALL(syscall_args));
+
+    // Zero all registers after syscall
+    for (int i = 0; i < count; i++) {
+        const emit_op_id_t src =
+            emit_emitter_make_op_with(emitter, OP_INT_LITERAL(0));
+        const emit_op_id_t dest =
+            emit_emitter_make_op_with(emitter, OP_REGISTER(emit_fn_arg(i)));
+        const emit_op_id_t assign =
+            emit_emitter_make_op_with(emitter, OP_ASSIGN(src, dest));
+
+        buf_push(emitter->em_text_section, assign);
+    }
+
+    return syscall;
 }
 
 usize emit_add_string_label_if_not_exists(emit_emitter_t* emitter,
@@ -346,13 +360,6 @@ void emit_asm_dump_op(const emit_emitter_t* emitter, const emit_op_id_t op_id,
                 emit_asm_dump_op(emitter, arg_id, file);
             }
             fprintf(file, "syscall\n");
-
-            // Zero all registers after syscall
-            for (usize j = 0; j < buf_size(syscall.sys_args); j++) {
-                const reg_t reg = emit_fn_arg(j);
-                fprintf(file, "movq $0, %s\n", reg_t_to_str[reg]);
-            }
-            fprintf(file, "\n");  // For prettyness
 
             break;
         }
