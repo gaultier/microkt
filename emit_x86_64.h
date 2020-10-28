@@ -306,20 +306,19 @@ void emit_emit(emit_emitter_t* emitter, const parser_t* parser) {
     buf_push(emitter->em_text_section, syscall_id);
 }
 
-void emit_asm_dump_op(const emit_emitter_t* emitter, const emit_op_t* op,
+void emit_asm_dump_op(const emit_emitter_t* emitter, const emit_op_id_t op_id,
                       FILE* file) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)op, !=, NULL, "%p");
     PG_ASSERT_COND((void*)file, !=, NULL, "%p");
+
+    const emit_op_t* const op = emit_emitter_op_get(emitter, op_id);
 
     switch (op->op_kind) {
         case OP_KIND_SYSCALL: {
             const emit_op_syscall_t syscall = op->op_o.op_syscall;
             for (usize j = 0; j < buf_size(syscall.sys_args); j++) {
                 const emit_op_id_t arg_id = syscall.sys_args[j];
-                const emit_op_t* const arg =
-                    emit_emitter_op_get(emitter, arg_id);
-                emit_asm_dump_op(emitter, arg, file);
+                emit_asm_dump_op(emitter, arg_id, file);
             }
             fprintf(file, "syscall\n");
 
@@ -338,9 +337,7 @@ void emit_asm_dump_op(const emit_emitter_t* emitter, const emit_op_t* op,
 
             for (usize j = 0; j < buf_size(block.cb_body); j++) {
                 const emit_op_id_t body_id = block.cb_body[j];
-                const emit_op_t* const body =
-                    emit_emitter_op_get(emitter, body_id);
-                emit_asm_dump_op(emitter, body, file);
+                emit_asm_dump_op(emitter, body_id, file);
             }
 
             break;
@@ -422,7 +419,6 @@ void emit_asm_dump(const emit_emitter_t* emitter, FILE* file) {
 
     for (usize i = 0; i < buf_size(emitter->em_text_section); i++) {
         const emit_op_id_t op_id = emitter->em_text_section[i];
-        const emit_op_t* const op = emit_emitter_op_get(emitter, op_id);
-        emit_asm_dump_op(emitter, op, file);
+        emit_asm_dump_op(emitter, op_id, file);
     }
 }
