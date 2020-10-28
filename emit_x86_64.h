@@ -61,6 +61,7 @@ reg_t emit_fn_arg(u16 position) {
 
 typedef enum {
     OP_KIND_SYSCALL,
+    OP_KIND_CALL_SYSCALL,
     OP_KIND_INT_LITERAL,
     OP_KIND_LABEL_ADDRESS,
     OP_KIND_STRING_LABEL,
@@ -73,7 +74,7 @@ typedef usize emit_op_id_t;
 
 typedef struct {
     emit_op_id_t* sys_args;
-} emit_op_syscall_t;
+} emit_op_call_syscall_t;
 
 typedef struct {
     usize sl_label_id;
@@ -98,7 +99,7 @@ typedef struct {
 typedef struct {
     emit_op_kind_t op_kind;
     union {
-        emit_op_syscall_t op_syscall;
+        emit_op_call_syscall_t op_call_syscall;
         usize op_int_literal;
         usize op_label_address;
         emit_op_string_label_t op_string_label;
@@ -122,9 +123,9 @@ typedef struct {
 #define OP_REGISTER(n) \
     ((emit_op_t){.op_kind = OP_KIND_REGISTER, .op_o = {.op_register = n}})
 
-#define OP_SYSCALL(args)                     \
-    ((emit_op_t){.op_kind = OP_KIND_SYSCALL, \
-                 .op_o = {.op_syscall = {.sys_args = args}}})
+#define OP_CALL_SYSCALL(args)                     \
+    ((emit_op_t){.op_kind = OP_KIND_CALL_SYSCALL, \
+                 .op_o = {.op_call_syscall = {.sys_args = args}}})
 
 #define OP_STRING_LABEL(string, string_len, label_id)                      \
     ((emit_op_t){.op_kind = OP_KIND_STRING_LABEL,                          \
@@ -174,18 +175,20 @@ emit_op_id_t emit_make_op_with(emit_t* emitter, emit_op_t op) {
     return op_id;
 }
 
+emit_op_id_t emit_zero_register(emit_t* emitter, reg_t reg) {
+    PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
+
+    const emit_op_id_t r = emit_make_op_with(emitter, OP_REGISTER(reg));
+    const emit_op_id_t zero = emit_make_op_with(emitter, OP_INT_LITERAL(0));
+    return emit_make_op_with(emitter, OP_ASSIGN(zero, r));
+}
+
 void emit_stdlib(emit_t* emitter) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
 
     emit_op_id_t* body = NULL;
     buf_grow(body, 50);
-
-    const emit_op_id_t r8 = emit_make_op_with(emitter, OP_REGISTER(REG_R8));
-    const emit_op_id_t zero = emit_make_op_with(emitter, OP_INT_LITERAL(0));
-
-    const emit_op_id_t A = emit_make_op_with(emitter, OP_ASSIGN(zero, r8));
-
-    buf_push(body, A);
+    buf_push(body, emit_zero_register(emitter, REG_R8));
 
     const emit_op_id_t int_to_string_block = emit_make_op_with(
         emitter, OP_CALLABLE_BLOCK("int_to_string", sizeof("int_to_string"),
@@ -210,14 +213,14 @@ emit_t emit_init() {
     return emitter;
 }
 
-emit_op_id_t emit_op_make_syscall(emit_t* emitter, int count, ...) {
+emit_op_id_t emit_op_make_call_syscall(emit_t* emitter, int count, ...) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
 
     va_list args;
     va_start(args, count);
 
-    emit_op_id_t* syscall_args = NULL;
-    buf_grow(syscall_args, count);
+    emit_op_id_t* call_syscall_args = NULL;
+    buf_grow(call_syscall_args, count);
 
     for (int i = 0; i < count; i++) {
         const emit_op_t o = va_arg(args, emit_op_t);
@@ -226,25 +229,20 @@ emit_op_id_t emit_op_make_syscall(emit_t* emitter, int count, ...) {
             emit_make_op_with(emitter, OP_REGISTER(emit_fn_arg(i)));
         const emit_op_id_t assign =
             emit_make_op_with(emitter, OP_ASSIGN(src, dest));
-        buf_push(syscall_args, assign);
+        buf_push(call_syscall_args, assign);
     }
     va_end(args);
 
-    const emit_op_id_t syscall =
-        emit_make_op_with(emitter, OP_SYSCALL(syscall_args));
+    const emit_op_id_t call_syscall =
+        emit_make_op_with(emitter, OP_CALL_SYSCALL(call_syscall_args));
 
-    // Zero all registers after syscall
+    // Zero all registers after call_syscall
     for (int i = 0; i < count; i++) {
-        const emit_op_id_t src = emit_make_op_with(emitter, OP_INT_LITERAL(0));
-        const emit_op_id_t dest =
-            emit_make_op_with(emitter, OP_REGISTER(emit_fn_arg(i)));
-        const emit_op_id_t assign =
-            emit_make_op_with(emitter, OP_ASSIGN(src, dest));
-
-        buf_push(emitter->em_text_section, assign);
+        buf_push(emitter->em_text_section,
+                 emit_zero_register(emitter, emit_fn_arg(i)));
     }
 
-    return syscall;
+    return call_syscall;
 }
 
 usize emit_add_string_label_if_not_exists(emit_t* emitter, const u8* string,
@@ -322,12 +320,12 @@ void emit_emit(emit_t* emitter, const parser_t* parser) {
                 const usize new_label_id = emit_node_to_string_label(
                     parser, emitter, &arg, &string_len);
 
-                const emit_op_id_t syscall_id = emit_op_make_syscall(
+                const emit_op_id_t call_syscall_id = emit_op_make_call_syscall(
                     emitter, 4, OP_INT_LITERAL(syscall_write_osx),
                     OP_INT_LITERAL(STDOUT), OP_LABEL_ADDRESS(new_label_id),
                     OP_INT_LITERAL(string_len));
 
-                buf_push(emitter->em_text_section, syscall_id);
+                buf_push(emitter->em_text_section, call_syscall_id);
                 break;
             }
             default:
@@ -335,10 +333,10 @@ void emit_emit(emit_t* emitter, const parser_t* parser) {
         }
     }
 
-    const emit_op_id_t syscall_id = emit_op_make_syscall(
+    const emit_op_id_t call_syscall_id = emit_op_make_call_syscall(
         emitter, 2, OP_INT_LITERAL(syscall_exit_osx), OP_INT_LITERAL(0));
 
-    buf_push(emitter->em_text_section, syscall_id);
+    buf_push(emitter->em_text_section, call_syscall_id);
 }
 
 void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
@@ -349,10 +347,11 @@ void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
     const emit_op_t* const op = emit_op_get(emitter, op_id);
 
     switch (op->op_kind) {
-        case OP_KIND_SYSCALL: {
-            const emit_op_syscall_t syscall = op->op_o.op_syscall;
-            for (usize j = 0; j < buf_size(syscall.sys_args); j++) {
-                const emit_op_id_t arg_id = syscall.sys_args[j];
+        case OP_KIND_CALL_SYSCALL: {
+            const emit_op_call_syscall_t call_syscall =
+                op->op_o.op_call_syscall;
+            for (usize j = 0; j < buf_size(call_syscall.sys_args); j++) {
+                const emit_op_id_t arg_id = call_syscall.sys_args[j];
                 emit_asm_dump_op(emitter, arg_id, file);
             }
             fprintf(file, "syscall\n");
@@ -449,7 +448,7 @@ void emit_asm_dump(const emit_t* emitter, FILE* file) {
         }
     }
 
-    fprintf(file, "\n.text");
+    fprintf(file, "\n.text\n");
 
     for (usize i = 0; i < buf_size(emitter->em_text_section); i++) {
         const emit_op_id_t op_id = emitter->em_text_section[i];
