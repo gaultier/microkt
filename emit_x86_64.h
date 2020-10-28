@@ -140,6 +140,7 @@ emit_op_id_t emit_emitter_make_op(emit_emitter_t* emitter) {
 emit_op_t* emit_emitter_op_get(const emit_emitter_t* emitter, emit_op_id_t id) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
     PG_ASSERT_COND((void*)emitter->em_ops_arena, !=, NULL, "%p");
+
     const usize len = buf_size(emitter->em_ops_arena);
     PG_ASSERT_COND(id, <, len, "%llu");
 
@@ -155,12 +156,8 @@ emit_op_id_t emit_op_make_syscall(emit_emitter_t* emitter, int count, ...) {
     emit_op_id_t* syscall_args = NULL;
     buf_grow(syscall_args, count);
 
-    emit_op_id_t syscall_op_id = emit_emitter_make_op(emitter);
-    emit_op_t* syscall = emit_emitter_op_get(emitter, syscall_op_id);
-    syscall->op_kind = OP_KIND_SYSCALL;
-    syscall->op_o.op_syscall = (emit_op_syscall_t){.op_sys_args = NULL};
     for (int i = 0; i < count; i++) {
-        usize arg_op_id = emit_emitter_make_op(emitter);
+        const usize arg_op_id = emit_emitter_make_op(emitter);
         const emit_op_t o = va_arg(args, emit_op_t);
         *(emit_emitter_op_get(emitter, arg_op_id)) = o;
 
@@ -168,7 +165,11 @@ emit_op_id_t emit_op_make_syscall(emit_emitter_t* emitter, int count, ...) {
     }
     va_end(args);
 
-    syscall->op_o.op_syscall.op_sys_args = syscall_args;
+    const emit_op_id_t syscall_op_id = emit_emitter_make_op(emitter);
+    emit_op_t* const syscall = emit_emitter_op_get(emitter, syscall_op_id);
+    syscall->op_kind = OP_KIND_SYSCALL;
+    syscall->op_o.op_syscall = (emit_op_syscall_t){.op_sys_args = syscall_args};
+
     return syscall_op_id;
 }
 
