@@ -153,14 +153,6 @@ typedef struct {
     emit_op_id_t* em_data_section;
 } emit_emitter_t;
 
-emit_op_id_t emit_emitter_make_op(emit_emitter_t* emitter) {
-    PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
-
-    buf_push(emitter->em_ops_arena, ((emit_op_t){0}));
-
-    return buf_size(emitter->em_ops_arena) - 1;
-}
-
 emit_op_t* emit_emitter_op_get(const emit_emitter_t* emitter, emit_op_id_t id) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
     PG_ASSERT_COND((void*)emitter->em_ops_arena, !=, NULL, "%p");
@@ -263,11 +255,10 @@ usize emit_add_string_label_if_not_exists(emit_emitter_t* emitter,
 
     emitter->em_label_id += 1;
 
-    const emit_op_id_t string_label_id = emit_emitter_make_op(emitter);
-    *(emit_emitter_op_get(emitter, string_label_id)) =
-        OP_STRING_LABEL(string, string_len, new_label_id);
+    const emit_op_id_t string_label = emit_emitter_make_op_with(
+        emitter, OP_STRING_LABEL(string, string_len, new_label_id));
 
-    buf_push(emitter->em_data_section, string_label_id);
+    buf_push(emitter->em_data_section, string_label);
 
     return new_label_id;
 }
