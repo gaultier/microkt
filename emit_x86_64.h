@@ -155,7 +155,6 @@ emit_op_id_t emit_op_make_syscall(emit_emitter_t* emitter, int count, ...) {
     va_list args;
     va_start(args, count);
 
-    // FIXME !!!
     emit_op_id_t* syscall_args = NULL;
     buf_grow(syscall_args, count);
 
@@ -198,12 +197,14 @@ usize emit_add_string_label_if_not_exists(emit_emitter_t* emitter,
 
     emitter->em_label_id += 1;
 
-    buf_push(a->asm_data_section,
-             ((emit_op_t){.op_kind = OP_KIND_STRING_LABEL,
-                          .op_o = {.op_string_label = {
-                                       .op_sl_string = string,
-                                       .op_sl_string_len = string_len,
-                                       .op_sl_label_id = new_label_id}}}));
+    const emit_op_id_t string_label_id = emit_emitter_make_op(emitter);
+    *(emit_emitter_op_get(emitter, string_label_id)) = (emit_op_t){
+        .op_kind = OP_KIND_STRING_LABEL,
+        .op_o = {.op_string_label = {.op_sl_string = string,
+                                     .op_sl_string_len = string_len,
+                                     .op_sl_label_id = new_label_id}}};
+
+    buf_push(a->asm_data_section, string_label_id);
 
     return new_label_id;
 }
