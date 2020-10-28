@@ -206,12 +206,10 @@ usize emit_add_string_label_if_not_exists(emit_emitter_t* emitter,
 }
 
 usize emit_node_to_string_label(const parser_t* parser, emit_emitter_t* emitter,
-                                const ast_node_t* node, usize* label_id,
-                                usize* string_len) {
+                                const ast_node_t* node, usize* string_len) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
     PG_ASSERT_COND((void*)node, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)label_id, !=, NULL, "%p");
     PG_ASSERT_COND((void*)string_len, !=, NULL, "%p");
 
     switch (node->node_kind) {
@@ -256,8 +254,6 @@ void emit_emit(emit_emitter_t* emitter, parser_t* parser) {
     PG_ASSERT_COND((void*)parser->par_stmt_nodes, !=, NULL, "%p");
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
 
-    usize label_id = 0;
-
     for (usize i = 0; i < buf_size(parser->par_stmt_nodes); i++) {
         const usize stmt_i = parser->par_stmt_nodes[i];
         const ast_node_t* stmt = &parser->par_nodes[stmt_i];
@@ -271,7 +267,7 @@ void emit_emit(emit_emitter_t* emitter, parser_t* parser) {
 
                 usize string_len = 0;
                 const usize new_label_id = emit_node_to_string_label(
-                    parser, emitter, &arg, &label_id, &string_len);
+                    parser, emitter, &arg, &string_len);
 
                 const emit_op_id_t syscall_id = emit_op_make_syscall(
                     emitter, 4, OP_INT_LITERAL(syscall_write_osx),
