@@ -228,7 +228,9 @@ emit_op_id_t emit_op_make_syscall(emit_emitter_t* emitter, int count, ...) {
         const emit_op_id_t dest =
             emit_emitter_make_op_with(emitter, OP_REGISTER(emit_fn_arg(i)));
 
-        emit_emitter_make_op_with(emitter, OP_ASSIGN(src, dest));
+        const emit_op_id_t assign =
+            emit_emitter_make_op_with(emitter, OP_ASSIGN(src, dest));
+        buf_push(syscall_args, assign);
     }
     va_end(args);
 
