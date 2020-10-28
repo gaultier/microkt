@@ -68,6 +68,7 @@ typedef enum {
     OP_KIND_CALLABLE_BLOCK,
     OP_KIND_ASSIGN,
     OP_KIND_REGISTER,
+    OP_KIND_RET,
 } emit_op_kind_t;
 
 typedef usize emit_op_id_t;
@@ -99,17 +100,18 @@ typedef struct {
 typedef struct {
     emit_op_kind_t op_kind;
     union {
-        emit_op_call_syscall_t op_call_syscall;
-        usize op_int_literal;
-        usize op_label_address;
-        emit_op_string_label_t op_string_label;
-        emit_op_callable_block_t op_callable_block;
-        emit_op_assign_t op_assign;
-        reg_t op_register;
+        emit_op_call_syscall_t op_call_syscall;      // OP_KIND_SYSCALL
+        usize op_int_literal;                        // OP_KIND_INT_LITERAL
+        usize op_label_address;                      // OP_KIND_LABEL_ADDRESS
+        emit_op_string_label_t op_string_label;      // OP_KIND_STRING_LABEL
+        emit_op_callable_block_t op_callable_block;  // OP_KIND_CALLABLE_BLOCK
+        emit_op_assign_t op_assign;                  // OP_KIND_ASSIGN
+        reg_t op_register;                           // OP_KIND_REGISTER
     } op_o;
 } emit_op_t;
 
 #define OP_SYSCALL() ((emit_op_t){.op_kind = OP_KIND_SYSCALL})
+#define OP_RET() ((emit_op_t){.op_kind = OP_KIND_RET})
 
 #define OP_INT_LITERAL(n) \
     ((emit_op_t){.op_kind = OP_KIND_INT_LITERAL, .op_o = {.op_int_literal = n}})
@@ -192,6 +194,7 @@ void emit_stdlib(emit_t* emitter) {
     emit_op_id_t* body = NULL;
     buf_grow(body, 50);
     buf_push(body, emit_zero_register(emitter, REG_R8));
+    buf_push(body, emit_make_op_with(emitter, OP_RET()));
 
     const emit_op_id_t int_to_string_block = emit_make_op_with(
         emitter, OP_CALLABLE_BLOCK("int_to_string", sizeof("int_to_string"),
@@ -425,6 +428,10 @@ void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
         }
         case OP_KIND_SYSCALL: {
             fprintf(file, "syscall\n");
+            break;
+        }
+        case OP_KIND_RET: {
+            fprintf(file, "ret\n");
             break;
         }
         case OP_KIND_REGISTER:
