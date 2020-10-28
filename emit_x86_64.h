@@ -101,7 +101,7 @@ typedef struct {
         emit_op_string_label_t op_string_label;
         emit_op_callable_block_t op_callable_block;
         emit_op_assign_t op_assign;
-        reg_t op_register_t;
+        reg_t op_register;
     } op_o;
 } emit_op_t;
 
@@ -157,11 +157,21 @@ emit_op_id_t emit_op_make_syscall(emit_emitter_t* emitter, int count, ...) {
     buf_grow(syscall_args, count);
 
     for (int i = 0; i < count; i++) {
-        const usize arg_op_id = emit_emitter_make_op(emitter);
-        const emit_op_t o = va_arg(args, emit_op_t);
-        *(emit_emitter_op_get(emitter, arg_op_id)) = o;
+        const usize arg_id = emit_emitter_make_op(emitter);
+        const usize src_id = emit_emitter_make_op(emitter);
+        const usize dest_id = emit_emitter_make_op(emitter);
 
-        buf_push(syscall_args, arg_op_id);
+        *(emit_emitter_op_get(emitter, arg_id)) = (emit_op_t){
+            .op_kind = OP_KIND_ASSIGN,
+            .op_o = {.op_assign = {.as_src = src_id, .as_dest = dest_id}}};
+        buf_push(syscall_args, arg_id);
+
+        const emit_op_t o = va_arg(args, emit_op_t);
+        *(emit_emitter_op_get(emitter, src_id)) = o;
+
+        *(emit_emitter_op_get(emitter, dest_id)) =
+            (emit_op_t){.op_kind = OP_KIND_REGISTER,
+                        .op_o = {.op_register = emit_fn_arg(i)}};
     }
     va_end(args);
 
@@ -339,7 +349,7 @@ void emit_asm_dump_op(const emit_emitter_t* emitter, const emit_op_t* op,
                     const usize n = src->op_o.op_int_literal;
                     switch (dest->op_kind) {
                         case OP_KIND_REGISTER: {
-                            const reg_t reg = dest->op_o.op_register_t;
+                            const reg_t reg = dest->op_o.op_register;
                             fprintf(file, "movq $%llu, %s\n", n,
                                     reg_t_to_str[reg]);
                             break;
@@ -353,7 +363,7 @@ void emit_asm_dump_op(const emit_emitter_t* emitter, const emit_op_t* op,
                     const usize label = src->op_o.op_label_address;
                     switch (dest->op_kind) {
                         case OP_KIND_REGISTER: {
-                            const reg_t reg = dest->op_o.op_register_t;
+                            const reg_t reg = dest->op_o.op_register;
                             fprintf(file, "leaq .L%llu(%s), %s\n", label,
                                     reg_t_to_str[REG_RIP], reg_t_to_str[reg]);
                             break;
