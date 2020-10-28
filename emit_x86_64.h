@@ -3,6 +3,7 @@
 #include <stdarg.h>
 
 #include "ast.h"
+#include "common.h"
 #include "parse.h"
 
 typedef enum {
@@ -121,6 +122,22 @@ const usize syscall_write_osx = (usize)0x2000004;
 const usize STIN = 0;
 const usize STDOUT = 1;
 const usize STDERR = 2;
+
+typedef struct {
+    emit_op_t* em_ops_arena;
+} emit_emitter_t;
+
+emit_emitter_t emit_emitter_init() {
+    return (emit_emitter_t){.em_ops_arena = NULL};
+}
+
+usize emit_emitter_make_op(emit_emitter_t* emitter) {
+    PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
+
+    buf_push(emitter->em_ops_arena, ((emit_op_t){0}));
+
+    return buf_size(emitter->em_ops_arena) - 1;
+}
 
 emit_op_t* emit_op_make_syscall(int count, ...) {
     va_list args;
