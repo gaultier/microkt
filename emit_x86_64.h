@@ -62,6 +62,8 @@ typedef enum {
     OP_KIND_LABEL_ADDRESS,
     OP_KIND_STRING_LABEL,
     OP_KIND_CALLABLE_BLOCK,
+    OP_KIND_ASSIGN,
+    OP_KIND_REGISTER,
 } emit_op_kind_t;
 
 typedef struct emit_op_t emit_op_t;
@@ -82,6 +84,11 @@ typedef struct {
     emit_op_t* cb_body;
 } emit_op_callable_block_t;
 
+typedef struct {
+    emit_op_t* as_src;
+    emit_op_t* as_dest;
+} emit_op_assign_t;
+
 struct emit_op_t {
     emit_op_kind_t op_kind;
     union {
@@ -90,6 +97,8 @@ struct emit_op_t {
         usize op_label_address;
         emit_op_string_label_t op_string_label;
         emit_op_callable_block_t op_callable_block;
+        emit_op_assign_t op_assign;
+        reg_t op_register_t;
     } op_o;
 };
 
@@ -165,9 +174,21 @@ usize emit_node_to_string_label(const parser_t* parser,
     }
 }
 
-// usize emit_callable_block(const char* block_name) {
-//    PG_ASSERT_COND((void*)block_name, !=, NULL, "%p");
-//}
+void emit_stdlib(emit_asm_t* a) {
+    PG_ASSERT_COND((void*)a, !=, NULL, "%p");
+
+    emit_op_t* int_to_string_body = NULL;
+    buf_grow(int_to_string_body, 20);
+    /* buf_push(int_to_string_body, ); */
+
+    buf_push(a->asm_text_section,
+             ((emit_op_t){.op_kind = OP_KIND_CALLABLE_BLOCK,
+                          .op_o = {.op_callable_block = {
+                                       .cb_name = "int_to_string",
+                                       .cb_name_len = sizeof("int_to_string"),
+                                       .cb_body = int_to_string_body,
+                                   }}}));
+}
 
 void emit_emit(parser_t* parser, emit_asm_t* a) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
@@ -247,25 +268,8 @@ void emit_asm_dump_op(const emit_op_t* op, FILE* file) {
         case OP_KIND_SYSCALL: {
             const emit_op_syscall_t syscall = op->op_o.op_syscall;
             for (usize j = 0; j < buf_size(syscall.op_sys_args); j++) {
-                const emit_op_t arg = syscall.op_sys_args[j];
-                const reg_t reg = emit_fn_arg(j);
-
-                switch (arg.op_kind) {
-                    case OP_KIND_INTEGER_LITERAL: {
-                        fprintf(file, "\tmovq $%llu, %s\n",
-                                arg.op_o.op_integer_literal, reg_t_to_str[reg]);
-                        break;
-                    }
-                    case OP_KIND_LABEL_ADDRESS: {
-                        fprintf(file, "\tleaq .L%llu(%s), %s\n",
-                                arg.op_o.op_label_address,
-                                reg_t_to_str[REG_RIP],  // TODO: understand why
-                                reg_t_to_str[reg]);
-                        break;
-                    }
-                    default:
-                        assert(0);  // Unreachable
-                }
+                const emit_op_t* arg = &syscall.op_sys_args[j];
+                emit_asm_dump_op(arg, file);
             }
             fprintf(file, "\tsyscall\n");
 
@@ -289,8 +293,47 @@ void emit_asm_dump_op(const emit_op_t* op, FILE* file) {
 
             break;
         }
-        default:
-            assert(0);  // Unreachable
+        case OP_KIND_ASSIGN: {
+            const emit_op_assign_t assign = op->op_o.op_assign;
+
+            switch (assign.as_src->op_kind) {
+                case OP_KIND_INTEGER_LITERAL: {
+                    const usize n = assign.as_src->op_o.op_integer_literal;
+                    switch (assign.as_dest->op_kind) {
+                        case OP_KIND_REGISTER: {
+                            const reg_t reg =
+                                assign.as_dest->op_o.op_register_t;
+                            fprintf(file, "movq $%llu, %s\n", n,
+                                    reg_t_to_str[reg]);
+                            break;
+                        }
+                        default:
+                            assert(0 && "Unreachable");
+                    }
+                    break;
+                }
+                case OP_KIND_LABEL_ADDRESS: {
+                    const usize label = assign.as_src->op_o.op_label_address;
+                    switch (assign.as_dest->op_kind) {
+                        case OP_KIND_REGISTER: {
+                            const reg_t reg =
+                                assign.as_dest->op_o.op_register_t;
+                            fprintf(file, "leaq .L%llu(%s), %s\n", label,
+                                    reg_t_to_str[REG_RIP], reg_t_to_str[reg]);
+                            break;
+                        }
+                        default:
+                            assert(0 && "Unreachable");
+                    }
+
+                    break;
+                }
+                default:
+                    assert(0 && "Unreachable");
+            }
+
+            break;
+        }
     }
 }
 
