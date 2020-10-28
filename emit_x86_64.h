@@ -375,10 +375,10 @@ void emit_asm_dump_op(const emit_emitter_t* emitter, const emit_op_id_t op_id,
 
             const emit_op_callable_block_t block = op->op_o.op_callable_block;
             if (block.cb_flags & CALLABLE_BLOCK_FLAG_GLOBAL)
-                fprintf(file, "\n.global %.*s\n", (int)block.cb_name_len,
+                fprintf(file, ".global %.*s\n", (int)block.cb_name_len,
                         block.cb_name);
 
-            fprintf(file, "\n%.*s:\n", (int)block.cb_name_len, block.cb_name);
+            fprintf(file, "%.*s:\n", (int)block.cb_name_len, block.cb_name);
 
             for (usize j = 0; j < buf_size(block.cb_body); j++) {
                 const emit_op_id_t body_id = block.cb_body[j];
