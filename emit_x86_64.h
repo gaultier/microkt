@@ -112,8 +112,8 @@ typedef struct {
                  .op_o = {.op_label_address = n}})
 
 typedef struct {
-    emit_op_id_t asm_text_section;
-    emit_op_id_t asm_data_section;
+    emit_op_id_t* asm_text_section;
+    emit_op_id_t* asm_data_section;
 } emit_asm_t;
 
 const usize syscall_exit_osx = (usize)0x2000001;
@@ -125,10 +125,11 @@ const usize STDERR = 2;
 
 typedef struct {
     emit_op_t* em_ops_arena;
+    usize em_label_id;
 } emit_emitter_t;
 
 emit_emitter_t emit_emitter_init() {
-    return (emit_emitter_t){.em_ops_arena = NULL};
+    return (emit_emitter_t){.em_ops_arena = NULL, .em_label_id = 0};
 }
 
 emit_op_id_t emit_emitter_make_op(emit_emitter_t* emitter) {
@@ -175,17 +176,18 @@ emit_op_id_t emit_op_make_syscall(emit_emitter_t* emitter, int count, ...) {
     return syscall_op_id;
 }
 
-usize emit_add_string_label_if_not_exists(emit_op_t** data_section,
-                                          const u8* string, usize string_len,
-                                          usize* label_id) {
-    PG_ASSERT_COND((void*)data_section, !=, NULL, "%p");
+usize emit_add_string_label_if_not_exists(emit_emitter_t* emitter,
+                                          emit_asm_t* a, const u8* string,
+                                          usize string_len) {
+    PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)a, !=, NULL, "%p");
     PG_ASSERT_COND((void*)string, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)label_id, !=, NULL, "%p");
 
-    const usize new_label_id = *label_id;
+    const usize new_label_id = emitter->em_label_id;
 
-    for (usize i = 0; i < buf_size(*data_section); i++) {
-        const emit_op_t op = (*data_section)[i];
+    for (usize i = 0; i < buf_size(a->asm_data_section); i++) {
+        const emit_op_id_t op_id = a->asm_data_section[i];
+        const emit_op_t op = *(emit_emitter_op_get(emitter, op_id));
         if (op.op_kind != OP_KIND_STRING_LABEL) continue;
 
         const emit_op_string_label_t s = op.op_o.op_string_label;
@@ -194,9 +196,9 @@ usize emit_add_string_label_if_not_exists(emit_op_t** data_section,
             return s.op_sl_label_id;
     }
 
-    *label_id += 1;
+    emitter->em_label_id += 1;
 
-    buf_push(*data_section,
+    buf_push(a->asm_data_section,
              ((emit_op_t){.op_kind = OP_KIND_STRING_LABEL,
                           .op_o = {.op_string_label = {
                                        .op_sl_string = string,
