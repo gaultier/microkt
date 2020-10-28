@@ -119,6 +119,10 @@ typedef struct {
 #define OP_REGISTER(n) \
     ((emit_op_t){.op_kind = OP_KIND_REGISTER, .op_o = {.op_register = n}})
 
+#define OP_SYSCALL(args)                     \
+    ((emit_op_t){.op_kind = OP_KIND_SYSCALL, \
+                 .op_o = {.op_syscall = {.op_sys_args = args}}})
+
 const usize syscall_exit_osx = (usize)0x2000001;
 const usize syscall_write_osx = (usize)0x2000004;
 
@@ -180,10 +184,7 @@ emit_op_id_t emit_op_make_syscall(emit_emitter_t* emitter, int count, ...) {
     va_end(args);
 
     const emit_op_id_t syscall_op_id = emit_emitter_make_op(emitter);
-    *(emit_emitter_op_get(emitter, syscall_op_id)) = (emit_op_t){
-        .op_kind = OP_KIND_SYSCALL,
-        .op_o.op_syscall = (emit_op_syscall_t){.op_sys_args = syscall_args}};
-
+    *(emit_emitter_op_get(emitter, syscall_op_id)) = OP_SYSCALL(syscall_args);
     return syscall_op_id;
 }
 
