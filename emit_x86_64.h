@@ -61,6 +61,7 @@ typedef enum {
     OP_KIND_INTEGER_LITERAL,
     OP_KIND_LABEL_ADDRESS,
     OP_KIND_STRING_LABEL,
+    OP_KIND_CALLABLE_BLOCK,
 } emit_op_kind_t;
 
 typedef struct emit_op_t emit_op_t;
@@ -75,6 +76,12 @@ typedef struct {
     usize op_sl_string_len;
 } emit_op_string_label_t;
 
+typedef struct {
+    const u8* cb_name;
+    usize cb_name_len;
+    emit_op_t* cb_body;
+} emit_op_callable_block_t;
+
 struct emit_op_t {
     emit_op_kind_t op_kind;
     union {
@@ -82,6 +89,7 @@ struct emit_op_t {
         usize op_integer_literal;
         usize op_label_address;
         emit_op_string_label_t op_string_label;
+        emit_op_callable_block_t op_callable_block;
     } op_o;
 };
 
@@ -157,6 +165,10 @@ usize emit_node_to_string_label(const parser_t* parser,
     }
 }
 
+// usize emit_callable_block(const char* block_name) {
+//    PG_ASSERT_COND((void*)block_name, !=, NULL, "%p");
+//}
+
 void emit_emit(parser_t* parser, emit_asm_t* a) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_nodes, !=, NULL, "%p");
@@ -227,6 +239,61 @@ void emit_emit(parser_t* parser, emit_asm_t* a) {
                       .asm_data_section = data_section};
 }
 
+void emit_asm_dump_op(const emit_op_t* op, FILE* file) {
+    PG_ASSERT_COND((void*)op, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)file, !=, NULL, "%p");
+
+    switch (op->op_kind) {
+        case OP_KIND_SYSCALL: {
+            const emit_op_syscall_t syscall = op->op_o.op_syscall;
+            for (usize j = 0; j < buf_size(syscall.op_sys_args); j++) {
+                const emit_op_t arg = syscall.op_sys_args[j];
+                const reg_t reg = emit_fn_arg(j);
+
+                switch (arg.op_kind) {
+                    case OP_KIND_INTEGER_LITERAL: {
+                        fprintf(file, "\tmovq $%llu, %s\n",
+                                arg.op_o.op_integer_literal, reg_t_to_str[reg]);
+                        break;
+                    }
+                    case OP_KIND_LABEL_ADDRESS: {
+                        fprintf(file, "\tleaq .L%llu(%s), %s\n",
+                                arg.op_o.op_label_address,
+                                reg_t_to_str[REG_RIP],  // TODO: understand why
+                                reg_t_to_str[reg]);
+                        break;
+                    }
+                    default:
+                        assert(0);  // Unreachable
+                }
+            }
+            fprintf(file, "\tsyscall\n");
+
+            // Zero all registers after syscall
+            for (usize j = 0; j < buf_size(syscall.op_sys_args); j++) {
+                const reg_t reg = emit_fn_arg(j);
+                fprintf(file, "\tmovq $0, %s\n", reg_t_to_str[reg]);
+            }
+            fprintf(file, "\n");  // For prettyness
+
+            break;
+        }
+        case OP_KIND_CALLABLE_BLOCK: {
+            const emit_op_callable_block_t block = op->op_o.op_callable_block;
+            fprintf(file, "\n%.*s:\n", (int)block.cb_name_len, block.cb_name);
+
+            for (usize j = 0; j < buf_size(block.cb_body); j++) {
+                const emit_op_t* const body = &block.cb_body[j];
+                emit_asm_dump_op(body, file);
+            }
+
+            break;
+        }
+        default:
+            assert(0);  // Unreachable
+    }
+}
+
 void emit_asm_dump(emit_asm_t* a, FILE* file) {
     PG_ASSERT_COND((void*)a, !=, NULL, "%p");
     PG_ASSERT_COND((void*)file, !=, NULL, "%p");
@@ -251,46 +318,7 @@ void emit_asm_dump(emit_asm_t* a, FILE* file) {
     fprintf(file, "\n.text\n.globl _main\n_main:\n");
 
     for (usize i = 0; i < buf_size(a->asm_text_section); i++) {
-        const emit_op_t op = a->asm_text_section[i];
-        switch (op.op_kind) {
-            case OP_KIND_SYSCALL: {
-                const emit_op_syscall_t syscall = op.op_o.op_syscall;
-                for (usize j = 0; j < buf_size(syscall.op_sys_args); j++) {
-                    const emit_op_t arg = syscall.op_sys_args[j];
-                    const reg_t reg = emit_fn_arg(j);
-
-                    switch (arg.op_kind) {
-                        case OP_KIND_INTEGER_LITERAL: {
-                            fprintf(file, "\tmovq $%llu, %s\n",
-                                    arg.op_o.op_integer_literal,
-                                    reg_t_to_str[reg]);
-                            break;
-                        }
-                        case OP_KIND_LABEL_ADDRESS: {
-                            fprintf(
-                                file, "\tleaq .L%llu(%s), %s\n",
-                                arg.op_o.op_label_address,
-                                reg_t_to_str[REG_RIP],  // TODO: understand why
-                                reg_t_to_str[reg]);
-                            break;
-                        }
-                        default:
-                            assert(0);  // Unreachable
-                    }
-                }
-                fprintf(file, "\tsyscall\n");
-
-                // Zero all registers after syscall
-                for (usize j = 0; j < buf_size(syscall.op_sys_args); j++) {
-                    const reg_t reg = emit_fn_arg(j);
-                    fprintf(file, "\tmovq $0, %s\n", reg_t_to_str[reg]);
-                }
-                fprintf(file, "\n");  // For prettyness
-
-                break;
-            }
-            default:
-                assert(0);  // Unreachable
-        }
+        const emit_op_t* const op = &a->asm_text_section[i];
+        emit_asm_dump_op(op, file);
     }
 }
