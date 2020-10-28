@@ -81,10 +81,13 @@ typedef struct {
     usize sl_string_len;
 } emit_op_string_label_t;
 
+#define CALLABLE_BLOCK_FLAG_DEFAULT 0
+#define CALLABLE_BLOCK_FLAG_GLOBAL 1
 typedef struct {
     const u8* cb_name;
     usize cb_name_len;
     emit_op_id_t* cb_body;
+    u16 cb_flags;
 } emit_op_callable_block_t;
 
 typedef struct {
@@ -129,6 +132,13 @@ typedef struct {
                                               .sl_string_len = string_len, \
                                               .sl_label_id = label_id}}})
 
+#define OP_CALLABLE_BLOCK(name, name_len, body, flags)                   \
+    ((emit_op_t){.op_kind = OP_KIND_CALLABLE_BLOCK,                      \
+                 .op_o = {.op_callable_block = {.cb_name = name,         \
+                                                .cb_name_len = name_len, \
+                                                .cb_body = body,         \
+                                                .cb_flags = flags}}})
+
 const usize syscall_exit_osx = (usize)0x2000001;
 const usize syscall_write_osx = (usize)0x2000004;
 
@@ -142,10 +152,6 @@ typedef struct {
     emit_op_id_t* em_text_section;
     emit_op_id_t* em_data_section;
 } emit_emitter_t;
-
-emit_emitter_t emit_emitter_init() {
-    return (emit_emitter_t){.em_ops_arena = NULL, .em_label_id = 0};
-}
 
 emit_op_id_t emit_emitter_make_op(emit_emitter_t* emitter) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
@@ -163,6 +169,51 @@ emit_op_t* emit_emitter_op_get(const emit_emitter_t* emitter, emit_op_id_t id) {
     PG_ASSERT_COND(id, <, len, "%llu");
 
     return &emitter->em_ops_arena[id];
+}
+
+emit_op_id_t emit_emitter_make_op_with(emit_emitter_t* emitter, emit_op_t op) {
+    PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
+
+    buf_push(emitter->em_ops_arena, ((emit_op_t){0}));
+
+    const usize op_id = buf_size(emitter->em_ops_arena) - 1;
+    *(emit_emitter_op_get(emitter, op_id)) = op;
+
+    return op_id;
+}
+
+void emit_emitter_stdlib(emit_emitter_t* emitter) {
+    PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
+
+    emit_op_id_t* body = NULL;
+    buf_grow(body, 50);
+
+    const emit_op_id_t r8 =
+        emit_emitter_make_op_with(emitter, OP_REGISTER(REG_R8));
+    const emit_op_id_t zero =
+        emit_emitter_make_op_with(emitter, OP_INT_LITERAL(99));
+
+    const emit_op_id_t A =
+        emit_emitter_make_op_with(emitter, OP_ASSIGN(zero, r8));
+
+    buf_push(body, A);
+
+    const emit_op_id_t int_to_string_block = emit_emitter_make_op_with(
+        emitter, OP_CALLABLE_BLOCK("int_to_string", sizeof("int_to_string"),
+                                   body, CALLABLE_BLOCK_FLAG_DEFAULT));
+
+    buf_push(emitter->em_text_section, int_to_string_block);
+}
+
+emit_emitter_t emit_emitter_init() {
+    emit_emitter_t emitter = {.em_ops_arena = NULL, .em_label_id = 0};
+    buf_grow(emitter.em_ops_arena, 100);
+    buf_grow(emitter.em_data_section, 100);
+    buf_grow(emitter.em_text_section, 100);
+
+    emit_emitter_stdlib(&emitter);
+
+    return emitter;
 }
 
 emit_op_id_t emit_op_make_syscall(emit_emitter_t* emitter, int count, ...) {
@@ -248,23 +299,6 @@ usize emit_node_to_string_label(const parser_t* parser, emit_emitter_t* emitter,
             assert(0 && "Unreachable");
     }
 }
-
-// void emit_stdlib(emit_asm_t* a) {
-//     PG_ASSERT_COND((void*)a, !=, NULL, "%p");
-//
-//     emit_op_t* int_to_string_body = NULL;
-//     buf_grow(int_to_string_body, 20);
-//     /* buf_push(int_to_string_body, ); */
-//
-//     buf_push(a->asm_text_section,
-//              ((emit_op_t){.op_kind = OP_KIND_CALLABLE_BLOCK,
-//                           .op_o = {.op_callable_block = {
-//                                        .cb_name = "int_to_string",
-//                                        .cb_name_len =
-//                                        sizeof("int_to_string"), .cb_body =
-//                                        int_to_string_body,
-//                                    }}}));
-// }
 
 void emit_emit(emit_emitter_t* emitter, const parser_t* parser) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
