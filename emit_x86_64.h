@@ -60,7 +60,7 @@ reg_t emit_fn_arg(u16 position) {
 
 typedef enum {
     OP_KIND_SYSCALL,
-    OP_KIND_INTEGER_LITERAL,
+    OP_KIND_INT_LITERAL,
     OP_KIND_LABEL_ADDRESS,
     OP_KIND_STRING_LABEL,
     OP_KIND_CALLABLE_BLOCK,
@@ -95,7 +95,7 @@ struct emit_op_t {
     emit_op_kind_t op_kind;
     union {
         emit_op_syscall_t op_syscall;
-        usize op_integer_literal;
+        usize op_int_literal;
         usize op_label_address;
         emit_op_string_label_t op_string_label;
         emit_op_callable_block_t op_callable_block;
@@ -103,6 +103,9 @@ struct emit_op_t {
         reg_t op_register_t;
     } op_o;
 };
+
+#define OP_INT_LITERAL(n) \
+    ((emit_op_t){.op_kind = OP_KIND_INT_LITERAL, .op_o = {.op_int_literal = n}})
 
 typedef struct {
     emit_op_t* asm_text_section;
@@ -240,16 +243,11 @@ void emit_emit(parser_t* parser, emit_asm_t* a) {
                     parser, &data_section, &arg, &label_id, &string_len);
 
                 const emit_op_t* syscall = emit_op_make_syscall(
-                    4,
-                    (emit_op_t){
-                        .op_kind = OP_KIND_INTEGER_LITERAL,
-                        .op_o = {.op_integer_literal = syscall_write_osx}},
-                    (emit_op_t){.op_kind = OP_KIND_INTEGER_LITERAL,
-                                .op_o = {.op_integer_literal = STDOUT}},
+                    4, OP_INT_LITERAL(syscall_write_osx),
+                    OP_INT_LITERAL(STDOUT),
                     (emit_op_t){.op_kind = OP_KIND_LABEL_ADDRESS,
                                 .op_o = {.op_label_address = new_label_id}},
-                    (emit_op_t){.op_kind = OP_KIND_INTEGER_LITERAL,
-                                .op_o = {.op_integer_literal = string_len}});
+                    OP_INT_LITERAL(string_len));
 
                 buf_push(text_section, *syscall);
                 break;
@@ -261,11 +259,10 @@ void emit_emit(parser_t* parser, emit_asm_t* a) {
 
     emit_op_t* args = NULL;
     buf_grow(args, 2);
-    buf_push(args,
-             ((emit_op_t){.op_kind = OP_KIND_INTEGER_LITERAL,
-                          .op_o = {.op_integer_literal = syscall_exit_osx}}));
-    buf_push(args, ((emit_op_t){.op_kind = OP_KIND_INTEGER_LITERAL,
-                                .op_o = {.op_integer_literal = 0}}));
+    buf_push(args, ((emit_op_t){.op_kind = OP_KIND_INT_LITERAL,
+                                .op_o = {.op_int_literal = syscall_exit_osx}}));
+    buf_push(args, ((emit_op_t){.op_kind = OP_KIND_INT_LITERAL,
+                                .op_o = {.op_int_literal = 0}}));
 
     const emit_op_t syscall = {.op_kind = OP_KIND_SYSCALL,
                                .op_o = {.op_syscall = {.op_sys_args = args}}};
@@ -312,8 +309,8 @@ void emit_asm_dump_op(const emit_op_t* op, FILE* file) {
             const emit_op_assign_t assign = op->op_o.op_assign;
 
             switch (assign.as_src->op_kind) {
-                case OP_KIND_INTEGER_LITERAL: {
-                    const usize n = assign.as_src->op_o.op_integer_literal;
+                case OP_KIND_INT_LITERAL: {
+                    const usize n = assign.as_src->op_o.op_int_literal;
                     switch (assign.as_dest->op_kind) {
                         case OP_KIND_REGISTER: {
                             const reg_t reg =
