@@ -69,10 +69,10 @@ typedef enum {
     OP_KIND_REGISTER,
 } emit_op_kind_t;
 
-typedef struct emit_op_t emit_op_t;
+typedef usize emit_op_id_t;
 
 typedef struct {
-    emit_op_t* op_sys_args;
+    emit_op_id_t* op_sys_args;
 } emit_op_syscall_t;
 
 typedef struct {
@@ -84,15 +84,15 @@ typedef struct {
 typedef struct {
     const u8* cb_name;
     usize cb_name_len;
-    emit_op_t* cb_body;
+    emit_op_id_t cb_body;
 } emit_op_callable_block_t;
 
 typedef struct {
-    emit_op_t* as_src;
-    emit_op_t* as_dest;
+    emit_op_id_t as_src;
+    emit_op_id_t as_dest;
 } emit_op_assign_t;
 
-struct emit_op_t {
+typedef struct {
     emit_op_kind_t op_kind;
     union {
         emit_op_syscall_t op_syscall;
@@ -103,7 +103,7 @@ struct emit_op_t {
         emit_op_assign_t op_assign;
         reg_t op_register_t;
     } op_o;
-};
+} emit_op_t;
 
 #define OP_INT_LITERAL(n) \
     ((emit_op_t){.op_kind = OP_KIND_INT_LITERAL, .op_o = {.op_int_literal = n}})
@@ -112,8 +112,8 @@ struct emit_op_t {
                  .op_o = {.op_label_address = n}})
 
 typedef struct {
-    emit_op_t* asm_text_section;
-    emit_op_t* asm_data_section;
+    emit_op_id_t asm_text_section;
+    emit_op_id_t asm_data_section;
 } emit_asm_t;
 
 const usize syscall_exit_osx = (usize)0x2000001;
@@ -131,7 +131,7 @@ emit_emitter_t emit_emitter_init() {
     return (emit_emitter_t){.em_ops_arena = NULL};
 }
 
-usize emit_emitter_make_op(emit_emitter_t* emitter) {
+emit_op_id_t emit_emitter_make_op(emit_emitter_t* emitter) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
 
     buf_push(emitter->em_ops_arena, ((emit_op_t){0}));
@@ -139,25 +139,40 @@ usize emit_emitter_make_op(emit_emitter_t* emitter) {
     return buf_size(emitter->em_ops_arena) - 1;
 }
 
-emit_op_t* emit_op_make_syscall(int count, ...) {
+emit_op_t* emit_emitter_op_get(emit_emitter_t* emitter, emit_op_id_t id) {
+    PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)emitter->em_ops_arena, !=, NULL, "%p");
+    const usize len = buf_size(emitter->em_ops_arena);
+    PG_ASSERT_COND(id, <, len, "%llu");
+
+    return &emitter->em_ops_arena[id];
+}
+
+emit_op_id_t emit_op_make_syscall(emit_emitter_t* emitter, int count, ...) {
+    PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
+
     va_list args;
     va_start(args, count);
 
     // FIXME !!!
-    emit_op_t* syscall_args = NULL;
+    emit_op_id_t* syscall_args = NULL;
     buf_grow(syscall_args, count);
 
-    emit_op_t syscall = {.op_kind = OP_KIND_SYSCALL,
-                         .op_o = {.op_syscall = {.op_sys_args = NULL}}};
+    emit_op_id_t syscall_op_id = emit_emitter_make_op(emitter);
+    emit_op_t* syscall = emit_emitter_op_get(emitter, syscall_op_id);
+    syscall->op_kind = OP_KIND_SYSCALL;
+    syscall->op_o.op_syscall = (emit_op_syscall_t){.op_sys_args = NULL};
     for (int i = 0; i < count; i++) {
+        usize arg_op_id = emit_emitter_make_op(emitter);
         const emit_op_t o = va_arg(args, emit_op_t);
+        *(emit_emitter_op_get(emitter, arg_op_id)) = o;
 
-        buf_push(syscall_args, o);
+        buf_push(syscall_args, arg_op_id);
     }
     va_end(args);
 
-    syscall.op_o.op_syscall.op_sys_args = syscall_args;
-    return &syscall;  // FIXME !!!
+    syscall->op_o.op_syscall.op_sys_args = syscall_args;
+    return syscall_op_id;
 }
 
 usize emit_add_string_label_if_not_exists(emit_op_t** data_section,
@@ -241,6 +256,8 @@ void emit_emit(parser_t* parser, emit_asm_t* a) {
     PG_ASSERT_COND((void*)parser->par_nodes, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_stmt_nodes, !=, NULL, "%p");
     PG_ASSERT_COND((void*)a, !=, NULL, "%p");
+
+    emit_emitter_t emitter = emit_emitter_init();
 
     emit_op_t* text_section = NULL;
     emit_op_t* data_section = NULL;
