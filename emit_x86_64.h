@@ -72,7 +72,7 @@ typedef enum {
 typedef usize emit_op_id_t;
 
 typedef struct {
-    emit_op_id_t* op_sys_args;
+    emit_op_id_t* sys_args;
 } emit_op_syscall_t;
 
 typedef struct {
@@ -121,7 +121,7 @@ typedef struct {
 
 #define OP_SYSCALL(args)                     \
     ((emit_op_t){.op_kind = OP_KIND_SYSCALL, \
-                 .op_o = {.op_syscall = {.op_sys_args = args}}})
+                 .op_o = {.op_syscall = {.sys_args = args}}})
 
 #define OP_STRING_LABEL(string, string_len, label_id)                      \
     ((emit_op_t){.op_kind = OP_KIND_STRING_LABEL,                          \
@@ -314,8 +314,8 @@ void emit_asm_dump_op(const emit_emitter_t* emitter, const emit_op_t* op,
     switch (op->op_kind) {
         case OP_KIND_SYSCALL: {
             const emit_op_syscall_t syscall = op->op_o.op_syscall;
-            for (usize j = 0; j < buf_size(syscall.op_sys_args); j++) {
-                const emit_op_id_t arg_id = syscall.op_sys_args[j];
+            for (usize j = 0; j < buf_size(syscall.sys_args); j++) {
+                const emit_op_id_t arg_id = syscall.sys_args[j];
                 const emit_op_t* const arg =
                     emit_emitter_op_get(emitter, arg_id);
                 emit_asm_dump_op(emitter, arg, file);
@@ -323,7 +323,7 @@ void emit_asm_dump_op(const emit_emitter_t* emitter, const emit_op_t* op,
             fprintf(file, "\tsyscall\n");
 
             // Zero all registers after syscall
-            for (usize j = 0; j < buf_size(syscall.op_sys_args); j++) {
+            for (usize j = 0; j < buf_size(syscall.sys_args); j++) {
                 const reg_t reg = emit_fn_arg(j);
                 fprintf(file, "\tmovq $0, %s\n", reg_t_to_str[reg]);
             }
