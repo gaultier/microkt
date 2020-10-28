@@ -231,23 +231,16 @@ emit_op_id_t emit_op_make_syscall(emit_emitter_t* emitter, int count, ...) {
     buf_grow(syscall_args, count);
 
     for (int i = 0; i < count; i++) {
-        const usize arg_id = emit_emitter_make_op(emitter);
-        const usize src_id = emit_emitter_make_op(emitter);
-        const usize dest_id = emit_emitter_make_op(emitter);
-
-        *(emit_emitter_op_get(emitter, arg_id)) = OP_ASSIGN(src_id, dest_id);
-        buf_push(syscall_args, arg_id);
-
         const emit_op_t o = va_arg(args, emit_op_t);
-        *(emit_emitter_op_get(emitter, src_id)) = o;
+        const emit_op_id_t src = emit_emitter_make_op_with(emitter, o);
+        const emit_op_id_t dest =
+            emit_emitter_make_op_with(emitter, OP_REGISTER(emit_fn_arg(i)));
 
-        *(emit_emitter_op_get(emitter, dest_id)) = OP_REGISTER(emit_fn_arg(i));
+        emit_emitter_make_op_with(emitter, OP_ASSIGN(src, dest));
     }
     va_end(args);
 
-    const emit_op_id_t syscall_op_id = emit_emitter_make_op(emitter);
-    *(emit_emitter_op_get(emitter, syscall_op_id)) = OP_SYSCALL(syscall_args);
-    return syscall_op_id;
+    return emit_emitter_make_op_with(emitter, OP_SYSCALL(syscall_args));
 }
 
 usize emit_add_string_label_if_not_exists(emit_emitter_t* emitter,
