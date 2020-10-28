@@ -84,7 +84,7 @@ typedef struct {
 typedef struct {
     const u8* cb_name;
     usize cb_name_len;
-    emit_op_id_t cb_body;
+    emit_op_id_t* cb_body;
 } emit_op_callable_block_t;
 
 typedef struct {
@@ -111,11 +111,6 @@ typedef struct {
     ((emit_op_t){.op_kind = OP_KIND_LABEL_ADDRESS, \
                  .op_o = {.op_label_address = n}})
 
-typedef struct {
-    emit_op_id_t* asm_text_section;
-    emit_op_id_t* asm_data_section;
-} emit_asm_t;
-
 const usize syscall_exit_osx = (usize)0x2000001;
 const usize syscall_write_osx = (usize)0x2000004;
 
@@ -126,6 +121,8 @@ const usize STDERR = 2;
 typedef struct {
     emit_op_t* em_ops_arena;
     usize em_label_id;
+    emit_op_id_t* em_text_section;
+    emit_op_id_t* em_data_section;
 } emit_emitter_t;
 
 emit_emitter_t emit_emitter_init() {
@@ -140,7 +137,7 @@ emit_op_id_t emit_emitter_make_op(emit_emitter_t* emitter) {
     return buf_size(emitter->em_ops_arena) - 1;
 }
 
-emit_op_t* emit_emitter_op_get(emit_emitter_t* emitter, emit_op_id_t id) {
+emit_op_t* emit_emitter_op_get(const emit_emitter_t* emitter, emit_op_id_t id) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
     PG_ASSERT_COND((void*)emitter->em_ops_arena, !=, NULL, "%p");
     const usize len = buf_size(emitter->em_ops_arena);
@@ -176,16 +173,14 @@ emit_op_id_t emit_op_make_syscall(emit_emitter_t* emitter, int count, ...) {
 }
 
 usize emit_add_string_label_if_not_exists(emit_emitter_t* emitter,
-                                          emit_asm_t* a, const u8* string,
-                                          usize string_len) {
+                                          const u8* string, usize string_len) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)a, !=, NULL, "%p");
     PG_ASSERT_COND((void*)string, !=, NULL, "%p");
 
     const usize new_label_id = emitter->em_label_id;
 
-    for (usize i = 0; i < buf_size(a->asm_data_section); i++) {
-        const emit_op_id_t op_id = a->asm_data_section[i];
+    for (usize i = 0; i < buf_size(emitter->em_data_section); i++) {
+        const emit_op_id_t op_id = emitter->em_data_section[i];
         const emit_op_t op = *(emit_emitter_op_get(emitter, op_id));
         if (op.op_kind != OP_KIND_STRING_LABEL) continue;
 
@@ -204,17 +199,16 @@ usize emit_add_string_label_if_not_exists(emit_emitter_t* emitter,
                                      .op_sl_string_len = string_len,
                                      .op_sl_label_id = new_label_id}}};
 
-    buf_push(a->asm_data_section, string_label_id);
+    buf_push(emitter->em_data_section, string_label_id);
 
     return new_label_id;
 }
 
-usize emit_node_to_string_label(const parser_t* parser,
-                                emit_op_t** data_section,
+usize emit_node_to_string_label(const parser_t* parser, emit_emitter_t* emitter,
                                 const ast_node_t* node, usize* label_id,
                                 usize* string_len) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)data_section, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
     PG_ASSERT_COND((void*)node, !=, NULL, "%p");
     PG_ASSERT_COND((void*)label_id, !=, NULL, "%p");
     PG_ASSERT_COND((void*)string_len, !=, NULL, "%p");
@@ -226,7 +220,7 @@ usize emit_node_to_string_label(const parser_t* parser,
             parser_ast_node_source(parser, node, &string, string_len);
 
             const usize new_label_id = emit_add_string_label_if_not_exists(
-                data_section, string, *string_len, label_id);
+                emitter, string, *string_len);
             return new_label_id;
         }
         case NODE_INT_LITERAL: {
@@ -238,32 +232,28 @@ usize emit_node_to_string_label(const parser_t* parser,
     }
 }
 
-void emit_stdlib(emit_asm_t* a) {
-    PG_ASSERT_COND((void*)a, !=, NULL, "%p");
+// void emit_stdlib(emit_asm_t* a) {
+//     PG_ASSERT_COND((void*)a, !=, NULL, "%p");
+//
+//     emit_op_t* int_to_string_body = NULL;
+//     buf_grow(int_to_string_body, 20);
+//     /* buf_push(int_to_string_body, ); */
+//
+//     buf_push(a->asm_text_section,
+//              ((emit_op_t){.op_kind = OP_KIND_CALLABLE_BLOCK,
+//                           .op_o = {.op_callable_block = {
+//                                        .cb_name = "int_to_string",
+//                                        .cb_name_len =
+//                                        sizeof("int_to_string"), .cb_body =
+//                                        int_to_string_body,
+//                                    }}}));
+// }
 
-    emit_op_t* int_to_string_body = NULL;
-    buf_grow(int_to_string_body, 20);
-    /* buf_push(int_to_string_body, ); */
-
-    buf_push(a->asm_text_section,
-             ((emit_op_t){.op_kind = OP_KIND_CALLABLE_BLOCK,
-                          .op_o = {.op_callable_block = {
-                                       .cb_name = "int_to_string",
-                                       .cb_name_len = sizeof("int_to_string"),
-                                       .cb_body = int_to_string_body,
-                                   }}}));
-}
-
-void emit_emit(parser_t* parser, emit_asm_t* a) {
+void emit_emit(emit_emitter_t* emitter, parser_t* parser) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_nodes, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_stmt_nodes, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)a, !=, NULL, "%p");
-
-    emit_emitter_t emitter = emit_emitter_init();
-
-    emit_op_t* text_section = NULL;
-    emit_op_t* data_section = NULL;
+    PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
 
     usize label_id = 0;
 
@@ -280,14 +270,14 @@ void emit_emit(parser_t* parser, emit_asm_t* a) {
 
                 usize string_len = 0;
                 const usize new_label_id = emit_node_to_string_label(
-                    parser, &data_section, &arg, &label_id, &string_len);
+                    parser, emitter, &arg, &label_id, &string_len);
 
-                const emit_op_t* syscall = emit_op_make_syscall(
-                    4, OP_INT_LITERAL(syscall_write_osx),
+                const emit_op_id_t syscall_id = emit_op_make_syscall(
+                    emitter, 4, OP_INT_LITERAL(syscall_write_osx),
                     OP_INT_LITERAL(STDOUT), OP_LABEL_ADDRESS(new_label_id),
                     OP_INT_LITERAL(string_len));
 
-                buf_push(text_section, *syscall);
+                buf_push(emitter->em_text_section, syscall_id);
                 break;
             }
             default:
@@ -295,16 +285,15 @@ void emit_emit(parser_t* parser, emit_asm_t* a) {
         }
     }
 
-    const emit_op_t* const syscall = emit_op_make_syscall(
-        2, OP_INT_LITERAL(syscall_exit_osx), OP_INT_LITERAL(0));
+    const emit_op_id_t syscall_id = emit_op_make_syscall(
+        emitter, 2, OP_INT_LITERAL(syscall_exit_osx), OP_INT_LITERAL(0));
 
-    buf_push(text_section, *syscall);
-
-    *a = (emit_asm_t){.asm_text_section = text_section,
-                      .asm_data_section = data_section};
+    buf_push(emitter->em_text_section, syscall_id);
 }
 
-void emit_asm_dump_op(const emit_op_t* op, FILE* file) {
+void emit_asm_dump_op(const emit_emitter_t* emitter, const emit_op_t* op,
+                      FILE* file) {
+    PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
     PG_ASSERT_COND((void*)op, !=, NULL, "%p");
     PG_ASSERT_COND((void*)file, !=, NULL, "%p");
 
@@ -312,8 +301,10 @@ void emit_asm_dump_op(const emit_op_t* op, FILE* file) {
         case OP_KIND_SYSCALL: {
             const emit_op_syscall_t syscall = op->op_o.op_syscall;
             for (usize j = 0; j < buf_size(syscall.op_sys_args); j++) {
-                const emit_op_t* arg = &syscall.op_sys_args[j];
-                emit_asm_dump_op(arg, file);
+                const emit_op_id_t arg_id = syscall.op_sys_args[j];
+                const emit_op_t* const arg =
+                    emit_emitter_op_get(emitter, arg_id);
+                emit_asm_dump_op(emitter, arg, file);
             }
             fprintf(file, "\tsyscall\n");
 
@@ -331,22 +322,27 @@ void emit_asm_dump_op(const emit_op_t* op, FILE* file) {
             fprintf(file, "\n%.*s:\n", (int)block.cb_name_len, block.cb_name);
 
             for (usize j = 0; j < buf_size(block.cb_body); j++) {
-                const emit_op_t* const body = &block.cb_body[j];
-                emit_asm_dump_op(body, file);
+                const emit_op_id_t body_id = block.cb_body[j];
+                const emit_op_t* const body =
+                    emit_emitter_op_get(emitter, body_id);
+                emit_asm_dump_op(emitter, body, file);
             }
 
             break;
         }
         case OP_KIND_ASSIGN: {
             const emit_op_assign_t assign = op->op_o.op_assign;
+            const emit_op_id_t src_id = assign.as_src;
+            const emit_op_id_t dest_id = assign.as_dest;
+            const emit_op_t* const src = emit_emitter_op_get(emitter, src_id);
+            const emit_op_t* const dest = emit_emitter_op_get(emitter, dest_id);
 
-            switch (assign.as_src->op_kind) {
+            switch (src->op_kind) {
                 case OP_KIND_INT_LITERAL: {
-                    const usize n = assign.as_src->op_o.op_int_literal;
-                    switch (assign.as_dest->op_kind) {
+                    const usize n = src->op_o.op_int_literal;
+                    switch (dest->op_kind) {
                         case OP_KIND_REGISTER: {
-                            const reg_t reg =
-                                assign.as_dest->op_o.op_register_t;
+                            const reg_t reg = dest->op_o.op_register_t;
                             fprintf(file, "movq $%llu, %s\n", n,
                                     reg_t_to_str[reg]);
                             break;
@@ -357,11 +353,10 @@ void emit_asm_dump_op(const emit_op_t* op, FILE* file) {
                     break;
                 }
                 case OP_KIND_LABEL_ADDRESS: {
-                    const usize label = assign.as_src->op_o.op_label_address;
-                    switch (assign.as_dest->op_kind) {
+                    const usize label = src->op_o.op_label_address;
+                    switch (dest->op_kind) {
                         case OP_KIND_REGISTER: {
-                            const reg_t reg =
-                                assign.as_dest->op_o.op_register_t;
+                            const reg_t reg = dest->op_o.op_register_t;
                             fprintf(file, "leaq .L%llu(%s), %s\n", label,
                                     reg_t_to_str[REG_RIP], reg_t_to_str[reg]);
                             break;
@@ -386,17 +381,18 @@ void emit_asm_dump_op(const emit_op_t* op, FILE* file) {
     }
 }
 
-void emit_asm_dump(emit_asm_t* a, FILE* file) {
-    PG_ASSERT_COND((void*)a, !=, NULL, "%p");
+void emit_asm_dump(const emit_emitter_t* emitter, FILE* file) {
+    PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
     PG_ASSERT_COND((void*)file, !=, NULL, "%p");
 
     fprintf(file, "\n.data\n");
 
-    for (usize i = 0; i < buf_size(a->asm_data_section); i++) {
-        const emit_op_t op = a->asm_data_section[i];
-        switch (op.op_kind) {
+    for (usize i = 0; i < buf_size(emitter->em_data_section); i++) {
+        const emit_op_id_t op_id = emitter->em_data_section[i];
+        const emit_op_t* const op = emit_emitter_op_get(emitter, op_id);
+        switch (op->op_kind) {
             case OP_KIND_STRING_LABEL: {
-                const emit_op_string_label_t s = op.op_o.op_string_label;
+                const emit_op_string_label_t s = op->op_o.op_string_label;
                 fprintf(file, ".L%llu: .asciz \"%.*s\"\n", s.op_sl_label_id,
                         (int)s.op_sl_string_len, s.op_sl_string);
                 break;
@@ -409,8 +405,9 @@ void emit_asm_dump(emit_asm_t* a, FILE* file) {
     // TODO: non hardcoded main
     fprintf(file, "\n.text\n.globl _main\n_main:\n");
 
-    for (usize i = 0; i < buf_size(a->asm_text_section); i++) {
-        const emit_op_t* const op = &a->asm_text_section[i];
-        emit_asm_dump_op(op, file);
+    for (usize i = 0; i < buf_size(emitter->em_text_section); i++) {
+        const emit_op_id_t op_id = emitter->em_text_section[i];
+        const emit_op_t* const op = emit_emitter_op_get(emitter, op_id);
+        emit_asm_dump_op(emitter, op, file);
     }
 }

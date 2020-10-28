@@ -64,8 +64,8 @@ res_t driver_run(const u8* file_name0) {
         return RES_ERR;
     }
 
-    emit_asm_t a;
-    emit_emit(&parser, &a);
+    emit_emitter_t emitter = emit_emitter_init();
+    emit_emit(&emitter, &parser);
 
     const usize file_name_len = strlen(file_name0);
     u8* const asm_file_name0 = strdup(file_name0);
@@ -77,7 +77,7 @@ res_t driver_run(const u8* file_name0) {
 
     log_debug("writing asm output to `%s`", asm_file_name0);
 
-    emit_asm_dump(&a, asm_file);
+    emit_asm_dump(&emitter, asm_file);
     fflush(asm_file);
     fclose(file);
 
