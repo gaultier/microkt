@@ -107,9 +107,17 @@ typedef struct {
 
 #define OP_INT_LITERAL(n) \
     ((emit_op_t){.op_kind = OP_KIND_INT_LITERAL, .op_o = {.op_int_literal = n}})
+
 #define OP_LABEL_ADDRESS(n)                        \
     ((emit_op_t){.op_kind = OP_KIND_LABEL_ADDRESS, \
                  .op_o = {.op_label_address = n}})
+
+#define OP_ASSIGN(src, dest)                \
+    ((emit_op_t){.op_kind = OP_KIND_ASSIGN, \
+                 .op_o = {.op_assign = {.as_src = src, .as_dest = dest}}})
+
+#define OP_REGISTER(n) \
+    ((emit_op_t){.op_kind = OP_KIND_REGISTER, .op_o = {.op_register = n}})
 
 const usize syscall_exit_osx = (usize)0x2000001;
 const usize syscall_write_osx = (usize)0x2000004;
@@ -161,17 +169,13 @@ emit_op_id_t emit_op_make_syscall(emit_emitter_t* emitter, int count, ...) {
         const usize src_id = emit_emitter_make_op(emitter);
         const usize dest_id = emit_emitter_make_op(emitter);
 
-        *(emit_emitter_op_get(emitter, arg_id)) = (emit_op_t){
-            .op_kind = OP_KIND_ASSIGN,
-            .op_o = {.op_assign = {.as_src = src_id, .as_dest = dest_id}}};
+        *(emit_emitter_op_get(emitter, arg_id)) = OP_ASSIGN(src_id, dest_id);
         buf_push(syscall_args, arg_id);
 
         const emit_op_t o = va_arg(args, emit_op_t);
         *(emit_emitter_op_get(emitter, src_id)) = o;
 
-        *(emit_emitter_op_get(emitter, dest_id)) =
-            (emit_op_t){.op_kind = OP_KIND_REGISTER,
-                        .op_o = {.op_register = emit_fn_arg(i)}};
+        *(emit_emitter_op_get(emitter, dest_id)) = OP_REGISTER(emit_fn_arg(i));
     }
     va_end(args);
 
