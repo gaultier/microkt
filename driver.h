@@ -64,7 +64,7 @@ res_t driver_run(const u8* file_name0) {
         return RES_ERR;
     }
 
-    emit_emitter_t emitter = emit_emitter_init();
+    emit_t emitter = emit_init();
     emit_emit(&emitter, &parser);
 
     const usize file_name_len = strlen(file_name0);

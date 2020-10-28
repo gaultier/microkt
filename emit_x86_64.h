@@ -151,9 +151,9 @@ typedef struct {
     usize em_label_id;
     emit_op_id_t* em_text_section;
     emit_op_id_t* em_data_section;
-} emit_emitter_t;
+} emit_t;
 
-emit_op_t* emit_emitter_op_get(const emit_emitter_t* emitter, emit_op_id_t id) {
+emit_op_t* emit_op_get(const emit_t* emitter, emit_op_id_t id) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
     PG_ASSERT_COND((void*)emitter->em_ops_arena, !=, NULL, "%p");
 
@@ -163,49 +163,46 @@ emit_op_t* emit_emitter_op_get(const emit_emitter_t* emitter, emit_op_id_t id) {
     return &emitter->em_ops_arena[id];
 }
 
-emit_op_id_t emit_emitter_make_op_with(emit_emitter_t* emitter, emit_op_t op) {
+emit_op_id_t emit_make_op_with(emit_t* emitter, emit_op_t op) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
 
     buf_push(emitter->em_ops_arena, ((emit_op_t){0}));
 
     const usize op_id = buf_size(emitter->em_ops_arena) - 1;
-    *(emit_emitter_op_get(emitter, op_id)) = op;
+    *(emit_op_get(emitter, op_id)) = op;
 
     return op_id;
 }
 
-void emit_emitter_stdlib(emit_emitter_t* emitter) {
+void emit_stdlib(emit_t* emitter) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
 
     emit_op_id_t* body = NULL;
     buf_grow(body, 50);
 
-    const emit_op_id_t r8 =
-        emit_emitter_make_op_with(emitter, OP_REGISTER(REG_R8));
-    const emit_op_id_t zero =
-        emit_emitter_make_op_with(emitter, OP_INT_LITERAL(99));
+    const emit_op_id_t r8 = emit_make_op_with(emitter, OP_REGISTER(REG_R8));
+    const emit_op_id_t zero = emit_make_op_with(emitter, OP_INT_LITERAL(0));
 
-    const emit_op_id_t A =
-        emit_emitter_make_op_with(emitter, OP_ASSIGN(zero, r8));
+    const emit_op_id_t A = emit_make_op_with(emitter, OP_ASSIGN(zero, r8));
 
     buf_push(body, A);
 
-    const emit_op_id_t int_to_string_block = emit_emitter_make_op_with(
+    const emit_op_id_t int_to_string_block = emit_make_op_with(
         emitter, OP_CALLABLE_BLOCK("int_to_string", sizeof("int_to_string"),
                                    body, CALLABLE_BLOCK_FLAG_DEFAULT));
 
     buf_push(emitter->em_text_section, int_to_string_block);
 }
 
-emit_emitter_t emit_emitter_init() {
-    emit_emitter_t emitter = {.em_ops_arena = NULL, .em_label_id = 0};
+emit_t emit_init() {
+    emit_t emitter = {.em_ops_arena = NULL, .em_label_id = 0};
     buf_grow(emitter.em_ops_arena, 100);
     buf_grow(emitter.em_data_section, 100);
     buf_grow(emitter.em_text_section, 100);
 
-    emit_emitter_stdlib(&emitter);
+    emit_stdlib(&emitter);
 
-    const emit_op_id_t main = emit_emitter_make_op_with(
+    const emit_op_id_t main = emit_make_op_with(
         &emitter, OP_CALLABLE_BLOCK("_main", sizeof("main"), NULL,
                                     CALLABLE_BLOCK_FLAG_GLOBAL));
     buf_push(emitter.em_text_section, main);
@@ -213,7 +210,7 @@ emit_emitter_t emit_emitter_init() {
     return emitter;
 }
 
-emit_op_id_t emit_op_make_syscall(emit_emitter_t* emitter, int count, ...) {
+emit_op_id_t emit_op_make_syscall(emit_t* emitter, int count, ...) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
 
     va_list args;
@@ -224,26 +221,25 @@ emit_op_id_t emit_op_make_syscall(emit_emitter_t* emitter, int count, ...) {
 
     for (int i = 0; i < count; i++) {
         const emit_op_t o = va_arg(args, emit_op_t);
-        const emit_op_id_t src = emit_emitter_make_op_with(emitter, o);
+        const emit_op_id_t src = emit_make_op_with(emitter, o);
         const emit_op_id_t dest =
-            emit_emitter_make_op_with(emitter, OP_REGISTER(emit_fn_arg(i)));
+            emit_make_op_with(emitter, OP_REGISTER(emit_fn_arg(i)));
         const emit_op_id_t assign =
-            emit_emitter_make_op_with(emitter, OP_ASSIGN(src, dest));
+            emit_make_op_with(emitter, OP_ASSIGN(src, dest));
         buf_push(syscall_args, assign);
     }
     va_end(args);
 
     const emit_op_id_t syscall =
-        emit_emitter_make_op_with(emitter, OP_SYSCALL(syscall_args));
+        emit_make_op_with(emitter, OP_SYSCALL(syscall_args));
 
     // Zero all registers after syscall
     for (int i = 0; i < count; i++) {
-        const emit_op_id_t src =
-            emit_emitter_make_op_with(emitter, OP_INT_LITERAL(0));
+        const emit_op_id_t src = emit_make_op_with(emitter, OP_INT_LITERAL(0));
         const emit_op_id_t dest =
-            emit_emitter_make_op_with(emitter, OP_REGISTER(emit_fn_arg(i)));
+            emit_make_op_with(emitter, OP_REGISTER(emit_fn_arg(i)));
         const emit_op_id_t assign =
-            emit_emitter_make_op_with(emitter, OP_ASSIGN(src, dest));
+            emit_make_op_with(emitter, OP_ASSIGN(src, dest));
 
         buf_push(emitter->em_text_section, assign);
     }
@@ -251,8 +247,8 @@ emit_op_id_t emit_op_make_syscall(emit_emitter_t* emitter, int count, ...) {
     return syscall;
 }
 
-usize emit_add_string_label_if_not_exists(emit_emitter_t* emitter,
-                                          const u8* string, usize string_len) {
+usize emit_add_string_label_if_not_exists(emit_t* emitter, const u8* string,
+                                          usize string_len) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
     PG_ASSERT_COND((void*)string, !=, NULL, "%p");
 
@@ -260,7 +256,7 @@ usize emit_add_string_label_if_not_exists(emit_emitter_t* emitter,
 
     for (usize i = 0; i < buf_size(emitter->em_data_section); i++) {
         const emit_op_id_t op_id = emitter->em_data_section[i];
-        const emit_op_t op = *(emit_emitter_op_get(emitter, op_id));
+        const emit_op_t op = *(emit_op_get(emitter, op_id));
         if (op.op_kind != OP_KIND_STRING_LABEL) continue;
 
         const emit_op_string_label_t s = op.op_o.op_string_label;
@@ -271,7 +267,7 @@ usize emit_add_string_label_if_not_exists(emit_emitter_t* emitter,
 
     emitter->em_label_id += 1;
 
-    const emit_op_id_t string_label = emit_emitter_make_op_with(
+    const emit_op_id_t string_label = emit_make_op_with(
         emitter, OP_STRING_LABEL(string, string_len, new_label_id));
 
     buf_push(emitter->em_data_section, string_label);
@@ -279,7 +275,7 @@ usize emit_add_string_label_if_not_exists(emit_emitter_t* emitter,
     return new_label_id;
 }
 
-usize emit_node_to_string_label(const parser_t* parser, emit_emitter_t* emitter,
+usize emit_node_to_string_label(const parser_t* parser, emit_t* emitter,
                                 const ast_node_t* node, usize* string_len) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
@@ -305,7 +301,7 @@ usize emit_node_to_string_label(const parser_t* parser, emit_emitter_t* emitter,
     }
 }
 
-void emit_emit(emit_emitter_t* emitter, const parser_t* parser) {
+void emit_emit(emit_t* emitter, const parser_t* parser) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_nodes, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_stmt_nodes, !=, NULL, "%p");
@@ -345,12 +341,12 @@ void emit_emit(emit_emitter_t* emitter, const parser_t* parser) {
     buf_push(emitter->em_text_section, syscall_id);
 }
 
-void emit_asm_dump_op(const emit_emitter_t* emitter, const emit_op_id_t op_id,
+void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
                       FILE* file) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
     PG_ASSERT_COND((void*)file, !=, NULL, "%p");
 
-    const emit_op_t* const op = emit_emitter_op_get(emitter, op_id);
+    const emit_op_t* const op = emit_op_get(emitter, op_id);
 
     switch (op->op_kind) {
         case OP_KIND_SYSCALL: {
@@ -385,8 +381,8 @@ void emit_asm_dump_op(const emit_emitter_t* emitter, const emit_op_id_t op_id,
             const emit_op_assign_t assign = op->op_o.op_assign;
             const emit_op_id_t src_id = assign.as_src;
             const emit_op_id_t dest_id = assign.as_dest;
-            const emit_op_t* const src = emit_emitter_op_get(emitter, src_id);
-            const emit_op_t* const dest = emit_emitter_op_get(emitter, dest_id);
+            const emit_op_t* const src = emit_op_get(emitter, src_id);
+            const emit_op_t* const dest = emit_op_get(emitter, dest_id);
 
             switch (src->op_kind) {
                 case OP_KIND_INT_LITERAL: {
@@ -432,7 +428,7 @@ void emit_asm_dump_op(const emit_emitter_t* emitter, const emit_op_id_t op_id,
     }
 }
 
-void emit_asm_dump(const emit_emitter_t* emitter, FILE* file) {
+void emit_asm_dump(const emit_t* emitter, FILE* file) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
     PG_ASSERT_COND((void*)file, !=, NULL, "%p");
 
@@ -440,7 +436,7 @@ void emit_asm_dump(const emit_emitter_t* emitter, FILE* file) {
 
     for (usize i = 0; i < buf_size(emitter->em_data_section); i++) {
         const emit_op_id_t op_id = emitter->em_data_section[i];
-        const emit_op_t* const op = emit_emitter_op_get(emitter, op_id);
+        const emit_op_t* const op = emit_op_get(emitter, op_id);
         switch (op->op_kind) {
             case OP_KIND_STRING_LABEL: {
                 const emit_op_string_label_t s = op->op_o.op_string_label;
