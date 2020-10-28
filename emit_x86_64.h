@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdarg.h>
+
 #include "ast.h"
 #include "parse.h"
 
@@ -114,6 +116,27 @@ const usize STIN = 0;
 const usize STDOUT = 1;
 const usize STDERR = 2;
 
+emit_op_t* emit_op_make_syscall(int count, ...) {
+    va_list args;
+    va_start(args, count);
+
+    // FIXME !!!
+    emit_op_t* syscall_args = NULL;
+    buf_grow(syscall_args, count);
+
+    emit_op_t syscall = {.op_kind = OP_KIND_SYSCALL,
+                         .op_o = {.op_syscall = {.op_sys_args = NULL}}};
+    for (int i = 0; i < count; i++) {
+        const emit_op_t o = va_arg(args, emit_op_t);
+
+        buf_push(syscall_args, o);
+    }
+    va_end(args);
+
+    syscall.op_o.op_syscall.op_sys_args = syscall_args;
+    return &syscall;  // FIXME !!!
+}
+
 usize emit_add_string_label_if_not_exists(emit_op_t** data_section,
                                           const u8* string, usize string_len,
                                           usize* label_id) {
@@ -216,27 +239,19 @@ void emit_emit(parser_t* parser, emit_asm_t* a) {
                 const usize new_label_id = emit_node_to_string_label(
                     parser, &data_section, &arg, &label_id, &string_len);
 
-                emit_op_t* args = NULL;
-                buf_grow(args, 4);
-                buf_push(args, ((emit_op_t){.op_kind = OP_KIND_INTEGER_LITERAL,
-                                            .op_o = {.op_integer_literal =
-                                                         syscall_write_osx}}));
-                buf_push(args,
-                         ((emit_op_t){.op_kind = OP_KIND_INTEGER_LITERAL,
-                                      .op_o = {.op_integer_literal = STDOUT}}));
-                buf_push(
-                    args,
-                    ((emit_op_t){.op_kind = OP_KIND_LABEL_ADDRESS,
-                                 .op_o = {.op_label_address = new_label_id}}));
-                buf_push(
-                    args,
-                    ((emit_op_t){.op_kind = OP_KIND_INTEGER_LITERAL,
-                                 .op_o = {.op_integer_literal = string_len}}));
+                const emit_op_t* syscall = emit_op_make_syscall(
+                    4,
+                    (emit_op_t){
+                        .op_kind = OP_KIND_INTEGER_LITERAL,
+                        .op_o = {.op_integer_literal = syscall_write_osx}},
+                    (emit_op_t){.op_kind = OP_KIND_INTEGER_LITERAL,
+                                .op_o = {.op_integer_literal = STDOUT}},
+                    (emit_op_t){.op_kind = OP_KIND_LABEL_ADDRESS,
+                                .op_o = {.op_label_address = new_label_id}},
+                    (emit_op_t){.op_kind = OP_KIND_INTEGER_LITERAL,
+                                .op_o = {.op_integer_literal = string_len}});
 
-                const emit_op_t syscall = {
-                    .op_kind = OP_KIND_SYSCALL,
-                    .op_o = {.op_syscall = {.op_sys_args = args}}};
-                buf_push(text_section, syscall);
+                buf_push(text_section, *syscall);
                 break;
             }
             default:
