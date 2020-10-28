@@ -76,9 +76,9 @@ typedef struct {
 } emit_op_syscall_t;
 
 typedef struct {
-    usize op_sl_label_id;
-    const u8* op_sl_string;
-    usize op_sl_string_len;
+    usize sl_label_id;
+    const u8* sl_string;
+    usize sl_string_len;
 } emit_op_string_label_t;
 
 typedef struct {
@@ -122,6 +122,12 @@ typedef struct {
 #define OP_SYSCALL(args)                     \
     ((emit_op_t){.op_kind = OP_KIND_SYSCALL, \
                  .op_o = {.op_syscall = {.op_sys_args = args}}})
+
+#define OP_STRING_LABEL(string, string_len, label_id)                      \
+    ((emit_op_t){.op_kind = OP_KIND_STRING_LABEL,                          \
+                 .op_o = {.op_string_label = {.sl_string = string,         \
+                                              .sl_string_len = string_len, \
+                                              .sl_label_id = label_id}}})
 
 const usize syscall_exit_osx = (usize)0x2000001;
 const usize syscall_write_osx = (usize)0x2000004;
@@ -201,19 +207,15 @@ usize emit_add_string_label_if_not_exists(emit_emitter_t* emitter,
         if (op.op_kind != OP_KIND_STRING_LABEL) continue;
 
         const emit_op_string_label_t s = op.op_o.op_string_label;
-        if (memcmp(s.op_sl_string, string,
-                   MIN(s.op_sl_string_len, string_len)) == 0)
-            return s.op_sl_label_id;
+        if (memcmp(s.sl_string, string, MIN(s.sl_string_len, string_len)) == 0)
+            return s.sl_label_id;
     }
 
     emitter->em_label_id += 1;
 
     const emit_op_id_t string_label_id = emit_emitter_make_op(emitter);
-    *(emit_emitter_op_get(emitter, string_label_id)) = (emit_op_t){
-        .op_kind = OP_KIND_STRING_LABEL,
-        .op_o = {.op_string_label = {.op_sl_string = string,
-                                     .op_sl_string_len = string_len,
-                                     .op_sl_label_id = new_label_id}}};
+    *(emit_emitter_op_get(emitter, string_label_id)) =
+        OP_STRING_LABEL(string, string_len, new_label_id);
 
     buf_push(emitter->em_data_section, string_label_id);
 
@@ -405,8 +407,8 @@ void emit_asm_dump(const emit_emitter_t* emitter, FILE* file) {
         switch (op->op_kind) {
             case OP_KIND_STRING_LABEL: {
                 const emit_op_string_label_t s = op->op_o.op_string_label;
-                fprintf(file, ".L%llu: .asciz \"%.*s\"\n", s.op_sl_label_id,
-                        (int)s.op_sl_string_len, s.op_sl_string);
+                fprintf(file, ".L%llu: .asciz \"%.*s\"\n", s.sl_label_id,
+                        (int)s.sl_string_len, s.sl_string);
                 break;
             }
             default:
