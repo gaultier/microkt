@@ -320,12 +320,12 @@ void emit_asm_dump_op(const emit_emitter_t* emitter, const emit_op_t* op,
                     emit_emitter_op_get(emitter, arg_id);
                 emit_asm_dump_op(emitter, arg, file);
             }
-            fprintf(file, "\tsyscall\n");
+            fprintf(file, "syscall\n");
 
             // Zero all registers after syscall
             for (usize j = 0; j < buf_size(syscall.sys_args); j++) {
                 const reg_t reg = emit_fn_arg(j);
-                fprintf(file, "\tmovq $0, %s\n", reg_t_to_str[reg]);
+                fprintf(file, "movq $0, %s\n", reg_t_to_str[reg]);
             }
             fprintf(file, "\n");  // For prettyness
 
