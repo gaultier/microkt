@@ -213,6 +213,11 @@ emit_emitter_t emit_emitter_init() {
 
     emit_emitter_stdlib(&emitter);
 
+    const emit_op_id_t main = emit_emitter_make_op_with(
+        &emitter, OP_CALLABLE_BLOCK("_main", sizeof("main"), NULL,
+                                    CALLABLE_BLOCK_FLAG_GLOBAL));
+    buf_push(emitter.em_text_section, main);
+
     return emitter;
 }
 
@@ -366,13 +371,20 @@ void emit_asm_dump_op(const emit_emitter_t* emitter, const emit_op_id_t op_id,
             break;
         }
         case OP_KIND_CALLABLE_BLOCK: {
+            fprintf(file, "\n");
+
             const emit_op_callable_block_t block = op->op_o.op_callable_block;
+            if (block.cb_flags & CALLABLE_BLOCK_FLAG_GLOBAL)
+                fprintf(file, "\n.global %.*s\n", (int)block.cb_name_len,
+                        block.cb_name);
+
             fprintf(file, "\n%.*s:\n", (int)block.cb_name_len, block.cb_name);
 
             for (usize j = 0; j < buf_size(block.cb_body); j++) {
                 const emit_op_id_t body_id = block.cb_body[j];
                 emit_asm_dump_op(emitter, body_id, file);
             }
+            fprintf(file, "\n");
 
             break;
         }
@@ -448,8 +460,7 @@ void emit_asm_dump(const emit_emitter_t* emitter, FILE* file) {
         }
     }
 
-    // TODO: non hardcoded main
-    fprintf(file, "\n.text\n.globl _main\n_main:\n");
+    fprintf(file, "\n.text");
 
     for (usize i = 0; i < buf_size(emitter->em_text_section); i++) {
         const emit_op_id_t op_id = emitter->em_text_section[i];
