@@ -3,6 +3,7 @@
 #include <stdarg.h>
 
 #include "ir.h"
+#include "macos_x86_64_stdlib.h"
 #include "parse.h"
 
 const usize syscall_exit_osx = (usize)0x2000001;
@@ -67,19 +68,11 @@ emit_op_id_t emit_op_callable_block(emit_t* emitter, const u8* name,
     return OP(emitter, OP_CALLABLE_BLOCK(name, name_len, body, flags));
 }
 
-void emit_stdlib(emit_t* emitter) {
-    PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
-
-    // TODO
-}
-
 emit_t emit_init() {
     emit_t emitter = {.em_ops_arena = NULL, .em_label_id = 0};
     buf_grow(emitter.em_ops_arena, 100);
     buf_grow(emitter.em_data_section, 100);
     buf_grow(emitter.em_text_section, 100);
-
-    emit_stdlib(&emitter);
 
     const emit_op_id_t main =
         OP(&emitter, OP_CALLABLE_BLOCK("_main", sizeof("main"), NULL,
@@ -345,7 +338,7 @@ void emit_asm_dump(const emit_t* emitter, FILE* file) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
     PG_ASSERT_COND((void*)file, !=, NULL, "%p");
 
-    fprintf(file, "\n.data\n");
+    fprintf(file, "%s\n.data\n", stdlib);
 
     for (usize i = 0; i < buf_size(emitter->em_data_section); i++) {
         const emit_op_id_t op_id = emitter->em_data_section[i];

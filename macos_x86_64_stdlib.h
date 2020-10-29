@@ -79,3 +79,4 @@ const char stdlib[] = ".data\n"
 "    int_to_string_end:\n"
 "      // Epilog\n"
 "      ret\n"
+;
