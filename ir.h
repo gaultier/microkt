@@ -57,7 +57,7 @@ reg_t emit_fn_arg(u16 position) {
 
 typedef enum {
     OP_KIND_SYSCALL,
-    OP_KIND_CALL_SYSCALL,
+    OP_KIND_CALL,
     OP_KIND_INT_LITERAL,
     OP_KIND_LABEL_ADDRESS,
     OP_KIND_STRING_LABEL,
@@ -74,7 +74,7 @@ typedef usize emit_op_id_t;
 
 typedef struct {
     emit_op_id_t* sc_instructions;
-} emit_op_call_syscall_t;
+} emit_op_call_t;
 
 typedef struct {
     usize sl_label_id;
@@ -105,7 +105,7 @@ typedef struct {
 typedef struct {
     emit_op_kind_t op_kind;
     union {
-        emit_op_call_syscall_t op_call_syscall;      // OP_KIND_SYSCALL
+        emit_op_call_t op_call;                      // OP_KIND_SYSCALL
         usize op_int_literal;                        // OP_KIND_INT_LITERAL
         usize op_label_address;                      // OP_KIND_LABEL_ADDRESS
         emit_op_string_label_t op_string_label;      // OP_KIND_STRING_LABEL
@@ -136,10 +136,9 @@ typedef struct {
 #define OP_REGISTER(n) \
     ((emit_op_t){.op_kind = OP_KIND_REGISTER, .op_o = {.op_register = n}})
 
-#define OP_CALL_SYSCALL(instructions)    \
-    ((emit_op_t){                        \
-        .op_kind = OP_KIND_CALL_SYSCALL, \
-        .op_o = {.op_call_syscall = {.sc_instructions = instructions}}})
+#define OP_CALL(instructions)             \
+    ((emit_op_t){.op_kind = OP_KIND_CALL, \
+                 .op_o = {.op_call = {.sc_instructions = instructions}}})
 
 #define OP_STRING_LABEL(string, string_len, label_id)                      \
     ((emit_op_t){.op_kind = OP_KIND_STRING_LABEL,                          \
