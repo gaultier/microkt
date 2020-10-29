@@ -70,6 +70,10 @@ emit_op_id_t emit_op_callable_block(emit_t* emitter, const u8* name,
 void emit_stdlib(emit_t* emitter) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
 
+    buf_push(emitter->em_data_section,
+             OP(emitter, OP_DATA_BYTE_ARRAY("int_to_string_data",
+                                            sizeof("int_to_string_data"), 21)));
+
     const emit_op_id_t int_to_string = emit_op_callable_block(
         emitter, "int_to_string", sizeof("int_to_string"),
         CALLABLE_BLOCK_FLAG_DEFAULT, 1,
@@ -392,6 +396,7 @@ void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
 
         case OP_KIND_STRING_LABEL:
         case OP_KIND_LABEL_ADDRESS:
+        case OP_KIND_DATA_BYTE_ARRAY:
             assert(0 && "Unreachable");
     }
 }
@@ -410,6 +415,13 @@ void emit_asm_dump(const emit_t* emitter, FILE* file) {
                 const emit_op_string_label_t s = op->op_o.op_string_label;
                 fprintf(file, ".L%llu: .asciz \"%.*s\"\n", s.sl_label_id,
                         (int)s.sl_string_len, s.sl_string);
+                break;
+            }
+            case OP_KIND_DATA_BYTE_ARRAY: {
+                const emit_op_data_byte_array_t array =
+                    op->op_o.op_data_byte_array;
+                fprintf(file, "%.*s: .fill %llu, 1, 0\n",
+                        (int)array.db_name_len, array.db_name, array.db_size);
                 break;
             }
             default:
