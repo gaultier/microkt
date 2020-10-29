@@ -64,22 +64,28 @@ emit_op_id_t emit_op_callable_block(emit_t* emitter, const u8* name,
     }
     va_end(args);
 
-    buf_push(body, OP(emitter, OP_RET()));
-
     return OP(emitter, OP_CALLABLE_BLOCK(name, name_len, body, flags));
 }
 
 void emit_stdlib(emit_t* emitter) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
 
-    const emit_op_id_t int_to_string_block = emit_op_callable_block(
+    const emit_op_id_t int_to_string_end = emit_op_callable_block(
+        emitter, "int_to_string_end", sizeof("int_to_string_end"),
+        CALLABLE_BLOCK_FLAG_DEFAULT, 1, OP(emitter, OP_RET()));
+
+    const emit_op_id_t int_to_string_loop = emit_op_callable_block(
+        emitter, "int_to_string_loop", sizeof("int_to_string_loop"),
+        CALLABLE_BLOCK_FLAG_DEFAULT, 0);
+
+    const emit_op_id_t int_to_string = emit_op_callable_block(
         emitter, "int_to_string", sizeof("int_to_string"),
-        CALLABLE_BLOCK_FLAG_DEFAULT, 3, emit_zero_register(emitter, REG_R8),
+        CALLABLE_BLOCK_FLAG_DEFAULT, 4, emit_zero_register(emitter, REG_R8),
         OP(emitter, OP_INT_ADD(OP(emitter, OP_INT_LITERAL(3)),
                                OP(emitter, OP_REGISTER(REG_R12)))),
-        OP(emitter, OP_RET()));
+        int_to_string_loop, int_to_string_end);
 
-    buf_push(emitter->em_text_section, int_to_string_block);
+    buf_push(emitter->em_text_section, int_to_string);
 }
 
 emit_t emit_init() {
