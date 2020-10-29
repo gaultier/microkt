@@ -1,4 +1,4 @@
-.PHONY: clean
+.PHONY: clean test
 
 SRC:=$(wildcard *.c)
 HEADERS:=$(wildcard *.h)
@@ -12,3 +12,8 @@ microktc_debug: $(SRC) $(HEADERS)
 
 clean:
 	rm -rf microktc microktc_debug ./*.dSYM e2e/*.o e2e/*.asm
+
+test: microktc_debug
+	./microktc_debug e2e/print_bool.kts
+	./microktc_debug e2e/print_string.kts
+	./microktc_debug e2e/print_integers.kts
