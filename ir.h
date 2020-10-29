@@ -56,7 +56,6 @@ reg_t emit_fn_arg(u16 position) {
 }
 
 typedef enum {
-    OP_KIND_SYSCALL,
     OP_KIND_CALL,
     OP_KIND_INT_LITERAL,
     OP_KIND_LABEL_ADDRESS,
@@ -106,8 +105,6 @@ typedef struct {
         reg_t op_register;                           // OP_KIND_REGISTER
     } op_o;
 } emit_op_t;
-
-#define OP_SYSCALL() ((emit_op_t){.op_kind = OP_KIND_SYSCALL})
 
 #define OP_INT_LITERAL(n) \
     ((emit_op_t){.op_kind = OP_KIND_INT_LITERAL, .op_o = {.op_int_literal = n}})
