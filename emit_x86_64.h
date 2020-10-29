@@ -192,11 +192,12 @@ void emit_emit(emit_t* emitter, const parser_t* parser) {
                 const usize new_label_id = emit_node_to_string_label(
                     parser, emitter, &arg, &string_len);
 
-                const emit_op_id_t call_id = emit_op_make_call(
-                    emitter, 4, OP(emitter, OP_INT_LITERAL(syscall_write_osx)),
-                    OP(emitter, OP_INT_LITERAL(STDOUT)),
-                    OP(emitter, OP_LABEL_ADDRESS(new_label_id)),
-                    OP(emitter, OP_INT_LITERAL(string_len)));
+                emit_op_id_t* call_args = NULL;
+                buf_push(call_args,
+                         OP(emitter, OP_LABEL_ADDRESS(new_label_id)));
+                buf_push(call_args, OP(emitter, OP_INT_LITERAL(string_len)));
+                const emit_op_id_t call_id =
+                    OP(emitter, OP_CALL("print", sizeof("print"), call_args));
 
                 buf_push(emitter->em_text_section, call_id);
                 break;
@@ -206,11 +207,8 @@ void emit_emit(emit_t* emitter, const parser_t* parser) {
         }
     }
 
-    const emit_op_id_t call_id = emit_op_make_call(
-        emitter, 2, OP(emitter, OP_INT_LITERAL(syscall_exit_osx)),
-        OP(emitter, OP_INT_LITERAL(0)));
-
-    buf_push(emitter->em_text_section, call_id);
+    buf_push(emitter->em_text_section,
+             OP(emitter, OP_CALL("exit_ok", sizeof("exit_ok"), NULL)));
 }
 
 void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
@@ -230,7 +228,7 @@ void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
                 emit_asm_dump_op(emitter, arg_id, file);
             }
 
-            fprintf(file, "\n");
+            fprintf(file, "call %.*s\n", (int)(call.sc_name_len), call.sc_name);
             break;
         }
         case OP_KIND_CALLABLE_BLOCK: {

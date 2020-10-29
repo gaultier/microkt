@@ -73,6 +73,8 @@ typedef enum {
 typedef usize emit_op_id_t;
 
 typedef struct {
+    const u8* sc_name;
+    usize sc_name_len;
     emit_op_id_t* sc_instructions;
 } emit_op_call_t;
 
@@ -105,7 +107,7 @@ typedef struct {
 typedef struct {
     emit_op_kind_t op_kind;
     union {
-        emit_op_call_t op_call;                      // OP_KIND_SYSCALL
+        emit_op_call_t op_call;                      // OP_KIND_CALL
         usize op_int_literal;                        // OP_KIND_INT_LITERAL
         usize op_label_address;                      // OP_KIND_LABEL_ADDRESS
         emit_op_string_label_t op_string_label;      // OP_KIND_STRING_LABEL
@@ -136,9 +138,11 @@ typedef struct {
 #define OP_REGISTER(n) \
     ((emit_op_t){.op_kind = OP_KIND_REGISTER, .op_o = {.op_register = n}})
 
-#define OP_CALL(instructions)             \
-    ((emit_op_t){.op_kind = OP_KIND_CALL, \
-                 .op_o = {.op_call = {.sc_instructions = instructions}}})
+#define OP_CALL(name, name_len, instructions)                  \
+    ((emit_op_t){.op_kind = OP_KIND_CALL,                      \
+                 .op_o = {.op_call = {.sc_name = name,         \
+                                      .sc_name_len = name_len, \
+                                      .sc_instructions = instructions}}})
 
 #define OP_STRING_LABEL(string, string_len, label_id)                      \
     ((emit_op_t){.op_kind = OP_KIND_STRING_LABEL,                          \
