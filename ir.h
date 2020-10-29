@@ -64,7 +64,6 @@ typedef enum {
     OP_KIND_CALLABLE_BLOCK,
     OP_KIND_ASSIGN,
     OP_KIND_REGISTER,
-    OP_KIND_RET,
 } emit_op_kind_t;
 
 typedef usize emit_op_id_t;
@@ -109,7 +108,6 @@ typedef struct {
 } emit_op_t;
 
 #define OP_SYSCALL() ((emit_op_t){.op_kind = OP_KIND_SYSCALL})
-#define OP_RET() ((emit_op_t){.op_kind = OP_KIND_RET})
 
 #define OP_INT_LITERAL(n) \
     ((emit_op_t){.op_kind = OP_KIND_INT_LITERAL, .op_o = {.op_int_literal = n}})

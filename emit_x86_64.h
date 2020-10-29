@@ -277,10 +277,6 @@ void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
             fprintf(file, "syscall\n");
             break;
         }
-        case OP_KIND_RET: {
-            fprintf(file, "ret\n");
-            break;
-        }
         case OP_KIND_REGISTER: {
             fprintf(file, "%s ", reg_t_to_str[op->op_o.op_register]);
             break;
