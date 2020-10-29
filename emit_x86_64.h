@@ -1,7 +1,5 @@
 #pragma once
 
-#include <stdarg.h>
-
 #include "ir.h"
 #include "macos_x86_64_stdlib.h"
 #include "parse.h"
@@ -158,8 +156,10 @@ static void emit_emit(emit_t* emitter, const parser_t* parser) {
                 buf_push(emitter->em_text_section, call_id);
                 break;
             }
-            default:
-                assert(0);  // Unreachable
+            case NODE_INT_LITERAL:
+            case NODE_STRING_LITERAL:
+            case NODE_KEYWORD_BOOL:
+                assert(0 && "Unreachable");
         }
     }
 
