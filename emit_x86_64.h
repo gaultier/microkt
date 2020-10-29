@@ -140,6 +140,14 @@ void emit_stdlib(emit_t* emitter) {
                            "  ret")));
 
     buf_push(emitter->em_text_section, int_to_string);
+
+    //    const emit_op_id_t print = emit_op_callable_block(
+    //        emitter, "print", sizeof("print"),
+    //        CALLABLE_BLOCK_FLAG_DEFAULT, 1,
+    //        OP(emitter, OP_ASSIGN(
+    // OP(emitter,
+    //                )));
+    //    buf_push(emitter->em_text_section, print);
 }
 
 emit_t emit_init() {
