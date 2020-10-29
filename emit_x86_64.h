@@ -101,16 +101,7 @@ static usize emit_node_to_string_label(const parser_t* parser, emit_t* emitter,
             return new_label_id;
         }
         case NODE_INT_LITERAL: {
-            /* const usize n = 42;  // FIXME */
-            /* emit_op_id_t* instructions = NULL; */
-            /* buf_push(instructions, */
-            /*          OP(emitter, OP_ASSIGN(OP(emitter, OP_INT_LITERAL(n)), */
-            /*                                OP(emitter,
-             * OP_REGISTER(REG_RAX))))); */
-
-            /* buf_push(instructions, OP(emitter, OP_ASM("call"))); */
-
-            /* return OP(emitter, OP_CALL(instructions)); */
+            assert(0 && "Unimplemented");
         }
         case NODE_BUILTIN_PRINT:
             assert(0 && "Unreachable");
