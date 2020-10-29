@@ -69,6 +69,7 @@ typedef enum {
     OP_KIND_ASSIGN,
     OP_KIND_REGISTER,
     OP_KIND_RET,
+    OP_KIND_ADD_INT,
 } emit_op_kind_t;
 
 typedef usize emit_op_id_t;
@@ -93,9 +94,9 @@ typedef struct {
 } emit_op_callable_block_t;
 
 typedef struct {
-    emit_op_id_t as_src;
-    emit_op_id_t as_dest;
-} emit_op_assign_t;
+    emit_op_id_t pa_src;
+    emit_op_id_t pa_dst;
+} emit_op_pair_t;
 
 typedef struct {
     emit_op_kind_t op_kind;
@@ -105,8 +106,9 @@ typedef struct {
         usize op_label_address;                      // OP_KIND_LABEL_ADDRESS
         emit_op_string_label_t op_string_label;      // OP_KIND_STRING_LABEL
         emit_op_callable_block_t op_callable_block;  // OP_KIND_CALLABLE_BLOCK
-        emit_op_assign_t op_assign;                  // OP_KIND_ASSIGN
+        emit_op_pair_t op_assign;                    // OP_KIND_ASSIGN
         reg_t op_register;                           // OP_KIND_REGISTER
+        emit_op_pair_t op_add_int;                   // OP_KIND_ADD_INT
     } op_o;
 } emit_op_t;
 
@@ -120,9 +122,9 @@ typedef struct {
     ((emit_op_t){.op_kind = OP_KIND_LABEL_ADDRESS, \
                  .op_o = {.op_label_address = n}})
 
-#define OP_ASSIGN(src, dest)                \
+#define OP_ASSIGN(src, dst)                 \
     ((emit_op_t){.op_kind = OP_KIND_ASSIGN, \
-                 .op_o = {.op_assign = {.as_src = src, .as_dest = dest}}})
+                 .op_o = {.op_assign = {.pa_src = src, .pa_dst = dst}}})
 
 #define OP_REGISTER(n) \
     ((emit_op_t){.op_kind = OP_KIND_REGISTER, .op_o = {.op_register = n}})
@@ -231,10 +233,10 @@ emit_op_id_t emit_op_make_call_syscall(emit_t* emitter, int count, ...) {
     for (int i = 0; i < count; i++) {
         const emit_op_t o = va_arg(args, emit_op_t);
         const emit_op_id_t src = emit_make_op_with(emitter, o);
-        const emit_op_id_t dest =
+        const emit_op_id_t dst =
             emit_make_op_with(emitter, OP_REGISTER(emit_fn_arg(i)));
         const emit_op_id_t assign =
-            emit_make_op_with(emitter, OP_ASSIGN(src, dest));
+            emit_make_op_with(emitter, OP_ASSIGN(src, dst));
         buf_push(syscall_instructions, assign);
     }
     va_end(args);
@@ -384,18 +386,18 @@ void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
             break;
         }
         case OP_KIND_ASSIGN: {
-            const emit_op_assign_t assign = op->op_o.op_assign;
-            const emit_op_id_t src_id = assign.as_src;
-            const emit_op_id_t dest_id = assign.as_dest;
+            const emit_op_pair_t assign = op->op_o.op_assign;
+            const emit_op_id_t src_id = assign.pa_src;
+            const emit_op_id_t dest_id = assign.pa_dst;
             const emit_op_t* const src = emit_op_get(emitter, src_id);
-            const emit_op_t* const dest = emit_op_get(emitter, dest_id);
+            const emit_op_t* const dst = emit_op_get(emitter, dest_id);
 
             switch (src->op_kind) {
                 case OP_KIND_INT_LITERAL: {
                     const usize n = src->op_o.op_int_literal;
-                    switch (dest->op_kind) {
+                    switch (dst->op_kind) {
                         case OP_KIND_REGISTER: {
-                            const reg_t reg = dest->op_o.op_register;
+                            const reg_t reg = dst->op_o.op_register;
                             fprintf(file, "movq $%llu, %s\n", n,
                                     reg_t_to_str[reg]);
                             break;
@@ -407,9 +409,9 @@ void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
                 }
                 case OP_KIND_LABEL_ADDRESS: {
                     const usize label = src->op_o.op_label_address;
-                    switch (dest->op_kind) {
+                    switch (dst->op_kind) {
                         case OP_KIND_REGISTER: {
-                            const reg_t reg = dest->op_o.op_register;
+                            const reg_t reg = dst->op_o.op_register;
                             fprintf(file, "leaq .L%llu(%s), %s\n", label,
                                     reg_t_to_str[REG_RIP], reg_t_to_str[reg]);
                             break;
