@@ -112,8 +112,8 @@ static usize emit_node_to_string_label(const parser_t* parser, emit_t* emitter,
     }
 }
 
-static emit_op_id_t emit_call_print(emit_t* emitter, usize label_id,
-                                    usize string_len) {
+static emit_op_id_t emit_call_print_string(emit_t* emitter, usize label_id,
+                                           usize string_len) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
 
     emit_op_id_t* call_args = NULL;
@@ -151,16 +151,18 @@ static void emit_emit(emit_t* emitter, const parser_t* parser) {
                     arg.node_kind == NODE_STRING_LITERAL) {
                     label_id = emit_node_to_string_label(parser, emitter, &arg,
                                                          &string_len);
+                    buf_push(
+                        emitter->em_text_section,
+                        emit_call_print_string(emitter, label_id, string_len));
                 } else if (arg.node_kind == NODE_INT_LITERAL) {
                     label_id =
                         OP(emitter, OP_PTR("int_to_string_data",
                                            sizeof("int_to_string_data"), 0));
+                    assert(0 && "Unimplemented");
                 } else {
                     assert(0 && "Unreachable");
                 }
 
-                buf_push(emitter->em_text_section,
-                         emit_call_print(emitter, label_id, string_len));
                 break;
             }
             case NODE_INT_LITERAL:
