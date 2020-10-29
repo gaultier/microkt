@@ -152,7 +152,9 @@ static void emit_emit(emit_t* emitter, const parser_t* parser) {
                     label_id = emit_node_to_string_label(parser, emitter, &arg,
                                                          &string_len);
                 } else if (arg.node_kind == NODE_INT_LITERAL) {
-                    label_id = 0;  // FIXME
+                    label_id =
+                        OP(emitter, OP_PTR("int_to_string_data",
+                                           sizeof("int_to_string_data"), 0));
                 } else {
                     assert(0 && "Unreachable");
                 }
@@ -263,6 +265,12 @@ static void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
         }
         case OP_KIND_LABEL_ADDRESS: {
             fprintf(file, ".L%lld(%s) ", op->op_o.op_int_literal,
+                    reg_t_to_str[REG_RSI]);
+            break;
+        }
+        case OP_KIND_PTR: {
+            fprintf(file, "%.*s+%lld(%s) ", (int)op->op_o.op_ptr.pt_name_len,
+                    op->op_o.op_ptr.pt_name, op->op_o.op_ptr.pt_offset,
                     reg_t_to_str[REG_RSI]);
             break;
         }

@@ -63,6 +63,7 @@ typedef enum {
     OP_KIND_CALLABLE_BLOCK,
     OP_KIND_ASSIGN,
     OP_KIND_REGISTER,
+    OP_KIND_PTR,
 } emit_op_kind_t;
 
 typedef usize emit_op_id_t;
@@ -94,6 +95,12 @@ typedef struct {
 } emit_op_pair_t;
 
 typedef struct {
+    const u8* pt_name;
+    usize pt_name_len;
+    usize pt_offset;
+} emit_op_ptr_t;
+
+typedef struct {
     emit_op_kind_t op_kind;
     union {
         emit_op_call_t op_call;                      // OP_KIND_CALL
@@ -103,6 +110,7 @@ typedef struct {
         emit_op_callable_block_t op_callable_block;  // OP_KIND_CALLABLE_BLOCK
         emit_op_pair_t op_assign;                    // OP_KIND_ASSIGN
         reg_t op_register;                           // OP_KIND_REGISTER
+        emit_op_ptr_t op_ptr;                        // OP_KIND_PTR
     } op_o;
 } emit_op_t;
 
@@ -138,6 +146,12 @@ typedef struct {
                                                 .cb_name_len = name_len, \
                                                 .cb_body = body,         \
                                                 .cb_flags = flags}}})
+
+#define OP_PTR(name, name_len, offset)                        \
+    ((emit_op_t){.op_kind = OP_KIND_PTR,                      \
+                 .op_o = {.op_ptr = {.pt_name = name,         \
+                                     .pt_name_len = name_len, \
+                                     .pt_offset = offset}}})
 
 #define OP(emitter, op) (emit_make_op_with(emitter, op))
 
