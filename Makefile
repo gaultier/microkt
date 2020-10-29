@@ -13,7 +13,16 @@ microktc_debug: $(SRC) $(HEADERS)
 clean:
 	rm -rf microktc microktc_debug ./*.dSYM e2e/*.o e2e/*.asm
 
-test: microktc_debug
-	./microktc_debug e2e/print_bool.kts
-	./microktc_debug e2e/print_string.kts
-	./microktc_debug e2e/print_integers.kts
+e2e/print_bool: e2e/print_bool.kts microktc_debug
+	./microktc_debug $<
+
+e2e/print_string: e2e/print_string.kts microktc_debug
+	./microktc_debug $<
+
+e2e/print_integers: e2e/print_integers.kts microktc_debug
+	./microktc_debug $<
+
+test: e2e/print_bool e2e/print_string e2e/print_integers
+	./e2e/print_bool
+	./e2e/print_string
+	./e2e/print_integers

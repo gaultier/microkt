@@ -108,6 +108,22 @@ static usize emit_node_to_string_label(const parser_t* parser, emit_t* emitter,
     }
 }
 
+static emit_op_id_t emit_call_print(emit_t* emitter, usize label_id,
+                                    usize string_len) {
+    PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
+
+    emit_op_id_t* call_args = NULL;
+    buf_push(call_args,
+             OP(emitter, OP_ASSIGN(OP(emitter, OP_LABEL_ADDRESS(label_id)),
+                                   OP(emitter, OP_REGISTER(emit_fn_arg(0))))));
+
+    buf_push(call_args,
+             OP(emitter, OP_ASSIGN(OP(emitter, OP_INT_LITERAL(string_len)),
+                                   OP(emitter, OP_REGISTER(emit_fn_arg(1))))));
+
+    return OP(emitter, OP_CALL("print", sizeof("print"), call_args));
+}
+
 static void emit_emit(emit_t* emitter, const parser_t* parser) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_nodes, !=, NULL, "%p");
@@ -129,22 +145,8 @@ static void emit_emit(emit_t* emitter, const parser_t* parser) {
                 const usize new_label_id = emit_node_to_string_label(
                     parser, emitter, &arg, &string_len);
 
-                emit_op_id_t* call_args = NULL;
-                buf_push(
-                    call_args,
-                    OP(emitter,
-                       OP_ASSIGN(OP(emitter, OP_LABEL_ADDRESS(new_label_id)),
-                                 OP(emitter, OP_REGISTER(emit_fn_arg(0))))));
-
-                buf_push(
-                    call_args,
-                    OP(emitter,
-                       OP_ASSIGN(OP(emitter, OP_INT_LITERAL(string_len)),
-                                 OP(emitter, OP_REGISTER(emit_fn_arg(1))))));
-                const emit_op_id_t call_id =
-                    OP(emitter, OP_CALL("print", sizeof("print"), call_args));
-
-                buf_push(emitter->em_text_section, call_id);
+                buf_push(emitter->em_text_section,
+                         emit_call_print(emitter, new_label_id, string_len));
                 break;
             }
             case NODE_INT_LITERAL:
