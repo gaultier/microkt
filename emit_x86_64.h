@@ -101,6 +101,10 @@ static usize emit_node_to_string_label(const parser_t* parser, emit_t* emitter,
             return new_label_id;
         }
         case NODE_INT_LITERAL: {
+            const u8* string = NULL;
+            parser_ast_node_source(parser, node, &string, string_len);
+            fprintf(stderr, "[debug] emit_node_to_string_label int `%.*s`",
+                    (int)*string_len, string);
             assert(0 && "Unimplemented");
         }
         case NODE_BUILTIN_PRINT:
@@ -142,11 +146,19 @@ static void emit_emit(emit_t* emitter, const parser_t* parser) {
                     parser->par_nodes[builtin_print.bp_arg_i];
 
                 usize string_len = 0;
-                const usize new_label_id = emit_node_to_string_label(
-                    parser, emitter, &arg, &string_len);
+                usize label_id = 0;
+                if (arg.node_kind == NODE_KEYWORD_BOOL ||
+                    arg.node_kind == NODE_STRING_LITERAL) {
+                    label_id = emit_node_to_string_label(parser, emitter, &arg,
+                                                         &string_len);
+                } else if (arg.node_kind == NODE_INT_LITERAL) {
+                    label_id = 0;  // FIXME
+                } else {
+                    assert(0 && "Unreachable");
+                }
 
                 buf_push(emitter->em_text_section,
-                         emit_call_print(emitter, new_label_id, string_len));
+                         emit_call_print(emitter, label_id, string_len));
                 break;
             }
             case NODE_INT_LITERAL:
