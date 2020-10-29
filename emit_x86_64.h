@@ -69,7 +69,7 @@ typedef enum {
     OP_KIND_ASSIGN,
     OP_KIND_REGISTER,
     OP_KIND_RET,
-    OP_KIND_ADD_INT,
+    OP_KIND_INT_ADD,
 } emit_op_kind_t;
 
 typedef usize emit_op_id_t;
@@ -108,7 +108,7 @@ typedef struct {
         emit_op_callable_block_t op_callable_block;  // OP_KIND_CALLABLE_BLOCK
         emit_op_pair_t op_assign;                    // OP_KIND_ASSIGN
         reg_t op_register;                           // OP_KIND_REGISTER
-        emit_op_pair_t op_add_int;                   // OP_KIND_ADD_INT
+        emit_op_pair_t op_int_add;                   // OP_KIND_INT_ADD
     } op_o;
 } emit_op_t;
 
@@ -146,6 +146,10 @@ typedef struct {
                                                 .cb_name_len = name_len, \
                                                 .cb_body = body,         \
                                                 .cb_flags = flags}}})
+
+#define OP_INT_ADD(src, dst)                 \
+    ((emit_op_t){.op_kind = OP_KIND_INT_ADD, \
+                 .op_o = {.op_int_add = {.pa_src = src, .pa_dst = dst}}})
 
 const usize syscall_exit_osx = (usize)0x2000001;
 const usize syscall_write_osx = (usize)0x2000004;
@@ -190,17 +194,39 @@ emit_op_id_t emit_zero_register(emit_t* emitter, reg_t reg) {
     return emit_make_op_with(emitter, OP_ASSIGN(zero, r));
 }
 
+emit_op_id_t emit_op_callable_block(emit_t* emitter, const u8* name,
+                                    usize name_len, u16 flags, int count, ...) {
+    PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
+
+    va_list args;
+    va_start(args, count);
+
+    emit_op_id_t* body = NULL;
+    buf_grow(body, count);
+
+    for (int i = 0; i < count; i++) {
+        const emit_op_id_t o = va_arg(args, emit_op_id_t);
+        buf_push(body, o);
+    }
+    va_end(args);
+
+    buf_push(body, emit_make_op_with(emitter, OP_RET()));
+
+    return emit_make_op_with(emitter,
+                             OP_CALLABLE_BLOCK(name, name_len, body, flags));
+}
+
 void emit_stdlib(emit_t* emitter) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
 
-    emit_op_id_t* body = NULL;
-    buf_grow(body, 50);
-    buf_push(body, emit_zero_register(emitter, REG_R8));
-    buf_push(body, emit_make_op_with(emitter, OP_RET()));
-
-    const emit_op_id_t int_to_string_block = emit_make_op_with(
-        emitter, OP_CALLABLE_BLOCK("int_to_string", sizeof("int_to_string"),
-                                   body, CALLABLE_BLOCK_FLAG_DEFAULT));
+    const emit_op_id_t int_to_string_block = emit_op_callable_block(
+        emitter, "int_to_string", sizeof("int_to_string"),
+        CALLABLE_BLOCK_FLAG_DEFAULT, 3, emit_zero_register(emitter, REG_R8),
+        emit_make_op_with(
+            emitter,
+            OP_INT_ADD(emit_make_op_with(emitter, OP_INT_LITERAL(3)),
+                       emit_make_op_with(emitter, OP_REGISTER(REG_R12)))),
+        emit_make_op_with(emitter, OP_RET()));
 
     buf_push(emitter->em_text_section, int_to_string_block);
 }
@@ -231,8 +257,7 @@ emit_op_id_t emit_op_make_call_syscall(emit_t* emitter, int count, ...) {
     buf_grow(syscall_instructions, count);
 
     for (int i = 0; i < count; i++) {
-        const emit_op_t o = va_arg(args, emit_op_t);
-        const emit_op_id_t src = emit_make_op_with(emitter, o);
+        const emit_op_id_t src = va_arg(args, emit_op_id_t);
         const emit_op_id_t dst =
             emit_make_op_with(emitter, OP_REGISTER(emit_fn_arg(i)));
         const emit_op_id_t assign =
@@ -328,9 +353,12 @@ void emit_emit(emit_t* emitter, const parser_t* parser) {
                     parser, emitter, &arg, &string_len);
 
                 const emit_op_id_t call_syscall_id = emit_op_make_call_syscall(
-                    emitter, 4, OP_INT_LITERAL(syscall_write_osx),
-                    OP_INT_LITERAL(STDOUT), OP_LABEL_ADDRESS(new_label_id),
-                    OP_INT_LITERAL(string_len));
+                    emitter, 4,
+                    emit_make_op_with(emitter,
+                                      OP_INT_LITERAL(syscall_write_osx)),
+                    emit_make_op_with(emitter, OP_INT_LITERAL(STDOUT)),
+                    emit_make_op_with(emitter, OP_LABEL_ADDRESS(new_label_id)),
+                    emit_make_op_with(emitter, OP_INT_LITERAL(string_len)));
 
                 buf_push(emitter->em_text_section, call_syscall_id);
                 break;
@@ -341,7 +369,9 @@ void emit_emit(emit_t* emitter, const parser_t* parser) {
     }
 
     const emit_op_id_t call_syscall_id = emit_op_make_call_syscall(
-        emitter, 2, OP_INT_LITERAL(syscall_exit_osx), OP_INT_LITERAL(0));
+        emitter, 2,
+        emit_make_op_with(emitter, OP_INT_LITERAL(syscall_exit_osx)),
+        emit_make_op_with(emitter, OP_INT_LITERAL(0)));
 
     buf_push(emitter->em_text_section, call_syscall_id);
 }
@@ -385,12 +415,24 @@ void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
 
             break;
         }
+        case OP_KIND_INT_ADD: {
+            const emit_op_pair_t assign = op->op_o.op_assign;
+            const emit_op_id_t src = assign.pa_src;
+            const emit_op_id_t dst = assign.pa_dst;
+
+            fprintf(file, "addq ");
+            emit_asm_dump_op(emitter, src, file);
+            fprintf(file, ", ");
+            emit_asm_dump_op(emitter, dst, file);
+            fprintf(file, "\n");
+            break;
+        }
         case OP_KIND_ASSIGN: {
             const emit_op_pair_t assign = op->op_o.op_assign;
             const emit_op_id_t src_id = assign.pa_src;
-            const emit_op_id_t dest_id = assign.pa_dst;
+            const emit_op_id_t dst_id = assign.pa_dst;
             const emit_op_t* const src = emit_op_get(emitter, src_id);
-            const emit_op_t* const dst = emit_op_get(emitter, dest_id);
+            const emit_op_t* const dst = emit_op_get(emitter, dst_id);
 
             switch (src->op_kind) {
                 case OP_KIND_INT_LITERAL: {
@@ -436,8 +478,14 @@ void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
             fprintf(file, "ret\n");
             break;
         }
-        case OP_KIND_REGISTER:
-        case OP_KIND_INT_LITERAL:
+        case OP_KIND_REGISTER: {
+            fprintf(file, "%s ", reg_t_to_str[op->op_o.op_register]);
+            break;
+        }
+        case OP_KIND_INT_LITERAL: {
+            fprintf(file, "%lld ", op->op_o.op_int_literal);
+            break;
+        }
         case OP_KIND_STRING_LABEL:
         case OP_KIND_LABEL_ADDRESS:
             assert(0 && "Unreachable");
