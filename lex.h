@@ -66,7 +66,7 @@ typedef enum {
 } lex_state_t;
 
 // TODO: trie?
-const token_id_t* token_get_keyword(const u8* source_start, usize len) {
+static const token_id_t* token_get_keyword(const u8* source_start, usize len) {
     const usize keywords_len = sizeof(keywords) / sizeof(keywords[0]);
     for (usize i = 0; i < keywords_len; i++) {
         const keyword_t* k = &keywords[i];
@@ -78,17 +78,17 @@ const token_id_t* token_get_keyword(const u8* source_start, usize len) {
 }
 
 // TODO: unicode
-res_t lex_is_identifier_char(u8 c) {
+static res_t lex_is_identifier_char(u8 c) {
     return ('0' <= c && c <= '9') || ('a' <= c && c <= 'z') ||
            ('A' <= c && c <= 'Z') || c == '_';
 }
 
-lexer_t lex_init(const u8* source, const usize source_len) {
+static lexer_t lex_init(const u8* source, const usize source_len) {
     return (lexer_t){
         .lex_source = source, .lex_source_len = source_len, .lex_index = 0};
 }
 
-token_t lex_next(lexer_t* lexer) {
+static token_t lex_next(lexer_t* lexer) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
 
@@ -338,7 +338,7 @@ outer:
     return result;
 }
 
-void token_dump(const token_t* t) {
+static void token_dump(const token_t* t) {
     log_debug("tok_id=%s tok_loc_start=%llu tok_loc_end=%llu",
               token_id_t_to_str[t->tok_id], t->tok_loc.loc_start,
               t->tok_loc.loc_end);

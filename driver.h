@@ -7,12 +7,12 @@
 
 #include "emit_x86_64.h"
 
-res_t driver_is_file_name_valid(const u8* file_name0) {
+static res_t driver_is_file_name_valid(const u8* file_name0) {
     const usize len = strlen(file_name0);
     return (len > (3 + 1) && memcmp(&file_name0[len - 4], ".kts", 3) == 0);
 }
 
-const u8* driver_base_source_file_name(const u8* file_name0) {
+static const u8* driver_base_source_file_name(const u8* file_name0) {
     PG_ASSERT_COND(driver_is_file_name_valid(file_name0), ==, RES_OK, "%d");
 
     u8* base_file_name0 = strdup(file_name0);
@@ -23,7 +23,7 @@ const u8* driver_base_source_file_name(const u8* file_name0) {
     return base_file_name0;
 }
 
-res_t driver_run(const u8* file_name0) {
+static res_t driver_run(const u8* file_name0) {
     PG_ASSERT_COND((void*)file_name0, !=, NULL, "%p");
 
     if (driver_is_file_name_valid(file_name0) != RES_OK) {

@@ -37,8 +37,8 @@ struct ast_node_t {
     } node_n;
 };
 
-void ast_node_dump(const ast_node_t* nodes, token_index_t node_i,
-                   usize indent) {
+static void ast_node_dump(const ast_node_t* nodes, token_index_t node_i,
+                          usize indent) {
     PG_ASSERT_COND((void*)nodes, !=, NULL, "%p");
 
     const ast_node_t* node = &nodes[node_i];
@@ -59,7 +59,7 @@ void ast_node_dump(const ast_node_t* nodes, token_index_t node_i,
     }
 }
 
-token_index_t ast_node_first_token(const ast_node_t* node) {
+static token_index_t ast_node_first_token(const ast_node_t* node) {
     switch (node->node_kind) {
         case NODE_BUILTIN_PRINT:
             return node->node_n.node_builtin_print.bp_keyword_print_i;
@@ -72,7 +72,7 @@ token_index_t ast_node_first_token(const ast_node_t* node) {
     }
 }
 
-token_index_t ast_node_last_token(const ast_node_t* node) {
+static token_index_t ast_node_last_token(const ast_node_t* node) {
     switch (node->node_kind) {
         case NODE_BUILTIN_PRINT:
             return node->node_n.node_builtin_print.bp_rparen_i;
