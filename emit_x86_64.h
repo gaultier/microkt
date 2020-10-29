@@ -82,34 +82,6 @@ emit_t emit_init() {
     return emitter;
 }
 
-emit_op_id_t emit_op_make_call(emit_t* emitter, int count, ...) {
-    PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
-
-    va_list args;
-    va_start(args, count);
-
-    emit_op_id_t* syscall_instructions = NULL;
-    buf_grow(syscall_instructions, count);
-
-    for (int i = 0; i < count; i++) {
-        const emit_op_id_t src = va_arg(args, emit_op_id_t);
-        const emit_op_id_t dst = OP(emitter, OP_REGISTER(emit_fn_arg(i)));
-        const emit_op_id_t assign = OP(emitter, OP_ASSIGN(src, dst));
-        buf_push(syscall_instructions, assign);
-    }
-    va_end(args);
-
-    buf_push(syscall_instructions, OP(emitter, OP_SYSCALL()));
-
-    // Zero all registers after call
-    for (int i = 0; i < count; i++) {
-        buf_push(syscall_instructions,
-                 emit_zero_register(emitter, emit_fn_arg(i)));
-    }
-
-    return OP(emitter, OP_CALL(syscall_instructions));
-}
-
 usize emit_add_string_label_if_not_exists(emit_t* emitter, const u8* string,
                                           usize string_len) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
@@ -156,15 +128,16 @@ usize emit_node_to_string_label(const parser_t* parser, emit_t* emitter,
             return new_label_id;
         }
         case NODE_INT_LITERAL: {
-            const usize n = 42;  // FIXME
-            emit_op_id_t* instructions = NULL;
-            buf_push(instructions,
-                     OP(emitter, OP_ASSIGN(OP(emitter, OP_INT_LITERAL(n)),
-                                           OP(emitter, OP_REGISTER(REG_RAX)))));
+            /* const usize n = 42;  // FIXME */
+            /* emit_op_id_t* instructions = NULL; */
+            /* buf_push(instructions, */
+            /*          OP(emitter, OP_ASSIGN(OP(emitter, OP_INT_LITERAL(n)), */
+            /*                                OP(emitter,
+             * OP_REGISTER(REG_RAX))))); */
 
-            buf_push(instructions, OP(emitter, OP_ASM("call")));
+            /* buf_push(instructions, OP(emitter, OP_ASM("call"))); */
 
-            return OP(emitter, OP_CALL(instructions));
+            /* return OP(emitter, OP_CALL(instructions)); */
         }
         case NODE_BUILTIN_PRINT:
             assert(0 && "Unreachable");
@@ -249,18 +222,6 @@ void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
 
             break;
         }
-        case OP_KIND_INT_ADD: {
-            const emit_op_pair_t assign = op->op_o.op_assign;
-            const emit_op_id_t src = assign.pa_src;
-            const emit_op_id_t dst = assign.pa_dst;
-
-            fprintf(file, "addq ");
-            emit_asm_dump_op(emitter, src, file);
-            fprintf(file, ", ");
-            emit_asm_dump_op(emitter, dst, file);
-            fprintf(file, "\n");
-            break;
-        }
         case OP_KIND_ASSIGN: {
             const emit_op_pair_t assign = op->op_o.op_assign;
             const emit_op_id_t src_id = assign.pa_src;
@@ -320,14 +281,8 @@ void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
             fprintf(file, "%lld ", op->op_o.op_int_literal);
             break;
         }
-        case OP_KIND_ASM: {
-            fprintf(file, "%s\n", op->op_o.op_asm0);
-            break;
-        }
-
         case OP_KIND_STRING_LABEL:
         case OP_KIND_LABEL_ADDRESS:
-        case OP_KIND_DATA_BYTE_ARRAY:
             assert(0 && "Unreachable");
     }
 }
@@ -346,13 +301,6 @@ void emit_asm_dump(const emit_t* emitter, FILE* file) {
                 const emit_op_string_label_t s = op->op_o.op_string_label;
                 fprintf(file, ".L%llu: .asciz \"%.*s\"\n", s.sl_label_id,
                         (int)s.sl_string_len, s.sl_string);
-                break;
-            }
-            case OP_KIND_DATA_BYTE_ARRAY: {
-                const emit_op_data_byte_array_t array =
-                    op->op_o.op_data_byte_array;
-                fprintf(file, "%.*s: .fill %llu, 1, 0\n",
-                        (int)array.db_name_len, array.db_name, array.db_size);
                 break;
             }
             default:

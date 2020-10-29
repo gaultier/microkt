@@ -65,9 +65,6 @@ typedef enum {
     OP_KIND_ASSIGN,
     OP_KIND_REGISTER,
     OP_KIND_RET,
-    OP_KIND_INT_ADD,
-    OP_KIND_ASM,
-    OP_KIND_DATA_BYTE_ARRAY,
 } emit_op_kind_t;
 
 typedef usize emit_op_id_t;
@@ -99,12 +96,6 @@ typedef struct {
 } emit_op_pair_t;
 
 typedef struct {
-    usize db_size;
-    const u8* db_name;
-    usize db_name_len;
-} emit_op_data_byte_array_t;
-
-typedef struct {
     emit_op_kind_t op_kind;
     union {
         emit_op_call_t op_call;                      // OP_KIND_CALL
@@ -114,10 +105,6 @@ typedef struct {
         emit_op_callable_block_t op_callable_block;  // OP_KIND_CALLABLE_BLOCK
         emit_op_pair_t op_assign;                    // OP_KIND_ASSIGN
         reg_t op_register;                           // OP_KIND_REGISTER
-        emit_op_pair_t op_int_add;                   // OP_KIND_INT_ADD
-        const u8* op_asm0;                           // OP_KIND_ASM
-        emit_op_data_byte_array_t
-            op_data_byte_array;  // OP_KIND_DATA_BYTE_ARRAY
     } op_o;
 } emit_op_t;
 
@@ -156,19 +143,6 @@ typedef struct {
                                                 .cb_name_len = name_len, \
                                                 .cb_body = body,         \
                                                 .cb_flags = flags}}})
-
-#define OP_INT_ADD(src, dst)                 \
-    ((emit_op_t){.op_kind = OP_KIND_INT_ADD, \
-                 .op_o = {.op_int_add = {.pa_src = src, .pa_dst = dst}}})
-
-#define OP_ASM(asm0) \
-    ((emit_op_t){.op_kind = OP_KIND_ASM, .op_o = {.op_asm0 = asm0}})
-
-#define OP_DATA_BYTE_ARRAY(name, name_len, size)                          \
-    ((emit_op_t){.op_kind = OP_KIND_DATA_BYTE_ARRAY,                      \
-                 .op_o = {.op_data_byte_array = {.db_name = name,         \
-                                                 .db_name_len = name_len, \
-                                                 .db_size = size}}})
 
 #define OP(emitter, op) (emit_make_op_with(emitter, op))
 
