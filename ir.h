@@ -66,6 +66,7 @@ typedef enum {
     OP_KIND_REGISTER,
     OP_KIND_RET,
     OP_KIND_INT_ADD,
+    OP_KIND_ASM,
 } emit_op_kind_t;
 
 typedef usize emit_op_id_t;
@@ -105,6 +106,7 @@ typedef struct {
         emit_op_pair_t op_assign;                    // OP_KIND_ASSIGN
         reg_t op_register;                           // OP_KIND_REGISTER
         emit_op_pair_t op_int_add;                   // OP_KIND_INT_ADD
+        const u8* op_asm0;                           // OP_KIND_ASM
     } op_o;
 } emit_op_t;
 
@@ -146,6 +148,9 @@ typedef struct {
 #define OP_INT_ADD(src, dst)                 \
     ((emit_op_t){.op_kind = OP_KIND_INT_ADD, \
                  .op_o = {.op_int_add = {.pa_src = src, .pa_dst = dst}}})
+
+#define OP_ASM(asm0) \
+    ((emit_op_t){.op_kind = OP_KIND_ASM, .op_o = {.op_asm0 = asm0}})
 
 #define OP(emitter, op) (emit_make_op_with(emitter, op))
 

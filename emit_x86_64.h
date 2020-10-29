@@ -70,20 +70,67 @@ emit_op_id_t emit_op_callable_block(emit_t* emitter, const u8* name,
 void emit_stdlib(emit_t* emitter) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
 
-    const emit_op_id_t int_to_string_end = emit_op_callable_block(
-        emitter, "int_to_string_end", sizeof("int_to_string_end"),
-        CALLABLE_BLOCK_FLAG_DEFAULT, 1, OP(emitter, OP_RET()));
-
-    const emit_op_id_t int_to_string_loop = emit_op_callable_block(
-        emitter, "int_to_string_loop", sizeof("int_to_string_loop"),
-        CALLABLE_BLOCK_FLAG_DEFAULT, 0);
-
     const emit_op_id_t int_to_string = emit_op_callable_block(
         emitter, "int_to_string", sizeof("int_to_string"),
-        CALLABLE_BLOCK_FLAG_DEFAULT, 4, emit_zero_register(emitter, REG_R8),
-        OP(emitter, OP_INT_ADD(OP(emitter, OP_INT_LITERAL(3)),
-                               OP(emitter, OP_REGISTER(REG_R12)))),
-        int_to_string_loop, int_to_string_end);
+        CALLABLE_BLOCK_FLAG_DEFAULT, 1,
+        OP(emitter, OP_ASM("movq $0, int_to_string_data+0(%rip)\n"
+                           "movq $0, int_to_string_data+1(%rip)\n"
+                           "movq $0, int_to_string_data+2(%rip)\n"
+                           "movq $0, int_to_string_data+3(%rip)\n"
+                           "movq $0, int_to_string_data+4(%rip)\n"
+                           "movq $0, int_to_string_data+5(%rip)\n"
+                           "movq $0, int_to_string_data+6(%rip)\n"
+                           "movq $0, int_to_string_data+7(%rip)\n"
+                           "movq $0, int_to_string_data+8(%rip)\n"
+                           "movq $0, int_to_string_data+9(%rip)\n"
+                           "movq $0, int_to_string_data+10(%rip)\n"
+                           "movq $0, int_to_string_data+11(%rip)\n"
+                           "movq $0, int_to_string_data+12(%rip)\n"
+                           "movq $0, int_to_string_data+13(%rip)\n"
+                           "movq $0, int_to_string_data+14(%rip)\n"
+                           "movq $0, int_to_string_data+15(%rip)\n"
+                           "movq $0, int_to_string_data+16(%rip)\n"
+                           "movq $0, int_to_string_data+17(%rip)\n"
+                           "movq $0, int_to_string_data+18(%rip)\n"
+                           "movq $0, int_to_string_data+19(%rip)\n"
+                           "movq $0, int_to_string_data+20(%rip)\n"
+                           "                                     \n"
+                           "// r9: Point at the end of the buffer\n"
+                           "leaq int_to_string_data+21(%rip), %r9\n"
+                           "xorq %r8, %r8 // r8: Loop index\n"
+                           "movq %rdi, %rax // rax: Dividee\n"
+                           "\n"
+                           "int_to_string_loop:\n"
+                           "    cmpq $0, %rax // While dividee != 0\n"
+                           "    jz int_to_string_end\n"
+                           "                                                   "
+                           "            \n"
+                           "             \n"
+                           "    // Dividee / 10\n"
+                           "    movq $10, %rcx \n"
+                           "    xorq %rdx, %rdx\n"
+                           "    div %rcx\n"
+                           "                                                   "
+                           "            \n"
+                           "             \n"
+                           "// Convert integer to character by adding '0'\n"
+                           "    add $48, %rdx "
+                           "                                                   "
+                           "            \n"
+                           "             \n"
+                           "    dec %r9 // *(--end) = rem\n"
+                           "    movb %dl, (%r9)\n"
+                           "                                                   "
+                           "            \n"
+                           "             \n"
+                           "    incq %r8\n"
+                           "    jmp int_to_string_loop\n"
+                           "                                                   "
+                           "            \n"
+                           "             \n"
+                           "int_to_string_end:\n"
+                           "  // Epilog\n"
+                           "  ret")));
 
     buf_push(emitter->em_text_section, int_to_string);
 }
@@ -338,6 +385,11 @@ void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
             fprintf(file, "%lld ", op->op_o.op_int_literal);
             break;
         }
+        case OP_KIND_ASM: {
+            fprintf(file, "%s\n", op->op_o.op_asm0);
+            break;
+        }
+
         case OP_KIND_STRING_LABEL:
         case OP_KIND_LABEL_ADDRESS:
             assert(0 && "Unreachable");
