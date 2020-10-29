@@ -20,7 +20,7 @@ typedef struct {
     emit_op_id_t* em_data_section;
 } emit_t;
 
-emit_op_t* emit_op_get(const emit_t* emitter, emit_op_id_t id) {
+static emit_op_t* emit_op_get(const emit_t* emitter, emit_op_id_t id) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
     PG_ASSERT_COND((void*)emitter->em_ops_arena, !=, NULL, "%p");
 
@@ -30,7 +30,7 @@ emit_op_t* emit_op_get(const emit_t* emitter, emit_op_id_t id) {
     return &emitter->em_ops_arena[id];
 }
 
-emit_op_id_t emit_make_op_with(emit_t* emitter, emit_op_t op) {
+static emit_op_id_t emit_make_op_with(emit_t* emitter, emit_op_t op) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
 
     buf_push(emitter->em_ops_arena, ((emit_op_t){0}));
@@ -41,34 +41,7 @@ emit_op_id_t emit_make_op_with(emit_t* emitter, emit_op_t op) {
     return op_id;
 }
 
-emit_op_id_t emit_zero_register(emit_t* emitter, reg_t reg) {
-    PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
-
-    const emit_op_id_t r = OP(emitter, OP_REGISTER(reg));
-    const emit_op_id_t zero = OP(emitter, OP_INT_LITERAL(0));
-    return OP(emitter, OP_ASSIGN(zero, r));
-}
-
-emit_op_id_t emit_op_callable_block(emit_t* emitter, const u8* name,
-                                    usize name_len, u16 flags, int count, ...) {
-    PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
-
-    va_list args;
-    va_start(args, count);
-
-    emit_op_id_t* body = NULL;
-    buf_grow(body, count);
-
-    for (int i = 0; i < count; i++) {
-        const emit_op_id_t o = va_arg(args, emit_op_id_t);
-        buf_push(body, o);
-    }
-    va_end(args);
-
-    return OP(emitter, OP_CALLABLE_BLOCK(name, name_len, body, flags));
-}
-
-emit_t emit_init() {
+static emit_t emit_init() {
     emit_t emitter = {.em_ops_arena = NULL, .em_label_id = 0};
     buf_grow(emitter.em_ops_arena, 100);
     buf_grow(emitter.em_data_section, 100);
@@ -82,8 +55,9 @@ emit_t emit_init() {
     return emitter;
 }
 
-usize emit_add_string_label_if_not_exists(emit_t* emitter, const u8* string,
-                                          usize string_len) {
+static usize emit_add_string_label_if_not_exists(emit_t* emitter,
+                                                 const u8* string,
+                                                 usize string_len) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
     PG_ASSERT_COND((void*)string, !=, NULL, "%p");
 
@@ -110,8 +84,9 @@ usize emit_add_string_label_if_not_exists(emit_t* emitter, const u8* string,
     return new_label_id;
 }
 
-usize emit_node_to_string_label(const parser_t* parser, emit_t* emitter,
-                                const ast_node_t* node, usize* string_len) {
+static usize emit_node_to_string_label(const parser_t* parser, emit_t* emitter,
+                                       const ast_node_t* node,
+                                       usize* string_len) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
     PG_ASSERT_COND((void*)node, !=, NULL, "%p");
@@ -144,7 +119,7 @@ usize emit_node_to_string_label(const parser_t* parser, emit_t* emitter,
     }
 }
 
-void emit_emit(emit_t* emitter, const parser_t* parser) {
+static void emit_emit(emit_t* emitter, const parser_t* parser) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_nodes, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_stmt_nodes, !=, NULL, "%p");
@@ -192,8 +167,8 @@ void emit_emit(emit_t* emitter, const parser_t* parser) {
              OP(emitter, OP_CALL("exit_ok", sizeof("exit_ok"), NULL)));
 }
 
-void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
-                      FILE* file) {
+static void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
+                             FILE* file) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
     PG_ASSERT_COND((void*)file, !=, NULL, "%p");
 
@@ -291,7 +266,7 @@ void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
     }
 }
 
-void emit_asm_dump(const emit_t* emitter, FILE* file) {
+static void emit_asm_dump(const emit_t* emitter, FILE* file) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
     PG_ASSERT_COND((void*)file, !=, NULL, "%p");
 
