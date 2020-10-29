@@ -151,6 +151,8 @@ typedef struct {
     ((emit_op_t){.op_kind = OP_KIND_INT_ADD, \
                  .op_o = {.op_int_add = {.pa_src = src, .pa_dst = dst}}})
 
+#define OP(emitter, op) (emit_make_op_with(emitter, op))
+
 const usize syscall_exit_osx = (usize)0x2000001;
 const usize syscall_write_osx = (usize)0x2000004;
 
@@ -189,9 +191,9 @@ emit_op_id_t emit_make_op_with(emit_t* emitter, emit_op_t op) {
 emit_op_id_t emit_zero_register(emit_t* emitter, reg_t reg) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
 
-    const emit_op_id_t r = emit_make_op_with(emitter, OP_REGISTER(reg));
-    const emit_op_id_t zero = emit_make_op_with(emitter, OP_INT_LITERAL(0));
-    return emit_make_op_with(emitter, OP_ASSIGN(zero, r));
+    const emit_op_id_t r = OP(emitter, OP_REGISTER(reg));
+    const emit_op_id_t zero = OP(emitter, OP_INT_LITERAL(0));
+    return OP(emitter, OP_ASSIGN(zero, r));
 }
 
 emit_op_id_t emit_op_callable_block(emit_t* emitter, const u8* name,
@@ -210,10 +212,9 @@ emit_op_id_t emit_op_callable_block(emit_t* emitter, const u8* name,
     }
     va_end(args);
 
-    buf_push(body, emit_make_op_with(emitter, OP_RET()));
+    buf_push(body, OP(emitter, OP_RET()));
 
-    return emit_make_op_with(emitter,
-                             OP_CALLABLE_BLOCK(name, name_len, body, flags));
+    return OP(emitter, OP_CALLABLE_BLOCK(name, name_len, body, flags));
 }
 
 void emit_stdlib(emit_t* emitter) {
@@ -222,11 +223,9 @@ void emit_stdlib(emit_t* emitter) {
     const emit_op_id_t int_to_string_block = emit_op_callable_block(
         emitter, "int_to_string", sizeof("int_to_string"),
         CALLABLE_BLOCK_FLAG_DEFAULT, 3, emit_zero_register(emitter, REG_R8),
-        emit_make_op_with(
-            emitter,
-            OP_INT_ADD(emit_make_op_with(emitter, OP_INT_LITERAL(3)),
-                       emit_make_op_with(emitter, OP_REGISTER(REG_R12)))),
-        emit_make_op_with(emitter, OP_RET()));
+        OP(emitter, OP_INT_ADD(OP(emitter, OP_INT_LITERAL(3)),
+                               OP(emitter, OP_REGISTER(REG_R12)))),
+        OP(emitter, OP_RET()));
 
     buf_push(emitter->em_text_section, int_to_string_block);
 }
@@ -239,9 +238,9 @@ emit_t emit_init() {
 
     emit_stdlib(&emitter);
 
-    const emit_op_id_t main = emit_make_op_with(
-        &emitter, OP_CALLABLE_BLOCK("_main", sizeof("main"), NULL,
-                                    CALLABLE_BLOCK_FLAG_GLOBAL));
+    const emit_op_id_t main =
+        OP(&emitter, OP_CALLABLE_BLOCK("_main", sizeof("main"), NULL,
+                                       CALLABLE_BLOCK_FLAG_GLOBAL));
     buf_push(emitter.em_text_section, main);
 
     return emitter;
@@ -258,15 +257,13 @@ emit_op_id_t emit_op_make_call_syscall(emit_t* emitter, int count, ...) {
 
     for (int i = 0; i < count; i++) {
         const emit_op_id_t src = va_arg(args, emit_op_id_t);
-        const emit_op_id_t dst =
-            emit_make_op_with(emitter, OP_REGISTER(emit_fn_arg(i)));
-        const emit_op_id_t assign =
-            emit_make_op_with(emitter, OP_ASSIGN(src, dst));
+        const emit_op_id_t dst = OP(emitter, OP_REGISTER(emit_fn_arg(i)));
+        const emit_op_id_t assign = OP(emitter, OP_ASSIGN(src, dst));
         buf_push(syscall_instructions, assign);
     }
     va_end(args);
 
-    buf_push(syscall_instructions, emit_make_op_with(emitter, OP_SYSCALL()));
+    buf_push(syscall_instructions, OP(emitter, OP_SYSCALL()));
 
     // Zero all registers after call_syscall
     for (int i = 0; i < count; i++) {
@@ -274,7 +271,7 @@ emit_op_id_t emit_op_make_call_syscall(emit_t* emitter, int count, ...) {
                  emit_zero_register(emitter, emit_fn_arg(i)));
     }
 
-    return emit_make_op_with(emitter, OP_CALL_SYSCALL(syscall_instructions));
+    return OP(emitter, OP_CALL_SYSCALL(syscall_instructions));
 }
 
 usize emit_add_string_label_if_not_exists(emit_t* emitter, const u8* string,
@@ -297,8 +294,8 @@ usize emit_add_string_label_if_not_exists(emit_t* emitter, const u8* string,
 
     emitter->em_label_id += 1;
 
-    const emit_op_id_t string_label = emit_make_op_with(
-        emitter, OP_STRING_LABEL(string, string_len, new_label_id));
+    const emit_op_id_t string_label =
+        OP(emitter, OP_STRING_LABEL(string, string_len, new_label_id));
 
     buf_push(emitter->em_data_section, string_label);
 
@@ -353,12 +350,10 @@ void emit_emit(emit_t* emitter, const parser_t* parser) {
                     parser, emitter, &arg, &string_len);
 
                 const emit_op_id_t call_syscall_id = emit_op_make_call_syscall(
-                    emitter, 4,
-                    emit_make_op_with(emitter,
-                                      OP_INT_LITERAL(syscall_write_osx)),
-                    emit_make_op_with(emitter, OP_INT_LITERAL(STDOUT)),
-                    emit_make_op_with(emitter, OP_LABEL_ADDRESS(new_label_id)),
-                    emit_make_op_with(emitter, OP_INT_LITERAL(string_len)));
+                    emitter, 4, OP(emitter, OP_INT_LITERAL(syscall_write_osx)),
+                    OP(emitter, OP_INT_LITERAL(STDOUT)),
+                    OP(emitter, OP_LABEL_ADDRESS(new_label_id)),
+                    OP(emitter, OP_INT_LITERAL(string_len)));
 
                 buf_push(emitter->em_text_section, call_syscall_id);
                 break;
@@ -369,9 +364,8 @@ void emit_emit(emit_t* emitter, const parser_t* parser) {
     }
 
     const emit_op_id_t call_syscall_id = emit_op_make_call_syscall(
-        emitter, 2,
-        emit_make_op_with(emitter, OP_INT_LITERAL(syscall_exit_osx)),
-        emit_make_op_with(emitter, OP_INT_LITERAL(0)));
+        emitter, 2, OP(emitter, OP_INT_LITERAL(syscall_exit_osx)),
+        OP(emitter, OP_INT_LITERAL(0)));
 
     buf_push(emitter->em_text_section, call_syscall_id);
 }
