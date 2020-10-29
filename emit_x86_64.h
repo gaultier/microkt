@@ -166,9 +166,17 @@ void emit_emit(emit_t* emitter, const parser_t* parser) {
                     parser, emitter, &arg, &string_len);
 
                 emit_op_id_t* call_args = NULL;
-                buf_push(call_args,
-                         OP(emitter, OP_LABEL_ADDRESS(new_label_id)));
-                buf_push(call_args, OP(emitter, OP_INT_LITERAL(string_len)));
+                buf_push(
+                    call_args,
+                    OP(emitter,
+                       OP_ASSIGN(OP(emitter, OP_LABEL_ADDRESS(new_label_id)),
+                                 OP(emitter, OP_REGISTER(emit_fn_arg(0))))));
+
+                buf_push(
+                    call_args,
+                    OP(emitter,
+                       OP_ASSIGN(OP(emitter, OP_INT_LITERAL(string_len)),
+                                 OP(emitter, OP_REGISTER(emit_fn_arg(1))))));
                 const emit_op_id_t call_id =
                     OP(emitter, OP_CALL("print", sizeof("print"), call_args));
 
@@ -281,8 +289,12 @@ void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
             fprintf(file, "%lld ", op->op_o.op_int_literal);
             break;
         }
+        case OP_KIND_LABEL_ADDRESS: {
+            fprintf(file, ".L%lld(%s) ", op->op_o.op_int_literal,
+                    reg_t_to_str[REG_RSI]);
+            break;
+        }
         case OP_KIND_STRING_LABEL:
-        case OP_KIND_LABEL_ADDRESS:
             assert(0 && "Unreachable");
     }
 }
