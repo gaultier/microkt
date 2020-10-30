@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/mman.h>
+#include <sys/param.h>
 #include <unistd.h>
 
 #include "emit_x86_64.h"
@@ -12,15 +13,16 @@ static res_t driver_is_file_name_valid(const u8* file_name0) {
     return (len > (3 + 1) && memcmp(&file_name0[len - 4], ".kts", 3) == 0);
 }
 
-static const u8* driver_base_source_file_name(const u8* file_name0) {
+static void driver_base_source_file_name(const u8* file_name0,
+                                         u8* base_file_name0) {
     PG_ASSERT_COND(driver_is_file_name_valid(file_name0), ==, RES_OK, "%d");
 
-    u8* base_file_name0 = strdup(file_name0);
-    base_file_name0[strlen(file_name0) - 4] = 0;
-    base_file_name0[strlen(file_name0) - 3] = 0;
-    base_file_name0[strlen(file_name0) - 2] = 0;
-    base_file_name0[strlen(file_name0) - 1] = 0;
-    return base_file_name0;
+    const usize len = strlen(file_name0);
+
+    base_file_name0[len - 4] = 0;
+    base_file_name0[len - 3] = 0;
+    base_file_name0[len - 2] = 0;
+    base_file_name0[len - 1] = 0;
 }
 
 static res_t driver_run(const u8* file_name0) {
@@ -68,7 +70,8 @@ static res_t driver_run(const u8* file_name0) {
     emit_emit(&emitter, &parser);
 
     const usize file_name_len = strlen(file_name0);
-    u8* const asm_file_name0 = strdup(file_name0);
+    u8 asm_file_name0[MAXPATHLEN + 1] = "\0";
+    memcpy(asm_file_name0, file_name0, MAXPATHLEN);
     asm_file_name0[file_name_len - 3] = 'a';
     asm_file_name0[file_name_len - 2] = 's';
     asm_file_name0[file_name_len - 1] = 'm';
@@ -82,25 +85,25 @@ static res_t driver_run(const u8* file_name0) {
     fclose(file);
 
     // as
-    const u8* const base_file_name0 = driver_base_source_file_name(file_name0);
-    usize argv_len = 2 * strlen(file_name0) + 100;
-    u8* argv = calloc(argv_len, 1);
-    PG_ASSERT_COND((void*)argv, !=, NULL, "%p");
+    u8 base_file_name0[MAXPATHLEN + 1] = "\0";
+    memcpy(base_file_name0, file_name0, MAXPATHLEN);
+    driver_base_source_file_name(file_name0, base_file_name0);
     {
-        snprintf(argv, argv_len, "as %s -o %s.o", asm_file_name0,
+        u8 argv0[3 * MAXPATHLEN] = "\0";
+        snprintf(argv0, sizeof(argv0), "as %s -o %s.o", asm_file_name0,
                  base_file_name0);
-        log_debug("%s", argv);
+        log_debug("%s", base_file_name0);
 
         fflush(stdout);
         fflush(stderr);
-        FILE* as_process = popen(argv, "r");
+        FILE* as_process = popen(argv0, "r");
         if (as_process == NULL) {
-            fprintf(stderr, "Failed to run `as`: `%s` %s\n", argv,
+            fprintf(stderr, "Failed to run `as`: `%s` %s\n", argv0,
                     strerror(errno));
             return RES_ERR;
         }
         if (pclose(as_process) != 0) {
-            fprintf(stderr, "Failed to run `as`: `%s` %s\n", argv,
+            fprintf(stderr, "Failed to run `as`: `%s` %s\n", argv0,
                     strerror(errno));
             return RES_ERR;
         }
@@ -110,21 +113,21 @@ static res_t driver_run(const u8* file_name0) {
 
     // ld
     {
-        memset(argv, 0, argv_len);
-        snprintf(argv, argv_len, "ld %s.o -lSystem -o %s", base_file_name0,
-                 base_file_name0);
-        log_debug("%s", argv);
+        u8 argv0[3 * MAXPATHLEN] = "\0";
+        snprintf(argv0, sizeof(argv0), "ld %s.o -lSystem -o %s",
+                 base_file_name0, base_file_name0);
+        log_debug("%s", argv0);
 
         fflush(stdout);
         fflush(stderr);
-        FILE* ld_process = popen(argv, "r");
+        FILE* ld_process = popen(argv0, "r");
         if (ld_process == NULL) {
-            fprintf(stderr, "Failed to run `ld`: `%s` %s\n", argv,
+            fprintf(stderr, "Failed to run `ld`: `%s` %s\n", argv0,
                     strerror(errno));
             return RES_ERR;
         }
         if (pclose(ld_process) != 0) {
-            fprintf(stderr, "Failed to run `ld`: `%s` %s\n", argv,
+            fprintf(stderr, "Failed to run `ld`: `%s` %s\n", argv0,
                     strerror(errno));
             return RES_ERR;
         }

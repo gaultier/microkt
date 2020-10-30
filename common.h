@@ -15,7 +15,10 @@ typedef u8 res_t;
 #define RES_OK ((res_t)1)
 #define RES_NONE ((res_t)2)
 
+// On macos this macro is defined in some system headers
+#ifndef MIN
 #define MIN(a, b) (a) < (b) ? (a) : (b)
+#endif
 
 #define STR(s) #s
 
