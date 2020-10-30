@@ -188,19 +188,7 @@ static void emit_emit(emit_t* emitter, const parser_t* parser) {
                                                          &string_len);
                     emit_call_print_string(emitter, label_id, string_len);
                 } else if (arg.node_kind == NODE_INT) {
-                    const u8* string = NULL;
-                    usize string_len = 0;
-                    parser_ast_node_source(parser, &arg, &string, &string_len);
-                    fprintf(stderr,
-                            "[debug] emit_call_print_integer int `%.*s`\n",
-                            (int)string_len, string);
-                    PG_ASSERT_COND(string_len, <, (usize)25, "%llu");
-
-                    // TOOD: liimit in the lexer the length of a number literal
-                    static u8 string0[25] = "\0";
-                    memcpy(string0, string, string_len);
-                    const usize n = strtoll(string0, NULL, 10);
-
+                    const usize n = parse_node_to_int(parser, &arg);
                     emit_call_print_integer(emitter, OP(emitter, OP_INT(n)));
 
                 } else {
