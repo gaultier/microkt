@@ -1,3 +1,6 @@
+// Calling convention: System V ABI
+
+
 .data
     int_to_string_data: .fill 21, 1, 0
 

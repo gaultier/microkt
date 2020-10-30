@@ -1,5 +1,8 @@
 #pragma once
-const char stdlib[] = ".data\n"
+const char stdlib[] = "// Calling convention: System V ABI\n"
+"\n"
+"\n"
+".data\n"
 "    int_to_string_data: .fill 21, 1, 0\n"
 "\n"
 ".text\n"
