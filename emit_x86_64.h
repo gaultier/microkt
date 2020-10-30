@@ -103,7 +103,7 @@ static usize emit_node_to_string_label(const parser_t* parser, emit_t* emitter,
         case NODE_INT: {
             const u8* string = NULL;
             parser_ast_node_source(parser, node, &string, string_len);
-            fprintf(stderr, "[debug] emit_node_to_string_label int `%.*s`",
+            fprintf(stderr, "[debug] emit_node_to_string_label int `%.*s`\n",
                     (int)*string_len, string);
             assert(0 && "Unimplemented");
         }
@@ -190,7 +190,10 @@ static void emit_emit(emit_t* emitter, const parser_t* parser) {
                 } else if (arg.node_kind == NODE_INT) {
                     const u8* string = NULL;
                     usize string_len = 0;
-                    parser_ast_node_source(parser, stmt, &string, &string_len);
+                    parser_ast_node_source(parser, &arg, &string, &string_len);
+                    fprintf(stderr,
+                            "[debug] emit_call_print_integer int `%.*s`\n",
+                            (int)string_len, string);
                     PG_ASSERT_COND(string_len, <, (usize)25, "%llu");
 
                     // TOOD: liimit in the lexer the length of a number literal
