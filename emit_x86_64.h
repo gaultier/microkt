@@ -115,18 +115,36 @@ static emit_op_id_t emit_call_print_integer(emit_t* emitter,
                                             emit_op_id_t arg_id) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
 
-    emit_op_id_t* call_args = NULL;
-    buf_push(call_args,
-             OP(emitter,
-                OP_ASSIGN(OP(emitter, OP_PTR("int_to_string_data",
-                                             sizeof("int_to_string_data"), 0)),
-                          OP(emitter, OP_REGISTER(emit_fn_arg(0))))));
+    {
+        const emit_op_t arg = *(emit_op_get(emitter, arg_id));
+        PG_ASSERT_COND(arg.op_kind, ==, OP_KIND_INT, "%d");
 
-    buf_push(call_args,
-             OP(emitter, OP_ASSIGN(OP(emitter, OP_INT(21)),  // Hardcoded
-                                   OP(emitter, OP_REGISTER(emit_fn_arg(1))))));
+        emit_op_id_t* int_to_string_args = NULL;
+        buf_push(
+            int_to_string_args,
+            OP(emitter,
+               OP_ASSIGN(arg_id, OP(emitter, OP_REGISTER(emit_fn_arg(0))))));
+        buf_push(emitter->em_text_section,
+                 OP(emitter, OP_CALL("int_to_string", sizeof("int_to_string"),
+                                     int_to_string_args)));
+    }
+    {
+        emit_op_id_t* call_args = NULL;
+        buf_push(
+            call_args,
+            OP(emitter,
+               OP_ASSIGN(OP(emitter, OP_PTR("int_to_string_data",
+                                            sizeof("int_to_string_data"), 0)),
+                         OP(emitter, OP_REGISTER(emit_fn_arg(0))))));
 
-    return OP(emitter, OP_CALL("print", sizeof("print"), call_args));
+        buf_push(
+            call_args,
+            OP(emitter, OP_ASSIGN(OP(emitter, OP_INT(21)),  // Hardcoded
+                                  OP(emitter, OP_REGISTER(emit_fn_arg(1))))));
+
+        buf_push(emitter->em_text_section,
+                 OP(emitter, OP_CALL("print", sizeof("print"), call_args)));
+    }
 }
 
 static emit_op_id_t emit_call_print_string(emit_t* emitter, usize label_id,
@@ -172,9 +190,8 @@ static void emit_emit(emit_t* emitter, const parser_t* parser) {
                         emitter->em_text_section,
                         emit_call_print_string(emitter, label_id, string_len));
                 } else if (arg.node_kind == NODE_INT) {
-                    buf_push(
-                        emitter->em_text_section,
-                        emit_call_print_integer(emitter, 0xAAAAAAAA));  // FIXME
+                    emit_call_print_integer(emitter,
+                                            OP(emitter, OP_INT(42)));  // FIXME
 
                 } else {
                     assert(0 && "Unreachable");
