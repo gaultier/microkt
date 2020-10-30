@@ -252,7 +252,6 @@ static void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
             const emit_op_id_t src_id = assign.pa_src;
             const emit_op_id_t dst_id = assign.pa_dst;
             const emit_op_t* const src = emit_op_get(emitter, src_id);
-            const emit_op_t* const dst = emit_op_get(emitter, dst_id);
 
             switch (src->op_kind) {
                 case OP_KIND_INT: {
