@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ast.h"
+#include "common.h"
 #include "ir.h"
 #include "macos_x86_64_stdlib.h"
 #include "parse.h"
@@ -89,28 +91,18 @@ static usize emit_node_to_string_label(const parser_t* parser, emit_t* emitter,
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
     PG_ASSERT_COND((void*)node, !=, NULL, "%p");
     PG_ASSERT_COND((void*)string_len, !=, NULL, "%p");
+    PG_ASSERT_COND(node->node_kind == NODE_STRING_LITERAL ||
+                       node->node_kind == NODE_KEYWORD_BOOL,
+                   ==, 1, "%d");
 
-    switch (node->node_kind) {
-        case NODE_STRING_LITERAL:
-        case NODE_KEYWORD_BOOL: {
-            const u8* string = NULL;
-            parser_ast_node_source(parser, node, &string, string_len);
+    const u8* string = NULL;
+    parser_ast_node_source(parser, node, &string, string_len);
 
-            const usize new_label_id = emit_add_string_label_if_not_exists(
-                emitter, string, *string_len);
-            return new_label_id;
-        }
-        case NODE_INT: {
-            const u8* string = NULL;
-            parser_ast_node_source(parser, node, &string, string_len);
-            fprintf(stderr, "[debug] emit_node_to_string_label int `%.*s`\n",
-                    (int)*string_len, string);
-            assert(0 && "Unimplemented");
-        }
-        case NODE_BUILTIN_PRINT:
-            assert(0 && "Unreachable");
-    }
+    const usize new_label_id =
+        emit_add_string_label_if_not_exists(emitter, string, *string_len);
+    return new_label_id;
 }
+
 static void emit_call_print_integer(emit_t* emitter, emit_op_id_t arg_id) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
 
