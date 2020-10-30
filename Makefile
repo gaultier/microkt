@@ -7,7 +7,7 @@ CFLAGS+=-Wall -Wextra -pedantic -g -std=c99 -march=native
 microktc: $(SRC) $(HEADERS)
 	$(CC) $(CFLAGS) -O2 $(SRC) -o $@
 
-microktc_debug: $(SRC) $(HEADERS)
+microktc_debug: $(SRC) $(HEADERS) macos_x86_64_stdlib.h
 	$(CC) $(CFLAGS) -O0 -fsanitize=address $(SRC) -o $@
 
 macos_x86_64_stdlib.h: macos_x86_64_stdlib.asm stdlib_asm_to_h.awk

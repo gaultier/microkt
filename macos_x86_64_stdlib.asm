@@ -5,6 +5,8 @@
 
 // 1st arg: string label id
 // 2nd arg: string label length
+// Returns: void
+// No stack usage
 print:
 movq %rax, %rsi
 movq %rdi, %rdx
@@ -27,7 +29,7 @@ syscall
 ret
 
 
-// rax: integer argumet
+// 1st arg: integer
 // Returns: void
 // No stack usage
 // Uses int_to_string_data
