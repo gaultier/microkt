@@ -13,7 +13,7 @@ typedef enum {
     LEX_TOKEN_ID_FALSE,
     LEX_TOKEN_ID_IDENTIFIER,
     LEX_TOKEN_ID_STRING_LITERAL,
-    LEX_TOKEN_ID_INT_LITERAL,
+    LEX_TOKEN_ID_INT,
     LEX_TOKEN_ID_EOF,
     LEX_TOKEN_ID_INVALID,
 } token_id_t;
@@ -26,7 +26,7 @@ const u8 token_id_t_to_str[][30] = {
     [LEX_TOKEN_ID_FALSE] = "false",
     [LEX_TOKEN_ID_IDENTIFIER] = "Identifier",
     [LEX_TOKEN_ID_STRING_LITERAL] = "StringLiteral",
-    [LEX_TOKEN_ID_INT_LITERAL] = "IntLiteral",
+    [LEX_TOKEN_ID_INT] = "IntLiteral",
     [LEX_TOKEN_ID_EOF] = "EOF",
     [LEX_TOKEN_ID_INVALID] = "INVALID",
 
@@ -62,7 +62,7 @@ typedef enum {
     LEX_STATE_START,
     LEX_STATE_IDENTIFIER,
     LEX_STATE_STRING_LITERAL,
-    LEX_STATE_INT_LITERAL,
+    LEX_STATE_INT,
 } lex_state_t;
 
 // TODO: trie?
@@ -192,8 +192,8 @@ static token_t lex_next(lexer_t* lexer) {
                     case '7':
                     case '8':
                     case '9': {
-                        state = LEX_STATE_INT_LITERAL;
-                        result.tok_id = LEX_TOKEN_ID_INT_LITERAL;
+                        state = LEX_STATE_INT;
+                        result.tok_id = LEX_TOKEN_ID_INT;
                         break;
                     }
                     default: {
@@ -204,7 +204,7 @@ static token_t lex_next(lexer_t* lexer) {
                 }
                 break;
             }
-            case LEX_STATE_INT_LITERAL: {
+            case LEX_STATE_INT: {
                 switch (c) {
                     case '_': {
                         break;

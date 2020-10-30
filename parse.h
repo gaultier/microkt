@@ -131,9 +131,9 @@ static res_t parser_parse_primary(parser_t* parser, usize* new_primary_node_i) {
 
         return RES_OK;
     }
-    if (parser_eat_token(parser, LEX_TOKEN_ID_INT_LITERAL, &token) == RES_OK) {
-        const ast_node_t new_node = {.node_kind = NODE_INT_LITERAL,
-                                     .node_n = {.node_int_literal = token}};
+    if (parser_eat_token(parser, LEX_TOKEN_ID_INT, &token) == RES_OK) {
+        const ast_node_t new_node = {.node_kind = NODE_INT,
+                                     .node_n = {.node_int = token}};
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = buf_size(parser->par_nodes) - 1;
 

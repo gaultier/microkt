@@ -100,7 +100,7 @@ static usize emit_node_to_string_label(const parser_t* parser, emit_t* emitter,
                 emitter, string, *string_len);
             return new_label_id;
         }
-        case NODE_INT_LITERAL: {
+        case NODE_INT: {
             const u8* string = NULL;
             parser_ast_node_source(parser, node, &string, string_len);
             fprintf(stderr, "[debug] emit_node_to_string_label int `%.*s`",
@@ -122,10 +122,9 @@ static emit_op_id_t emit_call_print_integer(emit_t* emitter,
                                              sizeof("int_to_string_data"), 0)),
                           OP(emitter, OP_REGISTER(emit_fn_arg(0))))));
 
-    buf_push(
-        call_args,
-        OP(emitter, OP_ASSIGN(OP(emitter, OP_INT_LITERAL(21)),  // Hardcoded
-                              OP(emitter, OP_REGISTER(emit_fn_arg(1))))));
+    buf_push(call_args,
+             OP(emitter, OP_ASSIGN(OP(emitter, OP_INT(21)),  // Hardcoded
+                                   OP(emitter, OP_REGISTER(emit_fn_arg(1))))));
 
     return OP(emitter, OP_CALL("print", sizeof("print"), call_args));
 }
@@ -140,7 +139,7 @@ static emit_op_id_t emit_call_print_string(emit_t* emitter, usize label_id,
                                    OP(emitter, OP_REGISTER(emit_fn_arg(0))))));
 
     buf_push(call_args,
-             OP(emitter, OP_ASSIGN(OP(emitter, OP_INT_LITERAL(string_len)),
+             OP(emitter, OP_ASSIGN(OP(emitter, OP_INT(string_len)),
                                    OP(emitter, OP_REGISTER(emit_fn_arg(1))))));
 
     return OP(emitter, OP_CALL("print", sizeof("print"), call_args));
@@ -172,7 +171,7 @@ static void emit_emit(emit_t* emitter, const parser_t* parser) {
                     buf_push(
                         emitter->em_text_section,
                         emit_call_print_string(emitter, label_id, string_len));
-                } else if (arg.node_kind == NODE_INT_LITERAL) {
+                } else if (arg.node_kind == NODE_INT) {
                     buf_push(
                         emitter->em_text_section,
                         emit_call_print_integer(emitter, 0xAAAAAAAA));  // FIXME
@@ -183,7 +182,7 @@ static void emit_emit(emit_t* emitter, const parser_t* parser) {
 
                 break;
             }
-            case NODE_INT_LITERAL:
+            case NODE_INT:
             case NODE_STRING_LITERAL:
             case NODE_KEYWORD_BOOL:
                 assert(0 && "Unreachable");
@@ -240,8 +239,8 @@ static void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
             const emit_op_t* const dst = emit_op_get(emitter, dst_id);
 
             switch (src->op_kind) {
-                case OP_KIND_INT_LITERAL: {
-                    const usize n = src->op_o.op_int_literal;
+                case OP_KIND_INT: {
+                    const usize n = src->op_o.op_int;
                     switch (dst->op_kind) {
                         case OP_KIND_REGISTER: {
                             const reg_t reg = dst->op_o.op_register;
@@ -279,12 +278,12 @@ static void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
             fprintf(file, "%s ", reg_t_to_str[op->op_o.op_register]);
             break;
         }
-        case OP_KIND_INT_LITERAL: {
-            fprintf(file, "%lld ", op->op_o.op_int_literal);
+        case OP_KIND_INT: {
+            fprintf(file, "%lld ", op->op_o.op_int);
             break;
         }
         case OP_KIND_LABEL_ADDRESS: {
-            fprintf(file, ".L%lld(%s) ", op->op_o.op_int_literal,
+            fprintf(file, ".L%lld(%s) ", op->op_o.op_int,
                     reg_t_to_str[REG_RSI]);
             break;
         }
