@@ -268,6 +268,15 @@ static void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
 
                     break;
                 }
+                case OP_KIND_PTR: {
+                    fprintf(file, "leaq ");
+                    emit_asm_dump_op(emitter, src_id, file);
+                    fprintf(file, ", ");
+                    emit_asm_dump_op(emitter, dst_id, file);
+                    fprintf(file, "\n");
+
+                    break;
+                }
                 default:
                     assert(0 && "Unreachable");
             }
@@ -284,13 +293,13 @@ static void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
         }
         case OP_KIND_LABEL_ID: {
             fprintf(file, ".L%lld(%s) ", op->op_o.op_int,
-                    reg_t_to_str[REG_RSI]);
+                    reg_t_to_str[REG_RIP]);
             break;
         }
         case OP_KIND_PTR: {
             fprintf(file, "%.*s+%lld(%s) ", (int)op->op_o.op_ptr.pt_name_len,
                     op->op_o.op_ptr.pt_name, op->op_o.op_ptr.pt_offset,
-                    reg_t_to_str[REG_RSI]);
+                    reg_t_to_str[REG_RIP]);
             break;
         }
         case OP_KIND_STRING_LABEL:
