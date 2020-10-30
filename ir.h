@@ -58,7 +58,7 @@ reg_t emit_fn_arg(u16 position) {
 typedef enum {
     OP_KIND_CALL,
     OP_KIND_INT,
-    OP_KIND_LABEL_ADDRESS,
+    OP_KIND_LABEL_ID,
     OP_KIND_STRING_LABEL,
     OP_KIND_CALLABLE_BLOCK,
     OP_KIND_ASSIGN,
@@ -105,7 +105,7 @@ typedef struct {
     union {
         emit_op_call_t op_call;                      // OP_KIND_CALL
         usize op_int;                                // OP_KIND_INT
-        usize op_label_address;                      // OP_KIND_LABEL_ADDRESS
+        usize op_label_id;                           // OP_KIND_LABEL_ID
         emit_op_string_label_t op_string_label;      // OP_KIND_STRING_LABEL
         emit_op_callable_block_t op_callable_block;  // OP_KIND_CALLABLE_BLOCK
         emit_op_pair_t op_assign;                    // OP_KIND_ASSIGN
@@ -116,9 +116,8 @@ typedef struct {
 
 #define OP_INT(n) ((emit_op_t){.op_kind = OP_KIND_INT, .op_o = {.op_int = n}})
 
-#define OP_LABEL_ADDRESS(n)                        \
-    ((emit_op_t){.op_kind = OP_KIND_LABEL_ADDRESS, \
-                 .op_o = {.op_label_address = n}})
+#define OP_LABEL_ID(n) \
+    ((emit_op_t){.op_kind = OP_KIND_LABEL_ID, .op_o = {.op_label_id = n}})
 
 #define OP_ASSIGN(src, dst)                 \
     ((emit_op_t){.op_kind = OP_KIND_ASSIGN, \

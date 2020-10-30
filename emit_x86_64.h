@@ -135,7 +135,7 @@ static emit_op_id_t emit_call_print_string(emit_t* emitter, usize label_id,
 
     emit_op_id_t* call_args = NULL;
     buf_push(call_args,
-             OP(emitter, OP_ASSIGN(OP(emitter, OP_LABEL_ADDRESS(label_id)),
+             OP(emitter, OP_ASSIGN(OP(emitter, OP_LABEL_ID(label_id)),
                                    OP(emitter, OP_REGISTER(emit_fn_arg(0))))));
 
     buf_push(call_args,
@@ -253,8 +253,8 @@ static void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
                     }
                     break;
                 }
-                case OP_KIND_LABEL_ADDRESS: {
-                    const usize label = src->op_o.op_label_address;
+                case OP_KIND_LABEL_ID: {
+                    const usize label = src->op_o.op_label_id;
                     switch (dst->op_kind) {
                         case OP_KIND_REGISTER: {
                             const reg_t reg = dst->op_o.op_register;
@@ -282,7 +282,7 @@ static void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
             fprintf(file, "%lld ", op->op_o.op_int);
             break;
         }
-        case OP_KIND_LABEL_ADDRESS: {
+        case OP_KIND_LABEL_ID: {
             fprintf(file, ".L%lld(%s) ", op->op_o.op_int,
                     reg_t_to_str[REG_RSI]);
             break;
