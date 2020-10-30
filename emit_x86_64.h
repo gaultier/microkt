@@ -311,7 +311,7 @@ static void emit_asm_dump(const emit_t* emitter, FILE* file) {
                 break;
             }
             default:
-                assert(0);  // Unreachable
+                assert(0 && "Unreachable");
         }
     }
 
