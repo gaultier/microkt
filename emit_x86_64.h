@@ -180,12 +180,13 @@ static void emit_emit(emit_t* emitter, const parser_t* parser) {
                 const ast_node_t arg =
                     parser->par_nodes[builtin_print.bp_arg_i];
 
-                usize string_len = 0;
-                usize label_id = 0;
                 if (arg.node_kind == NODE_KEYWORD_BOOL ||
                     arg.node_kind == NODE_STRING_LITERAL) {
-                    label_id = emit_node_to_string_label(parser, emitter, &arg,
-                                                         &string_len);
+                    usize string_len = 0;
+
+                    const usize label_id = emit_node_to_string_label(
+                        parser, emitter, &arg, &string_len);
+
                     emit_call_print_string(emitter, label_id, string_len);
                 } else if (arg.node_kind == NODE_INT) {
                     const usize n = parse_node_to_int(parser, &arg);
