@@ -10,6 +10,9 @@ microktc: $(SRC) $(HEADERS)
 microktc_debug: $(SRC) $(HEADERS)
 	$(CC) $(CFLAGS) -O0 -fsanitize=address $(SRC) -o $@
 
+macos_x86_64_stdlib.h: macos_x86_64_stdlib.asm stdlib_asm_to_h.awk
+	awk -f stdlib_asm_to_h.awk $< > $@
+
 clean:
 	rm -rf microktc microktc_debug ./*.dSYM e2e/*.o e2e/*.asm
 
