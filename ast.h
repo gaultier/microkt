@@ -1,6 +1,6 @@
 #pragma once
 
-#include "lex.h"
+#include "common.h"
 
 typedef usize token_index_t;
 

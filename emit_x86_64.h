@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ast.h"
-#include "common.h"
 #include "ir.h"
 #include "macos_x86_64_stdlib.h"
 #include "parse.h"
