@@ -256,34 +256,14 @@ static void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
 
             switch (src->op_kind) {
                 case OP_KIND_INT: {
-                    const usize n = src->op_o.op_int;
-                    switch (dst->op_kind) {
-                        case OP_KIND_REGISTER: {
-                            const reg_t reg = dst->op_o.op_register;
-                            fprintf(file, "movq $%llu, %s\n", n,
-                                    reg_t_to_str[reg]);
-                            break;
-                        }
-                        default:
-                            assert(0 && "Unreachable");
-                    }
+                    fprintf(file, "movq ");
+                    emit_asm_dump_op(emitter, src_id, file);
+                    fprintf(file, ", ");
+                    emit_asm_dump_op(emitter, dst_id, file);
+                    fprintf(file, "\n");
                     break;
                 }
-                case OP_KIND_LABEL_ID: {
-                    const usize label = src->op_o.op_label_id;
-                    switch (dst->op_kind) {
-                        case OP_KIND_REGISTER: {
-                            const reg_t reg = dst->op_o.op_register;
-                            fprintf(file, "leaq .L%llu(%s), %s\n", label,
-                                    reg_t_to_str[REG_RIP], reg_t_to_str[reg]);
-                            break;
-                        }
-                        default:
-                            assert(0 && "Unreachable");
-                    }
-
-                    break;
-                }
+                case OP_KIND_LABEL_ID:
                 case OP_KIND_PTR: {
                     fprintf(file, "leaq ");
                     emit_asm_dump_op(emitter, src_id, file);
@@ -304,7 +284,7 @@ static void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
             break;
         }
         case OP_KIND_INT: {
-            fprintf(file, "%lld ", op->op_o.op_int);
+            fprintf(file, "$%lld ", op->op_o.op_int);
             break;
         }
         case OP_KIND_LABEL_ID: {
