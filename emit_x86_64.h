@@ -147,8 +147,8 @@ static emit_op_id_t emit_call_print_integer(emit_t* emitter,
     }
 }
 
-static emit_op_id_t emit_call_print_string(emit_t* emitter, usize label_id,
-                                           usize string_len) {
+static void emit_call_print_string(emit_t* emitter, usize label_id,
+                                   usize string_len) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
 
     emit_op_id_t* call_args = NULL;
@@ -160,7 +160,8 @@ static emit_op_id_t emit_call_print_string(emit_t* emitter, usize label_id,
              OP(emitter, OP_ASSIGN(OP(emitter, OP_INT(string_len)),
                                    OP(emitter, OP_REGISTER(emit_fn_arg(1))))));
 
-    return OP(emitter, OP_CALL("print", sizeof("print"), call_args));
+    buf_push(emitter->em_text_section,
+             OP(emitter, OP_CALL("print", sizeof("print"), call_args)));
 }
 
 static void emit_emit(emit_t* emitter, const parser_t* parser) {
@@ -186,9 +187,7 @@ static void emit_emit(emit_t* emitter, const parser_t* parser) {
                     arg.node_kind == NODE_STRING_LITERAL) {
                     label_id = emit_node_to_string_label(parser, emitter, &arg,
                                                          &string_len);
-                    buf_push(
-                        emitter->em_text_section,
-                        emit_call_print_string(emitter, label_id, string_len));
+                    emit_call_print_string(emitter, label_id, string_len);
                 } else if (arg.node_kind == NODE_INT) {
                     emit_call_print_integer(emitter,
                                             OP(emitter, OP_INT(42)));  // FIXME
