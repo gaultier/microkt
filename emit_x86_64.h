@@ -183,7 +183,7 @@ static void emit_emit(emit_t* emitter, const parser_t* parser) {
                     emit_call_print_integer(emitter, OP(emitter, OP_INT(n)));
 
                 } else {
-                    assert(0 && "Unreachable");
+                    UNREACHABLE();
                 }
 
                 break;
@@ -191,7 +191,7 @@ static void emit_emit(emit_t* emitter, const parser_t* parser) {
             case NODE_INT:
             case NODE_STRING_LITERAL:
             case NODE_KEYWORD_BOOL:
-                assert(0 && "Unreachable");
+                UNREACHABLE();
         }
     }
 
@@ -263,7 +263,7 @@ static void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
                     break;
                 }
                 default:
-                    assert(0 && "Unreachable");
+                    UNREACHABLE();
             }
 
             break;
@@ -287,7 +287,7 @@ static void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
             break;
         }
         case OP_KIND_STRING_LABEL:
-            assert(0 && "Unreachable");
+            UNREACHABLE();
     }
 }
 
@@ -308,7 +308,7 @@ static void emit_asm_dump(const emit_t* emitter, FILE* file) {
                 break;
             }
             default:
-                assert(0 && "Unreachable");
+                UNREACHABLE();
         }
     }
 
