@@ -108,16 +108,14 @@ static res_t parser_parse_primary(parser_t* parser, usize* new_primary_node_i) {
 
     token_index_t token = 0;
     if (parser_eat_token(parser, LEX_TOKEN_ID_TRUE, &token) == RES_OK) {
-        const ast_node_t new_node = {.node_kind = NODE_KEYWORD_BOOL,
-                                     .node_n = {.node_boolean = token}};
+        const ast_node_t new_node = NODE_BOOL(token);
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = buf_size(parser->par_nodes) - 1;
 
         return RES_OK;
     }
     if (parser_eat_token(parser, LEX_TOKEN_ID_FALSE, &token) == RES_OK) {
-        const ast_node_t new_node = {.node_kind = NODE_KEYWORD_BOOL,
-                                     .node_n = {.node_boolean = token}};
+        const ast_node_t new_node = NODE_BOOL(token);
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = buf_size(parser->par_nodes) - 1;
 
@@ -125,8 +123,7 @@ static res_t parser_parse_primary(parser_t* parser, usize* new_primary_node_i) {
     }
     if (parser_eat_token(parser, LEX_TOKEN_ID_STRING_LITERAL, &token) ==
         RES_OK) {
-        const ast_node_t new_node = {.node_kind = NODE_STRING_LITERAL,
-                                     .node_n = {.node_string_literal = token}};
+        const ast_node_t new_node = NODE_STRING_LITERAL(token);
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = buf_size(parser->par_nodes) - 1;
 

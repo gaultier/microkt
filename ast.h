@@ -30,10 +30,10 @@ const u8 ast_node_kind_t_to_str[][30] = {
 struct ast_node_t {
     ast_node_kind_t node_kind;
     union {
-        ast_builtin_print_t node_builtin_print;
-        token_index_t node_boolean;
-        token_index_t node_string_literal;
-        token_index_t node_int;
+        ast_builtin_print_t node_builtin_print;  // NODE_BUILTIN_PRINT
+        token_index_t node_boolean;              // NODE_KEYWORD_BOOL
+        token_index_t node_string_literal;       // NODE_STRING_LITERAL
+        token_index_t node_int;                  // NODE_INT
     } node_n;
 };
 
@@ -84,3 +84,21 @@ static token_index_t ast_node_last_token(const ast_node_t* node) {
             return node->node_n.node_int;
     }
 }
+
+#define NODE_PRINT(arg, keyword, rparen) \
+    ((ast_node_t){.node_kind = NODE_BUILTIN_PRINT,          \
+                  .node_n = {.node_builtin_print={{.bp_arg_i = arg,               \
+                             .bp_keyword_print_i = keyword, \
+                             .bp_rparen_i = rparen}}})
+#define NODE_INT(n) \
+    ((ast_node_t){.node_kind = NODE_INT, .node_n = {.node_int = n}})
+
+#define NODE_BOOL(n)                              \
+    ((ast_node_t){.node_kind = NODE_KEYWORD_BOOL, \
+                  .node_n = {.node_boolean = n}})
+
+#define NODE_STRING_LITERAL(n)                      \
+    ((ast_node_t){.node_kind = NODE_STRING_LITERAL, \
+                  .node_n = {.node_string_literal = n}})
+
+#define AS_PRINT(node) ((ast_builtin_print_t)node.node_n.node_builtin_print)
