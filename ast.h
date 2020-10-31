@@ -85,11 +85,12 @@ static token_index_t ast_node_last_token(const ast_node_t* node) {
     }
 }
 
-#define NODE_PRINT(arg, keyword, rparen) \
-    ((ast_node_t){.node_kind = NODE_BUILTIN_PRINT,          \
-                  .node_n = {.node_builtin_print={{.bp_arg_i = arg,               \
-                             .bp_keyword_print_i = keyword, \
-                             .bp_rparen_i = rparen}}})
+#define NODE_PRINT(arg, keyword, rparen)                                 \
+    ((ast_node_t){                                                       \
+        .node_kind = NODE_BUILTIN_PRINT,                                 \
+        .node_n = {.node_builtin_print = {.bp_arg_i = arg,               \
+                                          .bp_keyword_print_i = keyword, \
+                                          .bp_rparen_i = rparen}}})
 #define NODE_INT(n) \
     ((ast_node_t){.node_kind = NODE_INT, .node_n = {.node_int = n}})
 
@@ -101,4 +102,4 @@ static token_index_t ast_node_last_token(const ast_node_t* node) {
     ((ast_node_t){.node_kind = NODE_STRING_LITERAL, \
                   .node_n = {.node_string_literal = n}})
 
-#define AS_PRINT(node) ((ast_builtin_print_t)node.node_n.node_builtin_print)
+#define AS_PRINT(node) ((node).node_n.node_builtin_print)

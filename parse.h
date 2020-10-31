@@ -130,8 +130,7 @@ static res_t parser_parse_primary(parser_t* parser, usize* new_primary_node_i) {
         return RES_OK;
     }
     if (parser_eat_token(parser, LEX_TOKEN_ID_INT, &token) == RES_OK) {
-        const ast_node_t new_node = {.node_kind = NODE_INT,
-                                     .node_n = {.node_int = token}};
+        const ast_node_t new_node = NODE_INT(token);
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = buf_size(parser->par_nodes) - 1;
 
@@ -175,12 +174,7 @@ static res_t parser_parse_builtin_print(parser_t* parser, usize* new_node_i) {
         if (parser_expect_token(parser, LEX_TOKEN_ID_RPAREN, &rparen) != RES_OK)
             return RES_ERR;
 
-        const ast_node_t new_node = {
-            .node_kind = NODE_BUILTIN_PRINT,
-            .node_n = {
-                .node_builtin_print = {.bp_arg_i = arg_i,
-                                       .bp_keyword_print_i = keyword_print,
-                                       .bp_rparen_i = rparen}}};
+        const ast_node_t new_node = NODE_PRINT(arg_i, keyword_print, rparen);
         buf_push(parser->par_nodes, new_node);
         *new_node_i = buf_size(parser->par_nodes) - 1;
 

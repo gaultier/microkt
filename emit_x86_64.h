@@ -165,8 +165,7 @@ static void emit_emit(emit_t* emitter, const parser_t* parser) {
 
         switch (stmt->node_kind) {
             case NODE_BUILTIN_PRINT: {
-                const ast_builtin_print_t builtin_print =
-                    stmt->node_n.node_builtin_print;
+                const ast_builtin_print_t builtin_print = AS_PRINT(*stmt);
                 const ast_node_t arg =
                     parser->par_nodes[builtin_print.bp_arg_i];
 
