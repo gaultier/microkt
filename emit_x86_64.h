@@ -273,18 +273,17 @@ static void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
             break;
         }
         case OP_KIND_INT: {
-            fprintf(file, "$%lld ", op->op_o.op_int);
+            fprintf(file, "$%lld ", AS_INT(*op));
             break;
         }
         case OP_KIND_LABEL_ID: {
-            fprintf(file, ".L%lld(%s) ", op->op_o.op_int,
-                    reg_t_to_str[REG_RIP]);
+            fprintf(file, ".L%lld(%s) ", AS_INT(*op), reg_t_to_str[REG_RIP]);
             break;
         }
         case OP_KIND_PTR: {
-            fprintf(file, "%.*s+%lld(%s) ", (int)op->op_o.op_ptr.pt_name_len,
-                    op->op_o.op_ptr.pt_name, op->op_o.op_ptr.pt_offset,
-                    reg_t_to_str[REG_RIP]);
+            emit_op_ptr_t p = AS_PTR(*op);
+            fprintf(file, "%.*s+%lld(%s) ", (int)p.pt_name_len, p.pt_name,
+                    p.pt_offset, reg_t_to_str[REG_RIP]);
             break;
         }
         case OP_KIND_STRING_LABEL:
@@ -303,7 +302,7 @@ static void emit_asm_dump(const emit_t* emitter, FILE* file) {
         const emit_op_t* const op = emit_op_get(emitter, op_id);
         switch (op->op_kind) {
             case OP_KIND_STRING_LABEL: {
-                const emit_op_string_label_t s = op->op_o.op_string_label;
+                const emit_op_string_label_t s = AS_STRING_LABEL(*op);
                 fprintf(file, ".L%llu: .asciz \"%.*s\"\n", s.sl_label_id,
                         (int)s.sl_string_len, s.sl_string);
                 break;
