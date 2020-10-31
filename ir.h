@@ -153,3 +153,21 @@ typedef struct {
 
 #define OP(emitter, op) (emit_make_op_with(emitter, op))
 
+#define AS_INT(op) ((op).op_o.op_int)
+
+#define AS_REGISTER(op) ((op).op_o.op_register)
+
+#define AS_CALL(op) ((op).op_o.op_call)
+
+#define AS_PTR(op) ((op).op_o.op_ptr)
+
+#define AS_REGISTER(op) ((op).op_o.op_register)
+
+#define AS_LABEL_ID(op) ((op).op_o.op_label_id)
+
+#define AS_ASSIGN(op) ((op).op_o.op_assign)
+
+#define AS_CALLABLE_BLOCK(op) ((op).op_o.op_callable_block)
+
+#define AS_STRING_LABEL(op) ((op).op_o.op_string_label)
+

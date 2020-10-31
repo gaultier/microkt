@@ -66,7 +66,7 @@ static usize emit_add_string_label_if_not_exists(emit_t* emitter,
         const emit_op_t op = *(emit_op_get(emitter, op_id));
         if (op.op_kind != OP_KIND_STRING_LABEL) continue;
 
-        const emit_op_string_label_t s = op.op_o.op_string_label;
+        const emit_op_string_label_t s = AS_STRING_LABEL(op);
         if (memcmp(s.sl_string, string, MIN(s.sl_string_len, string_len)) ==
             0)  // Found
             return s.sl_label_id;
@@ -210,7 +210,7 @@ static void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
         case OP_KIND_CALL: {
             fprintf(file, "\n");
 
-            const emit_op_call_t call = op->op_o.op_call;
+            const emit_op_call_t call = AS_CALL(*op);
             for (usize j = 0; j < buf_size(call.sc_instructions); j++) {
                 const emit_op_id_t arg_id = call.sc_instructions[j];
                 emit_asm_dump_op(emitter, arg_id, file);
@@ -222,7 +222,7 @@ static void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
         case OP_KIND_CALLABLE_BLOCK: {
             fprintf(file, "\n");
 
-            const emit_op_callable_block_t block = op->op_o.op_callable_block;
+            const emit_op_callable_block_t block = AS_CALLABLE_BLOCK(*op);
             if (block.cb_flags & CALLABLE_BLOCK_FLAG_GLOBAL)
                 fprintf(file, ".global %.*s\n", (int)block.cb_name_len,
                         block.cb_name);
@@ -238,7 +238,7 @@ static void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
             break;
         }
         case OP_KIND_ASSIGN: {
-            const emit_op_pair_t assign = op->op_o.op_assign;
+            const emit_op_pair_t assign = AS_ASSIGN(*op);
             const emit_op_id_t src_id = assign.pa_src;
             const emit_op_id_t dst_id = assign.pa_dst;
             const emit_op_t* const src = emit_op_get(emitter, src_id);
@@ -269,7 +269,7 @@ static void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
             break;
         }
         case OP_KIND_REGISTER: {
-            fprintf(file, "%s ", reg_t_to_str[op->op_o.op_register]);
+            fprintf(file, "%s ", reg_t_to_str[AS_REGISTER(*op)]);
             break;
         }
         case OP_KIND_INT: {

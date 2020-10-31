@@ -51,3 +51,5 @@ typedef u8 res_t;
         for (usize i = 0; i < indent; i++) fprintf(stderr, " ");  \
         fprintf(stderr, fmt, __VA_ARGS__);                        \
     } while (0)
+
+#define UNREACHABLE() (assert(0 && "Unreachable"))
