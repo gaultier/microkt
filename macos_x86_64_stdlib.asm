@@ -52,26 +52,28 @@ int_to_string:
     movq $0, int_to_string_data+19(%rip)
     movq $0, int_to_string_data+20(%rip)
 
-    leaq int_to_string_data+21(%rip), %r9 // r9: Point at the end of the buffer
     xorq %r8, %r8 // r8: Loop index
     
     int_to_string_loop:
-        cmpq $0, %rax // While dividee != 0
+        cmpq $0, %rax // While n != 0
         jz int_to_string_end
 
-        // Dividee / 10
+        // n / 10
         movq $10, %rcx 
         xorq %rdx, %rdx
-        div %rcx
-
+        idiv %rcx
+    
+        // buffer[20-i] = rem + '0'
         add $48, %rdx // Convert integer to character by adding '0'
-
-        dec %r9 // *(--end) = rem
-        movb %dl, (%r9)
+        leaq int_to_string_data(%rip), %r11
+        addq $20, %r11
+        subq %r8,  %r11
+        movb %dl, (%r11)
 
         incq %r8
         jmp int_to_string_loop
 
     int_to_string_end:
       // Epilog
+      movq %r8, %rax
       ret

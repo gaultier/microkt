@@ -313,7 +313,7 @@ static void emit_asm_dump(const emit_t* emitter, FILE* file) {
         switch (op->op_kind) {
             case OP_KIND_STRING_LABEL: {
                 const emit_op_string_label_t s = AS_STRING_LABEL(*op);
-                fprintf(file, ".L%llu: .asciz \"%.*s\"\n", s.sl_label_id,
+                fprintf(file, ".L%llu: .ascii \"%.*s\"\n", s.sl_label_id,
                         (int)s.sl_string_len, s.sl_string);
                 break;
             }

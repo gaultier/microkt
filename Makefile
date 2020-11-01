@@ -27,11 +27,16 @@ e2e/print_string: e2e/print_string.kts $(BIN_TEST)
 e2e/print_integers: e2e/print_integers.kts $(BIN_TEST)
 	$(BIN_TEST) $<
 
-test: e2e/print_bool e2e/print_string e2e/print_integers
+e2e/hello_world: e2e/hello_world.kts $(BIN_TEST)
+	$(BIN_TEST) $<
+
+test: e2e/print_bool e2e/print_string e2e/print_integers e2e/hello_world
 	@printf "\n===== Tests =====\n"
 	./e2e/print_bool
 	@printf "\n=====\n"
 	./e2e/print_string
 	@printf "\n=====\n"
 	./e2e/print_integers
+	@printf "\n=====\n"
+	./e2e/hello_world
 	@printf "\n=====\n"
