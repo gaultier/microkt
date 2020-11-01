@@ -1,21 +1,16 @@
 #pragma once
 
+#include "common.h"
 #include "ir.h"
 #include "macos_x86_64_stdlib.h"
 #include "parse.h"
-
-const usize syscall_exit_osx = (usize)0x2000001;
-const usize syscall_write_osx = (usize)0x2000004;
-
-const usize STIN = 0;
-const usize STDOUT = 1;
-const usize STDERR = 2;
 
 typedef struct {
     emit_op_t* em_ops_arena;
     usize em_label_id;
     emit_op_id_t* em_text_section;
     emit_op_id_t* em_data_section;
+    emit_op_id_t em_current_block;
 } emit_t;
 
 static emit_op_t* emit_op_get(const emit_t* emitter, emit_op_id_t id) {
@@ -26,6 +21,16 @@ static emit_op_t* emit_op_get(const emit_t* emitter, emit_op_id_t id) {
     PG_ASSERT_COND(id, <, len, "%llu");
 
     return &emitter->em_ops_arena[id];
+}
+
+static emit_op_t* emit_current_block(emit_t* emitter) {
+    PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
+    emit_op_t* const current = emit_op_get(emitter, emitter->em_current_block);
+
+    PG_ASSERT_COND((void*)current, !=, NULL, "%p");
+    PG_ASSERT_COND(current->op_kind, ==, OP_KIND_CALLABLE_BLOCK, "%d");
+
+    return current;
 }
 
 static emit_op_id_t emit_make_op_with(emit_t* emitter, emit_op_t op) {
@@ -43,12 +48,16 @@ static emit_t emit_init() {
     emit_t emitter = {.em_ops_arena = NULL, .em_label_id = 0};
     buf_grow(emitter.em_ops_arena, 100);
     buf_grow(emitter.em_data_section, 100);
-    buf_grow(emitter.em_text_section, 100);
+    buf_grow(emitter.em_text_section, 1);
 
+    emit_op_id_t* main_body = NULL;
+    // buf_grow(main_body, 100);
     const emit_op_id_t main =
-        OP(&emitter, OP_CALLABLE_BLOCK("_main", sizeof("main"), NULL,
+        OP(&emitter, OP_CALLABLE_BLOCK("_main", sizeof("main"), main_body,
                                        CALLABLE_BLOCK_FLAG_GLOBAL));
     buf_push(emitter.em_text_section, main);
+
+    emitter.em_current_block = main;
 
     return emitter;
 }
@@ -113,7 +122,8 @@ static void emit_call_print_integer(emit_t* emitter, emit_op_id_t arg_id) {
             int_to_string_args,
             OP(emitter,
                OP_ASSIGN(arg_id, OP(emitter, OP_REGISTER(emit_fn_arg(0))))));
-        buf_push(emitter->em_text_section,
+        emit_op_t* const current_block = emit_current_block(emitter);
+        buf_push(current_block->op_o.op_callable_block.cb_body,
                  OP(emitter, OP_CALL("int_to_string", sizeof("int_to_string"),
                                      int_to_string_args)));
     }
@@ -131,7 +141,8 @@ static void emit_call_print_integer(emit_t* emitter, emit_op_id_t arg_id) {
             OP(emitter, OP_ASSIGN(OP(emitter, OP_INT(21)),  // Hardcoded
                                   OP(emitter, OP_REGISTER(emit_fn_arg(1))))));
 
-        buf_push(emitter->em_text_section,
+        emit_op_t* const current_block = emit_current_block(emitter);
+        buf_push(current_block->op_o.op_callable_block.cb_body,
                  OP(emitter, OP_CALL("print", sizeof("print"), call_args)));
     }
 }
@@ -149,7 +160,8 @@ static void emit_call_print_string(emit_t* emitter, usize label_id,
              OP(emitter, OP_ASSIGN(OP(emitter, OP_INT(string_len)),
                                    OP(emitter, OP_REGISTER(emit_fn_arg(1))))));
 
-    buf_push(emitter->em_text_section,
+    emit_op_t* const current_block = emit_current_block(emitter);
+    buf_push(current_block->op_o.op_callable_block.cb_body,
              OP(emitter, OP_CALL("print", sizeof("print"), call_args)));
 }
 
@@ -193,9 +205,6 @@ static void emit_emit(emit_t* emitter, const parser_t* parser) {
                 UNREACHABLE();
         }
     }
-
-    buf_push(emitter->em_text_section,
-             OP(emitter, OP_CALL("exit_ok", sizeof("exit_ok"), NULL)));
 }
 
 static void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
@@ -232,7 +241,7 @@ static void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
                 const emit_op_id_t body_id = block.cb_body[j];
                 emit_asm_dump_op(emitter, body_id, file);
             }
-            fprintf(file, "\n");
+            fprintf(file, "\nret\n");
 
             break;
         }

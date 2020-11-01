@@ -24,14 +24,6 @@ movq $0, %rsi
 movq $0, %rdx
 ret
 
-// No args
-exit_ok:
-movq $0x2000001, %rax
-movq $0, %rdi
-syscall
-ret
-
-
 // 1st arg: integer
 // Returns: void
 // No stack usage
