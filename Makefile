@@ -1,10 +1,12 @@
-.PHONY: clean test
+.PHONY: clean test all e2e
 
 SRC:=$(wildcard *.c)
 HEADERS:=$(wildcard *.h)
 CFLAGS+=-Wall -Wextra -pedantic -g -std=c99 -march=native
 
 BIN_TEST:=./microktc_debug
+
+all: microktc microktc_debug e2e
 
 microktc: $(SRC) $(HEADERS)
 	$(CC) $(CFLAGS) -O2 $(SRC) -o $@
@@ -30,7 +32,9 @@ e2e/print_integers: e2e/print_integers.kts $(BIN_TEST)
 e2e/hello_world: e2e/hello_world.kts $(BIN_TEST)
 	$(BIN_TEST) $<
 
-test: e2e/print_bool e2e/print_string e2e/print_integers e2e/hello_world
+e2e: e2e/print_bool e2e/print_string e2e/print_integers e2e/hello_world
+
+test: e2e
 	@printf "\n===== Tests =====\n"
 	./e2e/print_bool
 	@printf "\n=====\n"
