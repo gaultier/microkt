@@ -114,7 +114,7 @@ static res_t driver_run(const u8* file_name0) {
     // ld
     {
         u8 argv0[3 * MAXPATHLEN] = "\0";
-        snprintf(argv0, sizeof(argv0), "ld %s.o -lSystem -o %s",
+        snprintf(argv0, sizeof(argv0), "ld %s.o -lSystem -o %s -e _main",
                  base_file_name0, base_file_name0);
         log_debug("%s", argv0);
 
