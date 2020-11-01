@@ -23,14 +23,17 @@ static emit_op_t* emit_op_get(const emit_t* emitter, emit_op_id_t id) {
     return &emitter->em_ops_arena[id];
 }
 
-static emit_op_t* emit_current_block(emit_t* emitter) {
+static emit_op_id_t emit_add_to_current_block(emit_t* emitter,
+                                              emit_op_id_t op) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
     emit_op_t* const current = emit_op_get(emitter, emitter->em_current_block);
 
     PG_ASSERT_COND((void*)current, !=, NULL, "%p");
     PG_ASSERT_COND(current->op_kind, ==, OP_KIND_CALLABLE_BLOCK, "%d");
 
-    return current;
+    buf_push(current->op_o.op_callable_block.cb_body, op);
+
+    return op;
 }
 
 static emit_op_id_t emit_make_op_with(emit_t* emitter, emit_op_t op) {
@@ -46,12 +49,12 @@ static emit_op_id_t emit_make_op_with(emit_t* emitter, emit_op_t op) {
 
 static emit_t emit_init() {
     emit_t emitter = {.em_ops_arena = NULL, .em_label_id = 0};
-    buf_grow(emitter.em_ops_arena, 100);
-    buf_grow(emitter.em_data_section, 100);
+    buf_grow(emitter.em_ops_arena, 1);
+    buf_grow(emitter.em_data_section, 1);
     buf_grow(emitter.em_text_section, 1);
 
     emit_op_id_t* main_body = NULL;
-    // buf_grow(main_body, 100);
+    buf_grow(main_body, 1);
     const emit_op_id_t main =
         OP(&emitter, OP_CALLABLE_BLOCK("_main", sizeof("main"), main_body,
                                        CALLABLE_BLOCK_FLAG_GLOBAL));
@@ -122,10 +125,11 @@ static void emit_call_print_integer(emit_t* emitter, emit_op_id_t arg_id) {
             int_to_string_args,
             OP(emitter,
                OP_ASSIGN(arg_id, OP(emitter, OP_REGISTER(emit_fn_arg(0))))));
-        emit_op_t* const current_block = emit_current_block(emitter);
-        buf_push(current_block->op_o.op_callable_block.cb_body,
-                 OP(emitter, OP_CALL("int_to_string", sizeof("int_to_string"),
-                                     int_to_string_args)));
+
+        emit_add_to_current_block(
+            emitter,
+            OP(emitter, OP_CALL("int_to_string", sizeof("int_to_string"),
+                                int_to_string_args)));
     }
     {
         emit_op_id_t* call_args = NULL;
@@ -141,9 +145,8 @@ static void emit_call_print_integer(emit_t* emitter, emit_op_id_t arg_id) {
             OP(emitter, OP_ASSIGN(OP(emitter, OP_INT(21)),  // Hardcoded
                                   OP(emitter, OP_REGISTER(emit_fn_arg(1))))));
 
-        emit_op_t* const current_block = emit_current_block(emitter);
-        buf_push(current_block->op_o.op_callable_block.cb_body,
-                 OP(emitter, OP_CALL("print", sizeof("print"), call_args)));
+        emit_add_to_current_block(
+            emitter, OP(emitter, OP_CALL("print", sizeof("print"), call_args)));
     }
 }
 
@@ -160,9 +163,8 @@ static void emit_call_print_string(emit_t* emitter, usize label_id,
              OP(emitter, OP_ASSIGN(OP(emitter, OP_INT(string_len)),
                                    OP(emitter, OP_REGISTER(emit_fn_arg(1))))));
 
-    emit_op_t* const current_block = emit_current_block(emitter);
-    buf_push(current_block->op_o.op_callable_block.cb_body,
-             OP(emitter, OP_CALL("print", sizeof("print"), call_args)));
+    emit_add_to_current_block(
+        emitter, OP(emitter, OP_CALL("print", sizeof("print"), call_args)));
 }
 
 static void emit_emit(emit_t* emitter, const parser_t* parser) {
