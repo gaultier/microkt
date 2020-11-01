@@ -6,6 +6,8 @@ WORKDIR /microktc
 
 COPY *.c .
 COPY *.h .
+COPY *.asm .
+COPY *.awk .
 COPY Makefile .
 
 RUN make

@@ -1,4 +1,6 @@
 *
 !*.h
 !*.c
+!*.asm
+!*.awk
 !Makefile
