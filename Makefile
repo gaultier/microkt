@@ -4,6 +4,8 @@ SRC:=$(wildcard *.c)
 HEADERS:=$(wildcard *.h)
 CFLAGS+=-Wall -Wextra -pedantic -g -std=c99 -march=native
 
+BIN_TEST:=./microktc_debug
+
 microktc: $(SRC) $(HEADERS)
 	$(CC) $(CFLAGS) -O2 $(SRC) -o $@
 
@@ -16,14 +18,14 @@ macos_x86_64_stdlib.h: macos_x86_64_stdlib.asm stdlib_asm_to_h.awk
 clean:
 	rm -rf microktc microktc_debug ./*.dSYM e2e/*.o e2e/*.asm
 
-e2e/print_bool: e2e/print_bool.kts microktc_debug
-	./microktc_debug $<
+e2e/print_bool: e2e/print_bool.kts $(BIN_TEST)
+	$(BIN_TEST) $<
 
-e2e/print_string: e2e/print_string.kts microktc_debug
-	./microktc_debug $<
+e2e/print_string: e2e/print_string.kts $(BIN_TEST)
+	$(BIN_TEST) $<
 
-e2e/print_integers: e2e/print_integers.kts microktc_debug
-	./microktc_debug $<
+e2e/print_integers: e2e/print_integers.kts $(BIN_TEST)
+	$(BIN_TEST) $<
 
 test: e2e/print_bool e2e/print_string e2e/print_integers
 	@printf "\n===== Tests =====\n"
