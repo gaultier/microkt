@@ -28,6 +28,21 @@ ret
 // Returns: void
 // No stack usage
 // Uses int_to_string_data
+print_int:
+    call int_to_string
+
+    movq %rax, %rdi // len
+    leaq int_to_string_data(%rip), %rax
+    addq $21, %rax
+    subq %rdi, %rax
+    call print
+    ret
+
+
+// 1st arg: integer
+// Returns: void
+// No stack usage
+// Uses int_to_string_data
 int_to_string:
     // Reset the buffer
     movq $0, int_to_string_data+0(%rip)

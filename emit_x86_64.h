@@ -116,38 +116,17 @@ static usize emit_node_to_string_label(const parser_t* parser, emit_t* emitter,
 static void emit_call_print_integer(emit_t* emitter, emit_op_id_t arg_id) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
 
-    {
-        const emit_op_t arg = *(emit_op_get(emitter, arg_id));
-        PG_ASSERT_COND(arg.op_kind, ==, OP_KIND_INT, "%d");
+    const emit_op_t arg = *(emit_op_get(emitter, arg_id));
+    PG_ASSERT_COND(arg.op_kind, ==, OP_KIND_INT, "%d");
 
-        emit_op_id_t* int_to_string_args = NULL;
-        buf_push(
-            int_to_string_args,
-            OP(emitter,
-               OP_ASSIGN(arg_id, OP(emitter, OP_REGISTER(emit_fn_arg(0))))));
+    emit_op_id_t* print_int_args = NULL;
+    buf_push(print_int_args,
+             OP(emitter,
+                OP_ASSIGN(arg_id, OP(emitter, OP_REGISTER(emit_fn_arg(0))))));
 
-        emit_add_to_current_block(
-            emitter,
-            OP(emitter, OP_CALL("int_to_string", sizeof("int_to_string"),
-                                int_to_string_args)));
-    }
-    {
-        emit_op_id_t* call_args = NULL;
-        buf_push(
-            call_args,
-            OP(emitter,
-               OP_ASSIGN(OP(emitter, OP_PTR("int_to_string_data",
-                                            sizeof("int_to_string_data"), 0)),
-                         OP(emitter, OP_REGISTER(emit_fn_arg(0))))));
-
-        buf_push(
-            call_args,
-            OP(emitter, OP_ASSIGN(OP(emitter, OP_INT(21)),  // Hardcoded
-                                  OP(emitter, OP_REGISTER(emit_fn_arg(1))))));
-
-        emit_add_to_current_block(
-            emitter, OP(emitter, OP_CALL("print", sizeof("print"), call_args)));
-    }
+    emit_add_to_current_block(
+        emitter,
+        OP(emitter, OP_CALL("print_int", sizeof("print_int"), print_int_args)));
 }
 
 static void emit_call_print_string(emit_t* emitter, usize label_id,
