@@ -35,7 +35,7 @@ BEGIN {
         }
 
         if (exit_code != 0 || actual_output != expected_output) {
-            print  RED "✘ " test RESET
+            print RED "✘ " test RESET
             print WHITE "Actual output below:\n" RESET GREY actual_output RESET
 
             ret = 1
