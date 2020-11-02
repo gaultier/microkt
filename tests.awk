@@ -6,6 +6,7 @@ BEGIN {
     tests[2] = "e2e/print_integers"
     tests[3] = "e2e/hello_world"
 
+    // TODO: extract expected outputs from the source file comments?
     outputs[0] = "truefalsefalse"
     outputs[1] = "hello world"
     outputs[2] = "1999"
