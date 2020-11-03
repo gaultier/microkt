@@ -140,7 +140,7 @@ static res_t lex_number(lexer_t* lexer, token_t* result) {
 }
 
 // TODO: escape sequences
-// TODO: miltiline
+// TODO: multiline
 static void lex_string(lexer_t* lexer, token_t* result) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
