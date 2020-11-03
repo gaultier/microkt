@@ -10,7 +10,7 @@ COPY *.asm .
 COPY *.awk .
 COPY Makefile .
 
-RUN make
+RUN make microktc
 
 FROM alpine
 RUN apk add --no-cache gcc

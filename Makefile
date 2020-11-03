@@ -9,10 +9,10 @@ BIN_TEST:=./microktc_debug
 all: microktc microktc_debug e2e
 
 microktc: $(SRC) $(HEADERS)
-	$(CC) $(CFLAGS) -DNDEBUG -O2 $(SRC) -o $@
+	$(CC) $(CFLAGS) -O2 $(SRC) -o $@
 
 microktc_debug: $(SRC) $(HEADERS) macos_x86_64_stdlib.h
-	$(CC) $(CFLAGS) -O0 -fsanitize=address $(SRC) -o $@
+	$(CC) $(CFLAGS) -O0 -fsanitize=address -DWITH_LOGS $(SRC) -o $@
 
 macos_x86_64_stdlib.h: macos_x86_64_stdlib.asm stdlib_asm_to_h.awk
 	awk -f stdlib_asm_to_h.awk $< > $@

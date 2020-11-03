@@ -61,7 +61,7 @@ static const u8 res_to_str[][100] = {
         (void)(x); \
     } while (0)
 
-#ifdef NDEBUG
+#ifndef WITH_LOGS
 #define log_debug(fmt, ...) \
     do {                    \
         IGNORE(fmt);        \
