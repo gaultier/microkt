@@ -219,8 +219,7 @@ static void parser_print_source_on_error(const parser_t* parser,
 }
 
 static res_t parser_err_unexpected_token(const parser_t* parser,
-                                         token_id_t expected,
-                                         token_id_t actual) {
+                                         token_id_t expected) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
 
     const res_t res = RES_UNEXPECTED_TOKEN;
@@ -234,7 +233,9 @@ static res_t parser_err_unexpected_token(const parser_t* parser,
             parser->par_file_name0, pos_start.pos_line, pos_start.pos_column,
             (parser->par_is_tty ? color_reset : ""),
             token_id_t_to_str[expected],
-            token_id_t_to_str[parser->par_token_ids[actual]]);
+            token_id_t_to_str[parser->par_token_ids[parser->par_tok_i - 1]]);
+
+    parser_print_source_on_error(parser, &actual_token_loc, &pos_start);
 
     return RES_UNEXPECTED_TOKEN;
 }
@@ -248,7 +249,7 @@ static res_t parser_expect_token(parser_t* parser, token_id_t expected,
 
     const token_index_t actual = parser_next_token(parser);
     if (parser->par_token_ids[actual] != expected) {
-        return parser_err_unexpected_token(parser, expected, actual);
+        return parser_err_unexpected_token(parser, expected);
     }
     *token = actual;
     return RES_OK;
@@ -301,6 +302,7 @@ static res_t parser_parse(parser_t* parser) {
 
             continue;
         }
+
         const token_index_t current = parser->par_token_ids[parser->par_tok_i];
         if (current == LEX_TOKEN_ID_COMMENT) {
             parser->par_tok_i += 1;
