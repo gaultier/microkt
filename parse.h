@@ -35,7 +35,7 @@ static parser_t parser_init(const u8* file_name0, const u8* source,
     loc_t* token_locs = NULL;
     buf_grow(token_locs, source_len / 8);
 
-    while (1) {
+    while (true) {
         const token_t token = lex_next(&lexer);
         token_dump(&token, &lexer);
 
