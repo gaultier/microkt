@@ -25,13 +25,13 @@ BEGIN {
         test = tests[i]
         expected_output = expected_outputs[i]
 
-        infile = "/tmp/actual_output"
-        exit_code = system("./" test " > " infile)
+        output_file = "/tmp/actual_output"
+        exit_code = system("./" test " > " output_file)
         
         actual_output = ""
         o = ""
         while (1) {
-            res == getline o < infile
+            res == getline o < output_file
             actual_output = actual_output o
             if (res != 1) { break }
         }
@@ -44,7 +44,7 @@ BEGIN {
         } else {
             print GREEN "✔ " test RESET
         }
-        close(infile)
+        close(output_file)
     }    
     exit(ret)
 }
