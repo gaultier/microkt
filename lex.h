@@ -135,7 +135,10 @@ static bool lex_match(lexer_t* lexer, u8 c) {
 
 static void lex_newline(lexer_t* lexer) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
+    PG_ASSERT_COND(lex_peek(lexer), ==, '\n', "%c");
+
     buf_push(lexer->lex_lines, lexer->lex_index);
+    log_debug("newline at position %llu", lexer->lex_index);
 
     lexer->lex_index += 1;
 }

@@ -71,16 +71,16 @@ static const u8 res_to_str[][100] = {
         IGNORE(fmt);                            \
     } while (0)
 #else
-#define log_debug(fmt, ...)                                             \
-    do {                                                                \
-        fprintf(stderr, "[debug] %s:%d: " fmt "\n", __func__, __LINE__, \
-                __VA_ARGS__);                                           \
+#define log_debug(fmt, ...)                                                \
+    do {                                                                   \
+        fprintf(stderr, "[debug] %s:%s:%d: " fmt "\n", __FILE__, __func__, \
+                __LINE__, __VA_ARGS__);                                    \
     } while (0)
-#define log_debug_with_indent(indent, fmt, ...)                  \
-    do {                                                         \
-        fprintf(stderr, "[debug] %s:%d: ", __func__, __LINE__);  \
-        for (usize i = 0; i < indent; i++) fprintf(stderr, " "); \
-        fprintf(stderr, fmt "\n", __VA_ARGS__);                  \
+#define log_debug_with_indent(indent, fmt, ...)                              \
+    do {                                                                     \
+        fprintf(stderr, "[debug] %s:%s:%d: ", __FILE__, __func__, __LINE__); \
+        for (usize i = 0; i < indent; i++) fprintf(stderr, " ");             \
+        fprintf(stderr, fmt "\n", __VA_ARGS__);                              \
     } while (0)
 #endif
 
