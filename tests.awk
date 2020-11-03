@@ -8,7 +8,7 @@ BEGIN {
 
     outputs[0] = "truefalsefalse"
     outputs[1] = "hello world"
-    outputs[2] = "1999"
+    outputs[2] = "19990"
     outputs[3] = "hello, world!"
 
     RED = "\x1b[31m"
