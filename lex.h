@@ -91,7 +91,7 @@ static loc_pos_t lex_pos(const lexer_t* lexer, usize position) {
         // TODO: column
     }
 
-    pos.pos_column = position - (i > 0 ? lexer->lex_lines[i - 1] : 0);
+    pos.pos_column = 1 + position - (i > 0 ? lexer->lex_lines[i - 1] : 0);
     return pos;
 }
 

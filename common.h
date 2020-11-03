@@ -23,7 +23,8 @@ typedef enum {
 static const u8 res_to_str[][100] = {
     [RES_OK] = "ok\n",
     [RES_NONE] = "none\n",
-    [RES_UNEXPECTED_TOKEN] = "%s:Unexpected token. Expected `%s`, got `%s`\n",
+    [RES_UNEXPECTED_TOKEN] =
+        "%s:%llu:%llu:Unexpected token. Expected `%s`, got `%s`\n",
     [RES_INVALID_SOURCE_FILE_NAME] = "Invalid source file name %s\n",
     [RES_SOURCE_FILE_READ_FAILED] = "Failed to read source file %s: %s\n",
     [RES_ASM_FILE_READ_FAILED] = "Failed to read asm file %s: %s\n",

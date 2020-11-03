@@ -16,6 +16,7 @@ typedef struct {
                                     // stored as the node index which is the
                                     // root of the statement in the ast
     loc_t* par_token_locs;
+    lexer_t par_lexer;
 } parser_t;
 
 static parser_t parser_init(const u8* file_name0, const u8* source,
@@ -48,7 +49,8 @@ static parser_t parser_init(const u8* file_name0, const u8* source,
                       .par_nodes = NULL,
                       .par_stmt_nodes = NULL,
                       .par_token_locs = token_locs,
-                      .par_tok_i = 0};
+                      .par_tok_i = 0,
+                      .par_lexer = lexer};
 }
 
 static void parser_ast_node_source(const parser_t* parser,
@@ -157,17 +159,25 @@ static res_t parser_expect_token(parser_t* parser, token_id_t id,
     const token_index_t tok = parser_next_token(parser);
     if (parser->par_token_ids[tok] != id) {
         const res_t res = RES_UNEXPECTED_TOKEN;
-        fprintf(stderr, res_to_str[res], parser->par_file_name0,
-                token_id_t_to_str[id],
-                token_id_t_to_str[parser->par_token_ids[tok]]);
 
         const loc_t actual_token_loc =
             parser->par_token_locs[parser->par_tok_i - 1];
+        const loc_pos_t pos_start =
+            lex_pos(&parser->par_lexer, actual_token_loc.loc_start);
+        const loc_pos_t pos_end =
+            lex_pos(&parser->par_lexer, actual_token_loc.loc_end);
+
+        fprintf(stderr, res_to_str[res], parser->par_file_name0,
+                pos_start.pos_line, pos_start.pos_column, token_id_t_to_str[id],
+                token_id_t_to_str[parser->par_token_ids[tok]]);
+
         const u8* const actual_source =
             &parser->par_source[actual_token_loc.loc_start];
         const usize actual_source_len =
             actual_token_loc.loc_end - actual_token_loc.loc_start;
+        for (usize i = 0; i < pos_start.pos_column; i++) fprintf(stderr, " ");
         fprintf(stderr, "%.*s\n", (int)actual_source_len, actual_source);
+        for (usize i = 0; i < pos_start.pos_column; i++) fprintf(stderr, " ");
         for (usize i = 0; i < actual_source_len; i++) fprintf(stderr, "^");
         fprintf(stderr, "\n");
         return res;
