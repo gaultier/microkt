@@ -13,11 +13,21 @@ BEGIN {
     tests[3] = "e2e/hello_world"
     expected_outputs[3] = "hello, world!"
 
-    RED = "\x1b[31m"
-    GREEN = "\x1b[32m"
-    GREY = "\x1b[90m"
-    WHITE = "\x1b[37m"
-    RESET = "\x1b[0m"
+    is_tty = system("test -t 1") == 0
+
+    if (is_tty) {
+        RED = "\x1b[31m"
+        GREEN = "\x1b[32m"
+        GREY = "\x1b[90m"
+        WHITE = "\x1b[37m"
+        RESET = "\x1b[0m"
+    } else {
+        RED = ""
+        GREEN = ""
+        GREY = ""
+        WHITE = ""
+        RESET = ""
+    }
 
     ret = 0
 
