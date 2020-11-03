@@ -81,6 +81,7 @@ static res_t driver_run(const u8* file_name0) {
     log_debug("writing asm output to `%s`", asm_file_name0);
 
     emit_asm_dump(&emitter, asm_file);
+    // Make sure everything has been written to the file and not simply buffered
     fflush(asm_file);
     fclose(file);
 
