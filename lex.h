@@ -80,10 +80,6 @@ static bool lex_is_identifier_char(u8 c) {
            ('A' <= c && c <= 'Z') || c == '_';
 }
 
-static bool lex_is_space(u8 c) {
-    return c == ' ' || c == '\n' || c == '\t' || c == '\r';
-}
-
 static lexer_t lex_init(const u8* source, const usize source_len) {
     return (lexer_t){
         .lex_source = source, .lex_source_len = source_len, .lex_index = 0};
