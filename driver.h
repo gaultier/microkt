@@ -72,7 +72,11 @@ static res_t driver_run(const u8* file_name0) {
     asm_file_name0[file_name_len - 2] = 's';
     asm_file_name0[file_name_len - 1] = 'm';
     FILE* asm_file = fopen(asm_file_name0, "w");
-    if (asm_file == NULL) return RES_SOURCE_FILE_READ_FAILED;
+    if (asm_file == NULL) {
+        res = RES_ASM_FILE_READ_FAILED;
+        fprintf(stderr, res_to_str[res], asm_file_name0, strerror(errno));
+        return res;
+    }
 
     log_debug("writing asm output to `%s`", asm_file_name0);
 

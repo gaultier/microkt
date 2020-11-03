@@ -16,6 +16,7 @@ typedef enum {
     RES_UNEXPECTED_TOKEN,
     RES_INVALID_SOURCE_FILE_NAME,
     RES_SOURCE_FILE_READ_FAILED,
+    RES_ASM_FILE_READ_FAILED,
     RES_FAILED_AS,
     RES_FAILED_LD,
 } res_t;
@@ -27,6 +28,7 @@ static const u8 res_to_str[][100] = {
     [RES_UNEXPECTED_TOKEN] = "Unexpected token: expected %s, got %s\n",
     [RES_INVALID_SOURCE_FILE_NAME] = "Invalid source file name %s\n",
     [RES_SOURCE_FILE_READ_FAILED] = "Failed to read source file %s: %s\n",
+    [RES_ASM_FILE_READ_FAILED] = "Failed to read asm file %s: %s\n",
 };
 
 // On macos this macro is defined in some system headers
