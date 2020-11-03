@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ast.h"
-#include "buf.h"
 #include "common.h"
 #include "ir.h"
 #include "lex.h"

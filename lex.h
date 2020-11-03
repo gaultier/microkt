@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "buf.h"
 #include "common.h"
 
 typedef enum {
@@ -56,7 +57,8 @@ static const keyword_t keywords[] = {
 typedef struct {
     const u8* lex_source;
     const usize lex_source_len;
-    usize lex_index, lex_column, lex_line;
+    usize lex_index;
+    usize* lex_lines;
 } lexer_t;
 
 // TODO: trie?
@@ -84,8 +86,7 @@ static lexer_t lex_init(const u8* source, const usize source_len) {
     return (lexer_t){.lex_source = source,
                      .lex_source_len = source_len,
                      .lex_index = 0,
-                     .lex_line = 1,
-                     .lex_column = 1};
+                     .lex_lines = NULL};
 }
 
 static u8 lex_advance(lexer_t* lexer) {
@@ -93,7 +94,6 @@ static u8 lex_advance(lexer_t* lexer) {
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
 
     lexer->lex_index += 1;
-    lexer->lex_column += 1;
 
     return lexer->lex_source[lexer->lex_index - 1];
 }
@@ -135,9 +135,9 @@ static bool lex_match(lexer_t* lexer, u8 c) {
 
 static void lex_newline(lexer_t* lexer) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
+    buf_push(lexer->lex_lines, lexer->lex_index);
+
     lexer->lex_index += 1;
-    lexer->lex_column = 1;
-    lexer->lex_line += 1;
 }
 
 static void lex_advance_until_newline_or_eof(lexer_t* lexer) {
@@ -245,11 +245,15 @@ static token_t lex_next(lexer_t* lexer) {
 
         switch (c) {
             case ' ':
-            case '\n':
             case '\r':
             case '\t': {
                 result.tok_loc.loc_start = lexer->lex_index + 1;
                 break;
+            }
+            case '\n': {
+                result.tok_loc.loc_start = lexer->lex_index + 1;
+                lex_newline(lexer);
+                continue;
             }
             case '/': {
                 if (lex_peek_next(lexer) == '/') {
