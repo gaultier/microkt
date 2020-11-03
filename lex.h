@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdbool.h>
 #include <string.h>
 
 #include "common.h"
@@ -70,15 +71,15 @@ static const token_id_t* token_get_keyword(const u8* source_start, usize len) {
 }
 
 // TODO: expand
-static res_t lex_is_digit(u8 c) { return ('0' <= c && c <= '9'); }
+static bool lex_is_digit(u8 c) { return ('0' <= c && c <= '9'); }
 
 // TODO: unicode
-static res_t lex_is_identifier_char(u8 c) {
+static bool lex_is_identifier_char(u8 c) {
     return lex_is_digit(c) || ('a' <= c && c <= 'z') ||
            ('A' <= c && c <= 'Z') || c == '_';
 }
 
-static res_t lex_is_space(u8 c) {
+static bool lex_is_space(u8 c) {
     return c == ' ' || c == '\n' || c == '\t' || c == '\r';
 }
 
@@ -87,19 +88,51 @@ static lexer_t lex_init(const u8* source, const usize source_len) {
         .lex_source = source, .lex_source_len = source_len, .lex_index = 0};
 }
 
+static u8 lex_advance(lexer_t* lexer) {
+    PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
+
+    lexer->lex_index += 1;
+
+    return lexer->lex_source[lexer->lex_index - 1];
+}
+
+static bool lex_is_at_end(const lexer_t* lexer) {
+    PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
+
+    return lexer->lex_index == lexer->lex_source_len;
+}
+
+static u8 lex_peek(const lexer_t* lexer) {
+    PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
+    PG_ASSERT_COND(lex_is_at_end(lexer), !=, true, "%d");
+
+    return lexer->lex_source[lexer->lex_index];
+}
+
+static u8 lex_peek_next(const lexer_t* lexer) {
+    PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
+    PG_ASSERT_COND(lexer->lex_index, <, lexer->lex_source_len - 1, "%llu");
+
+    return lex_is_at_end(lexer) ? '\0'
+                                : lexer->lex_source[lexer->lex_index + 1];
+}
+
 static void lex_identifier(lexer_t* lexer, token_t* result) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
     PG_ASSERT_COND((void*)result, !=, NULL, "%p");
 
-    u8 c = lexer->lex_source[lexer->lex_index];
+    u8 c = lex_advance(lexer);
     PG_ASSERT_COND(lex_is_identifier_char(c), ==, RES_OK, "%d");
 
     while (lexer->lex_index < lexer->lex_source_len) {
-        c = lexer->lex_source[lexer->lex_index];
+        c = lex_peek(lexer);
         if (!lex_is_identifier_char(c)) break;
 
-        lexer->lex_index += 1;
+        lex_advance(lexer);
     }
 
     PG_ASSERT_COND(lexer->lex_index, <, lexer->lex_source_len, "%llu");
@@ -121,14 +154,14 @@ static res_t lex_number(lexer_t* lexer, token_t* result) {
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
     PG_ASSERT_COND((void*)result, !=, NULL, "%p");
 
-    u8 c = lexer->lex_source[lexer->lex_index];
+    u8 c = lex_advance(lexer);
     PG_ASSERT_COND(lex_is_digit(c), ==, RES_OK, "%d");
 
     while (lexer->lex_index < lexer->lex_source_len) {
-        c = lexer->lex_source[lexer->lex_index];
+        c = lex_peek(lexer);
         if (!lex_is_digit(c)) break;
 
-        lexer->lex_index += 1;
+        lex_advance(lexer);
     }
 
     result->tok_id = LEX_TOKEN_ID_INT;
@@ -142,15 +175,15 @@ static void lex_string(lexer_t* lexer, token_t* result) {
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
     PG_ASSERT_COND((void*)result, !=, NULL, "%p");
 
-    u8 c = lexer->lex_source[lexer->lex_index];
+    u8 c = lex_peek(lexer);
     PG_ASSERT_COND(c, ==, '"', "%c");
-    lexer->lex_index += 1;
+    lex_advance(lexer);
 
     while (lexer->lex_index < lexer->lex_source_len) {
-        c = lexer->lex_source[lexer->lex_index];
+        c = lex_peek(lexer);
         if (c == '"') break;
 
-        lexer->lex_index += 1;
+        lex_advance(lexer);
     }
 
     if (c != '"') {
@@ -162,7 +195,7 @@ static void lex_string(lexer_t* lexer, token_t* result) {
     } else {
         PG_ASSERT_COND(c, ==, '"', "%c");
         result->tok_id = LEX_TOKEN_ID_STRING_LITERAL;
-        lexer->lex_index += 1;
+        lex_advance(lexer);
     }
 }
 
@@ -185,14 +218,17 @@ static token_t lex_next(lexer_t* lexer) {
                 result.tok_loc.loc_start = lexer->lex_index + 1;
                 break;
             }
+                // case '/': {
+                //     if () break;
+                // }
             case '(': {
                 result.tok_id = LEX_TOKEN_ID_LPAREN;
-                lexer->lex_index += 1;
+                lex_advance(lexer);
                 goto outer;
             }
             case ')': {
                 result.tok_id = LEX_TOKEN_ID_RPAREN;
-                lexer->lex_index += 1;
+                lex_advance(lexer);
                 goto outer;
             }
             case '"': {
@@ -270,11 +306,11 @@ static token_t lex_next(lexer_t* lexer) {
             }
             default: {
                 result.tok_id = LEX_TOKEN_ID_INVALID;
-                lexer->lex_index += 1;
+                lex_advance(lexer);
                 goto outer;
             }
         }
-        lexer->lex_index += 1;
+        lex_advance(lexer);
     }
 outer:
     result.tok_loc.loc_end = lexer->lex_index;
