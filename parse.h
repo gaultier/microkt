@@ -164,8 +164,6 @@ static void parser_print_source_on_error(const parser_t* parser,
         &parser->par_source[actual_token_loc->loc_start];
     const usize actual_source_len =
         actual_token_loc->loc_end - actual_token_loc->loc_start;
-    const loc_pos_t pos_end =
-        lex_pos(&parser->par_lexer, actual_token_loc->loc_end);
 
     if (parser->par_is_tty) fprintf(stderr, "%s", color_grey);
 
@@ -236,8 +234,10 @@ static res_t parser_expect_token(parser_t* parser, token_id_t id,
         const loc_pos_t pos_start =
             lex_pos(&parser->par_lexer, actual_token_loc.loc_start);
 
-        fprintf(stderr, res_to_str[res], parser->par_file_name0,
-                pos_start.pos_line, pos_start.pos_column, token_id_t_to_str[id],
+        fprintf(stderr, res_to_str[res], (parser->par_is_tty ? color_grey : ""),
+                parser->par_file_name0, pos_start.pos_line,
+                pos_start.pos_column, (parser->par_is_tty ? color_reset : ""),
+                token_id_t_to_str[id],
                 token_id_t_to_str[parser->par_token_ids[tok]]);
 
         parser_print_source_on_error(parser, &actual_token_loc, &pos_start);
