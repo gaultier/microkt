@@ -75,6 +75,9 @@ static const token_id_t* token_get_keyword(const u8* source_start, usize len) {
     return NULL;
 }
 
+// TODO: expand
+static res_t lex_is_digit(u8 c) { return ('0' <= c && c <= '9'); }
+
 // TODO: unicode
 static res_t lex_is_identifier_char(u8 c) {
     return ('0' <= c && c <= '9') || ('a' <= c && c <= 'z') ||
@@ -112,7 +115,32 @@ static void lex_identifier(lexer_t* lexer, token_t* result) {
              token_get_keyword(lexer->lex_source + result->tok_loc.loc_start,
                                lexer->lex_index - result->tok_loc.loc_start))) {
         result->tok_id = *id;
+    } else {
+        result->tok_id = LEX_TOKEN_ID_IDENTIFIER;
     }
+}
+
+static void lex_number(lexer_t* lexer, token_t* result) {
+    PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)result, !=, NULL, "%p");
+
+    u8 c = lexer->lex_source[lexer->lex_index];
+    PG_ASSERT_COND(lex_is_digit(c), ==, RES_OK, "%d");
+
+    while (lexer->lex_index < lexer->lex_source_len) {
+        c = lexer->lex_source[lexer->lex_index];
+        if (lex_is_digit(c)) {
+            lexer->lex_index += 1;
+            continue;
+        } else
+            break;
+    }
+
+    PG_ASSERT_COND(lexer->lex_index, <, lexer->lex_source_len, "%llu");
+    PG_ASSERT_COND(lexer->lex_index, >=, result->tok_loc.loc_start, "%llu");
+
+    result->tok_id = LEX_TOKEN_ID_INT;
 }
 
 static token_t lex_next(lexer_t* lexer) {
@@ -218,9 +246,8 @@ static token_t lex_next(lexer_t* lexer) {
                     case '7':
                     case '8':
                     case '9': {
-                        state = LEX_STATE_INT;
-                        result.tok_id = LEX_TOKEN_ID_INT;
-                        break;
+                        lex_number(lexer, &result);
+                        goto outer;
                     }
                     default: {
                         result.tok_id = LEX_TOKEN_ID_INVALID;
@@ -231,30 +258,7 @@ static token_t lex_next(lexer_t* lexer) {
                 break;
             }
             case LEX_STATE_INT: {
-                switch (c) {
-                    case '_': {
-                        break;
-                    }
-                    case '0':
-                    case '1':
-                    case '2':
-                    case '3':
-                    case '4':
-                    case '5':
-                    case '6':
-                    case '7':
-                    case '8':
-                    case '9': {
-                        break;
-                    }
-                    default: {
-                        if (lex_is_identifier_char(c)) {
-                            result.tok_id = LEX_TOKEN_ID_INVALID;
-                        }
-                        goto outer;
-                    }
-                }
-                break;
+                UNREACHABLE();
             }
             case LEX_STATE_STRING_LITERAL: {
                 switch (c) {
