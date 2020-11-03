@@ -165,8 +165,9 @@ static res_t parser_expect_token(parser_t* parser, token_id_t id,
         const usize actual_source_len =
             actual_token_loc.loc_end - actual_token_loc.loc_start;
         fprintf(stderr, res_to_str[res], parser->par_file_name0,
-                token_id_t_to_str[LEX_TOKEN_ID_BUILTIN_PRINT],
-                token_id_t_to_str[id], (int)actual_source_len, actual_source);
+                token_id_t_to_str[id],
+                token_id_t_to_str[parser->par_token_ids[tok]],
+                (int)actual_source_len, actual_source);
         return res;
     }
     *token = tok;
