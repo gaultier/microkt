@@ -57,10 +57,6 @@ typedef struct {
     usize lex_index;
 } lexer_t;
 
-typedef enum {
-    LEX_STATE_START,
-} lex_state_t;
-
 // TODO: trie?
 static const token_id_t* token_get_keyword(const u8* source_start, usize len) {
     const usize keywords_len = sizeof(keywords) / sizeof(keywords[0]);
@@ -182,114 +178,106 @@ static token_t lex_next(lexer_t* lexer) {
         .tok_id = LEX_TOKEN_ID_EOF,
         .tok_loc = {.loc_start = lexer->lex_index, .loc_end = 0xAAAAAAAA}};
 
-    lex_state_t state = LEX_STATE_START;
-
     while (lexer->lex_index < lexer->lex_source_len) {
         const u8 c = lexer->lex_source[lexer->lex_index];
 
-        switch (state) {
-            case LEX_STATE_START: {
-                switch (c) {
-                    case ' ':
-                    case '\n':
-                    case '\r':
-                    case '\t': {
-                        result.tok_loc.loc_start = lexer->lex_index + 1;
-                        break;
-                    }
-                    case '(': {
-                        result.tok_id = LEX_TOKEN_ID_LPAREN;
-                        lexer->lex_index += 1;
-                        goto outer;
-                    }
-                    case ')': {
-                        result.tok_id = LEX_TOKEN_ID_RPAREN;
-                        lexer->lex_index += 1;
-                        goto outer;
-                    }
-                    case '"': {
-                        lex_string(lexer, &result);
-                        goto outer;
-                    }
-                    case '_':
-                    case 'a':
-                    case 'b':
-                    case 'c':
-                    case 'd':
-                    case 'e':
-                    case 'f':
-                    case 'g':
-                    case 'h':
-                    case 'i':
-                    case 'j':
-                    case 'k':
-                    case 'l':
-                    case 'm':
-                    case 'n':
-                    case 'o':
-                    case 'p':
-                    case 'q':
-                    case 'r':
-                    case 's':
-                    case 't':
-                    case 'u':
-                    case 'v':
-                    case 'w':
-                    case 'x':
-                    case 'y':
-                    case 'z':
-                    case 'A':
-                    case 'B':
-                    case 'C':
-                    case 'D':
-                    case 'E':
-                    case 'F':
-                    case 'G':
-                    case 'H':
-                    case 'I':
-                    case 'J':
-                    case 'K':
-                    case 'L':
-                    case 'M':
-                    case 'N':
-                    case 'O':
-                    case 'P':
-                    case 'Q':
-                    case 'R':
-                    case 'S':
-                    case 'T':
-                    case 'U':
-                    case 'V':
-                    case 'W':
-                    case 'X':
-                    case 'Y':
-                    case 'Z': {
-                        lex_identifier(lexer, &result);
-                        goto outer;
-                    }
-                    case '1':
-                    case '2':
-                    case '3':
-                    case '4':
-                    case '5':
-                    case '6':
-                    case '7':
-                    case '8':
-                    case '9': {
-                        const res_t res = lex_number(lexer, &result);
-                        IGNORE(res);  // TODO: correct?
-                        goto outer;
-                    }
-                    default: {
-                        result.tok_id = LEX_TOKEN_ID_INVALID;
-                        lexer->lex_index += 1;
-                        goto outer;
-                    }
-                }
+        switch (c) {
+            case ' ':
+            case '\n':
+            case '\r':
+            case '\t': {
+                result.tok_loc.loc_start = lexer->lex_index + 1;
                 break;
             }
+            case '(': {
+                result.tok_id = LEX_TOKEN_ID_LPAREN;
+                lexer->lex_index += 1;
+                goto outer;
+            }
+            case ')': {
+                result.tok_id = LEX_TOKEN_ID_RPAREN;
+                lexer->lex_index += 1;
+                goto outer;
+            }
+            case '"': {
+                lex_string(lexer, &result);
+                goto outer;
+            }
+            case '_':
+            case 'a':
+            case 'b':
+            case 'c':
+            case 'd':
+            case 'e':
+            case 'f':
+            case 'g':
+            case 'h':
+            case 'i':
+            case 'j':
+            case 'k':
+            case 'l':
+            case 'm':
+            case 'n':
+            case 'o':
+            case 'p':
+            case 'q':
+            case 'r':
+            case 's':
+            case 't':
+            case 'u':
+            case 'v':
+            case 'w':
+            case 'x':
+            case 'y':
+            case 'z':
+            case 'A':
+            case 'B':
+            case 'C':
+            case 'D':
+            case 'E':
+            case 'F':
+            case 'G':
+            case 'H':
+            case 'I':
+            case 'J':
+            case 'K':
+            case 'L':
+            case 'M':
+            case 'N':
+            case 'O':
+            case 'P':
+            case 'Q':
+            case 'R':
+            case 'S':
+            case 'T':
+            case 'U':
+            case 'V':
+            case 'W':
+            case 'X':
+            case 'Y':
+            case 'Z': {
+                lex_identifier(lexer, &result);
+                goto outer;
+            }
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9': {
+                const res_t res = lex_number(lexer, &result);
+                IGNORE(res);  // TODO: correct?
+                goto outer;
+            }
+            default: {
+                result.tok_id = LEX_TOKEN_ID_INVALID;
+                lexer->lex_index += 1;
+                goto outer;
+            }
         }
-
         lexer->lex_index += 1;
     }
 outer:
