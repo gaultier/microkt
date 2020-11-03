@@ -74,7 +74,7 @@ static res_t lex_is_digit(u8 c) { return ('0' <= c && c <= '9'); }
 
 // TODO: unicode
 static res_t lex_is_identifier_char(u8 c) {
-    return ('0' <= c && c <= '9') || ('a' <= c && c <= 'z') ||
+    return lex_is_digit(c) || ('a' <= c && c <= 'z') ||
            ('A' <= c && c <= 'Z') || c == '_';
 }
 
