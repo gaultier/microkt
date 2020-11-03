@@ -97,11 +97,9 @@ static void lex_identifier(lexer_t* lexer, token_t* result) {
 
     while (lexer->lex_index < lexer->lex_source_len) {
         c = lexer->lex_source[lexer->lex_index];
-        if (lex_is_identifier_char(c)) {
-            lexer->lex_index += 1;
-            continue;
-        } else
-            break;
+        if (!lex_is_identifier_char(c)) break;
+
+        lexer->lex_index += 1;
     }
 
     PG_ASSERT_COND(lexer->lex_index, <, lexer->lex_source_len, "%llu");
@@ -128,11 +126,9 @@ static res_t lex_number(lexer_t* lexer, token_t* result) {
 
     while (lexer->lex_index < lexer->lex_source_len) {
         c = lexer->lex_source[lexer->lex_index];
-        if (lex_is_digit(c)) {
-            lexer->lex_index += 1;
-            continue;
-        } else
-            break;
+        if (!lex_is_digit(c)) break;
+
+        lexer->lex_index += 1;
     }
 
     result->tok_id = LEX_TOKEN_ID_INT;
