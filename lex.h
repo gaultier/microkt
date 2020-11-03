@@ -59,7 +59,6 @@ typedef struct {
 
 typedef enum {
     LEX_STATE_START,
-    LEX_STATE_IDENTIFIER,
     LEX_STATE_STRING_LITERAL,
     LEX_STATE_INT,
 } lex_state_t;
@@ -85,6 +84,35 @@ static res_t lex_is_identifier_char(u8 c) {
 static lexer_t lex_init(const u8* source, const usize source_len) {
     return (lexer_t){
         .lex_source = source, .lex_source_len = source_len, .lex_index = 0};
+}
+
+static void lex_identifier(lexer_t* lexer, token_t* result) {
+    PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)result, !=, NULL, "%p");
+
+    u8 c = lexer->lex_source[lexer->lex_index];
+    PG_ASSERT_COND(lex_is_identifier_char(c), ==, RES_OK, "%d");
+
+    while (lexer->lex_index < lexer->lex_source_len) {
+        c = lexer->lex_source[lexer->lex_index];
+        if (lex_is_identifier_char(c)) {
+            lexer->lex_index += 1;
+            continue;
+        } else
+            break;
+    }
+
+    PG_ASSERT_COND(lexer->lex_index, <, lexer->lex_source_len, "%llu");
+    PG_ASSERT_COND(lexer->lex_index, >=, result->tok_loc.loc_start, "%llu");
+
+    const token_id_t* id = NULL;
+
+    if ((id =
+             token_get_keyword(lexer->lex_source + result->tok_loc.loc_start,
+                               lexer->lex_index - result->tok_loc.loc_start))) {
+        result->tok_id = *id;
+    }
 }
 
 static token_t lex_next(lexer_t* lexer) {
@@ -178,9 +206,8 @@ static token_t lex_next(lexer_t* lexer) {
                     case 'X':
                     case 'Y':
                     case 'Z': {
-                        state = LEX_STATE_IDENTIFIER;
-                        result.tok_id = LEX_TOKEN_ID_IDENTIFIER;
-                        break;
+                        lex_identifier(lexer, &result);
+                        goto outer;
                     }
                     case '1':
                     case '2':
@@ -223,82 +250,6 @@ static token_t lex_next(lexer_t* lexer) {
                     default: {
                         if (lex_is_identifier_char(c)) {
                             result.tok_id = LEX_TOKEN_ID_INVALID;
-                        }
-                        goto outer;
-                    }
-                }
-                break;
-            }
-            case LEX_STATE_IDENTIFIER: {
-                switch (c) {
-                    case '_':
-                    case 'a':
-                    case 'b':
-                    case 'c':
-                    case 'd':
-                    case 'e':
-                    case 'f':
-                    case 'g':
-                    case 'h':
-                    case 'i':
-                    case 'j':
-                    case 'k':
-                    case 'l':
-                    case 'm':
-                    case 'n':
-                    case 'o':
-                    case 'p':
-                    case 'q':
-                    case 'r':
-                    case 's':
-                    case 't':
-                    case 'u':
-                    case 'v':
-                    case 'w':
-                    case 'x':
-                    case 'y':
-                    case 'z':
-                    case 'A':
-                    case 'B':
-                    case 'C':
-                    case 'D':
-                    case 'E':
-                    case 'F':
-                    case 'G':
-                    case 'H':
-                    case 'I':
-                    case 'J':
-                    case 'K':
-                    case 'L':
-                    case 'M':
-                    case 'N':
-                    case 'O':
-                    case 'P':
-                    case 'Q':
-                    case 'R':
-                    case 'S':
-                    case 'T':
-                    case 'U':
-                    case 'V':
-                    case 'W':
-                    case 'X':
-                    case 'Y':
-                    case 'Z': {
-                        break;
-                    }
-                    default: {
-                        PG_ASSERT_COND(lexer->lex_index, <,
-                                       lexer->lex_source_len, "%llu");
-                        PG_ASSERT_COND(lexer->lex_index, >=,
-                                       result.tok_loc.loc_start, "%llu");
-
-                        const token_id_t* id = NULL;
-
-                        if ((id = token_get_keyword(
-                                 lexer->lex_source + result.tok_loc.loc_start,
-                                 lexer->lex_index -
-                                     result.tok_loc.loc_start))) {
-                            result.tok_id = *id;
                         }
                         goto outer;
                     }
