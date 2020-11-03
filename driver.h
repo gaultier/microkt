@@ -86,11 +86,11 @@ static res_t driver_run(const u8* file_name0) {
     fclose(file);
 
     // as
-    u8 base_file_name0[MAXPATHLEN + 1] = "\0";
+    static u8 base_file_name0[MAXPATHLEN + 1] = "\0";
     memcpy(base_file_name0, file_name0, MAXPATHLEN);
     driver_base_source_file_name(file_name0, base_file_name0);
     {
-        u8 argv0[3 * MAXPATHLEN] = "\0";
+        static u8 argv0[3 * MAXPATHLEN] = "\0";
         snprintf(argv0, sizeof(argv0), "as %s -o %s.o", asm_file_name0,
                  base_file_name0);
         log_debug("%s", base_file_name0);
@@ -99,14 +99,14 @@ static res_t driver_run(const u8* file_name0) {
         fflush(stderr);
         FILE* as_process = popen(argv0, "r");
         if (as_process == NULL) {
-            fprintf(stderr, "Failed to run `as`: `%s` %s\n", argv0,
-                    strerror(errno));
-            return RES_FAILED_AS;
+            res = RES_FAILED_AS;
+            fprintf(stderr, res_to_str[res], argv0, strerror(errno));
+            return res;
         }
         if (pclose(as_process) != 0) {
-            fprintf(stderr, "Failed to run `as`: `%s` %s\n", argv0,
-                    strerror(errno));
-            return RES_FAILED_AS;
+            res = RES_FAILED_AS;
+            fprintf(stderr, res_to_str[res], argv0, strerror(errno));
+            return res;
         }
         fflush(stdout);
         fflush(stderr);
@@ -114,7 +114,7 @@ static res_t driver_run(const u8* file_name0) {
 
     // ld
     {
-        u8 argv0[3 * MAXPATHLEN] = "\0";
+        static u8 argv0[3 * MAXPATHLEN] = "\0";
         snprintf(argv0, sizeof(argv0), "ld %s.o -lSystem -o %s -e _main",
                  base_file_name0, base_file_name0);
         log_debug("%s", argv0);
