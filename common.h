@@ -10,7 +10,6 @@ typedef char u8;
 typedef unsigned short u16;
 
 typedef enum {
-    RES_ERR,
     RES_OK,
     RES_NONE,
     RES_UNEXPECTED_TOKEN,
@@ -22,7 +21,6 @@ typedef enum {
 } res_t;
 
 static const u8 res_to_str[][100] = {
-    [RES_ERR] = "error\n",
     [RES_OK] = "ok\n",
     [RES_NONE] = "none\n",
     [RES_UNEXPECTED_TOKEN] = "%s:Unexpected token. Expected %s, got %s\n",

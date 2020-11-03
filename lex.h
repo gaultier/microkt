@@ -140,7 +140,7 @@ static void lex_identifier(lexer_t* lexer, token_t* result) {
     PG_ASSERT_COND((void*)result, !=, NULL, "%p");
 
     u8 c = lex_advance(lexer);
-    PG_ASSERT_COND(lex_is_identifier_char(c), ==, RES_OK, "%d");
+    PG_ASSERT_COND(lex_is_identifier_char(c), ==, true, "%d");
 
     while (lexer->lex_index < lexer->lex_source_len) {
         c = lex_peek(lexer);
@@ -169,7 +169,7 @@ static res_t lex_number(lexer_t* lexer, token_t* result) {
     PG_ASSERT_COND((void*)result, !=, NULL, "%p");
 
     u8 c = lex_advance(lexer);
-    PG_ASSERT_COND(lex_is_digit(c), ==, RES_OK, "%d");
+    PG_ASSERT_COND(lex_is_digit(c), ==, true, "%d");
 
     while (lexer->lex_index < lexer->lex_source_len) {
         c = lex_peek(lexer);

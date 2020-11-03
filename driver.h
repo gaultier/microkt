@@ -16,7 +16,7 @@ static bool driver_is_file_name_valid(const u8* file_name0) {
 
 static void driver_base_source_file_name(const u8* file_name0,
                                          u8* base_file_name0) {
-    PG_ASSERT_COND(driver_is_file_name_valid(file_name0), ==, RES_OK, "%d");
+    PG_ASSERT_COND(driver_is_file_name_valid(file_name0), ==, true, "%d");
 
     const usize len = strlen(file_name0);
 
