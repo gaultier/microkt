@@ -1,7 +1,9 @@
 
-// expect: true
+// A comment
 print(true)
 
-  print(false) // expect: false
+  print(false) // And another
 
-    print(false) // expect: false
+    print(false)        
+
+    // A final comment

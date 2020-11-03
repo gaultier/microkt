@@ -2,14 +2,16 @@
 
 BEGIN {
     tests[0] = "e2e/print_bool"
-    tests[1] = "e2e/print_string"
-    tests[2] = "e2e/print_integers"
-    tests[3] = "e2e/hello_world"
+    expected_outputs[0] = "truefalsefalse"
 
-    outputs[0] = "truefalsefalse"
-    outputs[1] = "hello world"
-    outputs[2] = "19990"
-    outputs[3] = "hello, world!"
+    tests[1] = "e2e/print_string"
+    expected_outputs[1] = "hello world"
+
+    tests[2] = "e2e/print_integers"
+    expected_outputs[2] = "19990"
+
+    tests[3] = "e2e/hello_world"
+    expected_outputs[3] = "hello, world!"
 
     RED = "\x1b[31m"
     GREEN = "\x1b[32m"
@@ -21,7 +23,7 @@ BEGIN {
 
     for (i=0; i<length(tests); i++) {
         test = tests[i]
-        expected_output = outputs[i]
+        expected_output = expected_outputs[i]
 
         infile = "/tmp/actual_output"
         exit_code = system("./" test " > " infile)
