@@ -39,7 +39,7 @@ typedef struct {
 } loc_t;
 
 typedef struct {
-    usize loc_line, loc_column;
+    usize pos_line, pos_column;
 } loc_pos_t;
 
 typedef struct {
@@ -80,13 +80,13 @@ static const token_id_t* token_get_keyword(const u8* source_start, usize len) {
 static loc_pos_t lex_pos(const lexer_t* lexer, usize position) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
 
-    loc_pos_t pos = {.loc_line = 1};
+    loc_pos_t pos = {.pos_line = 1};
 
     for (usize i = 0; i < buf_size(lexer->lex_lines); i++) {
         const usize line_pos = lexer->lex_lines[i];
-        if (position > line_pos) break;
+        if (position < line_pos) break;
 
-        pos.loc_line += 1;
+        pos.pos_line += 1;
         // TODO: column
     }
 
@@ -391,5 +391,5 @@ static void token_dump(const token_t* t, const lexer_t* lexer) {
     const loc_pos_t pos_start = lex_pos(lexer, t->tok_loc.loc_start);
     log_debug("tok_id=%s tok_loc_start=%llu tok_loc_end=%llu pos line=%llu",
               token_id_t_to_str[t->tok_id], t->tok_loc.loc_start,
-              t->tok_loc.loc_end, pos_start.loc_line);
+              t->tok_loc.loc_end, pos_start.pos_line);
 }
