@@ -158,16 +158,19 @@ static res_t parser_expect_token(parser_t* parser, token_id_t id,
     const token_index_t tok = parser_next_token(parser);
     if (parser->par_token_ids[tok] != id) {
         const res_t res = RES_UNEXPECTED_TOKEN;
+        fprintf(stderr, res_to_str[res], parser->par_file_name0,
+                token_id_t_to_str[id],
+                token_id_t_to_str[parser->par_token_ids[tok]]);
+
         const loc_t actual_token_loc =
-            parser->par_token_locs[parser->par_tok_i];
+            parser->par_token_locs[parser->par_tok_i - 1];
         const u8* const actual_source =
             &parser->par_source[actual_token_loc.loc_start];
         const usize actual_source_len =
             actual_token_loc.loc_end - actual_token_loc.loc_start;
-        fprintf(stderr, res_to_str[res], parser->par_file_name0,
-                token_id_t_to_str[id],
-                token_id_t_to_str[parser->par_token_ids[tok]],
-                (int)actual_source_len, actual_source);
+        fprintf(stderr, "%.*s\n", (int)actual_source_len, actual_source);
+        for (usize i = 0; i < actual_source_len; i++) fprintf(stderr, "^");
+        fprintf(stderr, "\n");
         return res;
     }
     *token = tok;
