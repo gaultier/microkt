@@ -218,9 +218,9 @@ static void parser_print_source_on_error(const parser_t* parser,
     fprintf(stderr, "\n");
 }
 
-static void parser_err_unexpected_token(const parser_t* parser,
-                                        token_id_t expected,
-                                        token_id_t actual) {
+static res_t parser_err_unexpected_token(const parser_t* parser,
+                                         token_id_t expected,
+                                         token_id_t actual) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
 
     const res_t res = RES_UNEXPECTED_TOKEN;
@@ -235,6 +235,8 @@ static void parser_err_unexpected_token(const parser_t* parser,
             (parser->par_is_tty ? color_reset : ""),
             token_id_t_to_str[expected],
             token_id_t_to_str[parser->par_token_ids[actual]]);
+
+    return RES_UNEXPECTED_TOKEN;
 }
 
 static res_t parser_expect_token(parser_t* parser, token_id_t expected,
@@ -246,9 +248,7 @@ static res_t parser_expect_token(parser_t* parser, token_id_t expected,
 
     const token_index_t actual = parser_next_token(parser);
     if (parser->par_token_ids[actual] != expected) {
-        const res_t res = RES_UNEXPECTED_TOKEN;
-        parser_err_unexpected_token(parser, expected, actual);
-        return res;
+        return parser_err_unexpected_token(parser, expected, actual);
     }
     *token = actual;
     return RES_OK;
