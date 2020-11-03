@@ -239,7 +239,7 @@ static usize parse_node_to_int(const parser_t* parser, const ast_node_t* node) {
     log_debug("emit_call_print_integer int `%.*s`", (int)string_len, string);
     PG_ASSERT_COND(string_len, <, (usize)25, "%llu");
 
-    // TOOD: liimit in the lexer the length of a number literal
+    // TOOD: limit in the lexer the length of a number literal
     static u8 string0[25] = "\0";
     memcpy(string0, string, string_len);
     return strtoll(string0, NULL, 10);
