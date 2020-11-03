@@ -158,7 +158,8 @@ static res_t parser_expect_token(parser_t* parser, token_id_t id,
     const token_index_t tok = parser_next_token(parser);
     if (parser->par_token_ids[tok] != id) {
         const res_t res = RES_UNEXPECTED_TOKEN;
-        fprintf(stderr, res_to_str[res], token_id_t_to_str[id],
+        fprintf(stderr, res_to_str[res], parser->par_file_name0,
+                token_id_t_to_str[id],
                 token_id_t_to_str[parser->par_token_ids[tok]]);
         return res;
     }
@@ -223,7 +224,7 @@ static res_t parser_parse(parser_t* parser) {
             return RES_OK;
         else {
             const res_t res = RES_UNEXPECTED_TOKEN;
-            fprintf(stderr, res_to_str[res],
+            fprintf(stderr, res_to_str[res], parser->par_file_name0,
                     token_id_t_to_str[LEX_TOKEN_ID_BUILTIN_PRINT],
                     token_id_t_to_str[next]);
             return res;
