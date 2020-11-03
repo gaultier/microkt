@@ -20,7 +20,7 @@ typedef enum {
 } token_id_t;
 
 const u8 token_id_t_to_str[][30] = {
-    [LEX_TOKEN_ID_BUILTIN_PRINT] = "print",
+    [LEX_TOKEN_ID_BUILTIN_PRINT] = "Print",
     [LEX_TOKEN_ID_LPAREN] = "(",
     [LEX_TOKEN_ID_RPAREN] = ")",
     [LEX_TOKEN_ID_TRUE] = "true",
@@ -29,9 +29,8 @@ const u8 token_id_t_to_str[][30] = {
     [LEX_TOKEN_ID_STRING_LITERAL] = "StringLiteral",
     [LEX_TOKEN_ID_COMMENT] = "Comment",
     [LEX_TOKEN_ID_INT] = "IntLiteral",
-    [LEX_TOKEN_ID_EOF] = "EOF",
-    [LEX_TOKEN_ID_INVALID] = "INVALID",
-
+    [LEX_TOKEN_ID_EOF] = "Eof",
+    [LEX_TOKEN_ID_INVALID] = "Invalid",
 };
 
 typedef struct {

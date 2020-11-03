@@ -157,10 +157,10 @@ static res_t parser_expect_token(parser_t* parser, token_id_t id,
 
     const token_index_t tok = parser_next_token(parser);
     if (parser->par_token_ids[tok] != id) {
-        // TODO: errors
-        fprintf(stderr, "Expected token %s, got %s\n", token_id_t_to_str[id],
+        const res_t res = RES_UNEXPECTED_TOKEN;
+        fprintf(stderr, res_to_str[res], token_id_t_to_str[id],
                 token_id_t_to_str[parser->par_token_ids[tok]]);
-        return RES_UNEXPECTED_TOKEN;
+        return res;
     }
     *token = tok;
     return RES_OK;
@@ -222,10 +222,11 @@ static res_t parser_parse(parser_t* parser) {
         if (next == LEX_TOKEN_ID_EOF)
             return RES_OK;
         else {
-            fprintf(stderr, "Expected builtin print, got %s\n",
+            const res_t res = RES_UNEXPECTED_TOKEN;
+            fprintf(stderr, res_to_str[res],
+                    token_id_t_to_str[LEX_TOKEN_ID_BUILTIN_PRINT],
                     token_id_t_to_str[next]);
-            // TODO: errors
-            return RES_UNEXPECTED_TOKEN;
+            return res;
         }
     }
     UNREACHABLE();
