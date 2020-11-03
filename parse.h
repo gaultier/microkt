@@ -153,6 +153,40 @@ static res_t parser_parse_primary(parser_t* parser, usize* new_primary_node_i) {
     return RES_NONE;
 }
 
+static void parser_print_source_on_error(const parser_t* parser,
+                                         const loc_t* actual_token_loc,
+                                         const loc_pos_t* pos_start) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)actual_token_loc, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)pos_start, !=, NULL, "%p");
+
+    const u8* const actual_source =
+        &parser->par_source[actual_token_loc->loc_start];
+    const usize actual_source_len =
+        actual_token_loc->loc_end - actual_token_loc->loc_start;
+
+    if (parser->par_is_tty) fprintf(stderr, "%s", color_grey);
+
+    static u8 prefix[MAXPATHLEN + 50] = "\0";
+    snprintf(prefix, sizeof(prefix), "%s:%llu:%llu:", parser->par_file_name0,
+             pos_start->pos_line, pos_start->pos_column);
+    const usize prefix_len = strlen(prefix);
+    fprintf(stderr, "%s", prefix);
+    if (parser->par_is_tty) fprintf(stderr, "%s", color_reset);
+
+    for (usize i = 0; i < pos_start->pos_column; i++) fprintf(stderr, " ");
+    fprintf(stderr, "%.*s\n", (int)actual_source_len, actual_source);
+
+    for (usize i = 0; i < prefix_len + pos_start->pos_column; i++)
+        fprintf(stderr, " ");
+
+    if (parser->par_is_tty) fprintf(stderr, "%s", color_red);
+    for (usize i = 0; i < actual_source_len; i++) fprintf(stderr, "^");
+    if (parser->par_is_tty) fprintf(stderr, "%s", color_reset);
+
+    fprintf(stderr, "\n");
+}
+
 static res_t parser_expect_token(parser_t* parser, token_id_t id,
                                  token_index_t* token) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
@@ -168,39 +202,12 @@ static res_t parser_expect_token(parser_t* parser, token_id_t id,
             parser->par_token_locs[parser->par_tok_i - 1];
         const loc_pos_t pos_start =
             lex_pos(&parser->par_lexer, actual_token_loc.loc_start);
-        const loc_pos_t pos_end =
-            lex_pos(&parser->par_lexer, actual_token_loc.loc_end);
 
         fprintf(stderr, res_to_str[res], parser->par_file_name0,
                 pos_start.pos_line, pos_start.pos_column, token_id_t_to_str[id],
                 token_id_t_to_str[parser->par_token_ids[tok]]);
 
-        const u8* const actual_source =
-            &parser->par_source[actual_token_loc.loc_start];
-        const usize actual_source_len =
-            actual_token_loc.loc_end - actual_token_loc.loc_start;
-
-        if (parser->par_is_tty) fprintf(stderr, "%s", color_grey);
-
-        static u8 prefix[MAXPATHLEN + 50] = "\0";
-        snprintf(prefix, sizeof(prefix),
-                 "%s:%llu:%llu:", parser->par_file_name0, pos_start.pos_line,
-                 pos_start.pos_column);
-        const usize prefix_len = strlen(prefix);
-        fprintf(stderr, "%s", prefix);
-        if (parser->par_is_tty) fprintf(stderr, "%s", color_reset);
-
-        for (usize i = 0; i < pos_start.pos_column; i++) fprintf(stderr, " ");
-        fprintf(stderr, "%.*s\n", (int)actual_source_len, actual_source);
-
-        for (usize i = 0; i < prefix_len + pos_start.pos_column; i++)
-            fprintf(stderr, " ");
-
-        if (parser->par_is_tty) fprintf(stderr, "%s", color_red);
-        for (usize i = 0; i < actual_source_len; i++) fprintf(stderr, "^");
-        if (parser->par_is_tty) fprintf(stderr, "%s", color_reset);
-
-        fprintf(stderr, "\n");
+        parser_print_source_on_error(parser, &actual_token_loc, &pos_start);
         return res;
     }
     *token = tok;
