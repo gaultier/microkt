@@ -46,12 +46,12 @@ typedef u8 res_t;
 #ifdef NDEBUG
 #define log_debug(fmt, ...) \
     do {                    \
-        IFNORE(fmt);        \
+        IGNORE(fmt);        \
     } while (0)
 #define log_debug_with_indent(indent, fmt, ...) \
     do {                                        \
         IGNORE(indent);                         \
-        IFNORE(fmt);                            \
+        IGNORE(fmt);                            \
     } while (0)
 #else
 #define log_debug(fmt, ...)                                             \
