@@ -2,6 +2,7 @@
 
 #include "ast.h"
 #include "buf.h"
+#include "common.h"
 #include "ir.h"
 #include "lex.h"
 
@@ -78,12 +79,18 @@ static token_index_t parser_next_token(parser_t* parser) {
     PG_ASSERT_COND((usize)buf_size(parser->par_token_ids), >, parser->par_tok_i,
                    "%llu");
 
-    // TODO: skip comments
+    while (parser->par_tok_i < buf_size(parser->par_token_ids)) {
+        const token_index_t res = parser->par_tok_i;
+        parser->par_tok_i += 1;
 
-    const token_index_t res = parser->par_tok_i;
-    parser->par_tok_i += 1;
+        if (parser->par_token_ids[res] == LEX_TOKEN_ID_COMMENT) continue;
 
-    return res;
+        log_debug("parser_next_token: %s",
+                  token_id_t_to_str[parser->par_token_ids[res]]);
+
+        return res;
+    }
+    UNREACHABLE();
 }
 
 static res_t parser_eat_token(parser_t* parser, token_id_t id,
@@ -107,8 +114,6 @@ static res_t parser_parse_primary(parser_t* parser, usize* new_primary_node_i) {
     PG_ASSERT_COND((void*)new_primary_node_i, !=, NULL, "%p");
 
     token_index_t token = 0;
-    while ((parser_eat_token(parser, LEX_TOKEN_ID_COMMENT, &token)) == RES_OK) {
-    }
 
     if (parser_eat_token(parser, LEX_TOKEN_ID_TRUE, &token) == RES_OK) {
         const ast_node_t new_node = NODE_BOOL(token);
@@ -153,6 +158,8 @@ static res_t parser_expect_token(parser_t* parser, token_id_t id,
     const token_index_t tok = parser_next_token(parser);
     if (parser->par_token_ids[tok] != id) {
         // TODO: errors
+        fprintf(stderr, "Expected token %s, got %s\n", token_id_t_to_str[id],
+                token_id_t_to_str[parser->par_token_ids[tok]]);
         return RES_ERR;
     }
     *token = tok;
@@ -164,9 +171,6 @@ static res_t parser_parse_builtin_print(parser_t* parser, usize* new_node_i) {
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
     token_index_t keyword_print = 0;
-    while ((parser_eat_token(parser, LEX_TOKEN_ID_COMMENT, &keyword_print)) ==
-           RES_OK) {
-    }
     if (parser_eat_token(parser, LEX_TOKEN_ID_BUILTIN_PRINT, &keyword_print) ==
         RES_OK) {
         token_index_t lparen = 0;
@@ -196,7 +200,7 @@ static res_t parser_parse(parser_t* parser) {
     PG_ASSERT_COND((usize)buf_size(parser->par_token_ids), >, parser->par_tok_i,
                    "%llu");
 
-    while (1) {
+    while (parser->par_tok_i < buf_size(parser->par_token_ids)) {
         usize new_node_i = 0;
         if (parser_parse_builtin_print(parser, &new_node_i) == RES_OK) {
             ast_node_dump(parser->par_nodes, new_node_i, 0);
@@ -207,13 +211,21 @@ static res_t parser_parse(parser_t* parser) {
 
         const token_index_t next = parser->par_token_ids[parser->par_tok_i];
 
+        if (next == LEX_TOKEN_ID_COMMENT) {
+            parser->par_tok_i += 1;
+            continue;
+        };
+
         if (next == LEX_TOKEN_ID_EOF)
             return RES_OK;
         else {
+            fprintf(stderr, "Expected builtin print, got %s\n",
+                    token_id_t_to_str[next]);
             // TODO: errors
             return RES_ERR;
         }
     }
+    UNREACHABLE();
 }
 
 static usize parse_node_to_int(const parser_t* parser, const ast_node_t* node) {
