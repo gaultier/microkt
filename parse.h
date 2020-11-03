@@ -211,8 +211,7 @@ static void parser_print_source_on_error(const parser_t* parser,
     }
 
     fprintf(stderr, "\n");
-    for (usize i = 0; i < prefix_len /*+ pos_start->pos_column*/; i++)
-        fprintf(stderr, " ");
+    for (usize i = 0; i < prefix_len; i++) fprintf(stderr, " ");
 
     if (parser->par_is_tty) fprintf(stderr, "%s", color_red);
     for (usize i = 0; i < actual_source_len; i++) fprintf(stderr, "^");
