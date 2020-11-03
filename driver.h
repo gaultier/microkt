@@ -123,14 +123,14 @@ static res_t driver_run(const u8* file_name0) {
         fflush(stderr);
         FILE* ld_process = popen(argv0, "r");
         if (ld_process == NULL) {
-            fprintf(stderr, "Failed to run `ld`: `%s` %s\n", argv0,
-                    strerror(errno));
-            return RES_FAILED_LD;
+            res = RES_FAILED_LD;
+            fprintf(stderr, res_to_str[res], argv0, strerror(errno));
+            return res;
         }
         if (pclose(ld_process) != 0) {
-            fprintf(stderr, "Failed to run `ld`: `%s` %s\n", argv0,
-                    strerror(errno));
-            return RES_FAILED_LD;
+            res = RES_FAILED_LD;
+            fprintf(stderr, res_to_str[res], argv0, strerror(errno));
+            return res;
         }
         fflush(stdout);
         fflush(stderr);
