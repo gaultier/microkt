@@ -107,6 +107,9 @@ static res_t parser_parse_primary(parser_t* parser, usize* new_primary_node_i) {
     PG_ASSERT_COND((void*)new_primary_node_i, !=, NULL, "%p");
 
     token_index_t token = 0;
+    while ((parser_eat_token(parser, LEX_TOKEN_ID_COMMENT, &token)) == RES_OK) {
+    }
+
     if (parser_eat_token(parser, LEX_TOKEN_ID_TRUE, &token) == RES_OK) {
         const ast_node_t new_node = NODE_BOOL(token);
         buf_push(parser->par_nodes, new_node);
@@ -161,6 +164,9 @@ static res_t parser_parse_builtin_print(parser_t* parser, usize* new_node_i) {
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
     token_index_t keyword_print = 0;
+    while ((parser_eat_token(parser, LEX_TOKEN_ID_COMMENT, &keyword_print)) ==
+           RES_OK) {
+    }
     if (parser_eat_token(parser, LEX_TOKEN_ID_BUILTIN_PRINT, &keyword_print) ==
         RES_OK) {
         token_index_t lparen = 0;

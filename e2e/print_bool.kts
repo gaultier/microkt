@@ -1,6 +1,7 @@
 
+// expect: true
 print(true)
 
-  print(false)
+  print(false) // expect: false
 
-    print(false)
+    print(false) // expect: false

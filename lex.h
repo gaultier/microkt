@@ -14,6 +14,7 @@ typedef enum {
     LEX_TOKEN_ID_IDENTIFIER,
     LEX_TOKEN_ID_STRING_LITERAL,
     LEX_TOKEN_ID_INT,
+    LEX_TOKEN_ID_COMMENT,
     LEX_TOKEN_ID_EOF,
     LEX_TOKEN_ID_INVALID,
 } token_id_t;
@@ -26,6 +27,7 @@ const u8 token_id_t_to_str[][30] = {
     [LEX_TOKEN_ID_FALSE] = "false",
     [LEX_TOKEN_ID_IDENTIFIER] = "Identifier",
     [LEX_TOKEN_ID_STRING_LITERAL] = "StringLiteral",
+    [LEX_TOKEN_ID_COMMENT] = "Comment",
     [LEX_TOKEN_ID_INT] = "IntLiteral",
     [LEX_TOKEN_ID_EOF] = "EOF",
     [LEX_TOKEN_ID_INVALID] = "INVALID",
@@ -118,6 +120,19 @@ static u8 lex_peek_next(const lexer_t* lexer) {
 
     return lex_is_at_end(lexer) ? '\0'
                                 : lexer->lex_source[lexer->lex_index + 1];
+}
+
+static void lex_advance_until_newline_or_eof(lexer_t* lexer) {
+    PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
+    PG_ASSERT_COND(lexer->lex_index, <, lexer->lex_source_len - 1, "%llu");
+
+    while (true) {
+        const u8 c = lex_peek(lexer);
+        if (c == '\n' || c == '\0') break;
+
+        lex_advance(lexer);
+    }
 }
 
 static void lex_identifier(lexer_t* lexer, token_t* result) {
@@ -218,9 +233,15 @@ static token_t lex_next(lexer_t* lexer) {
                 result.tok_loc.loc_start = lexer->lex_index + 1;
                 break;
             }
-                // case '/': {
-                //     if () break;
-                // }
+            case '/': {
+                if (lex_peek_next(lexer) == '/') {
+                    lex_advance_until_newline_or_eof(lexer);
+                    result.tok_id = LEX_TOKEN_ID_COMMENT;
+                    goto outer;
+                } else {
+                    UNREACHABLE();  // TODO
+                }
+            }
             case '(': {
                 result.tok_id = LEX_TOKEN_ID_LPAREN;
                 lex_advance(lexer);
