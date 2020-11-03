@@ -33,7 +33,7 @@ static parser_t parser_init(const u8* file_name0, const u8* source,
 
     while (1) {
         const token_t token = lex_next(&lexer);
-        token_dump(&token);
+        token_dump(&token, &lexer);
 
         buf_push(token_ids, token.tok_id);
         buf_push(token_locs, token.tok_loc);
