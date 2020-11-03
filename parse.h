@@ -164,20 +164,54 @@ static void parser_print_source_on_error(const parser_t* parser,
         &parser->par_source[actual_token_loc->loc_start];
     const usize actual_source_len =
         actual_token_loc->loc_end - actual_token_loc->loc_start;
+    const loc_pos_t pos_end =
+        lex_pos(&parser->par_lexer, actual_token_loc->loc_end);
 
     if (parser->par_is_tty) fprintf(stderr, "%s", color_grey);
 
     static u8 prefix[MAXPATHLEN + 50] = "\0";
     snprintf(prefix, sizeof(prefix), "%s:%llu:%llu:", parser->par_file_name0,
              pos_start->pos_line, pos_start->pos_column);
-    const usize prefix_len = strlen(prefix);
+    usize prefix_len = strlen(prefix);
     fprintf(stderr, "%s", prefix);
     if (parser->par_is_tty) fprintf(stderr, "%s", color_reset);
 
-    for (usize i = 0; i < pos_start->pos_column; i++) fprintf(stderr, " ");
-    fprintf(stderr, "%.*s\n", (int)actual_source_len, actual_source);
+    // If there is a token before, print it
+    if (parser->par_tok_i > 1) {
+        const loc_t before_actual_token_loc =
+            parser->par_token_locs[parser->par_tok_i - 2];
+        const u8* const before_actual_source =
+            &parser->par_source[before_actual_token_loc.loc_start];
+        const usize before_actual_source_len =
+            // Include spaces here, meaning we consider the start of the
+            // previous token until the start of the actual token
+            actual_token_loc->loc_start - before_actual_token_loc.loc_start;
+        prefix_len += before_actual_source_len;
 
-    for (usize i = 0; i < prefix_len + pos_start->pos_column; i++)
+        fprintf(stderr, "%.*s", (int)before_actual_source_len,
+                before_actual_source);
+    }
+    fprintf(stderr, "%.*s", (int)actual_source_len, actual_source);
+
+    // If there is a token after, print it
+    if (parser->par_tok_i < buf_size(parser->par_token_ids)) {
+        const loc_t after_actual_token_loc =
+            parser->par_token_locs[parser->par_tok_i];
+        const u8* const after_actual_source =
+            &parser->par_source[actual_token_loc->loc_end];
+        const usize after_actual_source_len =
+            // Include spaces here, meaning we consider the end of the
+            // actual token until the end of the next token
+            after_actual_token_loc.loc_end - actual_token_loc->loc_end;
+
+        // Do not add to prefix_len here since this is the suffix
+
+        fprintf(stderr, "%.*s", (int)after_actual_source_len,
+                after_actual_source);
+    }
+
+    fprintf(stderr, "\n");
+    for (usize i = 0; i < prefix_len /*+ pos_start->pos_column*/; i++)
         fprintf(stderr, " ");
 
     if (parser->par_is_tty) fprintf(stderr, "%s", color_red);
