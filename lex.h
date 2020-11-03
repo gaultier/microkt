@@ -59,7 +59,6 @@ typedef struct {
 
 typedef enum {
     LEX_STATE_START,
-    LEX_STATE_STRING_LITERAL,
 } lex_state_t;
 
 // TODO: trie?
@@ -144,6 +143,37 @@ static res_t lex_number(lexer_t* lexer, token_t* result) {
     return RES_OK;
 }
 
+// TODO: escape sequences
+// TODO: miltiline
+static void lex_string(lexer_t* lexer, token_t* result) {
+    PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)result, !=, NULL, "%p");
+
+    u8 c = lexer->lex_source[lexer->lex_index];
+    PG_ASSERT_COND(c, ==, '"', "%c");
+    lexer->lex_index += 1;
+
+    while (lexer->lex_index < lexer->lex_source_len) {
+        c = lexer->lex_source[lexer->lex_index];
+        if (c == '"') break;
+
+        lexer->lex_index += 1;
+    }
+
+    if (c != '"') {
+        log_debug(
+            "Unterminated string, missing trailing quote: c=`%c` "
+            "lex_index=%llu",
+            c, lexer->lex_index);
+        result->tok_id = LEX_TOKEN_ID_INVALID;
+    } else {
+        PG_ASSERT_COND(c, ==, '"', "%c");
+        result->tok_id = LEX_TOKEN_ID_STRING_LITERAL;
+        lexer->lex_index += 1;
+    }
+}
+
 static token_t lex_next(lexer_t* lexer) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
@@ -178,9 +208,8 @@ static token_t lex_next(lexer_t* lexer) {
                         goto outer;
                     }
                     case '"': {
-                        result.tok_id = LEX_TOKEN_ID_STRING_LITERAL;
-                        state = LEX_STATE_STRING_LITERAL;
-                        break;
+                        lex_string(lexer, &result);
+                        goto outer;
                     }
                     case '_':
                     case 'a':
@@ -258,28 +287,6 @@ static token_t lex_next(lexer_t* lexer) {
                     }
                 }
                 break;
-            }
-            case LEX_STATE_STRING_LITERAL: {
-                switch (c) {
-                    case '"': {
-                        lexer->lex_index += 1;
-                        goto outer;
-                    }
-                    default: {
-                    }
-                }
-
-                break;
-            }
-        }
-        if (lexer->lex_index == lexer->lex_source_len) {
-            switch (state) {
-                case LEX_STATE_STRING_LITERAL: {
-                    result.tok_id = LEX_TOKEN_ID_INVALID;
-                    break;
-                }
-                default: {
-                }
             }
         }
 
