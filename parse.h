@@ -218,32 +218,39 @@ static void parser_print_source_on_error(const parser_t* parser,
     fprintf(stderr, "\n");
 }
 
-static res_t parser_expect_token(parser_t* parser, token_id_t id,
+static void parser_err_unexpected_token(const parser_t* parser,
+                                        token_id_t expected,
+                                        token_id_t actual) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+
+    const res_t res = RES_UNEXPECTED_TOKEN;
+
+    const loc_t actual_token_loc =
+        parser->par_token_locs[parser->par_tok_i - 1];
+    const loc_pos_t pos_start =
+        lex_pos(&parser->par_lexer, actual_token_loc.loc_start);
+
+    fprintf(stderr, res_to_str[res], (parser->par_is_tty ? color_grey : ""),
+            parser->par_file_name0, pos_start.pos_line, pos_start.pos_column,
+            (parser->par_is_tty ? color_reset : ""),
+            token_id_t_to_str[expected],
+            token_id_t_to_str[parser->par_token_ids[actual]]);
+}
+
+static res_t parser_expect_token(parser_t* parser, token_id_t expected,
                                  token_index_t* token) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_token_ids, !=, NULL, "%p");
     PG_ASSERT_COND((usize)buf_size(parser->par_token_ids), >, (usize)0, "%llu");
     PG_ASSERT_COND((void*)token, !=, NULL, "%p");
 
-    const token_index_t tok = parser_next_token(parser);
-    if (parser->par_token_ids[tok] != id) {
+    const token_index_t actual = parser_next_token(parser);
+    if (parser->par_token_ids[actual] != expected) {
         const res_t res = RES_UNEXPECTED_TOKEN;
-
-        const loc_t actual_token_loc =
-            parser->par_token_locs[parser->par_tok_i - 1];
-        const loc_pos_t pos_start =
-            lex_pos(&parser->par_lexer, actual_token_loc.loc_start);
-
-        fprintf(stderr, res_to_str[res], (parser->par_is_tty ? color_grey : ""),
-                parser->par_file_name0, pos_start.pos_line,
-                pos_start.pos_column, (parser->par_is_tty ? color_reset : ""),
-                token_id_t_to_str[id],
-                token_id_t_to_str[parser->par_token_ids[tok]]);
-
-        parser_print_source_on_error(parser, &actual_token_loc, &pos_start);
+        parser_err_unexpected_token(parser, expected, actual);
         return res;
     }
-    *token = tok;
+    *token = actual;
     return RES_OK;
 }
 
@@ -287,25 +294,22 @@ static res_t parser_parse(parser_t* parser) {
     while (parser->par_tok_i < buf_size(parser->par_token_ids)) {
         usize new_node_i = 0;
         res_t res = RES_NONE;
+
         if ((res = parser_parse_builtin_print(parser, &new_node_i)) == RES_OK) {
             ast_node_dump(parser->par_nodes, new_node_i, 0);
             buf_push(parser->par_stmt_nodes, new_node_i);
 
             continue;
         }
-
-        const token_index_t next = parser->par_token_ids[parser->par_tok_i];
-
-        if (next == LEX_TOKEN_ID_COMMENT) {
+        const token_index_t current = parser->par_token_ids[parser->par_tok_i];
+        if (current == LEX_TOKEN_ID_COMMENT) {
             parser->par_tok_i += 1;
             continue;
-        };
-
-        if (next == LEX_TOKEN_ID_EOF)
-            return RES_OK;
-        else {
-            return res;
         }
+        if (current == LEX_TOKEN_ID_EOF)
+            return RES_OK;
+        else
+            return res;
     }
     UNREACHABLE();
 }
