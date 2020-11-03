@@ -38,36 +38,29 @@ static res_t driver_run(const u8* file_name0) {
 
     FILE* file = NULL;
     if ((file = fopen(file_name0, "r")) == NULL) {
-        fprintf(stderr, "Could not open the file `%s`: errno=%d error=%s\n",
-                file_name0, errno, strerror(errno));
-        return errno;
+        res = RES_SOURCE_FILE_READ_FAILED;
+        fprintf(stderr, res_to_str[res], file_name0, strerror(errno));
+        return res;
     }
 
-    int ret = 0;
-    if ((ret = fseek(file, 0, SEEK_END)) != 0) {
-        fprintf(stderr,
-                "Could not move the file cursor to the end of the file `%s`: "
-                "errno=%d error=%s\n",
-                file_name0, errno, strerror(errno));
-        fclose(file);
-        return errno;
+    if (fseek(file, 0, SEEK_END) != 0) {
+        res = RES_SOURCE_FILE_READ_FAILED;
+        fprintf(stderr, res_to_str[res], file_name0, strerror(errno));
+        return res;
     }
     const usize file_size = (size_t)ftell(file);
 
     const u8* source =
         mmap(NULL, file_size, PROT_READ, MAP_SHARED, fileno(file), 0);
     if (source == MAP_FAILED) {
-        fprintf(stderr, "Failed to mmap the file %s: %s", file_name0,
-                strerror(errno));
-        return RES_SOURCE_FILE_READ_FAILED;
+        res = RES_SOURCE_FILE_READ_FAILED;
+        fprintf(stderr, res_to_str[res], file_name0, strerror(errno));
+        return res;
     }
 
     parser_t parser = parser_init(file_name0, source, file_size);
 
-    if ((res = parser_parse(&parser)) != RES_OK) {
-        fprintf(stderr, "%s: error %d\n", file_name0, res);
-        return res;
-    }
+    if ((res = parser_parse(&parser)) != RES_OK) return res;
 
     emit_t emitter = emit_init();
     emit_emit(&emitter, &parser);
