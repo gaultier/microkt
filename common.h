@@ -13,6 +13,8 @@ typedef enum {
     RES_ERR,
     RES_OK,
     RES_NONE,
+    RES_UNEXPECTED_TOKEN,
+    RES_INVALID_FILE_NAME,
 } res_t;
 
 // On macos this macro is defined in some system headers

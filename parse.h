@@ -160,7 +160,7 @@ static res_t parser_expect_token(parser_t* parser, token_id_t id,
         // TODO: errors
         fprintf(stderr, "Expected token %s, got %s\n", token_id_t_to_str[id],
                 token_id_t_to_str[parser->par_token_ids[tok]]);
-        return RES_ERR;
+        return RES_UNEXPECTED_TOKEN;
     }
     *token = tok;
     return RES_OK;
@@ -171,18 +171,21 @@ static res_t parser_parse_builtin_print(parser_t* parser, usize* new_node_i) {
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
     token_index_t keyword_print = 0;
-    if (parser_eat_token(parser, LEX_TOKEN_ID_BUILTIN_PRINT, &keyword_print) ==
-        RES_OK) {
+    res_t res = RES_NONE;
+    if ((res = parser_eat_token(parser, LEX_TOKEN_ID_BUILTIN_PRINT,
+                                &keyword_print)) == RES_OK) {
         token_index_t lparen = 0;
-        if (parser_expect_token(parser, LEX_TOKEN_ID_LPAREN, &lparen) != RES_OK)
-            return RES_ERR;
+        if ((res = parser_expect_token(parser, LEX_TOKEN_ID_LPAREN, &lparen)) !=
+            RES_OK)
+            return res;
 
         usize arg_i = 0;
-        if (parser_parse_primary(parser, &arg_i) != RES_OK) return RES_ERR;
+        if ((res = parser_parse_primary(parser, &arg_i)) != RES_OK) return res;
 
         token_index_t rparen = 0;
-        if (parser_expect_token(parser, LEX_TOKEN_ID_RPAREN, &rparen) != RES_OK)
-            return RES_ERR;
+        if ((res = parser_expect_token(parser, LEX_TOKEN_ID_RPAREN, &rparen)) !=
+            RES_OK)
+            return res;
 
         const ast_node_t new_node = NODE_PRINT(arg_i, keyword_print, rparen);
         buf_push(parser->par_nodes, new_node);

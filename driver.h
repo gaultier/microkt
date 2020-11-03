@@ -30,7 +30,7 @@ static res_t driver_run(const u8* file_name0) {
 
     if (driver_is_file_name_valid(file_name0) != RES_OK) {
         fprintf(stderr, "Invalid file name: %s\n", file_name0);
-        return RES_ERR;
+        return RES_INVALID_FILE_NAME;
     }
 
     FILE* file = NULL;

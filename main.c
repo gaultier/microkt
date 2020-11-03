@@ -1,3 +1,4 @@
+#include "common.h"
 #include "driver.h"
 
 int main(int argc, char* argv[]) {
@@ -6,5 +7,5 @@ int main(int argc, char* argv[]) {
         return 0;
     };
 
-    if (driver_run(argv[1]) == RES_ERR) return 1;
+    if (driver_run(argv[1]) != RES_OK) return 1;
 }
