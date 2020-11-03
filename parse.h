@@ -158,9 +158,15 @@ static res_t parser_expect_token(parser_t* parser, token_id_t id,
     const token_index_t tok = parser_next_token(parser);
     if (parser->par_token_ids[tok] != id) {
         const res_t res = RES_UNEXPECTED_TOKEN;
+        const loc_t actual_token_loc =
+            parser->par_token_locs[parser->par_tok_i];
+        const u8* const actual_source =
+            &parser->par_source[actual_token_loc.loc_start];
+        const usize actual_source_len =
+            actual_token_loc.loc_end - actual_token_loc.loc_start;
         fprintf(stderr, res_to_str[res], parser->par_file_name0,
-                token_id_t_to_str[id],
-                token_id_t_to_str[parser->par_token_ids[tok]]);
+                token_id_t_to_str[LEX_TOKEN_ID_BUILTIN_PRINT],
+                token_id_t_to_str[id], (int)actual_source_len, actual_source);
         return res;
     }
     *token = tok;
@@ -206,7 +212,8 @@ static res_t parser_parse(parser_t* parser) {
 
     while (parser->par_tok_i < buf_size(parser->par_token_ids)) {
         usize new_node_i = 0;
-        if (parser_parse_builtin_print(parser, &new_node_i) == RES_OK) {
+        res_t res = RES_NONE;
+        if ((res = parser_parse_builtin_print(parser, &new_node_i)) == RES_OK) {
             ast_node_dump(parser->par_nodes, new_node_i, 0);
             buf_push(parser->par_stmt_nodes, new_node_i);
 
@@ -223,10 +230,6 @@ static res_t parser_parse(parser_t* parser) {
         if (next == LEX_TOKEN_ID_EOF)
             return RES_OK;
         else {
-            const res_t res = RES_UNEXPECTED_TOKEN;
-            fprintf(stderr, res_to_str[res], parser->par_file_name0,
-                    token_id_t_to_str[LEX_TOKEN_ID_BUILTIN_PRINT],
-                    token_id_t_to_str[next]);
             return res;
         }
     }
