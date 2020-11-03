@@ -6,6 +6,7 @@
 #include <sys/param.h>
 #include <unistd.h>
 
+#include "common.h"
 #include "emit_x86_64.h"
 
 static res_t driver_is_file_name_valid(const u8* file_name0) {
@@ -30,7 +31,7 @@ static res_t driver_run(const u8* file_name0) {
 
     if (driver_is_file_name_valid(file_name0) != RES_OK) {
         fprintf(stderr, "Invalid file name: %s\n", file_name0);
-        return RES_INVALID_FILE_NAME;
+        return RES_INVALID_SOURCE_FILE_NAME;
     }
 
     FILE* file = NULL;
@@ -56,14 +57,15 @@ static res_t driver_run(const u8* file_name0) {
     if (source == MAP_FAILED) {
         fprintf(stderr, "Failed to mmap the file %s: %s", file_name0,
                 strerror(errno));
-        return RES_OK;
+        return RES_SOURCE_FILE_READ_FAILED;
     }
 
     parser_t parser = parser_init(file_name0, source, file_size);
 
-    if (parser_parse(&parser) == RES_ERR) {
-        fprintf(stderr, "%s: error\n", file_name0);
-        return RES_ERR;
+    res_t res = RES_NONE;
+    if ((res = parser_parse(&parser)) != RES_OK) {
+        fprintf(stderr, "%s: error %d\n", file_name0, res);
+        return res;
     }
 
     emit_t emitter = emit_init();
@@ -76,7 +78,7 @@ static res_t driver_run(const u8* file_name0) {
     asm_file_name0[file_name_len - 2] = 's';
     asm_file_name0[file_name_len - 1] = 'm';
     FILE* asm_file = fopen(asm_file_name0, "w");
-    if (asm_file == NULL) return RES_ERR;
+    if (asm_file == NULL) return RES_SOURCE_FILE_READ_FAILED;
 
     log_debug("writing asm output to `%s`", asm_file_name0);
 
