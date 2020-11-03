@@ -38,15 +38,20 @@ typedef u8 res_t;
         exit(1);                                                   \
     } while (0)
 
+#define IGNORE(x)  \
+    do {           \
+        (void)(x); \
+    } while (0)
+
 #ifdef NDEBUG
 #define log_debug(fmt, ...) \
     do {                    \
-        (void)fmt;          \
+        IFNORE(fmt);        \
     } while (0)
 #define log_debug_with_indent(indent, fmt, ...) \
     do {                                        \
-        (void)indent;                           \
-        (void)fmt;                              \
+        IGNORE(indent);                         \
+        IFNORE(fmt);                            \
     } while (0)
 #else
 #define log_debug(fmt, ...)                                          \

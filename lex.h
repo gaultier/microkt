@@ -60,7 +60,6 @@ typedef struct {
 typedef enum {
     LEX_STATE_START,
     LEX_STATE_STRING_LITERAL,
-    LEX_STATE_INT,
 } lex_state_t;
 
 // TODO: trie?
@@ -82,6 +81,10 @@ static res_t lex_is_digit(u8 c) { return ('0' <= c && c <= '9'); }
 static res_t lex_is_identifier_char(u8 c) {
     return ('0' <= c && c <= '9') || ('a' <= c && c <= 'z') ||
            ('A' <= c && c <= 'Z') || c == '_';
+}
+
+static res_t lex_is_space(u8 c) {
+    return c == ' ' || c == '\n' || c == '\t' || c == '\r';
 }
 
 static lexer_t lex_init(const u8* source, const usize source_len) {
@@ -120,7 +123,7 @@ static void lex_identifier(lexer_t* lexer, token_t* result) {
     }
 }
 
-static void lex_number(lexer_t* lexer, token_t* result) {
+static res_t lex_number(lexer_t* lexer, token_t* result) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
     PG_ASSERT_COND((void*)result, !=, NULL, "%p");
@@ -137,10 +140,8 @@ static void lex_number(lexer_t* lexer, token_t* result) {
             break;
     }
 
-    PG_ASSERT_COND(lexer->lex_index, <, lexer->lex_source_len, "%llu");
-    PG_ASSERT_COND(lexer->lex_index, >=, result->tok_loc.loc_start, "%llu");
-
     result->tok_id = LEX_TOKEN_ID_INT;
+    return RES_OK;
 }
 
 static token_t lex_next(lexer_t* lexer) {
@@ -246,7 +247,8 @@ static token_t lex_next(lexer_t* lexer) {
                     case '7':
                     case '8':
                     case '9': {
-                        lex_number(lexer, &result);
+                        const res_t res = lex_number(lexer, &result);
+                        IGNORE(res);  // TODO: correct?
                         goto outer;
                     }
                     default: {
@@ -256,9 +258,6 @@ static token_t lex_next(lexer_t* lexer) {
                     }
                 }
                 break;
-            }
-            case LEX_STATE_INT: {
-                UNREACHABLE();
             }
             case LEX_STATE_STRING_LITERAL: {
                 switch (c) {
