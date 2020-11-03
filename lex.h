@@ -82,7 +82,8 @@ static loc_pos_t lex_pos(const lexer_t* lexer, usize position) {
 
     loc_pos_t pos = {.pos_line = 1};
 
-    for (usize i = 0; i < buf_size(lexer->lex_lines); i++) {
+    usize i = 0;
+    for (i = 0; i < buf_size(lexer->lex_lines); i++) {
         const usize line_pos = lexer->lex_lines[i];
         if (position < line_pos) break;
 
@@ -90,6 +91,7 @@ static loc_pos_t lex_pos(const lexer_t* lexer, usize position) {
         // TODO: column
     }
 
+    pos.pos_column = position - (i > 0 ? lexer->lex_lines[i - 1] : 0);
     return pos;
 }
 
@@ -389,7 +391,11 @@ static void token_dump(const token_t* t, const lexer_t* lexer) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
 
     const loc_pos_t pos_start = lex_pos(lexer, t->tok_loc.loc_start);
-    log_debug("tok_id=%s tok_loc_start=%llu tok_loc_end=%llu pos line=%llu",
-              token_id_t_to_str[t->tok_id], t->tok_loc.loc_start,
-              t->tok_loc.loc_end, pos_start.pos_line);
+    const loc_pos_t pos_end = lex_pos(lexer, t->tok_loc.loc_end);
+    log_debug(
+        "id=%s loc_start=%llu loc_end=%llu start_line=%llu "
+        "start_column=%llu end_line=%llu end_column=%llu",
+        token_id_t_to_str[t->tok_id], t->tok_loc.loc_start, t->tok_loc.loc_end,
+        pos_start.pos_line, pos_start.pos_column, pos_end.pos_line,
+        pos_end.pos_column);
 }
