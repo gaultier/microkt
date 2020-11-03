@@ -4,7 +4,6 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/param.h>
-#include <unistd.h>
 
 #include "common.h"
 #include "emit_x86_64.h"

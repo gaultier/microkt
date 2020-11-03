@@ -1,5 +1,7 @@
 #pragma once
 
+#include <unistd.h>
+
 #include "ast.h"
 #include "common.h"
 #include "ir.h"
@@ -17,6 +19,7 @@ typedef struct {
                                     // root of the statement in the ast
     loc_t* par_token_locs;
     lexer_t par_lexer;
+    bool par_is_tty;
 } parser_t;
 
 static parser_t parser_init(const u8* file_name0, const u8* source,
@@ -50,7 +53,8 @@ static parser_t parser_init(const u8* file_name0, const u8* source,
                       .par_stmt_nodes = NULL,
                       .par_token_locs = token_locs,
                       .par_tok_i = 0,
-                      .par_lexer = lexer};
+                      .par_lexer = lexer,
+                      .par_is_tty = isatty(2)};
 }
 
 static void parser_ast_node_source(const parser_t* parser,
@@ -175,10 +179,27 @@ static res_t parser_expect_token(parser_t* parser, token_id_t id,
             &parser->par_source[actual_token_loc.loc_start];
         const usize actual_source_len =
             actual_token_loc.loc_end - actual_token_loc.loc_start;
+
+        if (parser->par_is_tty) fprintf(stderr, "%s", color_grey);
+
+        static u8 prefix[MAXPATHLEN + 50] = "\0";
+        snprintf(prefix, sizeof(prefix),
+                 "%s:%llu:%llu:", parser->par_file_name0, pos_start.pos_line,
+                 pos_start.pos_column);
+        const usize prefix_len = strlen(prefix);
+        fprintf(stderr, "%s", prefix);
+        if (parser->par_is_tty) fprintf(stderr, "%s", color_reset);
+
         for (usize i = 0; i < pos_start.pos_column; i++) fprintf(stderr, " ");
         fprintf(stderr, "%.*s\n", (int)actual_source_len, actual_source);
-        for (usize i = 0; i < pos_start.pos_column; i++) fprintf(stderr, " ");
+
+        for (usize i = 0; i < prefix_len + pos_start.pos_column; i++)
+            fprintf(stderr, " ");
+
+        if (parser->par_is_tty) fprintf(stderr, "%s", color_red);
         for (usize i = 0; i < actual_source_len; i++) fprintf(stderr, "^");
+        if (parser->par_is_tty) fprintf(stderr, "%s", color_reset);
+
         fprintf(stderr, "\n");
         return res;
     }

@@ -86,3 +86,7 @@ static const u8 res_to_str[][100] = {
 #endif
 
 #define UNREACHABLE() (assert(0 && "Unreachable"))
+
+static const u8 color_red[] = "\x1b[31m";
+static const u8 color_reset[] = "\x1b[0m";
+static const u8 color_grey[] = "\x1b[90m";
