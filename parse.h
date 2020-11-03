@@ -225,7 +225,7 @@ static res_t parser_parse(parser_t* parser) {
             fprintf(stderr, "Expected builtin print, got %s\n",
                     token_id_t_to_str[next]);
             // TODO: errors
-            return RES_ERR;
+            return RES_UNEXPECTED_TOKEN;
         }
     }
     UNREACHABLE();

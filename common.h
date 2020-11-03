@@ -16,15 +16,17 @@ typedef enum {
     RES_UNEXPECTED_TOKEN,
     RES_INVALID_SOURCE_FILE_NAME,
     RES_SOURCE_FILE_READ_FAILED,
+    RES_FAILED_AS,
+    RES_FAILED_LD,
 } res_t;
 
 static const u8 res_to_str[][100] = {
-    [RES_ERR] = "error",
-    [RES_OK] = "ok",
-    [RES_NONE] = "none",
-    [RES_UNEXPECTED_TOKEN] = "Unexpected token: expected %s, got %s",
-    [RES_INVALID_SOURCE_FILE_NAME] = "Invalid source file name %s",
-    [RES_SOURCE_FILE_READ_FAILED] = "Failed to read source file %s",
+    [RES_ERR] = "error\n",
+    [RES_OK] = "ok\n",
+    [RES_NONE] = "none\n",
+    [RES_UNEXPECTED_TOKEN] = "Unexpected token: expected %s, got %s\n",
+    [RES_INVALID_SOURCE_FILE_NAME] = "Invalid source file name %s\n",
+    [RES_SOURCE_FILE_READ_FAILED] = "Failed to read source file %s\n",
 };
 
 // On macos this macro is defined in some system headers

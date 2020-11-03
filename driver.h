@@ -9,7 +9,7 @@
 #include "common.h"
 #include "emit_x86_64.h"
 
-static res_t driver_is_file_name_valid(const u8* file_name0) {
+static bool driver_is_file_name_valid(const u8* file_name0) {
     const usize len = strlen(file_name0);
     return (len > (3 + 1) && memcmp(&file_name0[len - 4], ".kts", 3) == 0);
 }
@@ -29,9 +29,11 @@ static void driver_base_source_file_name(const u8* file_name0,
 static res_t driver_run(const u8* file_name0) {
     PG_ASSERT_COND((void*)file_name0, !=, NULL, "%p");
 
-    if (driver_is_file_name_valid(file_name0) != RES_OK) {
-        fprintf(stderr, "Invalid file name: %s\n", file_name0);
-        return RES_INVALID_SOURCE_FILE_NAME;
+    res_t res = RES_NONE;
+    if (!driver_is_file_name_valid(file_name0)) {
+        res = RES_INVALID_SOURCE_FILE_NAME;
+        fprintf(stderr, res_to_str[res], file_name0);
+        return res;
     }
 
     FILE* file = NULL;
@@ -62,7 +64,6 @@ static res_t driver_run(const u8* file_name0) {
 
     parser_t parser = parser_init(file_name0, source, file_size);
 
-    res_t res = RES_NONE;
     if ((res = parser_parse(&parser)) != RES_OK) {
         fprintf(stderr, "%s: error %d\n", file_name0, res);
         return res;
@@ -102,12 +103,12 @@ static res_t driver_run(const u8* file_name0) {
         if (as_process == NULL) {
             fprintf(stderr, "Failed to run `as`: `%s` %s\n", argv0,
                     strerror(errno));
-            return RES_ERR;
+            return RES_FAILED_AS;
         }
         if (pclose(as_process) != 0) {
             fprintf(stderr, "Failed to run `as`: `%s` %s\n", argv0,
                     strerror(errno));
-            return RES_ERR;
+            return RES_FAILED_AS;
         }
         fflush(stdout);
         fflush(stderr);
@@ -126,12 +127,12 @@ static res_t driver_run(const u8* file_name0) {
         if (ld_process == NULL) {
             fprintf(stderr, "Failed to run `ld`: `%s` %s\n", argv0,
                     strerror(errno));
-            return RES_ERR;
+            return RES_FAILED_LD;
         }
         if (pclose(ld_process) != 0) {
             fprintf(stderr, "Failed to run `ld`: `%s` %s\n", argv0,
                     strerror(errno));
-            return RES_ERR;
+            return RES_FAILED_LD;
         }
         fflush(stdout);
         fflush(stderr);
