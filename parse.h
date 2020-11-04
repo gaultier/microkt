@@ -44,6 +44,7 @@ static parser_t parser_init(const u8* file_name0, const u8* source,
 
         if (token.tok_id == LEX_TOKEN_ID_EOF) break;
     }
+    PG_ASSERT_COND(buf_size(token_ids), ==, buf_size(token_locs), "%lu");
 
     return (parser_t){.par_file_name0 = file_name0,
                       .par_source = source,
@@ -66,7 +67,10 @@ static void parser_ast_node_source(const parser_t* parser,
     PG_ASSERT_COND((void*)source_len, !=, NULL, "%p");
 
     const token_index_t first = ast_node_first_token(node);
+    PG_ASSERT_COND(first, <, (usize)buf_size(parser->par_token_locs), "%llu");
     const token_index_t last = ast_node_last_token(node);
+    PG_ASSERT_COND(last, <, (usize)buf_size(parser->par_token_locs), "%llu");
+
     const loc_t first_token = parser->par_token_locs[first];
     const loc_t last_token = parser->par_token_locs[last];
 
