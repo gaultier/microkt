@@ -13,7 +13,7 @@ typedef enum {
     LEX_TOKEN_ID_TRUE,
     LEX_TOKEN_ID_FALSE,
     LEX_TOKEN_ID_IDENTIFIER,
-    LEX_TOKEN_ID_STRING_LITERAL,
+    LEX_TOKEN_ID_STRING,
     LEX_TOKEN_ID_INT,
     LEX_TOKEN_ID_COMMENT,
     LEX_TOKEN_ID_CHAR,
@@ -28,10 +28,10 @@ const u8 token_id_t_to_str[][30] = {
     [LEX_TOKEN_ID_TRUE] = "true",
     [LEX_TOKEN_ID_FALSE] = "false",
     [LEX_TOKEN_ID_IDENTIFIER] = "Identifier",
-    [LEX_TOKEN_ID_STRING_LITERAL] = "StringLiteral",
+    [LEX_TOKEN_ID_STRING] = "String",
     [LEX_TOKEN_ID_COMMENT] = "Comment",
     [LEX_TOKEN_ID_CHAR] = "Char",
-    [LEX_TOKEN_ID_INT] = "IntLiteral",
+    [LEX_TOKEN_ID_INT] = "Int",
     [LEX_TOKEN_ID_EOF] = "Eof",
     [LEX_TOKEN_ID_INVALID] = "Invalid",
 };
@@ -254,7 +254,7 @@ static void lex_string(lexer_t* lexer, token_t* result) {
         result->tok_id = LEX_TOKEN_ID_INVALID;
     } else {
         PG_ASSERT_COND(c, ==, '"', "%c");
-        result->tok_id = LEX_TOKEN_ID_STRING_LITERAL;
+        result->tok_id = LEX_TOKEN_ID_STRING;
         lex_advance(lexer);
     }
 }

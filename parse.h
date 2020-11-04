@@ -188,7 +188,7 @@ static res_t parser_parse_primary(parser_t* parser, usize* new_primary_node_i) {
 
         return RES_OK;
     }
-    if (parser_match(parser, LEX_TOKEN_ID_STRING_LITERAL, &token)) {
+    if (parser_match(parser, LEX_TOKEN_ID_STRING, &token)) {
         const ast_node_t new_node = NODE_STRING(token);
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = buf_size(parser->par_nodes) - 1;
