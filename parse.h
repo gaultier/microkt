@@ -243,9 +243,9 @@ static void parser_print_source_on_error(const parser_t* parser,
     if (parser->par_is_tty) fprintf(stderr, "%s", color_reset);
 
     // If there is a token before, print it
-    if (parser->par_tok_i > 1) {
+    if (parser->par_tok_i > 0) {
         const loc_t before_actual_token_loc =
-            parser->par_token_locs[parser->par_tok_i - 2];
+            parser->par_token_locs[parser->par_tok_i - 1];
         const u8* const before_actual_source =
             &parser->par_source[before_actual_token_loc.loc_start];
         const usize before_actual_source_len =
@@ -260,9 +260,9 @@ static void parser_print_source_on_error(const parser_t* parser,
     fprintf(stderr, "%.*s", (int)actual_source_len, actual_source);
 
     // If there is a token after, print it
-    if (!parser_is_at_end(parser)) {
+    if (parser->par_tok_i < buf_size(parser->par_token_ids) - 1) {
         const loc_t after_actual_token_loc =
-            parser->par_token_locs[parser->par_tok_i];
+            parser->par_token_locs[parser->par_tok_i + 1];
         const u8* const after_actual_source =
             &parser->par_source[actual_token_loc->loc_end];
         const usize after_actual_source_len =
@@ -292,8 +292,7 @@ static res_t parser_err_unexpected_token(const parser_t* parser,
 
     const res_t res = RES_UNEXPECTED_TOKEN;
 
-    const loc_t actual_token_loc =
-        parser->par_token_locs[parser->par_tok_i - 1];
+    const loc_t actual_token_loc = parser->par_token_locs[parser->par_tok_i];
     const loc_pos_t pos_start =
         lex_pos(&parser->par_lexer, actual_token_loc.loc_start);
 
@@ -301,7 +300,7 @@ static res_t parser_err_unexpected_token(const parser_t* parser,
             parser->par_file_name0, pos_start.pos_line, pos_start.pos_column,
             (parser->par_is_tty ? color_reset : ""),
             token_id_t_to_str[expected],
-            token_id_t_to_str[parser->par_token_ids[parser->par_tok_i - 1]]);
+            token_id_t_to_str[parser_current(parser)]);
 
     parser_print_source_on_error(parser, &actual_token_loc, &pos_start);
 
