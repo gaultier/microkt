@@ -90,15 +90,12 @@ static token_index_t parser_advance(parser_t* parser) {
     PG_ASSERT_COND((usize)buf_size(parser->par_token_ids), >, parser->par_tok_i,
                    "%llu");
 
-    while (parser->par_tok_i < buf_size(parser->par_token_ids)) {
-        usize i = parser->par_tok_i;
-        const token_id_t id = parser->par_token_ids[i];
-        if (id == LEX_TOKEN_ID_COMMENT) {
-            parser->par_tok_i += 1;
-            continue;
-        }
+    while (!parser_is_at_end(parser)) {
+        parser->par_tok_i += 1;
+        const token_id_t id = parser->par_token_ids[parser->par_tok_i];
+        if (id == LEX_TOKEN_ID_COMMENT) continue;
 
-        return i;
+        return parser->par_tok_i;
     }
     UNREACHABLE();
 }
@@ -131,10 +128,16 @@ static bool parser_match(parser_t* parser, token_id_t id,
     PG_ASSERT_COND((usize)buf_size(parser->par_token_ids), >, parser->par_tok_i,
                    "%llu");
 
-    if (parser_is_at_end(parser)) return false;
+    if (parser_is_at_end(parser)) {
+        log_debug("did not match %s, at end", token_id_t_to_str[id]);
+        return false;
+    }
 
     const token_id_t current_id = parser_peek(parser);
-    if (id != current_id) return false;
+    if (id != current_id) {
+        log_debug("did not match %s", token_id_t_to_str[id]);
+        return false;
+    }
 
     parser_advance(parser);
     *return_token_index = current_id;
@@ -150,28 +153,28 @@ static res_t parser_parse_primary(parser_t* parser, usize* new_primary_node_i) {
 
     token_index_t token = 0;
 
-    if (parser_match(parser, LEX_TOKEN_ID_TRUE, &token) == RES_OK) {
+    if (parser_match(parser, LEX_TOKEN_ID_TRUE, &token)) {
         const ast_node_t new_node = NODE_BOOL(token);
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = buf_size(parser->par_nodes) - 1;
 
         return RES_OK;
     }
-    if (parser_match(parser, LEX_TOKEN_ID_FALSE, &token) == RES_OK) {
+    if (parser_match(parser, LEX_TOKEN_ID_FALSE, &token)) {
         const ast_node_t new_node = NODE_BOOL(token);
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = buf_size(parser->par_nodes) - 1;
 
         return RES_OK;
     }
-    if (parser_match(parser, LEX_TOKEN_ID_STRING_LITERAL, &token) == RES_OK) {
+    if (parser_match(parser, LEX_TOKEN_ID_STRING_LITERAL, &token)) {
         const ast_node_t new_node = NODE_STRING_LITERAL(token);
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = buf_size(parser->par_nodes) - 1;
 
         return RES_OK;
     }
-    if (parser_match(parser, LEX_TOKEN_ID_INT, &token) == RES_OK) {
+    if (parser_match(parser, LEX_TOKEN_ID_INT, &token)) {
         const ast_node_t new_node = NODE_INT(token);
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = buf_size(parser->par_nodes) - 1;
@@ -278,9 +281,11 @@ static res_t parser_expect_token(parser_t* parser, token_id_t expected,
 
     const token_id_t actual = parser_peek(parser);
     if (actual != expected) {
+        log_debug("expected token not found: %s", token_id_t_to_str[expected]);
         return parser_err_unexpected_token(parser, expected);
     }
     *token = parser_advance(parser);
+    log_debug("expected token found: %s", token_id_t_to_str[expected]);
     return RES_OK;
 }
 
@@ -290,8 +295,7 @@ static res_t parser_parse_builtin_print(parser_t* parser, usize* new_node_i) {
 
     token_index_t keyword_print = 0;
     res_t res = RES_NONE;
-    if ((res = parser_match(parser, LEX_TOKEN_ID_BUILTIN_PRINT,
-                            &keyword_print)) == RES_OK) {
+    if (parser_match(parser, LEX_TOKEN_ID_BUILTIN_PRINT, &keyword_print)) {
         token_index_t lparen = 0;
         if ((res = parser_expect_token(parser, LEX_TOKEN_ID_LPAREN, &lparen)) !=
             RES_OK)
