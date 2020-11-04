@@ -5,8 +5,8 @@
 #include <sys/mman.h>
 #include <sys/param.h>
 
-#include "common.h"
 #include "codegen.h"
+#include "common.h"
 
 static bool driver_is_file_name_valid(const char* file_name0) {
     const int len = strlen(file_name0);
@@ -61,9 +61,6 @@ static res_t driver_run(const char* file_name0) {
 
     if ((res = parser_parse(&parser)) != RES_OK) return res;
 
-    emit_t emitter = emit_init();
-    emit_emit(&emitter, &parser);
-
     const int file_name_len = strlen(file_name0);
     char asm_file_name0[MAXPATHLEN + 1] = "\0";
     memcpy(asm_file_name0, file_name0, (size_t)file_name_len);
@@ -79,7 +76,8 @@ static res_t driver_run(const char* file_name0) {
 
     log_debug("writing asm output to `%s`", asm_file_name0);
 
-    emit_asm_dump(&emitter, asm_file);
+    emit_t emitter = emit_init();
+    emit(&emitter, &parser, asm_file);
     // Make sure everything has been written to the file and not simply buffered
     fflush(asm_file);
     fclose(file);
