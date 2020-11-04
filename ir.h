@@ -57,7 +57,7 @@ reg_t emit_fn_arg(u16 position) {
 
 typedef enum {
     OP_KIND_CALL,
-    OP_KIND_INT,
+    OP_KIND_I64,
     OP_KIND_LABEL_ID,
     OP_KIND_STRING_LABEL,
     OP_KIND_CALLABLE_BLOCK,
@@ -104,7 +104,7 @@ typedef struct {
     emit_op_kind_t op_kind;
     union {
         emit_op_call_t op_call;                      // OP_KIND_CALL
-        isize op_int;                                // OP_KIND_INT
+        isize op_int;                                // OP_KIND_I64
         usize op_label_id;                           // OP_KIND_LABEL_ID
         emit_op_string_label_t op_string_label;      // OP_KIND_STRING_LABEL
         emit_op_callable_block_t op_callable_block;  // OP_KIND_CALLABLE_BLOCK
@@ -114,7 +114,7 @@ typedef struct {
     } op_o;
 } emit_op_t;
 
-#define OP_INT(n) ((emit_op_t){.op_kind = OP_KIND_INT, .op_o = {.op_int = n}})
+#define OP_I64(n) ((emit_op_t){.op_kind = OP_KIND_I64, .op_o = {.op_int = n}})
 
 #define OP_LABEL_ID(n) \
     ((emit_op_t){.op_kind = OP_KIND_LABEL_ID, .op_o = {.op_label_id = n}})
@@ -153,7 +153,7 @@ typedef struct {
 
 #define OP(emitter, op) (emit_make_op_with(emitter, op))
 
-#define AS_INT(op) ((op).op_o.op_int)
+#define AS_I64(op) ((op).op_o.op_int)
 
 #define AS_REGISTER(op) ((op).op_o.op_register)
 

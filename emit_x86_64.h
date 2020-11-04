@@ -117,7 +117,7 @@ static void emit_call_print_integer(emit_t* emitter, emit_op_id_t arg_id) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
 
     const emit_op_t arg = *(emit_op_get(emitter, arg_id));
-    PG_ASSERT_COND(arg.op_kind, ==, OP_KIND_INT, "%d");
+    PG_ASSERT_COND(arg.op_kind, ==, OP_KIND_I64, "%d");
 
     emit_op_id_t* print_int_args = NULL;
     buf_push(print_int_args,
@@ -133,7 +133,7 @@ static void emit_call_print_char(emit_t* emitter, emit_op_id_t arg_id) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
 
     const emit_op_t arg = *(emit_op_get(emitter, arg_id));
-    PG_ASSERT_COND(arg.op_kind, ==, OP_KIND_INT, "%d");
+    PG_ASSERT_COND(arg.op_kind, ==, OP_KIND_I64, "%d");
 
     emit_op_id_t* print_int_args = NULL;
     buf_push(print_int_args,
@@ -155,7 +155,7 @@ static void emit_call_print_string(emit_t* emitter, usize label_id,
                                    OP(emitter, OP_REGISTER(emit_fn_arg(0))))));
 
     buf_push(call_args,
-             OP(emitter, OP_ASSIGN(OP(emitter, OP_INT((isize)string_len)),
+             OP(emitter, OP_ASSIGN(OP(emitter, OP_I64((isize)string_len)),
                                    OP(emitter, OP_REGISTER(emit_fn_arg(1))))));
 
     emit_add_to_current_block(
@@ -186,19 +186,19 @@ static void emit_emit(emit_t* emitter, const parser_t* parser) {
                         parser, emitter, &arg, &string_len);
 
                     emit_call_print_string(emitter, label_id, string_len);
-                } else if (arg.node_kind == NODE_INT) {
+                } else if (arg.node_kind == NODE_I64) {
                     const isize n = parse_node_to_int(parser, &arg);
-                    emit_call_print_integer(emitter, OP(emitter, OP_INT(n)));
+                    emit_call_print_integer(emitter, OP(emitter, OP_I64(n)));
                 } else if (arg.node_kind == NODE_CHAR) {
                     const char n = parse_node_to_char(parser, &arg);
-                    emit_call_print_char(emitter, OP(emitter, OP_INT(n)));
+                    emit_call_print_char(emitter, OP(emitter, OP_I64(n)));
                 } else {
                     UNREACHABLE();
                 }
 
                 break;
             }
-            case NODE_INT:
+            case NODE_I64:
             case NODE_CHAR:
             case NODE_STRING:
             case NODE_KEYWORD_BOOL:
@@ -252,7 +252,7 @@ static void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
             const emit_op_t* const src = emit_op_get(emitter, src_id);
 
             switch (src->op_kind) {
-                case OP_KIND_INT: {
+                case OP_KIND_I64: {
                     fprintf(file, "movq ");
                     emit_asm_dump_op(emitter, src_id, file);
                     fprintf(file, ", ");
@@ -280,12 +280,12 @@ static void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
             fprintf(file, "%s ", reg_t_to_str[AS_REGISTER(*op)]);
             break;
         }
-        case OP_KIND_INT: {
-            fprintf(file, "$%lld ", AS_INT(*op));
+        case OP_KIND_I64: {
+            fprintf(file, "$%lld ", AS_I64(*op));
             break;
         }
         case OP_KIND_LABEL_ID: {
-            fprintf(file, ".L%lld(%s) ", AS_INT(*op), reg_t_to_str[REG_RIP]);
+            fprintf(file, ".L%lld(%s) ", AS_I64(*op), reg_t_to_str[REG_RIP]);
             break;
         }
         case OP_KIND_PTR: {

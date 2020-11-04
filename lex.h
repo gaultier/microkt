@@ -14,7 +14,7 @@ typedef enum {
     LEX_TOKEN_ID_FALSE,
     LEX_TOKEN_ID_IDENTIFIER,
     LEX_TOKEN_ID_STRING,
-    LEX_TOKEN_ID_INT,
+    LEX_TOKEN_ID_I64,
     LEX_TOKEN_ID_COMMENT,
     LEX_TOKEN_ID_CHAR,
     LEX_TOKEN_ID_PLUS,
@@ -32,7 +32,7 @@ const u8 token_id_t_to_str[][30] = {
     [LEX_TOKEN_ID_STRING] = "String",
     [LEX_TOKEN_ID_COMMENT] = "Comment",
     [LEX_TOKEN_ID_CHAR] = "Char",
-    [LEX_TOKEN_ID_INT] = "Int",
+    [LEX_TOKEN_ID_I64] = "Int",
     [LEX_TOKEN_ID_PLUS] = "+",
     [LEX_TOKEN_ID_EOF] = "Eof",
     [LEX_TOKEN_ID_INVALID] = "Invalid",
@@ -226,7 +226,7 @@ static res_t lex_number(lexer_t* lexer, token_t* result) {
         lex_advance(lexer);
     }
 
-    result->tok_id = LEX_TOKEN_ID_INT;
+    result->tok_id = LEX_TOKEN_ID_I64;
     return RES_OK;
 }
 

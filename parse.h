@@ -198,8 +198,8 @@ static res_t parser_parse_primary(parser_t* parser, usize* new_primary_node_i) {
 
         return RES_OK;
     }
-    if (parser_match(parser, LEX_TOKEN_ID_INT, &token)) {
-        const ast_node_t new_node = NODE_INT(token);
+    if (parser_match(parser, LEX_TOKEN_ID_I64, &token)) {
+        const ast_node_t new_node = NODE_I64(token);
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = buf_size(parser->par_nodes) - 1;
 
@@ -389,7 +389,7 @@ static res_t parser_parse(parser_t* parser) {
 static isize parse_node_to_int(const parser_t* parser, const ast_node_t* node) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)node, !=, NULL, "%p");
-    PG_ASSERT_COND(node->node_kind, ==, NODE_INT, "%d");
+    PG_ASSERT_COND(node->node_kind, ==, NODE_I64, "%d");
 
     const u8* string = NULL;
     usize string_len = 0;
