@@ -325,7 +325,7 @@ static res_t parser_parse(parser_t* parser) {
     PG_ASSERT_COND((usize)buf_size(parser->par_token_ids), >, parser->par_tok_i,
                    "%llu");
 
-    while (parser->par_tok_i < buf_size(parser->par_token_ids)) {
+    while (!parser_is_at_end(parser)) {
         usize new_node_i = 0;
         res_t res = RES_NONE;
 
