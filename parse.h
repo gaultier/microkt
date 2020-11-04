@@ -94,28 +94,22 @@ static token_id_t parser_current(const parser_t* parser) {
     return parser->par_token_ids[parser->par_tok_i];
 }
 
-static token_index_t parser_advance(parser_t* parser) {
+static void parser_advance_until_after(parser_t* parser, token_id_t id) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_token_ids, !=, NULL, "%p");
     PG_ASSERT_COND((usize)buf_size(parser->par_token_ids), >, (usize)0, "%llu");
     PG_ASSERT_COND((usize)buf_size(parser->par_token_ids), >, parser->par_tok_i,
                    "%llu");
 
-    parser->par_tok_i += 1;
-
-    while (!parser_is_at_end(parser)) {
-        log_debug("previous=%llu, current=%llu", parser->par_tok_i - 1,
-                  parser->par_tok_i);
-        const token_id_t id = parser_current(parser);
-        if (id == LEX_TOKEN_ID_COMMENT) {
-            log_debug("Skipping over comment at pos=%llu", parser->par_tok_i);
-            parser->par_tok_i += 1;
-            continue;
-        }
-
-        return parser->par_tok_i;
+    while (!parser_is_at_end(parser) && parser_current(parser) != id) {
+        PG_ASSERT_COND(parser->par_tok_i, <,
+                       (usize)buf_size(parser->par_token_ids), "%llu");
+        parser->par_tok_i += 1;
+        PG_ASSERT_COND(parser->par_tok_i, <,
+                       (usize)buf_size(parser->par_token_ids), "%llu");
     }
-    UNREACHABLE();
+
+    parser->par_tok_i += 1;
 }
 
 static token_id_t parser_peek(parser_t* parser) {
@@ -161,16 +155,7 @@ static bool parser_match(parser_t* parser, token_id_t id,
         return false;
     }
 
-    // Advance
-    while (!parser_is_at_end(parser) && parser_current(parser) != id) {
-        PG_ASSERT_COND(parser->par_tok_i, <,
-                       (usize)buf_size(parser->par_token_ids), "%llu");
-        parser->par_tok_i += 1;
-        PG_ASSERT_COND(parser->par_tok_i, <,
-                       (usize)buf_size(parser->par_token_ids), "%llu");
-    }
-
-    parser->par_tok_i += 1;
+    parser_advance_until_after(parser, id);
     PG_ASSERT_COND(parser->par_tok_i, <, (usize)buf_size(parser->par_token_ids),
                    "%llu");
 
