@@ -357,10 +357,18 @@ static res_t parser_parse(parser_t* parser) {
     PG_ASSERT_COND((usize)buf_size(parser->par_token_ids), >, parser->par_tok_i,
                    "%llu");
 
-    while (!parser_is_at_end(parser)) {
-        usize new_node_i = 0;
-        res_t res = RES_NONE;
+    usize new_node_i = 0;
+    res_t res = RES_NONE;
 
+    if ((res = parser_parse_builtin_print(parser, &new_node_i)) == RES_OK) {
+        ast_node_dump(parser->par_nodes, new_node_i, 0);
+        buf_push(parser->par_stmt_nodes, new_node_i);
+
+    } else {
+        return parser_err_unexpected_token(parser, LEX_TOKEN_ID_BUILTIN_PRINT);
+    }
+
+    while (!parser_is_at_end(parser)) {
         if ((res = parser_parse_builtin_print(parser, &new_node_i)) == RES_OK) {
             ast_node_dump(parser->par_nodes, new_node_i, 0);
             buf_push(parser->par_stmt_nodes, new_node_i);
