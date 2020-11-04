@@ -162,11 +162,19 @@ static bool parser_match(parser_t* parser, token_id_t id,
     }
 
     // Advance
-    while (!parser_is_at_end(parser) && parser_current(parser) != id)
+    while (!parser_is_at_end(parser) && parser_current(parser) != id) {
+        PG_ASSERT_COND(parser->par_tok_i, <,
+                       (usize)buf_size(parser->par_token_ids), "%llu");
         parser->par_tok_i += 1;
-    parser->par_tok_i += 1;
+        PG_ASSERT_COND(parser->par_tok_i, <,
+                       (usize)buf_size(parser->par_token_ids), "%llu");
+    }
 
-    *return_token_index = current_id;
+    parser->par_tok_i += 1;
+    PG_ASSERT_COND(parser->par_tok_i, <, (usize)buf_size(parser->par_token_ids),
+                   "%llu");
+
+    *return_token_index = parser->par_tok_i;
 
     log_debug("matched %s, now current token: %s", token_id_t_to_str[id],
               token_id_t_to_str[parser_current(parser)]);
@@ -359,7 +367,8 @@ static res_t parser_parse(parser_t* parser) {
 
             continue;
         }
-        log_debug("failed to parse builtin_print: res=%d", res);
+        log_debug("failed to parse builtin_print: res=%d tok_i=%llu", res,
+                  parser->par_tok_i);
 
         const token_index_t current = parser_current(parser);
         if (current == LEX_TOKEN_ID_COMMENT) {
