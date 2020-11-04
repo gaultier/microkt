@@ -196,9 +196,16 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
         buf_push(parser->par_types,
                  ((type_t){.ty_size = 1, .ty_kind = TYPE_STRING}));
         const int type_idx = buf_size(parser->par_types) - 1;
+
+        obj_t obj = {.obj_type_i = type_idx};
+
         const ast_node_t new_node = NODE_STRING(token, type_idx);
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = (int)buf_size(parser->par_nodes) - 1;
+
+        obj.obj_tok_i = new_node.node_n.node_string;
+        log_debug("new object: type=TYPE_STRING tok_i=%d", obj.obj_tok_i);
+        buf_push(parser->par_objects, obj);
 
         return RES_OK;
     }
@@ -206,6 +213,7 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
         buf_push(parser->par_types,
                  ((type_t){.ty_size = 1, .ty_kind = TYPE_I64}));
         const int type_idx = buf_size(parser->par_types) - 1;
+
         const ast_node_t new_node = NODE_I64(token, type_idx);
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = (int)buf_size(parser->par_nodes) - 1;
@@ -216,6 +224,7 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
         buf_push(parser->par_types,
                  ((type_t){.ty_size = 1, .ty_kind = TYPE_CHAR}));
         const int type_idx = buf_size(parser->par_types) - 1;
+
         const ast_node_t new_node = NODE_CHAR(token, type_idx);
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = (int)buf_size(parser->par_nodes) - 1;
@@ -433,4 +442,24 @@ static char parse_node_to_char(const parser_t* parser, const ast_node_t* node) {
     if (string_len > 1) UNIMPLEMENTED();
 
     return string[0];
+}
+
+static void parser_obj_source(const parser_t* parser, int obj_i,
+                              const char** source, int* source_len) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)source, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)source_len, !=, NULL, "%p");
+
+    const obj_t obj = parser->par_objects[obj_i];
+    const token_id_t tok = parser->par_token_ids[obj.obj_tok_i];
+    const loc_t loc = parser->par_token_locs[obj.obj_tok_i];
+
+    // Without quotes for char/string
+    *source = &parser->par_source[(tok == LEX_TOKEN_ID_STRING ||
+                                   tok == LEX_TOKEN_ID_CHAR)
+                                      ? loc.loc_start + 1
+                                      : loc.loc_start];
+    *source_len = (tok == LEX_TOKEN_ID_STRING || tok == LEX_TOKEN_ID_CHAR)
+                      ? (loc.loc_end - loc.loc_start - 2)
+                      : (loc.loc_end - loc.loc_start);
 }

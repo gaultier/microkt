@@ -194,6 +194,15 @@ static void emit(emit_t* emitter, const parser_t* parser, FILE* asm_file) {
     println(".Ltrue: .ascii \"true\"");
     println(".Lfalse: .ascii \"false\"");
 
+    for (int i = 0; i < (int)buf_size(parser->par_objects); i++) {
+        const obj_t obj = parser->par_objects[i];
+        const char* source = NULL;
+        int source_len = 0;
+        parser_obj_source(parser, i, &source, &source_len);
+
+        println(".L%d: .ascii \"%.*s\"", obj.obj_tok_i, source_len, source);
+    }
+
     println("\n.text");
     println(".global _main");
     println("_main:");
@@ -208,10 +217,11 @@ static void emit(emit_t* emitter, const parser_t* parser, FILE* asm_file) {
                 const ast_node_t arg =
                     parser->par_nodes[builtin_print.bp_arg_i];
 
+                println("movq $%lld, %%rax", syscall_write);
+
                 if (arg.node_kind == NODE_KEYWORD_BOOL) {
                     const token_index_t index = arg.node_n.node_boolean;
                     const token_id_t tok = parser->par_token_ids[index];
-                    println("movq $%lld, %%rax", syscall_write);
 
                     println("movq $1, %%rdi");
                     if (tok == LEX_TOKEN_ID_TRUE) {
@@ -221,13 +231,14 @@ static void emit(emit_t* emitter, const parser_t* parser, FILE* asm_file) {
                         println("leaq .Lfalse(%%rip), %%rsi");
                         println("movq $5, %%rdx");
                     }
-                    println("syscall\n");
-                } else if (arg.node_kind == NODE_I64) {
-                    const token_index_t index = arg.node_n.node_i64;
-                    const token_id_t tok = parser->par_token_ids[index];
+                } else if (arg.node_kind == NODE_STRING) {
+                    const token_index_t tok_i = arg.node_n.node_string;
+                    println("leaq .L%d(%%rip), %%rsi", tok_i);
+                    println("movq $%d, %%rdx", 1);
                 } else
                     UNREACHABLE();
 
+                println("syscall\n");
                 break;
             }
             case NODE_I64:

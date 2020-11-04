@@ -18,7 +18,7 @@ typedef struct {
 } type_t;
 
 typedef struct {
-    int obj_type_index;
+    int obj_type_i, obj_tok_i;
 } obj_t;
 typedef int token_index_t;
 
