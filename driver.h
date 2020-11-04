@@ -66,7 +66,7 @@ static res_t driver_run(const u8* file_name0) {
 
     const usize file_name_len = strlen(file_name0);
     u8 asm_file_name0[MAXPATHLEN + 1] = "\0";
-    memcpy(asm_file_name0, file_name0, MAXPATHLEN);
+    memcpy(asm_file_name0, file_name0, file_name_len);
     asm_file_name0[file_name_len - 3] = 'a';
     asm_file_name0[file_name_len - 2] = 's';
     asm_file_name0[file_name_len - 1] = 'm';
@@ -86,7 +86,7 @@ static res_t driver_run(const u8* file_name0) {
 
     // as
     static u8 base_file_name0[MAXPATHLEN + 1] = "\0";
-    memcpy(base_file_name0, file_name0, MAXPATHLEN);
+    memcpy(base_file_name0, file_name0, file_name_len);
     driver_base_source_file_name(file_name0, base_file_name0);
     {
         static u8 argv0[3 * MAXPATHLEN] = "\0";

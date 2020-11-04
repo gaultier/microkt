@@ -1,4 +1,4 @@
-// Calling convention: System V ABI
+# Calling convention: System V ABI
 
 
 .data
@@ -6,10 +6,10 @@
 
 .text
 
-// 1st arg: string label id
-// 2nd arg: string label length
-// Returns: void
-// No stack usage
+# 1st arg: string label id
+# 2nd arg: string label length
+# Returns: void
+# No stack usage
 print:
 movq %rax, %rsi
 movq %rdi, %rdx
@@ -24,14 +24,14 @@ movq $0, %rsi
 movq $0, %rdx
 ret
 
-// 1st arg: integer
-// Returns: void
-// No stack usage
-// Uses int_to_string_data
+# 1st arg: integer
+# Returns: void
+# No stack usage
+# Uses int_to_string_data
 print_int:
     call int_to_string
 
-    movq %rax, %rdi // len
+    movq %rax, %rdi # len
     leaq int_to_string_data(%rip), %rax
     addq $21, %rax
     subq %rdi, %rax
@@ -39,12 +39,12 @@ print_int:
     ret
 
 
-// 1st arg: integer
-// Returns: void
-// No stack usage
-// Uses int_to_string_data
+# 1st arg: integer
+# Returns: void
+# No stack usage
+# Uses int_to_string_data
 int_to_string:
-    // Reset the buffer
+    # Reset the buffer
     movq $0, int_to_string_data+0(%rip)
     movq $0, int_to_string_data+1(%rip)
     movq $0, int_to_string_data+2(%rip)
@@ -67,19 +67,19 @@ int_to_string:
     movq $0, int_to_string_data+19(%rip)
     movq $0, int_to_string_data+20(%rip)
 
-    xorq %r8, %r8 // r8: Loop index
+    xorq %r8, %r8 # r8: Loop index
     
     int_to_string_loop:
-        cmpq $0, %rax // While n != 0
+        cmpq $0, %rax # While n != 0
         jz int_to_string_end
 
-        // n / 10
+        # n / 10
         movq $10, %rcx 
         xorq %rdx, %rdx
         idiv %rcx
     
-        // buffer[20-i] = rem + '0'
-        add $48, %rdx // Convert integer to character by adding '0'
+        # buffer[20-i] = rem + '0'
+        add $48, %rdx # Convert integer to character by adding '0'
         leaq int_to_string_data(%rip), %r11
         addq $20, %r11
         subq %r8,  %r11
@@ -89,6 +89,6 @@ int_to_string:
         jmp int_to_string_loop
 
     int_to_string_end:
-      // Epilog
+      # Epilog
       movq %r8, %rax
       ret
