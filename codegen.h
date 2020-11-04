@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdarg.h>
+
 #include "common.h"
 #include "ir.h"
 #include "macos_x86_64_stdlib.h"
@@ -12,6 +14,16 @@ typedef struct {
     emit_op_id_t* em_data_section;
     emit_op_id_t em_current_block;
 } emit_t;
+
+static FILE* output_file = NULL;
+
+__attribute__((format(printf, 1, 2))) static void println(char* fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    vfprintf(output_file, fmt, ap);
+    va_end(ap);
+    fprintf(output_file, "\n");
+}
 
 static emit_op_t* emit_op_get(const emit_t* emitter, emit_op_id_t id) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
@@ -214,32 +226,27 @@ static void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
 
     switch (op->op_kind) {
         case OP_KIND_CALL: {
-            fprintf(file, "\n");
-
             const emit_op_call_t call = AS_CALL(*op);
             for (int j = 0; j < (int)buf_size(call.sc_instructions); j++) {
                 const emit_op_id_t arg_id = call.sc_instructions[j];
                 emit_asm_dump_op(emitter, arg_id, file);
             }
 
-            fprintf(file, "call %.*s\n", (int)(call.sc_name_len), call.sc_name);
+            println("call %.*s", (int)(call.sc_name_len), call.sc_name);
             break;
         }
         case OP_KIND_CALLABLE_BLOCK: {
-            fprintf(file, "\n");
-
             const emit_op_callable_block_t block = AS_CALLABLE_BLOCK(*op);
             if (block.cb_flags & CALLABLE_BLOCK_FLAG_GLOBAL)
-                fprintf(file, ".global %.*s\n", (int)block.cb_name_len,
-                        block.cb_name);
+                println(".global %.*s", (int)block.cb_name_len, block.cb_name);
 
-            fprintf(file, "%.*s:\n", (int)block.cb_name_len, block.cb_name);
+            println("%.*s:", (int)block.cb_name_len, block.cb_name);
 
             for (int j = 0; j < (int)buf_size(block.cb_body); j++) {
                 const emit_op_id_t body_id = block.cb_body[j];
                 emit_asm_dump_op(emitter, body_id, file);
             }
-            fprintf(file, "\nret\n");
+            println("\nret");
 
             break;
         }
@@ -251,20 +258,18 @@ static void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
 
             switch (src->op_kind) {
                 case OP_KIND_I64: {
-                    fprintf(file, "movq ");
+                    println("movq ");
                     emit_asm_dump_op(emitter, src_id, file);
-                    fprintf(file, ", ");
+                    println(", ");
                     emit_asm_dump_op(emitter, dst_id, file);
-                    fprintf(file, "\n");
                     break;
                 }
                 case OP_KIND_LABEL_ID:
                 case OP_KIND_PTR: {
-                    fprintf(file, "leaq ");
+                    println("leaq ");
                     emit_asm_dump_op(emitter, src_id, file);
-                    fprintf(file, ", ");
+                    println(", ");
                     emit_asm_dump_op(emitter, dst_id, file);
-                    fprintf(file, "\n");
 
                     break;
                 }
@@ -275,21 +280,21 @@ static void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
             break;
         }
         case OP_KIND_REGISTER: {
-            fprintf(file, "%s ", reg_t_to_str[AS_REGISTER(*op)]);
+            println("%s ", reg_t_to_str[AS_REGISTER(*op)]);
             break;
         }
         case OP_KIND_I64: {
-            fprintf(file, "$%lld ", AS_I64(*op));
+            println("$%lld ", AS_I64(*op));
             break;
         }
         case OP_KIND_LABEL_ID: {
-            fprintf(file, ".L%lld(%s) ", AS_I64(*op), reg_t_to_str[REG_RIP]);
+            println(".L%lld(%s) ", AS_I64(*op), reg_t_to_str[REG_RIP]);
             break;
         }
         case OP_KIND_PTR: {
             emit_op_ptr_t p = AS_PTR(*op);
-            fprintf(file, "%.*s+%d(%s) ", (int)p.pt_name_len, p.pt_name,
-                    p.pt_offset, reg_t_to_str[REG_RIP]);
+            println("%.*s+%d(%s) ", (int)p.pt_name_len, p.pt_name, p.pt_offset,
+                    reg_t_to_str[REG_RIP]);
             break;
         }
         case OP_KIND_STRING_LABEL:
@@ -301,24 +306,20 @@ static void emit_asm_dump(const emit_t* emitter, FILE* file) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
     PG_ASSERT_COND((void*)file, !=, NULL, "%p");
 
-    fprintf(file, "%s\n.data\n", stdlib);
+    output_file = file;
+    println("%s\n.data", stdlib);
 
     for (int i = 0; i < (int)buf_size(emitter->em_data_section); i++) {
         const emit_op_id_t op_id = emitter->em_data_section[i];
         const emit_op_t* const op = emit_op_get(emitter, op_id);
-        switch (op->op_kind) {
-            case OP_KIND_STRING_LABEL: {
-                const emit_op_string_label_t s = AS_STRING_LABEL(*op);
-                fprintf(file, ".L%d: .ascii \"%.*s\"\n", s.sl_label_id,
-                        (int)s.sl_string_len, s.sl_string);
-                break;
-            }
-            default:
-                UNREACHABLE();
-        }
+
+        if (op->op_kind != OP_KIND_STRING_LABEL) UNIMPLEMENTED();
+        const emit_op_string_label_t s = AS_STRING_LABEL(*op);
+        println(".L%d: .ascii \"%.*s\"", s.sl_label_id, (int)s.sl_string_len,
+                s.sl_string);
     }
 
-    fprintf(file, "\n.text\n");
+    println("\n.text");
 
     for (int i = 0; i < (int)buf_size(emitter->em_text_section); i++) {
         const emit_op_id_t op_id = emitter->em_text_section[i];
