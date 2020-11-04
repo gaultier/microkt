@@ -5,8 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef unsigned long long int usize;
-typedef signed long long int isize;
 typedef char u8;
 typedef unsigned short u16;
 
@@ -25,7 +23,7 @@ static const u8 res_to_str[][100] = {
     [RES_OK] = "ok\n",
     [RES_NONE] = "none\n",
     [RES_UNEXPECTED_TOKEN] =
-        "%s%s:%llu:%llu:%sUnexpected token. Expected `%s`, got `%s`\n",
+        "%s%s:%d:%d:%sUnexpected token. Expected `%s`, got `%s`\n",
     [RES_INVALID_SOURCE_FILE_NAME] = "Invalid source file name %s\n",
     [RES_SOURCE_FILE_READ_FAILED] = "Failed to read source file %s: %s\n",
     [RES_ASM_FILE_READ_FAILED] = "Failed to read asm file %s: %s\n",
@@ -35,7 +33,7 @@ static const u8 res_to_str[][100] = {
 
 // On macos this macro is defined in some system headers
 #ifndef MIN
-#define MIN(a, b) (a) < (b) ? (a) : (b)
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
 #define STR(s) #s
@@ -81,7 +79,7 @@ static const u8 res_to_str[][100] = {
 #define log_debug_with_indent(indent, fmt, ...)                              \
     do {                                                                     \
         fprintf(stderr, "[debug] %s:%s:%d: ", __FILE__, __func__, __LINE__); \
-        for (usize i = 0; i < indent; i++) fprintf(stderr, " ");             \
+        for (int i = 0; i < indent; i++) fprintf(stderr, " ");               \
         fprintf(stderr, fmt "\n", __VA_ARGS__);                              \
     } while (0)
 #endif

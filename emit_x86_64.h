@@ -7,7 +7,7 @@
 
 typedef struct {
     emit_op_t* em_ops_arena;
-    usize em_label_id;
+    int em_label_id;
     emit_op_id_t* em_text_section;
     emit_op_id_t* em_data_section;
     emit_op_id_t em_current_block;
@@ -17,8 +17,8 @@ static emit_op_t* emit_op_get(const emit_t* emitter, emit_op_id_t id) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
     PG_ASSERT_COND((void*)emitter->em_ops_arena, !=, NULL, "%p");
 
-    const usize len = buf_size(emitter->em_ops_arena);
-    PG_ASSERT_COND(id, <, len, "%llu");
+    const int len = (int)buf_size(emitter->em_ops_arena);
+    PG_ASSERT_COND(id, <, len, "%d");
 
     return &emitter->em_ops_arena[id];
 }
@@ -41,7 +41,7 @@ static emit_op_id_t emit_make_op_with(emit_t* emitter, emit_op_t op) {
 
     buf_push(emitter->em_ops_arena, ((emit_op_t){0}));
 
-    const usize op_id = buf_size(emitter->em_ops_arena) - 1;
+    const int op_id = (int)buf_size(emitter->em_ops_arena) - 1;
     *(emit_op_get(emitter, op_id)) = op;
 
     return op_id;
@@ -65,22 +65,22 @@ static emit_t emit_init() {
     return emitter;
 }
 
-static usize emit_add_string_label_if_not_exists(emit_t* emitter,
-                                                 const u8* string,
-                                                 usize string_len) {
+static int emit_add_string_label_if_not_exists(emit_t* emitter,
+                                               const u8* string,
+                                               int string_len) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
     PG_ASSERT_COND((void*)string, !=, NULL, "%p");
 
-    const usize new_label_id = emitter->em_label_id;
+    const int new_label_id = emitter->em_label_id;
 
-    for (usize i = 0; i < buf_size(emitter->em_data_section); i++) {
+    for (int i = 0; i < (int)buf_size(emitter->em_data_section); i++) {
         const emit_op_id_t op_id = emitter->em_data_section[i];
         const emit_op_t op = *(emit_op_get(emitter, op_id));
         if (op.op_kind != OP_KIND_STRING_LABEL) continue;
 
         const emit_op_string_label_t s = AS_STRING_LABEL(op);
-        if (memcmp(s.sl_string, string, MIN(s.sl_string_len, string_len)) ==
-            0)  // Found
+        if (memcmp(s.sl_string, string,
+                   (size_t)MIN(s.sl_string_len, string_len)) == 0)  // Found
             return s.sl_label_id;
     }
 
@@ -94,9 +94,8 @@ static usize emit_add_string_label_if_not_exists(emit_t* emitter,
     return new_label_id;
 }
 
-static usize emit_node_to_string_label(const parser_t* parser, emit_t* emitter,
-                                       const ast_node_t* node,
-                                       usize* string_len) {
+static int emit_node_to_string_label(const parser_t* parser, emit_t* emitter,
+                                     const ast_node_t* node, int* string_len) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
     PG_ASSERT_COND((void*)node, !=, NULL, "%p");
@@ -108,7 +107,7 @@ static usize emit_node_to_string_label(const parser_t* parser, emit_t* emitter,
     const u8* string = NULL;
     parser_ast_node_source(parser, node, &string, string_len);
 
-    const usize new_label_id =
+    const int new_label_id =
         emit_add_string_label_if_not_exists(emitter, string, *string_len);
     return new_label_id;
 }
@@ -144,8 +143,8 @@ static void emit_call_print_char(emit_t* emitter, emit_op_id_t arg_id) {
         OP(emitter, OP_CALL("print_char", sizeof("print_char"), args)));
 }
 
-static void emit_call_print_string(emit_t* emitter, usize label_id,
-                                   usize string_len) {
+static void emit_call_print_string(emit_t* emitter, int label_id,
+                                   int string_len) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
 
     emit_op_id_t* call_args = NULL;
@@ -154,7 +153,7 @@ static void emit_call_print_string(emit_t* emitter, usize label_id,
                                    OP(emitter, OP_REGISTER(emit_fn_arg(0))))));
 
     buf_push(call_args,
-             OP(emitter, OP_ASSIGN(OP(emitter, OP_I64((isize)string_len)),
+             OP(emitter, OP_ASSIGN(OP(emitter, OP_I64((int64_t)string_len)),
                                    OP(emitter, OP_REGISTER(emit_fn_arg(1))))));
 
     emit_add_to_current_block(
@@ -167,8 +166,8 @@ static void emit_emit(emit_t* emitter, const parser_t* parser) {
     PG_ASSERT_COND((void*)parser->par_stmt_nodes, !=, NULL, "%p");
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
 
-    for (usize i = 0; i < buf_size(parser->par_stmt_nodes); i++) {
-        const usize stmt_i = parser->par_stmt_nodes[i];
+    for (int i = 0; i < (int)buf_size(parser->par_stmt_nodes); i++) {
+        const int stmt_i = parser->par_stmt_nodes[i];
         const ast_node_t* stmt = &parser->par_nodes[stmt_i];
 
         switch (stmt->node_kind) {
@@ -179,14 +178,14 @@ static void emit_emit(emit_t* emitter, const parser_t* parser) {
 
                 if (arg.node_kind == NODE_KEYWORD_BOOL ||
                     arg.node_kind == NODE_STRING) {
-                    usize string_len = 0;
+                    int string_len = 0;
 
-                    const usize label_id = emit_node_to_string_label(
+                    const int label_id = emit_node_to_string_label(
                         parser, emitter, &arg, &string_len);
 
                     emit_call_print_string(emitter, label_id, string_len);
                 } else if (arg.node_kind == NODE_I64) {
-                    const isize n = parse_node_to_i64(parser, &arg);
+                    const int64_t n = parse_node_to_i64(parser, &arg);
                     emit_call_print_i64(emitter, OP(emitter, OP_I64(n)));
                 } else if (arg.node_kind == NODE_CHAR) {
                     const char n = parse_node_to_char(parser, &arg);
@@ -218,7 +217,7 @@ static void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
             fprintf(file, "\n");
 
             const emit_op_call_t call = AS_CALL(*op);
-            for (usize j = 0; j < buf_size(call.sc_instructions); j++) {
+            for (int j = 0; j < (int)buf_size(call.sc_instructions); j++) {
                 const emit_op_id_t arg_id = call.sc_instructions[j];
                 emit_asm_dump_op(emitter, arg_id, file);
             }
@@ -236,7 +235,7 @@ static void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
 
             fprintf(file, "%.*s:\n", (int)block.cb_name_len, block.cb_name);
 
-            for (usize j = 0; j < buf_size(block.cb_body); j++) {
+            for (int j = 0; j < (int)buf_size(block.cb_body); j++) {
                 const emit_op_id_t body_id = block.cb_body[j];
                 emit_asm_dump_op(emitter, body_id, file);
             }
@@ -289,7 +288,7 @@ static void emit_asm_dump_op(const emit_t* emitter, const emit_op_id_t op_id,
         }
         case OP_KIND_PTR: {
             emit_op_ptr_t p = AS_PTR(*op);
-            fprintf(file, "%.*s+%lld(%s) ", (int)p.pt_name_len, p.pt_name,
+            fprintf(file, "%.*s+%d(%s) ", (int)p.pt_name_len, p.pt_name,
                     p.pt_offset, reg_t_to_str[REG_RIP]);
             break;
         }
@@ -304,13 +303,13 @@ static void emit_asm_dump(const emit_t* emitter, FILE* file) {
 
     fprintf(file, "%s\n.data\n", stdlib);
 
-    for (usize i = 0; i < buf_size(emitter->em_data_section); i++) {
+    for (int i = 0; i < (int)buf_size(emitter->em_data_section); i++) {
         const emit_op_id_t op_id = emitter->em_data_section[i];
         const emit_op_t* const op = emit_op_get(emitter, op_id);
         switch (op->op_kind) {
             case OP_KIND_STRING_LABEL: {
                 const emit_op_string_label_t s = AS_STRING_LABEL(*op);
-                fprintf(file, ".L%llu: .ascii \"%.*s\"\n", s.sl_label_id,
+                fprintf(file, ".L%d: .ascii \"%.*s\"\n", s.sl_label_id,
                         (int)s.sl_string_len, s.sl_string);
                 break;
             }
@@ -321,7 +320,7 @@ static void emit_asm_dump(const emit_t* emitter, FILE* file) {
 
     fprintf(file, "\n.text\n");
 
-    for (usize i = 0; i < buf_size(emitter->em_text_section); i++) {
+    for (int i = 0; i < (int)buf_size(emitter->em_text_section); i++) {
         const emit_op_id_t op_id = emitter->em_text_section[i];
         emit_asm_dump_op(emitter, op_id, file);
     }

@@ -9,15 +9,15 @@
 #include "emit_x86_64.h"
 
 static bool driver_is_file_name_valid(const u8* file_name0) {
-    const usize len = strlen(file_name0);
-    return (len > (3 + 1) && memcmp(&file_name0[len - 4], ".kts", 3) == 0);
+    const int len = strlen(file_name0);
+    return (len > (3 + 1) && memcmp(&file_name0[len - 4], ".kts", 3UL) == 0);
 }
 
 static void driver_base_source_file_name(const u8* file_name0,
                                          u8* base_file_name0) {
     PG_ASSERT_COND(driver_is_file_name_valid(file_name0), ==, true, "%d");
 
-    const usize len = strlen(file_name0);
+    const int len = strlen(file_name0);
 
     base_file_name0[len - 4] = 0;
     base_file_name0[len - 3] = 0;
@@ -47,10 +47,10 @@ static res_t driver_run(const u8* file_name0) {
         fprintf(stderr, res_to_str[res], file_name0, strerror(errno));
         return res;
     }
-    const usize file_size = (size_t)ftell(file);
+    const int file_size = ftell(file);
 
     const u8* source =
-        mmap(NULL, file_size, PROT_READ, MAP_SHARED, fileno(file), 0);
+        mmap(NULL, (size_t)file_size, PROT_READ, MAP_SHARED, fileno(file), 0);
     if (source == MAP_FAILED) {
         res = RES_SOURCE_FILE_READ_FAILED;
         fprintf(stderr, res_to_str[res], file_name0, strerror(errno));
@@ -64,9 +64,9 @@ static res_t driver_run(const u8* file_name0) {
     emit_t emitter = emit_init();
     emit_emit(&emitter, &parser);
 
-    const usize file_name_len = strlen(file_name0);
+    const int file_name_len = strlen(file_name0);
     u8 asm_file_name0[MAXPATHLEN + 1] = "\0";
-    memcpy(asm_file_name0, file_name0, file_name_len);
+    memcpy(asm_file_name0, file_name0, (size_t)file_name_len);
     asm_file_name0[file_name_len - 3] = 'a';
     asm_file_name0[file_name_len - 2] = 's';
     asm_file_name0[file_name_len - 1] = 'm';
@@ -86,7 +86,7 @@ static res_t driver_run(const u8* file_name0) {
 
     // as
     static u8 base_file_name0[MAXPATHLEN + 1] = "\0";
-    memcpy(base_file_name0, file_name0, file_name_len);
+    memcpy(base_file_name0, file_name0, (size_t)file_name_len);
     driver_base_source_file_name(file_name0, base_file_name0);
     {
         static u8 argv0[3 * MAXPATHLEN] = "\0";

@@ -39,11 +39,11 @@ const u8 token_id_t_to_str[][30] = {
 };
 
 typedef struct {
-    usize loc_start, loc_end;
+    int loc_start, loc_end;
 } loc_t;
 
 typedef struct {
-    usize pos_line, pos_column;
+    int pos_line, pos_column;
 } loc_pos_t;
 
 typedef struct {
@@ -64,31 +64,32 @@ static const keyword_t keywords[] = {
 
 typedef struct {
     const u8* lex_source;
-    const usize lex_source_len;
-    usize lex_index;
-    usize* lex_lines;
+    const int lex_source_len;
+    int lex_index;
+    int* lex_lines;
 } lexer_t;
 
 // TODO: trie?
-static const token_id_t* token_get_keyword(const u8* source_start, usize len) {
-    const usize keywords_len = sizeof(keywords) / sizeof(keywords[0]);
-    for (usize i = 0; i < keywords_len; i++) {
+static const token_id_t* token_get_keyword(const u8* source_start, int len) {
+    const int keywords_len = sizeof(keywords) / sizeof(keywords[0]);
+    for (int i = 0; i < keywords_len; i++) {
         const keyword_t* k = &keywords[i];
-        if (memcmp(source_start, k->key_str, MIN(len, sizeof(k->key_str))) == 0)
+        if (memcmp(source_start, k->key_str,
+                   MIN((size_t)len, sizeof(k->key_str))) == 0)
             return &k->key_id;
     }
 
     return NULL;
 }
 
-static loc_pos_t lex_pos(const lexer_t* lexer, usize position) {
+static loc_pos_t lex_pos(const lexer_t* lexer, int position) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
 
     loc_pos_t pos = {.pos_line = 1};
 
-    usize i = 0;
-    for (i = 0; i < buf_size(lexer->lex_lines); i++) {
-        const usize line_pos = lexer->lex_lines[i];
+    int i = 0;
+    for (i = 0; i < (int)buf_size(lexer->lex_lines); i++) {
+        const int line_pos = lexer->lex_lines[i];
         if (position < line_pos) break;
 
         pos.pos_line += 1;
@@ -108,7 +109,7 @@ static bool lex_is_identifier_char(u8 c) {
            ('A' <= c && c <= 'Z') || c == '_';
 }
 
-static lexer_t lex_init(const u8* source, const usize source_len) {
+static lexer_t lex_init(const u8* source, const int source_len) {
     return (lexer_t){.lex_source = source,
                      .lex_source_len = source_len,
                      .lex_index = 0,
@@ -141,7 +142,7 @@ static u8 lex_peek(const lexer_t* lexer) {
 static u8 lex_peek_next(const lexer_t* lexer) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
-    PG_ASSERT_COND(lexer->lex_index, <, lexer->lex_source_len - 1, "%llu");
+    PG_ASSERT_COND(lexer->lex_index, <, lexer->lex_source_len - 1, "%d");
 
     return lex_is_at_end(lexer) ? '\0'
                                 : lexer->lex_source[lexer->lex_index + 1];
@@ -164,7 +165,7 @@ static void lex_newline(lexer_t* lexer) {
     PG_ASSERT_COND(lex_peek(lexer), ==, '\n', "%c");
 
     buf_push(lexer->lex_lines, lexer->lex_index);
-    log_debug("newline at position %llu", lexer->lex_index);
+    log_debug("newline at position %d", lexer->lex_index);
 
     lexer->lex_index += 1;
 }
@@ -172,7 +173,7 @@ static void lex_newline(lexer_t* lexer) {
 static void lex_advance_until_newline_or_eof(lexer_t* lexer) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
-    PG_ASSERT_COND(lexer->lex_index, <, lexer->lex_source_len - 1, "%llu");
+    PG_ASSERT_COND(lexer->lex_index, <, lexer->lex_source_len - 1, "%d");
 
     while (true) {
         const u8 c = lex_peek(lexer);
@@ -197,8 +198,8 @@ static void lex_identifier(lexer_t* lexer, token_t* result) {
         lex_advance(lexer);
     }
 
-    PG_ASSERT_COND(lexer->lex_index, <, lexer->lex_source_len, "%llu");
-    PG_ASSERT_COND(lexer->lex_index, >=, result->tok_loc.loc_start, "%llu");
+    PG_ASSERT_COND(lexer->lex_index, <, lexer->lex_source_len, "%d");
+    PG_ASSERT_COND(lexer->lex_index, >=, result->tok_loc.loc_start, "%d");
 
     const token_id_t* id = NULL;
 
@@ -251,7 +252,7 @@ static void lex_string(lexer_t* lexer, token_t* result) {
     if (c != '"') {
         log_debug(
             "Unterminated string, missing trailing quote: c=`%c` "
-            "lex_index=%llu",
+            "lex_index=%d",
             c, lexer->lex_index);
         result->tok_id = LEX_TOKEN_ID_INVALID;
     } else {
@@ -272,7 +273,7 @@ static void lex_char(lexer_t* lexer, token_t* result) {
     PG_ASSERT_COND(c, ==, '\'', "%c");
     lex_advance(lexer);
 
-    usize len = 0;
+    int len = 0;
     while (lexer->lex_index < lexer->lex_source_len) {
         c = lex_peek(lexer);
         if (c == '\'') break;
@@ -284,7 +285,7 @@ static void lex_char(lexer_t* lexer, token_t* result) {
     if (c != '\'') {
         log_debug(
             "Unterminated char, missing trailing quote: c=`%c` "
-            "lex_index=%llu",
+            "lex_index=%d",
             c, lexer->lex_index);
         result->tok_id = LEX_TOKEN_ID_INVALID;
     } else {
@@ -302,9 +303,8 @@ static token_t lex_next(lexer_t* lexer) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
 
-    token_t result = {
-        .tok_id = LEX_TOKEN_ID_EOF,
-        .tok_loc = {.loc_start = lexer->lex_index, .loc_end = 0xAAAAAAAA}};
+    token_t result = {.tok_id = LEX_TOKEN_ID_EOF,
+                      .tok_loc = {.loc_start = lexer->lex_index}};
 
     while (lexer->lex_index < lexer->lex_source_len) {
         const u8 c = lexer->lex_source[lexer->lex_index];
@@ -444,8 +444,8 @@ static void token_dump(const token_t* t, const lexer_t* lexer) {
     const loc_pos_t pos_start = lex_pos(lexer, t->tok_loc.loc_start);
     const loc_pos_t pos_end = lex_pos(lexer, t->tok_loc.loc_end);
     log_debug(
-        "id=%s loc_start=%llu loc_end=%llu start_line=%llu "
-        "start_column=%llu end_line=%llu end_column=%llu",
+        "id=%s loc_start=%d loc_end=%d start_line=%d "
+        "start_column=%d end_line=%d end_column=%d",
         token_id_t_to_str[t->tok_id], t->tok_loc.loc_start, t->tok_loc.loc_end,
         pos_start.pos_line, pos_start.pos_column, pos_end.pos_line,
         pos_end.pos_column);

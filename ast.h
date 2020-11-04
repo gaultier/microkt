@@ -2,7 +2,7 @@
 
 #include "common.h"
 
-typedef usize token_index_t;
+typedef int token_index_t;
 
 struct ast_node_t;
 typedef struct ast_node_t ast_node_t;
@@ -38,7 +38,7 @@ struct ast_node_t {
 };
 
 static void ast_node_dump(const ast_node_t* nodes, token_index_t node_i,
-                          usize indent) {
+                          int indent) {
     PG_ASSERT_COND((void*)nodes, !=, NULL, "%p");
 
     const ast_node_t* node = &nodes[node_i];

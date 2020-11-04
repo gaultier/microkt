@@ -66,25 +66,25 @@ typedef enum {
     OP_KIND_PTR,
 } emit_op_kind_t;
 
-typedef usize emit_op_id_t;
+typedef int emit_op_id_t;
 
 typedef struct {
     const u8* sc_name;
-    usize sc_name_len;
+    int sc_name_len;
     emit_op_id_t* sc_instructions;
 } emit_op_call_t;
 
 typedef struct {
-    usize sl_label_id;
+    int sl_label_id;
     const u8* sl_string;
-    usize sl_string_len;
+    int sl_string_len;
 } emit_op_string_label_t;
 
 #define CALLABLE_BLOCK_FLAG_DEFAULT 0
 #define CALLABLE_BLOCK_FLAG_GLOBAL 1
 typedef struct {
     const u8* cb_name;
-    usize cb_name_len;
+    int cb_name_len;
     emit_op_id_t* cb_body;
     u16 cb_flags;
 } emit_op_callable_block_t;
@@ -96,16 +96,16 @@ typedef struct {
 
 typedef struct {
     const u8* pt_name;
-    usize pt_name_len;
-    usize pt_offset;
+    int pt_name_len;
+    int pt_offset;
 } emit_op_ptr_t;
 
 typedef struct {
     emit_op_kind_t op_kind;
     union {
         emit_op_call_t op_call;                      // OP_KIND_CALL
-        isize op_int;                                // OP_KIND_I64
-        usize op_label_id;                           // OP_KIND_LABEL_ID
+        int64_t op_int;                              // OP_KIND_I64
+        int op_label_id;                             // OP_KIND_LABEL_ID
         emit_op_string_label_t op_string_label;      // OP_KIND_STRING_LABEL
         emit_op_callable_block_t op_callable_block;  // OP_KIND_CALLABLE_BLOCK
         emit_op_pair_t op_assign;                    // OP_KIND_ASSIGN
