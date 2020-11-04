@@ -74,10 +74,10 @@ static void parser_ast_node_source(const parser_t* parser,
     const loc_t first_token = parser->par_token_locs[first];
     const loc_t last_token = parser->par_token_locs[last];
 
-    *source = &parser->par_source[(node->node_kind == NODE_STRING_LITERAL)
+    *source = &parser->par_source[(node->node_kind == NODE_STRING)
                                       ? first_token.loc_start + 1
                                       : first_token.loc_start];
-    *source_len = (node->node_kind == NODE_STRING_LITERAL)
+    *source_len = (node->node_kind == NODE_STRING)
                       ? (last_token.loc_end - first_token.loc_start - 2)
                       : (last_token.loc_end - first_token.loc_start);
 }
@@ -189,7 +189,7 @@ static res_t parser_parse_primary(parser_t* parser, usize* new_primary_node_i) {
         return RES_OK;
     }
     if (parser_match(parser, LEX_TOKEN_ID_STRING_LITERAL, &token)) {
-        const ast_node_t new_node = NODE_STRING_LITERAL(token);
+        const ast_node_t new_node = NODE_STRING(token);
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = buf_size(parser->par_nodes) - 1;
 

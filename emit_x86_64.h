@@ -101,9 +101,9 @@ static usize emit_node_to_string_label(const parser_t* parser, emit_t* emitter,
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
     PG_ASSERT_COND((void*)node, !=, NULL, "%p");
     PG_ASSERT_COND((void*)string_len, !=, NULL, "%p");
-    PG_ASSERT_COND(node->node_kind == NODE_STRING_LITERAL ||
-                       node->node_kind == NODE_KEYWORD_BOOL,
-                   ==, 1, "%d");
+    PG_ASSERT_COND(
+        node->node_kind == NODE_STRING || node->node_kind == NODE_KEYWORD_BOOL,
+        ==, 1, "%d");
 
     const u8* string = NULL;
     parser_ast_node_source(parser, node, &string, string_len);
@@ -163,7 +163,7 @@ static void emit_emit(emit_t* emitter, const parser_t* parser) {
                     parser->par_nodes[builtin_print.bp_arg_i];
 
                 if (arg.node_kind == NODE_KEYWORD_BOOL ||
-                    arg.node_kind == NODE_STRING_LITERAL) {
+                    arg.node_kind == NODE_STRING) {
                     usize string_len = 0;
 
                     const usize label_id = emit_node_to_string_label(
@@ -181,7 +181,7 @@ static void emit_emit(emit_t* emitter, const parser_t* parser) {
                 break;
             }
             case NODE_INT:
-            case NODE_STRING_LITERAL:
+            case NODE_STRING:
             case NODE_KEYWORD_BOOL:
                 UNREACHABLE();
         }
