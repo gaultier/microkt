@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 #include "common.h"
 
 typedef enum {
@@ -30,7 +32,7 @@ const char reg_t_to_str[][5] = {
     [REG_R12] = "%r12", [REG_R13] = "%r13", [REG_R14] = "%r14",
     [REG_R15] = "%r15", [REG_RIP] = "%rip"};
 
-reg_t emit_fn_arg(u16 position) {
+reg_t emit_fn_arg(int position) {
     switch (position) {
         case 0:
             return REG_RAX;
@@ -86,7 +88,7 @@ typedef struct {
     const char* cb_name;
     int cb_name_len;
     emit_op_id_t* cb_body;
-    u16 cb_flags;
+    uint16_t cb_flags;
 } emit_op_callable_block_t;
 
 typedef struct {

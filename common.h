@@ -5,8 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef unsigned short u16;
-
 typedef enum {
     RES_OK,
     RES_NONE,
