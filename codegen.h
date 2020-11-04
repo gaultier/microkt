@@ -1,13 +1,8 @@
 #pragma once
 
 #include <stdarg.h>
-#include <stdint.h>
 
 #include "ast.h"
-#include "common.h"
-//#include "ir.h"
-//#include "macos_x86_64_stdlib.h"
-#include "lex.h"
 #include "parse.h"
 
 static const int64_t syscall_write = 0x2000004;

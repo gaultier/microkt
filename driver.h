@@ -6,7 +6,6 @@
 #include <sys/param.h>
 
 #include "codegen.h"
-#include "common.h"
 
 static bool driver_is_file_name_valid(const char* file_name0) {
     const int len = strlen(file_name0);
