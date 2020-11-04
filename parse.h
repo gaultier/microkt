@@ -224,7 +224,7 @@ static void parser_print_source_on_error(const parser_t* parser,
     fprintf(stderr, "%.*s", (int)actual_source_len, actual_source);
 
     // If there is a token after, print it
-    if (parser->par_tok_i < buf_size(parser->par_token_ids)) {
+    if (!parser_is_at_end(parser)) {
         const loc_t after_actual_token_loc =
             parser->par_token_locs[parser->par_tok_i];
         const u8* const after_actual_source =
