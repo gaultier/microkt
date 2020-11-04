@@ -38,6 +38,18 @@ print_int:
     call print
     ret
 
+# 1st arg: char
+# Returns: void
+# No stack usage
+# Uses int_to_string_data
+print_char:
+    leaq int_to_string_data(%rip), %rdi
+    movq %rax, (%rdi) # int_to_string_data[0] = c
+    movq %rdi, %rax
+    movq $1, %rdi # FIXME: char of length 1
+    call print
+    ret
+
 
 # 1st arg: integer
 # Returns: void
