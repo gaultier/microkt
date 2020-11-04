@@ -74,12 +74,15 @@ static void parser_ast_node_source(const parser_t* parser,
     const loc_t first_token = parser->par_token_locs[first];
     const loc_t last_token = parser->par_token_locs[last];
 
-    *source = &parser->par_source[(node->node_kind == NODE_STRING)
+    // Without quotes for char/string
+    *source = &parser->par_source[(node->node_kind == NODE_STRING ||
+                                   node->node_kind == NODE_CHAR)
                                       ? first_token.loc_start + 1
                                       : first_token.loc_start];
-    *source_len = (node->node_kind == NODE_STRING)
-                      ? (last_token.loc_end - first_token.loc_start - 2)
-                      : (last_token.loc_end - first_token.loc_start);
+    *source_len =
+        (node->node_kind == NODE_STRING || node->node_kind == NODE_CHAR)
+            ? (last_token.loc_end - first_token.loc_start - 2)
+            : (last_token.loc_end - first_token.loc_start);
 }
 
 static bool parser_is_at_end(const parser_t* parser) {

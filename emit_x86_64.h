@@ -181,6 +181,7 @@ static void emit_emit(emit_t* emitter, const parser_t* parser) {
                 break;
             }
             case NODE_INT:
+            case NODE_CHAR:
             case NODE_STRING:
             case NODE_KEYWORD_BOOL:
                 UNREACHABLE();
