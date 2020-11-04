@@ -52,6 +52,12 @@ static const char res_to_str[][100] = {
         exit(1);                                                   \
     } while (0)
 
+#define UNREACHABLE()                                            \
+    do {                                                         \
+        fprintf(stderr, __FILE__ ":%d:unreachable\n", __LINE__); \
+        exit(1);                                                 \
+    } while (0)
+
 #define IGNORE(x)  \
     do {           \
         (void)(x); \
@@ -80,8 +86,6 @@ static const char res_to_str[][100] = {
         fprintf(stderr, fmt "\n", __VA_ARGS__);                              \
     } while (0)
 #endif
-
-#define UNREACHABLE() (assert(0 && "Unreachable"))
 
 static const char color_red[] = "\x1b[31m";
 static const char color_reset[] = "\x1b[0m";
