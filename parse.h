@@ -90,10 +90,17 @@ static token_index_t parser_advance(parser_t* parser) {
     PG_ASSERT_COND((usize)buf_size(parser->par_token_ids), >, parser->par_tok_i,
                    "%llu");
 
+    parser->par_tok_i += 1;
+
     while (!parser_is_at_end(parser)) {
-        parser->par_tok_i += 1;
+        log_debug("previous=%llu, current=%llu", parser->par_tok_i - 1,
+                  parser->par_tok_i);
         const token_id_t id = parser->par_token_ids[parser->par_tok_i];
-        if (id == LEX_TOKEN_ID_COMMENT) continue;
+        if (id == LEX_TOKEN_ID_COMMENT) {
+            log_debug("Skipping over comment at pos=%llu", parser->par_tok_i);
+            parser->par_tok_i += 1;
+            continue;
+        }
 
         return parser->par_tok_i;
     }
@@ -108,9 +115,12 @@ static token_id_t parser_peek(parser_t* parser) {
                    "%llu");
 
     usize i = parser->par_tok_i;
+
     while (i < buf_size(parser->par_token_ids)) {
         const token_id_t id = parser->par_token_ids[i];
+        log_debug("peeking at pos=%llu", i);
         if (id == LEX_TOKEN_ID_COMMENT) {
+            log_debug("Skipping over comment at pos=%llu", i);
             i += 1;
             continue;
         }
@@ -135,14 +145,21 @@ static bool parser_match(parser_t* parser, token_id_t id,
 
     const token_id_t current_id = parser_peek(parser);
     if (id != current_id) {
-        log_debug("did not match %s", token_id_t_to_str[id]);
+        log_debug("did not match %s, got %s", token_id_t_to_str[id],
+                  token_id_t_to_str[current_id]);
         return false;
     }
 
-    parser_advance(parser);
+    // Advance
+    while (!parser_is_at_end(parser) &&
+           parser->par_token_ids[parser->par_tok_i] != id)
+        parser->par_tok_i += 1;
+    parser->par_tok_i += 1;
+
     *return_token_index = current_id;
 
-    log_debug("matched %s", token_id_t_to_str[id]);
+    log_debug("matched %s, now current token: %s", token_id_t_to_str[id],
+              token_id_t_to_str[parser->par_tok_i]);
 
     return true;
 }
@@ -279,13 +296,10 @@ static res_t parser_expect_token(parser_t* parser, token_id_t expected,
     PG_ASSERT_COND((usize)buf_size(parser->par_token_ids), >, (usize)0, "%llu");
     PG_ASSERT_COND((void*)token, !=, NULL, "%p");
 
-    const token_id_t actual = parser_peek(parser);
-    if (actual != expected) {
+    if (!parser_match(parser, expected, token)) {
         log_debug("expected token not found: %s", token_id_t_to_str[expected]);
         return parser_err_unexpected_token(parser, expected);
     }
-    *token = parser_advance(parser);
-    log_debug("expected token found: %s", token_id_t_to_str[expected]);
     return RES_OK;
 }
 
