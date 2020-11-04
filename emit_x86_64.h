@@ -113,20 +113,19 @@ static usize emit_node_to_string_label(const parser_t* parser, emit_t* emitter,
     return new_label_id;
 }
 
-static void emit_call_print_integer(emit_t* emitter, emit_op_id_t arg_id) {
+static void emit_call_print_i64(emit_t* emitter, emit_op_id_t arg_id) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
 
     const emit_op_t arg = *(emit_op_get(emitter, arg_id));
     PG_ASSERT_COND(arg.op_kind, ==, OP_KIND_I64, "%d");
 
-    emit_op_id_t* print_int_args = NULL;
-    buf_push(print_int_args,
+    emit_op_id_t* args = NULL;
+    buf_push(args,
              OP(emitter,
                 OP_ASSIGN(arg_id, OP(emitter, OP_REGISTER(emit_fn_arg(0))))));
 
     emit_add_to_current_block(
-        emitter,
-        OP(emitter, OP_CALL("print_int", sizeof("print_int"), print_int_args)));
+        emitter, OP(emitter, OP_CALL("print_int", sizeof("print_int"), args)));
 }
 
 static void emit_call_print_char(emit_t* emitter, emit_op_id_t arg_id) {
@@ -135,14 +134,14 @@ static void emit_call_print_char(emit_t* emitter, emit_op_id_t arg_id) {
     const emit_op_t arg = *(emit_op_get(emitter, arg_id));
     PG_ASSERT_COND(arg.op_kind, ==, OP_KIND_I64, "%d");
 
-    emit_op_id_t* print_int_args = NULL;
-    buf_push(print_int_args,
+    emit_op_id_t* args = NULL;
+    buf_push(args,
              OP(emitter,
                 OP_ASSIGN(arg_id, OP(emitter, OP_REGISTER(emit_fn_arg(0))))));
 
     emit_add_to_current_block(
-        emitter, OP(emitter, OP_CALL("print_char", sizeof("print_char"),
-                                     print_int_args)));
+        emitter,
+        OP(emitter, OP_CALL("print_char", sizeof("print_char"), args)));
 }
 
 static void emit_call_print_string(emit_t* emitter, usize label_id,
@@ -187,8 +186,8 @@ static void emit_emit(emit_t* emitter, const parser_t* parser) {
 
                     emit_call_print_string(emitter, label_id, string_len);
                 } else if (arg.node_kind == NODE_I64) {
-                    const isize n = parse_node_to_int(parser, &arg);
-                    emit_call_print_integer(emitter, OP(emitter, OP_I64(n)));
+                    const isize n = parse_node_to_i64(parser, &arg);
+                    emit_call_print_i64(emitter, OP(emitter, OP_I64(n)));
                 } else if (arg.node_kind == NODE_CHAR) {
                     const char n = parse_node_to_char(parser, &arg);
                     emit_call_print_char(emitter, OP(emitter, OP_I64(n)));

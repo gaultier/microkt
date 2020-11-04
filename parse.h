@@ -386,7 +386,7 @@ static res_t parser_parse(parser_t* parser) {
     UNREACHABLE();
 }
 
-static isize parse_node_to_int(const parser_t* parser, const ast_node_t* node) {
+static isize parse_node_to_i64(const parser_t* parser, const ast_node_t* node) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)node, !=, NULL, "%p");
     PG_ASSERT_COND(node->node_kind, ==, NODE_I64, "%d");
