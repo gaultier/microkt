@@ -8,13 +8,13 @@
 #include "common.h"
 #include "emit_x86_64.h"
 
-static bool driver_is_file_name_valid(const u8* file_name0) {
+static bool driver_is_file_name_valid(const char* file_name0) {
     const int len = strlen(file_name0);
     return (len > (3 + 1) && memcmp(&file_name0[len - 4], ".kts", 3UL) == 0);
 }
 
-static void driver_base_source_file_name(const u8* file_name0,
-                                         u8* base_file_name0) {
+static void driver_base_source_file_name(const char* file_name0,
+                                         char* base_file_name0) {
     PG_ASSERT_COND(driver_is_file_name_valid(file_name0), ==, true, "%d");
 
     const int len = strlen(file_name0);
@@ -25,7 +25,7 @@ static void driver_base_source_file_name(const u8* file_name0,
     base_file_name0[len - 1] = 0;
 }
 
-static res_t driver_run(const u8* file_name0) {
+static res_t driver_run(const char* file_name0) {
     PG_ASSERT_COND((void*)file_name0, !=, NULL, "%p");
 
     res_t res = RES_NONE;
@@ -49,7 +49,7 @@ static res_t driver_run(const u8* file_name0) {
     }
     const int file_size = ftell(file);
 
-    const u8* source =
+    const char* source =
         mmap(NULL, (size_t)file_size, PROT_READ, MAP_SHARED, fileno(file), 0);
     if (source == MAP_FAILED) {
         res = RES_SOURCE_FILE_READ_FAILED;
@@ -65,7 +65,7 @@ static res_t driver_run(const u8* file_name0) {
     emit_emit(&emitter, &parser);
 
     const int file_name_len = strlen(file_name0);
-    u8 asm_file_name0[MAXPATHLEN + 1] = "\0";
+    char asm_file_name0[MAXPATHLEN + 1] = "\0";
     memcpy(asm_file_name0, file_name0, (size_t)file_name_len);
     asm_file_name0[file_name_len - 3] = 'a';
     asm_file_name0[file_name_len - 2] = 's';
@@ -85,11 +85,11 @@ static res_t driver_run(const u8* file_name0) {
     fclose(file);
 
     // as
-    static u8 base_file_name0[MAXPATHLEN + 1] = "\0";
+    static char base_file_name0[MAXPATHLEN + 1] = "\0";
     memcpy(base_file_name0, file_name0, (size_t)file_name_len);
     driver_base_source_file_name(file_name0, base_file_name0);
     {
-        static u8 argv0[3 * MAXPATHLEN] = "\0";
+        static char argv0[3 * MAXPATHLEN] = "\0";
         snprintf(argv0, sizeof(argv0), "as %s -o %s.o", asm_file_name0,
                  base_file_name0);
         fflush(stdout);
@@ -112,11 +112,11 @@ static res_t driver_run(const u8* file_name0) {
     // ld
     {
 #ifdef __APPLE__
-        const u8 ld_additional_args[] = "-lSystem";
+        const char ld_additional_args[] = "-lSystem";
 #else
-        const u8 ld_additional_args[] = "";
+        const char ld_additional_args[] = "";
 #endif
-        static u8 argv0[3 * MAXPATHLEN] = "\0";
+        static char argv0[3 * MAXPATHLEN] = "\0";
         snprintf(argv0, sizeof(argv0), "ld %s.o %s -o %s -e _main",
                  base_file_name0, ld_additional_args, base_file_name0);
         log_debug("%s", argv0);

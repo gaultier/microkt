@@ -22,7 +22,7 @@ typedef enum {
     REG_RIP,
 } reg_t;
 
-const u8 reg_t_to_str[][5] = {
+const char reg_t_to_str[][5] = {
     [REG_RAX] = "%rax", [REG_RBX] = "%rbx", [REG_RCX] = "%rcx",
     [REG_RDX] = "%rdx", [REG_RBP] = "%rbp", [REG_RSP] = "%rsp",
     [REG_RSI] = "%rsi", [REG_RDI] = "%rdi", [REG_R8] = "%r8",
@@ -69,21 +69,21 @@ typedef enum {
 typedef int emit_op_id_t;
 
 typedef struct {
-    const u8* sc_name;
+    const char* sc_name;
     int sc_name_len;
     emit_op_id_t* sc_instructions;
 } emit_op_call_t;
 
 typedef struct {
     int sl_label_id;
-    const u8* sl_string;
+    const char* sl_string;
     int sl_string_len;
 } emit_op_string_label_t;
 
 #define CALLABLE_BLOCK_FLAG_DEFAULT 0
 #define CALLABLE_BLOCK_FLAG_GLOBAL 1
 typedef struct {
-    const u8* cb_name;
+    const char* cb_name;
     int cb_name_len;
     emit_op_id_t* cb_body;
     u16 cb_flags;
@@ -95,7 +95,7 @@ typedef struct {
 } emit_op_pair_t;
 
 typedef struct {
-    const u8* pt_name;
+    const char* pt_name;
     int pt_name_len;
     int pt_offset;
 } emit_op_ptr_t;

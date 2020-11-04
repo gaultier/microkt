@@ -9,9 +9,9 @@
 
 typedef struct {
     token_id_t* par_token_ids;
-    const u8* par_source;
+    const char* par_source;
     const int par_source_len;
-    const u8* par_file_name0;
+    const char* par_file_name0;
     int par_tok_i;
     ast_node_t* par_nodes;          // Arena of all nodes
     token_index_t* par_stmt_nodes;  // Array of statements. Each statement is
@@ -22,7 +22,7 @@ typedef struct {
     bool par_is_tty;
 } parser_t;
 
-static parser_t parser_init(const u8* file_name0, const u8* source,
+static parser_t parser_init(const char* file_name0, const char* source,
                             int source_len) {
     PG_ASSERT_COND((void*)file_name0, !=, NULL, "%p");
     PG_ASSERT_COND((void*)source, !=, NULL, "%p");
@@ -60,7 +60,7 @@ static parser_t parser_init(const u8* file_name0, const u8* source,
 }
 
 static void parser_ast_node_source(const parser_t* parser,
-                                   const ast_node_t* node, const u8** source,
+                                   const ast_node_t* node, const char** source,
                                    int* source_len) {
     PG_ASSERT_COND((void*)node, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
@@ -224,14 +224,14 @@ static void parser_print_source_on_error(const parser_t* parser,
     PG_ASSERT_COND((void*)actual_token_loc, !=, NULL, "%p");
     PG_ASSERT_COND((void*)pos_start, !=, NULL, "%p");
 
-    const u8* const actual_source =
+    const char* const actual_source =
         &parser->par_source[actual_token_loc->loc_start];
     const int actual_source_len =
         actual_token_loc->loc_end - actual_token_loc->loc_start;
 
     if (parser->par_is_tty) fprintf(stderr, "%s", color_grey);
 
-    static u8 prefix[MAXPATHLEN + 50] = "\0";
+    static char prefix[MAXPATHLEN + 50] = "\0";
     snprintf(prefix, sizeof(prefix), "%s:%d:%d:", parser->par_file_name0,
              pos_start->pos_line, pos_start->pos_column);
     int prefix_len = strlen(prefix);
@@ -242,7 +242,7 @@ static void parser_print_source_on_error(const parser_t* parser,
     if (parser->par_tok_i > 0) {
         const loc_t before_actual_token_loc =
             parser->par_token_locs[parser->par_tok_i - 1];
-        const u8* const before_actual_source =
+        const char* const before_actual_source =
             &parser->par_source[before_actual_token_loc.loc_start];
         const int before_actual_source_len =
             // Include spaces here, meaning we consider the start of the
@@ -259,7 +259,7 @@ static void parser_print_source_on_error(const parser_t* parser,
     if (parser->par_tok_i < (int)buf_size(parser->par_token_ids) - 1) {
         const loc_t after_actual_token_loc =
             parser->par_token_locs[parser->par_tok_i + 1];
-        const u8* const after_actual_source =
+        const char* const after_actual_source =
             &parser->par_source[actual_token_loc->loc_end];
         const int after_actual_source_len =
             // Include spaces here, meaning we consider the end of the
@@ -393,7 +393,7 @@ static int64_t parse_node_to_i64(const parser_t* parser,
     PG_ASSERT_COND((void*)node, !=, NULL, "%p");
     PG_ASSERT_COND(node->node_kind, ==, NODE_I64, "%d");
 
-    const u8* string = NULL;
+    const char* string = NULL;
     int string_len = 0;
     parser_ast_node_source(parser, node, &string, &string_len);
     log_debug("`%.*s`", (int)string_len, string);
@@ -401,7 +401,7 @@ static int64_t parse_node_to_i64(const parser_t* parser,
     PG_ASSERT_COND(string_len, <, (int)25, "%d");
 
     // TOOD: limit in the lexer the length of a number literal
-    static u8 string0[25] = "\0";
+    static char string0[25] = "\0";
     memcpy(string0, string, (size_t)string_len);
     return strtoll(string0, NULL, 10);
 }
@@ -410,7 +410,7 @@ static char parse_node_to_char(const parser_t* parser, const ast_node_t* node) {
     PG_ASSERT_COND((void*)node, !=, NULL, "%p");
     PG_ASSERT_COND(node->node_kind, ==, NODE_CHAR, "%d");
 
-    const u8* string = NULL;
+    const char* string = NULL;
     int string_len = 0;
     parser_ast_node_source(parser, node, &string, &string_len);
     log_debug("`%.*s`", (int)string_len, string);

@@ -66,7 +66,7 @@ static emit_t emit_init() {
 }
 
 static int emit_add_string_label_if_not_exists(emit_t* emitter,
-                                               const u8* string,
+                                               const char* string,
                                                int string_len) {
     PG_ASSERT_COND((void*)emitter, !=, NULL, "%p");
     PG_ASSERT_COND((void*)string, !=, NULL, "%p");
@@ -104,7 +104,7 @@ static int emit_node_to_string_label(const parser_t* parser, emit_t* emitter,
         node->node_kind == NODE_STRING || node->node_kind == NODE_KEYWORD_BOOL,
         ==, 1, "%d");
 
-    const u8* string = NULL;
+    const char* string = NULL;
     parser_ast_node_source(parser, node, &string, string_len);
 
     const int new_label_id =

@@ -22,7 +22,7 @@ typedef enum {
     LEX_TOKEN_ID_INVALID,
 } token_id_t;
 
-const u8 token_id_t_to_str[][30] = {
+const char token_id_t_to_str[][30] = {
     [LEX_TOKEN_ID_BUILTIN_PRINT] = "Print",
     [LEX_TOKEN_ID_LPAREN] = "(",
     [LEX_TOKEN_ID_RPAREN] = ")",
@@ -53,7 +53,7 @@ typedef struct {
 
 typedef struct {
     token_id_t key_id;
-    const u8 key_str[20];
+    const char key_str[20];
 } keyword_t;
 
 static const keyword_t keywords[] = {
@@ -63,14 +63,14 @@ static const keyword_t keywords[] = {
 };
 
 typedef struct {
-    const u8* lex_source;
+    const char* lex_source;
     const int lex_source_len;
     int lex_index;
     int* lex_lines;
 } lexer_t;
 
 // TODO: trie?
-static const token_id_t* token_get_keyword(const u8* source_start, int len) {
+static const token_id_t* token_get_keyword(const char* source_start, int len) {
     const int keywords_len = sizeof(keywords) / sizeof(keywords[0]);
     for (int i = 0; i < keywords_len; i++) {
         const keyword_t* k = &keywords[i];
@@ -101,22 +101,22 @@ static loc_pos_t lex_pos(const lexer_t* lexer, int position) {
 }
 
 // TODO: expand
-static bool lex_is_digit(u8 c) { return ('0' <= c && c <= '9'); }
+static bool lex_is_digit(char c) { return ('0' <= c && c <= '9'); }
 
 // TODO: unicode
-static bool lex_is_identifier_char(u8 c) {
+static bool lex_is_identifier_char(char c) {
     return lex_is_digit(c) || ('a' <= c && c <= 'z') ||
            ('A' <= c && c <= 'Z') || c == '_';
 }
 
-static lexer_t lex_init(const u8* source, const int source_len) {
+static lexer_t lex_init(const char* source, const int source_len) {
     return (lexer_t){.lex_source = source,
                      .lex_source_len = source_len,
                      .lex_index = 0,
                      .lex_lines = NULL};
 }
 
-static u8 lex_advance(lexer_t* lexer) {
+static char lex_advance(lexer_t* lexer) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
 
@@ -131,7 +131,7 @@ static bool lex_is_at_end(const lexer_t* lexer) {
     return lexer->lex_index == lexer->lex_source_len;
 }
 
-static u8 lex_peek(const lexer_t* lexer) {
+static char lex_peek(const lexer_t* lexer) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
     PG_ASSERT_COND(lex_is_at_end(lexer), !=, true, "%d");
@@ -139,7 +139,7 @@ static u8 lex_peek(const lexer_t* lexer) {
     return lexer->lex_source[lexer->lex_index];
 }
 
-static u8 lex_peek_next(const lexer_t* lexer) {
+static char lex_peek_next(const lexer_t* lexer) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
     PG_ASSERT_COND(lexer->lex_index, <, lexer->lex_source_len - 1, "%d");
@@ -148,7 +148,7 @@ static u8 lex_peek_next(const lexer_t* lexer) {
                                 : lexer->lex_source[lexer->lex_index + 1];
 }
 
-static bool lex_match(lexer_t* lexer, u8 c) {
+static bool lex_match(lexer_t* lexer, char c) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
 
@@ -176,7 +176,7 @@ static void lex_advance_until_newline_or_eof(lexer_t* lexer) {
     PG_ASSERT_COND(lexer->lex_index, <, lexer->lex_source_len - 1, "%d");
 
     while (true) {
-        const u8 c = lex_peek(lexer);
+        const char c = lex_peek(lexer);
         if (c == '\n' || c == '\0') break;
 
         lex_advance(lexer);
@@ -188,7 +188,7 @@ static void lex_identifier(lexer_t* lexer, token_t* result) {
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
     PG_ASSERT_COND((void*)result, !=, NULL, "%p");
 
-    u8 c = lex_advance(lexer);
+    char c = lex_advance(lexer);
     PG_ASSERT_COND(lex_is_identifier_char(c), ==, true, "%d");
 
     while (lexer->lex_index < lexer->lex_source_len) {
@@ -217,7 +217,7 @@ static res_t lex_number(lexer_t* lexer, token_t* result) {
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
     PG_ASSERT_COND((void*)result, !=, NULL, "%p");
 
-    u8 c = lex_advance(lexer);
+    char c = lex_advance(lexer);
     PG_ASSERT_COND(lex_is_digit(c), ==, true, "%d");
 
     while (lexer->lex_index < lexer->lex_source_len) {
@@ -238,7 +238,7 @@ static void lex_string(lexer_t* lexer, token_t* result) {
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
     PG_ASSERT_COND((void*)result, !=, NULL, "%p");
 
-    u8 c = lex_peek(lexer);
+    char c = lex_peek(lexer);
     PG_ASSERT_COND(c, ==, '"', "%c");
     lex_advance(lexer);
 
@@ -269,7 +269,7 @@ static void lex_char(lexer_t* lexer, token_t* result) {
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
     PG_ASSERT_COND((void*)result, !=, NULL, "%p");
 
-    u8 c = lex_peek(lexer);
+    char c = lex_peek(lexer);
     PG_ASSERT_COND(c, ==, '\'', "%c");
     lex_advance(lexer);
 
@@ -307,7 +307,7 @@ static token_t lex_next(lexer_t* lexer) {
                       .tok_loc = {.loc_start = lexer->lex_index}};
 
     while (lexer->lex_index < lexer->lex_source_len) {
-        const u8 c = lexer->lex_source[lexer->lex_index];
+        const char c = lexer->lex_source[lexer->lex_index];
 
         switch (c) {
             case ' ':

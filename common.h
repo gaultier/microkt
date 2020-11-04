@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef char u8;
 typedef unsigned short u16;
 
 typedef enum {
@@ -19,7 +18,7 @@ typedef enum {
     RES_FAILED_LD,
 } res_t;
 
-static const u8 res_to_str[][100] = {
+static const char res_to_str[][100] = {
     [RES_OK] = "ok\n",
     [RES_NONE] = "none\n",
     [RES_UNEXPECTED_TOKEN] =
@@ -86,6 +85,6 @@ static const u8 res_to_str[][100] = {
 
 #define UNREACHABLE() (assert(0 && "Unreachable"))
 
-static const u8 color_red[] = "\x1b[31m";
-static const u8 color_reset[] = "\x1b[0m";
-static const u8 color_grey[] = "\x1b[90m";
+static const char color_red[] = "\x1b[31m";
+static const char color_reset[] = "\x1b[0m";
+static const char color_grey[] = "\x1b[90m";

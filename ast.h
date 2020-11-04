@@ -21,7 +21,7 @@ typedef enum {
     NODE_CHAR,
 } ast_node_kind_t;
 
-const u8 ast_node_kind_t_to_str[][30] = {
+const char ast_node_kind_t_to_str[][30] = {
     [NODE_BUILTIN_PRINT] = "print", [NODE_KEYWORD_BOOL] = "bool",
     [NODE_STRING] = "String",       [NODE_I64] = "I64",
     [NODE_CHAR] = "Char",
