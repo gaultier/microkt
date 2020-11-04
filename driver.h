@@ -92,8 +92,6 @@ static res_t driver_run(const u8* file_name0) {
         static u8 argv0[3 * MAXPATHLEN] = "\0";
         snprintf(argv0, sizeof(argv0), "as %s -o %s.o", asm_file_name0,
                  base_file_name0);
-        log_debug("%s", base_file_name0);
-
         fflush(stdout);
         fflush(stderr);
         FILE* as_process = popen(argv0, "r");
