@@ -97,7 +97,8 @@ static token_index_t ast_node_last_token(const ast_node_t* node) {
 #define NODE_INT(n) \
     ((ast_node_t){.node_kind = NODE_INT, .node_n = {.node_int = n}})
 
-#define NODE_CHAR(n) NODE_INT(n)
+#define NODE_CHAR(n) \
+    ((ast_node_t){.node_kind = NODE_CHAR, .node_n = {.node_int = n}})
 
 #define NODE_BOOL(n)                              \
     ((ast_node_t){.node_kind = NODE_KEYWORD_BOOL, \

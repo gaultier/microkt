@@ -205,6 +205,13 @@ static res_t parser_parse_primary(parser_t* parser, usize* new_primary_node_i) {
 
         return RES_OK;
     }
+    if (parser_match(parser, LEX_TOKEN_ID_CHAR, &token)) {
+        const ast_node_t new_node = NODE_CHAR(token);
+        buf_push(parser->par_nodes, new_node);
+        *new_primary_node_i = buf_size(parser->par_nodes) - 1;
+
+        return RES_OK;
+    }
 
     return RES_NONE;
 }
@@ -379,7 +386,7 @@ static res_t parser_parse(parser_t* parser) {
     UNREACHABLE();
 }
 
-static usize parse_node_to_int(const parser_t* parser, const ast_node_t* node) {
+static isize parse_node_to_int(const parser_t* parser, const ast_node_t* node) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)node, !=, NULL, "%p");
     PG_ASSERT_COND(node->node_kind, ==, NODE_INT, "%d");
@@ -387,11 +394,28 @@ static usize parse_node_to_int(const parser_t* parser, const ast_node_t* node) {
     const u8* string = NULL;
     usize string_len = 0;
     parser_ast_node_source(parser, node, &string, &string_len);
-    log_debug("emit_call_print_integer int `%.*s`", (int)string_len, string);
+    log_debug("`%.*s`", (int)string_len, string);
+    PG_ASSERT_COND(string_len, >, (usize)0, "%llu");
     PG_ASSERT_COND(string_len, <, (usize)25, "%llu");
 
     // TOOD: limit in the lexer the length of a number literal
     static u8 string0[25] = "\0";
     memcpy(string0, string, string_len);
     return strtoll(string0, NULL, 10);
+}
+static char parse_node_to_char(const parser_t* parser, const ast_node_t* node) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)node, !=, NULL, "%p");
+    PG_ASSERT_COND(node->node_kind, ==, NODE_CHAR, "%d");
+
+    const u8* string = NULL;
+    usize string_len = 0;
+    parser_ast_node_source(parser, node, &string, &string_len);
+    log_debug("`%.*s`", (int)string_len, string);
+    PG_ASSERT_COND(string_len, >, (usize)0, "%llu");
+    PG_ASSERT_COND(string_len, <, (usize)25, "%llu");
+
+    if (string_len > 1) UNIMPLEMENTED();
+
+    return string[0];
 }

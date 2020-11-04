@@ -6,6 +6,7 @@
 #include <stdlib.h>
 
 typedef unsigned long long int usize;
+typedef signed long long int isize;
 typedef char u8;
 typedef unsigned short u16;
 
