@@ -16,6 +16,7 @@ typedef enum {
     LEX_TOKEN_ID_STRING_LITERAL,
     LEX_TOKEN_ID_INT,
     LEX_TOKEN_ID_COMMENT,
+    LEX_TOKEN_ID_CHAR,
     LEX_TOKEN_ID_EOF,
     LEX_TOKEN_ID_INVALID,
 } token_id_t;
@@ -29,6 +30,7 @@ const u8 token_id_t_to_str[][30] = {
     [LEX_TOKEN_ID_IDENTIFIER] = "Identifier",
     [LEX_TOKEN_ID_STRING_LITERAL] = "StringLiteral",
     [LEX_TOKEN_ID_COMMENT] = "Comment",
+    [LEX_TOKEN_ID_CHAR] = "Char",
     [LEX_TOKEN_ID_INT] = "IntLiteral",
     [LEX_TOKEN_ID_EOF] = "Eof",
     [LEX_TOKEN_ID_INVALID] = "Invalid",
@@ -257,6 +259,43 @@ static void lex_string(lexer_t* lexer, token_t* result) {
     }
 }
 
+// TODO: escape sequences
+// TODO: unicode literals
+static void lex_char(lexer_t* lexer, token_t* result) {
+    PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)result, !=, NULL, "%p");
+
+    u8 c = lex_peek(lexer);
+    PG_ASSERT_COND(c, ==, '\'', "%c");
+    lex_advance(lexer);
+
+    usize len = 0;
+    while (lexer->lex_index < lexer->lex_source_len) {
+        c = lex_peek(lexer);
+        if (c == '\'') break;
+
+        lex_advance(lexer);
+        len++;
+    }
+
+    if (c != '\'') {
+        log_debug(
+            "Unterminated char, missing trailing quote: c=`%c` "
+            "lex_index=%llu",
+            c, lexer->lex_index);
+        result->tok_id = LEX_TOKEN_ID_INVALID;
+    } else {
+        PG_ASSERT_COND(c, ==, '\'', "%c");
+        result->tok_id = LEX_TOKEN_ID_CHAR;
+        lex_advance(lexer);
+    }
+
+    if (len != 1) {
+        UNIMPLEMENTED();
+    }
+}
+
 static token_t lex_next(lexer_t* lexer) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
@@ -301,6 +340,10 @@ static token_t lex_next(lexer_t* lexer) {
             }
             case '"': {
                 lex_string(lexer, &result);
+                goto outer;
+            }
+            case '\'': {
+                lex_char(lexer, &result);
                 goto outer;
             }
             case '_':
