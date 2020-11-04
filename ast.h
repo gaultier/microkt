@@ -33,7 +33,7 @@ struct ast_node_t {
         ast_builtin_print_t node_builtin_print;  // NODE_BUILTIN_PRINT
         token_index_t node_boolean;              // NODE_KEYWORD_BOOL
         token_index_t node_string;               // NODE_STRING
-        token_index_t node_int;                  // NODE_I64, NODE_CHAR
+        token_index_t node_i64;                  // NODE_I64, NODE_CHAR
     } node_n;
 };
 
@@ -70,7 +70,7 @@ static token_index_t ast_node_first_token(const ast_node_t* node) {
             return node->node_n.node_string;
         case NODE_CHAR:
         case NODE_I64:
-            return node->node_n.node_int;
+            return node->node_n.node_i64;
     }
 }
 
@@ -84,7 +84,7 @@ static token_index_t ast_node_last_token(const ast_node_t* node) {
             return node->node_n.node_string;
         case NODE_I64:
         case NODE_CHAR:
-            return node->node_n.node_int;
+            return node->node_n.node_i64;
     }
 }
 
@@ -95,10 +95,10 @@ static token_index_t ast_node_last_token(const ast_node_t* node) {
                                           .bp_keyword_print_i = keyword, \
                                           .bp_rparen_i = rparen}}})
 #define NODE_I64(n) \
-    ((ast_node_t){.node_kind = NODE_I64, .node_n = {.node_int = n}})
+    ((ast_node_t){.node_kind = NODE_I64, .node_n = {.node_i64 = n}})
 
 #define NODE_CHAR(n) \
-    ((ast_node_t){.node_kind = NODE_CHAR, .node_n = {.node_int = n}})
+    ((ast_node_t){.node_kind = NODE_CHAR, .node_n = {.node_i64 = n}})
 
 #define NODE_BOOL(n)                              \
     ((ast_node_t){.node_kind = NODE_KEYWORD_BOOL, \
