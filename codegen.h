@@ -222,6 +222,9 @@ static void emit(emit_t* emitter, const parser_t* parser, FILE* asm_file) {
                         println("movq $5, %%rdx");
                     }
                     println("syscall\n");
+                } else if (arg.node_kind == NODE_I64) {
+                    const token_index_t index = arg.node_n.node_i64;
+                    const token_id_t tok = parser->par_token_ids[index];
                 } else
                     UNREACHABLE();
 

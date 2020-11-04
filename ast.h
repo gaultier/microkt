@@ -108,3 +108,19 @@ static token_index_t ast_node_last_token(const ast_node_t* node) {
     ((ast_node_t){.node_kind = NODE_STRING, .node_n = {.node_string = n}})
 
 #define AS_PRINT(node) ((node).node_n.node_builtin_print)
+
+typedef enum {
+    TYPE_BOOL,
+    TYPE_CHAR,
+    TYPE_I64,
+    TYPE_STRING,
+} type_kind_t;
+
+typedef struct {
+    int ty_size;
+    uint16_t ty_flags;
+} type_t;
+
+typedef struct {
+    type_t obj_type;
+} obj_t;
