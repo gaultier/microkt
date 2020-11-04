@@ -4,7 +4,7 @@ A WIP tiny compiler for a subset of the Kotlin language, with zero dependencies.
 
 ```sh
 # Only requires a C99 compiler and a POSIX environment
-make all
+make
 ./e2e/hello_world
 hello, world!
 
