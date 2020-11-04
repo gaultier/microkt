@@ -87,7 +87,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
                 println("syscall\n");
                 println("xorq %%rax, %%rax\n");
 
-                if (arg.node_kind == NODE_I64) println("popq %%rcx");
+                if (arg.node_kind == NODE_I64) println("popq %%rcx");  // FIXME
                 break;
             }
             case NODE_I64:
