@@ -79,11 +79,18 @@ static void emit(const parser_t* parser, FILE* asm_file) {
                     println("leaq .L%d(%%rip), %%rsi", obj.obj_tok_i);
                     println("movq $%d, %%rdx",
                             obj.obj.obj_global_var.gl_source_len);
+                } else if (arg.node_kind == NODE_I64) {
+                    println("pushq %%rax");
+                    println("movl $53, 4(%%rsp)");  // FIXME: hardcoded
+                    println("leaq 4(%%rsp), %%rsi");
+                    println("mov $4, %%rdx");
                 } else
                     UNIMPLEMENTED();
 
                 println("syscall\n");
                 println("xorq %%rax, %%rax\n");
+
+                if (arg.node_kind == NODE_I64) println("popq %%rcx");
                 break;
             }
             case NODE_I64:
