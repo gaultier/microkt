@@ -2,7 +2,6 @@
 
 #include <stdarg.h>
 
-#include "ast.h"
 #include "parse.h"
 
 static const int64_t syscall_write = 0x2000004;
@@ -37,6 +36,8 @@ static void emit(const parser_t* parser, FILE* asm_file) {
 
     for (int i = 0; i < (int)buf_size(parser->par_objects); i++) {
         const obj_t obj = parser->par_objects[i];
+        if (obj.obj_kind != OBJ_GLOBAL_VAR) UNIMPLEMENTED();
+
         const global_var_t var = obj.obj.obj_global_var;
         println(".L%d: .ascii \"%.*s\"", obj.obj_tok_i, var.gl_source_len,
                 var.gl_source);
@@ -79,7 +80,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
                     println("movq $%d, %%rdx",
                             obj.obj.obj_global_var.gl_source_len);
                 } else
-                    UNREACHABLE();
+                    UNIMPLEMENTED();
 
                 println("syscall\n");
                 println("xorq %%rax, %%rax\n");
