@@ -65,9 +65,10 @@ static void parser_ast_node_source(const parser_t* parser,
     PG_ASSERT_COND((void*)source, !=, NULL, "%p");
     PG_ASSERT_COND((void*)source_len, !=, NULL, "%p");
 
-    const loc_t first_token =
-        parser->par_token_locs[ast_node_first_token(node)];
-    const loc_t last_token = parser->par_token_locs[ast_node_last_token(node)];
+    const token_index_t first = ast_node_first_token(node);
+    const token_index_t last = ast_node_last_token(node);
+    const loc_t first_token = parser->par_token_locs[first];
+    const loc_t last_token = parser->par_token_locs[last];
 
     *source = &parser->par_source[(node->node_kind == NODE_STRING_LITERAL)
                                       ? first_token.loc_start + 1
@@ -354,6 +355,7 @@ static res_t parser_parse(parser_t* parser) {
 
             continue;
         }
+        log_debug("failed to parse builtin_print: res=%d", res);
 
         const token_index_t current = parser_current(parser);
         if (current == LEX_TOKEN_ID_COMMENT) {
