@@ -20,6 +20,8 @@ typedef struct {
     loc_t* par_token_locs;
     lexer_t par_lexer;
     bool par_is_tty;
+    obj_t* par_objects;
+    type_t* par_types;
 } parser_t;
 
 static parser_t parser_init(const char* file_name0, const char* source,
@@ -178,36 +180,43 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
 
     token_index_t token = 0;
 
-    if (parser_match(parser, LEX_TOKEN_ID_TRUE, &token)) {
-        const ast_node_t new_node = NODE_BOOL(token);
-        buf_push(parser->par_nodes, new_node);
-        *new_primary_node_i = (int)buf_size(parser->par_nodes) - 1;
+    if (parser_match(parser, LEX_TOKEN_ID_TRUE, &token) ||
+        parser_match(parser, LEX_TOKEN_ID_FALSE, &token)) {
+        buf_push(parser->par_types,
+                 ((type_t){.ty_size = 1, .ty_kind = TYPE_BOOL}));
+        const int type_idx = buf_size(parser->par_types) - 1;
 
-        return RES_OK;
-    }
-    if (parser_match(parser, LEX_TOKEN_ID_FALSE, &token)) {
-        const ast_node_t new_node = NODE_BOOL(token);
+        const ast_node_t new_node = NODE_BOOL(token, type_idx);
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = (int)buf_size(parser->par_nodes) - 1;
 
         return RES_OK;
     }
     if (parser_match(parser, LEX_TOKEN_ID_STRING, &token)) {
-        const ast_node_t new_node = NODE_STRING(token);
+        buf_push(parser->par_types,
+                 ((type_t){.ty_size = 1, .ty_kind = TYPE_STRING}));
+        const int type_idx = buf_size(parser->par_types) - 1;
+        const ast_node_t new_node = NODE_STRING(token, type_idx);
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = (int)buf_size(parser->par_nodes) - 1;
 
         return RES_OK;
     }
     if (parser_match(parser, LEX_TOKEN_ID_I64, &token)) {
-        const ast_node_t new_node = NODE_I64(token);
+        buf_push(parser->par_types,
+                 ((type_t){.ty_size = 1, .ty_kind = TYPE_I64}));
+        const int type_idx = buf_size(parser->par_types) - 1;
+        const ast_node_t new_node = NODE_I64(token, type_idx);
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = (int)buf_size(parser->par_nodes) - 1;
 
         return RES_OK;
     }
     if (parser_match(parser, LEX_TOKEN_ID_CHAR, &token)) {
-        const ast_node_t new_node = NODE_CHAR(token);
+        buf_push(parser->par_types,
+                 ((type_t){.ty_size = 1, .ty_kind = TYPE_CHAR}));
+        const int type_idx = buf_size(parser->par_types) - 1;
+        const ast_node_t new_node = NODE_CHAR(token, type_idx);
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = (int)buf_size(parser->par_nodes) - 1;
 
@@ -337,7 +346,11 @@ static res_t parser_parse_builtin_print(parser_t* parser, int* new_node_i) {
             RES_OK)
             return res;
 
-        const ast_node_t new_node = NODE_PRINT(arg_i, keyword_print, rparen);
+        buf_push(parser->par_types,
+                 ((type_t){.ty_size = 1, .ty_kind = TYPE_BUILTIN_PRINT}));
+        const int type_idx = buf_size(parser->par_types) - 1;
+        const ast_node_t new_node =
+            NODE_PRINT(arg_i, keyword_print, rparen, type_idx);
         buf_push(parser->par_nodes, new_node);
         *new_node_i = (int)buf_size(parser->par_nodes) - 1;
 

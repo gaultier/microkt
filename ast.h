@@ -1,10 +1,29 @@
 #pragma once
 
+#include <stdint.h>
+
 #include "common.h"
 
+typedef enum {
+    TYPE_BOOL,
+    TYPE_CHAR,
+    TYPE_I64,
+    TYPE_STRING,
+    TYPE_BUILTIN_PRINT,
+} type_kind_t;
+
+typedef struct {
+    int ty_size;
+    type_kind_t ty_kind;
+} type_t;
+
+typedef struct {
+    int obj_type_index;
+} obj_t;
 typedef int token_index_t;
 
 struct ast_node_t;
+
 typedef struct ast_node_t ast_node_t;
 
 typedef struct {
@@ -29,6 +48,7 @@ const char ast_node_kind_t_to_str[][30] = {
 
 struct ast_node_t {
     ast_node_kind_t node_kind;
+    int node_type_idx;
     union {
         ast_builtin_print_t node_builtin_print;  // NODE_BUILTIN_PRINT
         token_index_t node_boolean;              // NODE_KEYWORD_BOOL
@@ -88,39 +108,32 @@ static token_index_t ast_node_last_token(const ast_node_t* node) {
     }
 }
 
-#define NODE_PRINT(arg, keyword, rparen)                                 \
+#define NODE_PRINT(arg, keyword, rparen, type_idx)                       \
     ((ast_node_t){                                                       \
         .node_kind = NODE_BUILTIN_PRINT,                                 \
+        .node_type_idx = type_idx,                                       \
         .node_n = {.node_builtin_print = {.bp_arg_i = arg,               \
                                           .bp_keyword_print_i = keyword, \
                                           .bp_rparen_i = rparen}}})
-#define NODE_I64(n) \
-    ((ast_node_t){.node_kind = NODE_I64, .node_n = {.node_i64 = n}})
+#define NODE_I64(n, type_idx)                \
+    ((ast_node_t){.node_kind = NODE_I64,     \
+                  .node_type_idx = type_idx, \
+                  .node_n = {.node_i64 = n}})
 
-#define NODE_CHAR(n) \
-    ((ast_node_t){.node_kind = NODE_CHAR, .node_n = {.node_i64 = n}})
+#define NODE_CHAR(n, type_idx)               \
+    ((ast_node_t){.node_kind = NODE_CHAR,    \
+                  .node_type_idx = type_idx, \
+                  .node_n = {.node_i64 = n}})
 
-#define NODE_BOOL(n)                              \
+#define NODE_BOOL(n, type_idx)                    \
     ((ast_node_t){.node_kind = NODE_KEYWORD_BOOL, \
+                  .node_type_idx = type_idx,      \
                   .node_n = {.node_boolean = n}})
 
-#define NODE_STRING(n) \
-    ((ast_node_t){.node_kind = NODE_STRING, .node_n = {.node_string = n}})
+#define NODE_STRING(n, type_idx)             \
+    ((ast_node_t){.node_kind = NODE_STRING,  \
+                  .node_type_idx = type_idx, \
+                  .node_n = {.node_string = n}})
 
 #define AS_PRINT(node) ((node).node_n.node_builtin_print)
 
-typedef enum {
-    TYPE_BOOL,
-    TYPE_CHAR,
-    TYPE_I64,
-    TYPE_STRING,
-} type_kind_t;
-
-typedef struct {
-    int ty_size;
-    uint16_t ty_flags;
-} type_t;
-
-typedef struct {
-    type_t obj_type;
-} obj_t;
