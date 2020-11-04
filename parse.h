@@ -61,6 +61,113 @@ static parser_t parser_init(const char* file_name0, const char* source,
                       .par_is_tty = isatty(2)};
 }
 
+static void ast_node_dump(const ast_node_t* nodes, token_index_t node_i,
+                          int indent) {
+    PG_ASSERT_COND((void*)nodes, !=, NULL, "%p");
+
+    const ast_node_t* node = &nodes[node_i];
+    switch (node->node_kind) {
+        case NODE_BUILTIN_PRINT: {
+            log_debug_with_indent(indent, "ast_node %s",
+                                  ast_node_kind_t_to_str[node->node_kind]);
+            ast_node_dump(nodes, node->node_n.node_builtin_print.bp_arg_i, 2);
+            break;
+        }
+        case NODE_KEYWORD_BOOL:
+        case NODE_I64:
+        case NODE_CHAR:
+        case NODE_STRING: {
+            log_debug_with_indent(indent, "ast_node %s",
+                                  ast_node_kind_t_to_str[node->node_kind]);
+            break;
+        }
+    }
+}
+
+static token_index_t ast_node_first_token(const parser_t* parser,
+                                          const ast_node_t* node) {
+    switch (node->node_kind) {
+        case NODE_BUILTIN_PRINT:
+            return node->node_n.node_builtin_print.bp_keyword_print_i;
+        case NODE_KEYWORD_BOOL:
+            return node->node_n.node_boolean;
+        case NODE_STRING:
+            return parser->par_objects[node->node_n.node_string].obj_tok_i;
+        case NODE_CHAR:
+        case NODE_I64:
+            return node->node_n.node_i64;
+    }
+}
+
+static token_index_t ast_node_last_token(const parser_t* parser,
+                                         const ast_node_t* node) {
+    switch (node->node_kind) {
+        case NODE_BUILTIN_PRINT:
+            return node->node_n.node_builtin_print.bp_rparen_i;
+        case NODE_KEYWORD_BOOL:
+            return node->node_n.node_boolean;
+        case NODE_STRING:
+            return parser->par_objects[node->node_n.node_string].obj_tok_i;
+        case NODE_I64:
+        case NODE_CHAR:
+            return node->node_n.node_i64;
+    }
+}
+
+#define NODE_PRINT(arg, keyword, rparen, type_idx)                       \
+    ((ast_node_t){                                                       \
+        .node_kind = NODE_BUILTIN_PRINT,                                 \
+        .node_type_idx = type_idx,                                       \
+        .node_n = {.node_builtin_print = {.bp_arg_i = arg,               \
+                                          .bp_keyword_print_i = keyword, \
+                                          .bp_rparen_i = rparen}}})
+#define NODE_I64(n, type_idx)                \
+    ((ast_node_t){.node_kind = NODE_I64,     \
+                  .node_type_idx = type_idx, \
+                  .node_n = {.node_i64 = n}})
+
+#define NODE_CHAR(n, type_idx)               \
+    ((ast_node_t){.node_kind = NODE_CHAR,    \
+                  .node_type_idx = type_idx, \
+                  .node_n = {.node_i64 = n}})
+
+#define NODE_BOOL(n, type_idx)                    \
+    ((ast_node_t){.node_kind = NODE_KEYWORD_BOOL, \
+                  .node_type_idx = type_idx,      \
+                  .node_n = {.node_boolean = n}})
+
+#define NODE_STRING(n, type_idx)             \
+    ((ast_node_t){.node_kind = NODE_STRING,  \
+                  .node_type_idx = type_idx, \
+                  .node_n = {.node_string = n}})
+
+#define AS_PRINT(node) ((node).node_n.node_builtin_print)
+
+#define OBJ_GLOBAL_VAR(type_i, tok_i, source, source_len) \
+    ((obj_t){.obj_kind = OBJ_GLOBAL_VAR,                  \
+             .obj_type_i = type_i,                        \
+             .obj_tok_i = tok_i,                          \
+             .obj = {.obj_global_var = (global_var_t){    \
+                         .gl_source = source, .gl_source_len = source_len}}})
+static void parser_tok_source(const parser_t* parser, int tok_i,
+                              const char** source, int* source_len) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)source, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)source_len, !=, NULL, "%p");
+
+    const token_id_t tok = parser->par_token_ids[tok_i];
+    const loc_t loc = parser->par_token_locs[tok_i];
+
+    // Without quotes for char/string
+    *source = &parser->par_source[(tok == LEX_TOKEN_ID_STRING ||
+                                   tok == LEX_TOKEN_ID_CHAR)
+                                      ? loc.loc_start + 1
+                                      : loc.loc_start];
+    *source_len = (tok == LEX_TOKEN_ID_STRING || tok == LEX_TOKEN_ID_CHAR)
+                      ? (loc.loc_end - loc.loc_start - 2)
+                      : (loc.loc_end - loc.loc_start);
+}
+
 static void parser_ast_node_source(const parser_t* parser,
                                    const ast_node_t* node, const char** source,
                                    int* source_len) {
@@ -69,9 +176,9 @@ static void parser_ast_node_source(const parser_t* parser,
     PG_ASSERT_COND((void*)source, !=, NULL, "%p");
     PG_ASSERT_COND((void*)source_len, !=, NULL, "%p");
 
-    const token_index_t first = ast_node_first_token(node);
+    const token_index_t first = ast_node_first_token(parser, node);
     PG_ASSERT_COND(first, <, (int)buf_size(parser->par_token_locs), "%d");
-    const token_index_t last = ast_node_last_token(node);
+    const token_index_t last = ast_node_last_token(parser, node);
     PG_ASSERT_COND(last, <, (int)buf_size(parser->par_token_locs), "%d");
 
     const loc_t first_token = parser->par_token_locs[first];
@@ -195,17 +302,21 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
     if (parser_match(parser, LEX_TOKEN_ID_STRING, &token)) {
         buf_push(parser->par_types,
                  ((type_t){.ty_size = 1, .ty_kind = TYPE_STRING}));
-        const int type_idx = buf_size(parser->par_types) - 1;
+        const int type_i = buf_size(parser->par_types) - 1;
 
-        obj_t obj = {.obj_type_i = type_idx};
+        const char* source = NULL;
+        int source_len = 0;
+        parser_tok_source(parser, token, &source, &source_len);
+        const obj_t obj = OBJ_GLOBAL_VAR(type_i, token, source, source_len);
+        buf_push(parser->par_objects, obj);
+        const int obj_i = buf_size(parser->par_objects) - 1;
 
-        const ast_node_t new_node = NODE_STRING(token, type_idx);
+        const ast_node_t new_node = NODE_STRING(obj_i, type_i);
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = (int)buf_size(parser->par_nodes) - 1;
 
-        obj.obj_tok_i = new_node.node_n.node_string;
-        log_debug("new object: type=TYPE_STRING tok_i=%d", obj.obj_tok_i);
-        buf_push(parser->par_objects, obj);
+        log_debug("new object: type=TYPE_STRING tok_i=%d source_len=%d",
+                  obj.obj_tok_i, source_len);
 
         return RES_OK;
     }
@@ -444,22 +555,3 @@ static char parse_node_to_char(const parser_t* parser, const ast_node_t* node) {
     return string[0];
 }
 
-static void parser_obj_source(const parser_t* parser, int obj_i,
-                              const char** source, int* source_len) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)source, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)source_len, !=, NULL, "%p");
-
-    const obj_t obj = parser->par_objects[obj_i];
-    const token_id_t tok = parser->par_token_ids[obj.obj_tok_i];
-    const loc_t loc = parser->par_token_locs[obj.obj_tok_i];
-
-    // Without quotes for char/string
-    *source = &parser->par_source[(tok == LEX_TOKEN_ID_STRING ||
-                                   tok == LEX_TOKEN_ID_CHAR)
-                                      ? loc.loc_start + 1
-                                      : loc.loc_start];
-    *source_len = (tok == LEX_TOKEN_ID_STRING || tok == LEX_TOKEN_ID_CHAR)
-                      ? (loc.loc_end - loc.loc_start - 2)
-                      : (loc.loc_end - loc.loc_start);
-}
