@@ -174,10 +174,11 @@ static bool parser_match(parser_t* parser, token_id_t id,
     PG_ASSERT_COND(parser->par_tok_i, <, (usize)buf_size(parser->par_token_ids),
                    "%llu");
 
-    *return_token_index = parser->par_tok_i;
+    *return_token_index = parser->par_tok_i - 1;
 
-    log_debug("matched %s, now current token: %s", token_id_t_to_str[id],
-              token_id_t_to_str[parser_current(parser)]);
+    log_debug("matched %s, now current token: %s at tok_i=%llu",
+              token_id_t_to_str[id], token_id_t_to_str[parser_current(parser)],
+              parser->par_tok_i);
 
     return true;
 }
