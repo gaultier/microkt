@@ -155,7 +155,7 @@ static void emit_call_print_string(emit_t* emitter, usize label_id,
                                    OP(emitter, OP_REGISTER(emit_fn_arg(0))))));
 
     buf_push(call_args,
-             OP(emitter, OP_ASSIGN(OP(emitter, OP_INT(string_len)),
+             OP(emitter, OP_ASSIGN(OP(emitter, OP_INT((isize)string_len)),
                                    OP(emitter, OP_REGISTER(emit_fn_arg(1))))));
 
     emit_add_to_current_block(

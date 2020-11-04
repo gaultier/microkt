@@ -2,7 +2,7 @@
 
 SRC:=$(wildcard *.c)
 HEADERS:=$(wildcard *.h)
-CFLAGS+=-Wall -Wextra -pedantic -g -std=c99 -march=native
+CFLAGS+=-Wall -Wextra -pedantic -Wsign-conversion -g -std=c99 -march=native
 
 BIN_TEST:=./microktc_debug
 

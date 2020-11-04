@@ -104,7 +104,7 @@ typedef struct {
     emit_op_kind_t op_kind;
     union {
         emit_op_call_t op_call;                      // OP_KIND_CALL
-        usize op_int;                                // OP_KIND_INT
+        isize op_int;                                // OP_KIND_INT
         usize op_label_id;                           // OP_KIND_LABEL_ID
         emit_op_string_label_t op_string_label;      // OP_KIND_STRING_LABEL
         emit_op_callable_block_t op_callable_block;  // OP_KIND_CALLABLE_BLOCK
