@@ -3,8 +3,6 @@
 #include <unistd.h>
 
 #include "ast.h"
-#include "common.h"
-#include "ir.h"
 #include "lex.h"
 
 typedef struct {

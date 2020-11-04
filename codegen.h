@@ -4,15 +4,12 @@
 
 #include "parse.h"
 
+// TODO: use platform headers for that?
+#ifdef __APPLE__
 static const int64_t syscall_write = 0x2000004;
-
-typedef struct {
-    emit_op_t* em_ops_arena;
-    int em_label_id;
-    emit_op_id_t* em_text_section;
-    emit_op_id_t* em_data_section;
-    emit_op_id_t em_current_block;
-} emit_t;
+#else
+static const int64_t syscall_write = 0;  // FIXME
+#endif
 
 static FILE* output_file = NULL;
 
