@@ -13,6 +13,9 @@ BEGIN {
     tests[3] = "e2e/hello_world"
     expected_outputs[3] = "hello, world!"
 
+    tests[4] = "e2e/print_char"
+    expected_outputs[4] = "A"
+
     is_tty = system("test -t 1") == 0
 
     if (is_tty) {
