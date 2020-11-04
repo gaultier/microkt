@@ -8,7 +8,6 @@ make all
 ./e2e/hello_world
 hello, world!
 
-
 # Run the tests
 make test
 ```
