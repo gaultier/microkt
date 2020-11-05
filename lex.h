@@ -441,6 +441,7 @@ static void token_dump(const token_t* t, const lexer_t* lexer) {
     PG_ASSERT_COND((void*)t, !=, NULL, "%p");
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
 
+#ifdef WITH_LOGS
     const loc_pos_t pos_start = lex_pos(lexer, t->tok_loc.loc_start);
     const loc_pos_t pos_end = lex_pos(lexer, t->tok_loc.loc_end);
     log_debug(
@@ -449,4 +450,5 @@ static void token_dump(const token_t* t, const lexer_t* lexer) {
         token_id_t_to_str[t->tok_id], t->tok_loc.loc_start, t->tok_loc.loc_end,
         pos_start.pos_line, pos_start.pos_column, pos_end.pos_line,
         pos_end.pos_column);
+#endif
 }
