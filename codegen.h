@@ -29,9 +29,9 @@ static void fn_prolog() {
 }
 
 static void fn_epilog() {
-    println("addq $16, %%rsp\n");
+    println("addq $16, %%rsp");
     println("popq %%rbp");
-    println("ret");
+    println("ret\n");
 }
 
 static void emit_print_i64() {
