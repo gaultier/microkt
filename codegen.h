@@ -25,11 +25,11 @@ __attribute__((format(printf, 1, 2))) static void println(char* fmt, ...) {
 static void fn_prolog() {
     println("pushq %%rbp");
     println("movq %%rsp, %%rbp");
-    println("subq $16, %%rsp\n");
+    println("subq $64, %%rsp\n");  // Hardcoded stack size
 }
 
 static void fn_epilog() {
-    println("addq $16, %%rsp");
+    println("addq $64, %%rsp");  // Hardcoded stack size
     println("popq %%rbp");
     println("ret\n");
 }
