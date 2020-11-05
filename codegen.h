@@ -103,6 +103,8 @@ static void emit(const parser_t* parser, FILE* asm_file) {
     println("_main:");
     fn_prolog();
 
+    int stack_depth = 0;
+
     for (int i = 0; i < (int)buf_size(parser->par_stmt_nodes); i++) {
         const int stmt_i = parser->par_stmt_nodes[i];
         const ast_node_t* stmt = &parser->par_nodes[stmt_i];
@@ -139,15 +141,19 @@ static void emit(const parser_t* parser, FILE* asm_file) {
                             obj.obj.obj_global_var.gl_source_len);
                     println("syscall\n");
                 } else if (arg.node_kind == NODE_I64) {
-                    println("movq $%lld, %%rax",
-                            parse_node_to_i64(parser, &arg));
+                    stack_depth += 8;
+                    println("movq $%lld, -%d(%%rsp)",
+                            parse_node_to_i64(parser, &arg), stack_depth);
+
+                    println("movq -%d(%%rsp) , %%rax", stack_depth);
                     println("call __print_int");
                 } else if (arg.node_kind == NODE_CHAR) {
-                    println("movq $%d, -4(%%rsp)",
-                            parse_node_to_char(parser, &arg));
+                    stack_depth += 1;
+                    println("movq $%d, -%d(%%rsp)",
+                            parse_node_to_char(parser, &arg), stack_depth);
                     println("movq $%lld, %%rax", syscall_write);
                     println("movq $1, %%rdi");
-                    println("leaq -4(%%rsp), %%rsi");
+                    println("leaq -%d(%%rsp), %%rsi", stack_depth);
                     println("movq $1, %%rdx");
                     println("syscall");
                 } else
