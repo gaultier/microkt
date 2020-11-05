@@ -25,9 +25,11 @@ __attribute__((format(printf, 1, 2))) static void println(char* fmt, ...) {
 static void fn_prolog() {
     println("pushq %%rbp");
     println("movq %%rsp, %%rbp");
+    println("subq $16, %%rsp\n");
 }
 
 static void fn_epilog() {
+    println("addq $16, %%rsp\n");
     println("popq %%rbp");
     println("ret");
 }
@@ -140,8 +142,14 @@ static void emit(const parser_t* parser, FILE* asm_file) {
                     println("movq $%lld, %%rax",
                             parse_node_to_i64(parser, &arg));
                     println("call __print_int");
-                } else {
-                    // UNIMPLEMENTED
+                } else if (arg.node_kind == NODE_CHAR) {
+                    println("movq $%d, -4(%%rsp)",
+                            parse_node_to_char(parser, &arg));
+                    println("movq $%lld, %%rax", syscall_write);
+                    println("movq $1, %%rdi");
+                    println("leaq -4(%%rsp), %%rsi");
+                    println("movq $1, %%rdx");
+                    println("syscall");
                 }
 
                 println("xorq %%rax, %%rax\n");
