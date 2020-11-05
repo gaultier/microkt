@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdarg.h>
+#include <stdint.h>
 
 #include "parse.h"
 
@@ -31,6 +32,50 @@ static void fn_epilog() {
     println("ret");
 }
 
+static void emit_print_i64() {
+    println(
+        "__print_int: \n"
+        "    pushq %%rbp\n"
+        "    movq %%rsp, %%rbp\n"
+        "    subq $32, %%rsp # char data[21]\n"
+        "  \n"
+        "    xorq %%r8, %%r8 # r8: Loop index and length\n"
+        "    movq %%rsp, %%rsi # end ptr\n"
+        "    \n"
+        "    int_to_string_loop:\n"
+        "        cmpq $0, %%rax # While n != 0\n"
+        "        jz int_to_string_end\n"
+        "\n"
+        "        decq %%rsi # end--\n"
+        "\n"
+        "        # n / 10\n"
+        "        movq $10, %%rcx \n"
+        "        xorq %%rdx, %%rdx\n"
+        "        idiv %%rcx\n"
+        "    \n"
+        "        # *end = rem + '0'\n"
+        "        add $48, %%rdx # Convert integer to character by adding '0'\n"
+        "        movb %%dl, (%%rsi)\n"
+        "\n"
+        "        incq %%r8 # len++\n"
+        "        jmp int_to_string_loop\n"
+        "\n"
+        "    int_to_string_end:\n"
+        "      movq $0x2000004, %%rax\n"
+        "      movq $1, %%rdi\n"
+        "      movq %%r8, %%rdx\n"
+        "      movq %%rsp, %%rsi\n"
+        "      subq %%r8, %%rsi\n"
+        "\n"
+        "      syscall\n"
+        "      xorq %%rax, %%rax\n"
+        "\n"
+        "      # Epilog\n"
+        "      addq $32, %%rsp\n"
+        "      popq %%rbp\n"
+        "      ret\n");
+}
+
 static void emit(const parser_t* parser, FILE* asm_file) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_nodes, !=, NULL, "%p");
@@ -51,9 +96,10 @@ static void emit(const parser_t* parser, FILE* asm_file) {
     }
 
     println("\n.text");
+    emit_print_i64();
     println(".global _main");
     println("_main:");
-    fn_epilog();
+    fn_prolog();
 
     for (int i = 0; i < (int)buf_size(parser->par_stmt_nodes); i++) {
         const int stmt_i = parser->par_stmt_nodes[i];
@@ -65,13 +111,12 @@ static void emit(const parser_t* parser, FILE* asm_file) {
                 const ast_node_t arg =
                     parser->par_nodes[builtin_print.bp_arg_i];
 
-                println("movq $%lld, %%rax", syscall_write);
-                println("movq $1, %%rdi");
-
                 if (arg.node_kind == NODE_KEYWORD_BOOL) {
                     const token_index_t index = arg.node_n.node_boolean;
                     const token_id_t tok = parser->par_token_ids[index];
 
+                    println("movq $%lld, %%rax", syscall_write);
+                    println("movq $1, %%rdi");
                     if (tok == LEX_TOKEN_ID_TRUE) {
                         println("leaq .Ltrue(%%rip), %%rsi");
                         println("movq $4, %%rdx");
@@ -79,26 +124,28 @@ static void emit(const parser_t* parser, FILE* asm_file) {
                         println("leaq .Lfalse(%%rip), %%rsi");
                         println("movq $5, %%rdx");
                     }
+                    println("syscall\n");
                 } else if (arg.node_kind == NODE_STRING) {
                     const int obj_i = arg.node_n.node_string;
                     const obj_t obj = parser->par_objects[obj_i];
                     PG_ASSERT_COND(obj.obj_kind, ==, OBJ_GLOBAL_VAR, "%d");
 
+                    println("movq $%lld, %%rax", syscall_write);
+                    println("movq $1, %%rdi");
                     println("leaq .L%d(%%rip), %%rsi", obj.obj_tok_i);
                     println("movq $%d, %%rdx",
                             obj.obj.obj_global_var.gl_source_len);
+                    println("syscall\n");
                 } else if (arg.node_kind == NODE_I64) {
-                    println("pushq %%rax");
-                    println("movl $53, 4(%%rsp)");  // FIXME: hardcoded
-                    println("leaq 4(%%rsp), %%rsi");
-                    println("mov $4, %%rdx");
-                } else
-                    UNIMPLEMENTED();
+                    println("movq $%lld, %%rax",
+                            parse_node_to_i64(parser, &arg));
+                    println("call __print_int");
+                } else {
+                    // UNIMPLEMENTED
+                }
 
-                println("syscall\n");
                 println("xorq %%rax, %%rax\n");
 
-                if (arg.node_kind == NODE_I64) println("popq %%rcx");  // FIXME
                 break;
             }
             case NODE_I64:
@@ -108,5 +155,5 @@ static void emit(const parser_t* parser, FILE* asm_file) {
                 UNREACHABLE();
         }
     }
-    fn_prolog();
+    fn_epilog();
 }
