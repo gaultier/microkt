@@ -150,7 +150,8 @@ static void emit(const parser_t* parser, FILE* asm_file) {
                     println("leaq -4(%%rsp), %%rsi");
                     println("movq $1, %%rdx");
                     println("syscall");
-                }
+                } else
+                    UNREACHABLE();
 
                 println("xorq %%rax, %%rax\n");
 
