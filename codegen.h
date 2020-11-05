@@ -21,6 +21,16 @@ __attribute__((format(printf, 1, 2))) static void println(char* fmt, ...) {
     fprintf(output_file, "\n");
 }
 
+static void fn_prolog() {
+    println("pushq %%rbp");
+    println("movq %%rsp, %%rbp");
+}
+
+static void fn_epilog() {
+    println("popq %%rbp");
+    println("ret");
+}
+
 static void emit(const parser_t* parser, FILE* asm_file) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_nodes, !=, NULL, "%p");
@@ -43,6 +53,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
     println("\n.text");
     println(".global _main");
     println("_main:");
+    fn_epilog();
 
     for (int i = 0; i < (int)buf_size(parser->par_stmt_nodes); i++) {
         const int stmt_i = parser->par_stmt_nodes[i];
@@ -55,12 +66,12 @@ static void emit(const parser_t* parser, FILE* asm_file) {
                     parser->par_nodes[builtin_print.bp_arg_i];
 
                 println("movq $%lld, %%rax", syscall_write);
+                println("movq $1, %%rdi");
 
                 if (arg.node_kind == NODE_KEYWORD_BOOL) {
                     const token_index_t index = arg.node_n.node_boolean;
                     const token_id_t tok = parser->par_token_ids[index];
 
-                    println("movq $1, %%rdi");
                     if (tok == LEX_TOKEN_ID_TRUE) {
                         println("leaq .Ltrue(%%rip), %%rsi");
                         println("movq $4, %%rdx");
@@ -97,5 +108,5 @@ static void emit(const parser_t* parser, FILE* asm_file) {
                 UNREACHABLE();
         }
     }
-    println("ret");
+    fn_prolog();
 }
