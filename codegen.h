@@ -28,13 +28,17 @@ __attribute__((format(printf, 1, 2))) static void println(char* fmt, ...) {
 static void fn_prolog() {
     println("pushq %%rbp");
     println("movq %%rsp, %%rbp");
-    println("subq $64, %%rsp\n");  // Hardcoded stack size
+
+    // Hardcoded stack size
+    stack_depth = 64;
+    println("subq $%d, %%rsp\n", stack_depth);
 }
 
 static void fn_epilog() {
-    println("addq $64, %%rsp");  // Hardcoded stack size
+    println("addq $%d, %%rsp", stack_depth);  // Hardcoded stack size
     println("popq %%rbp");
     println("ret\n");
+    stack_depth = 0;
 }
 
 static void emit_print_i64() {
@@ -115,21 +119,18 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             return;
         }
         case NODE_I64: {
-            stack_depth += 8;
-            println("movq $%lld, -%d(%%rsp)", parse_node_to_i64(parser, expr),
-                    stack_depth);
-
-            println("movq -%d(%%rsp) , %%rax", stack_depth);
+            println("pushq $%lld", parse_node_to_i64(parser, expr));
+            println("popq %%rax");
             println("call __print_int");
             return;
         }
         case NODE_CHAR: {
-            stack_depth += 1;
-            println("movq $%d, -%d(%%rsp)", parse_node_to_char(parser, expr),
+            // FIXME: we assume there is enough space on the stack
+            println("movb $%d, -%d(%%rbp)", parse_node_to_char(parser, expr),
                     stack_depth);
             println("movq $%lld, %%rax", syscall_write);
             println("movq $1, %%rdi");
-            println("leaq -%d(%%rsp), %%rsi", stack_depth);
+            println("leaq -%d(%%rbp), %%rsi", stack_depth);
             println("movq $1, %%rdx");
             println("syscall");
             return;
