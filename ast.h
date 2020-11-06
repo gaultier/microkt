@@ -54,13 +54,13 @@ typedef enum {
     NODE_STRING,
     NODE_I64,
     NODE_CHAR,
-    NODE_PLUS,
+    NODE_ADD,
 } ast_node_kind_t;
 
 const char ast_node_kind_t_to_str[][30] = {
     [NODE_BUILTIN_PRINT] = "print", [NODE_KEYWORD_BOOL] = "bool",
     [NODE_STRING] = "String",       [NODE_I64] = "I64",
-    [NODE_CHAR] = "Char",           [NODE_PLUS] = "Plus",
+    [NODE_CHAR] = "Char",           [NODE_ADD] = "Plus",
 };
 
 typedef struct {
@@ -76,7 +76,7 @@ struct ast_node_t {
         int node_boolean;                        // NODE_KEYWORD_BOOL
         int node_string;                         // NODE_STRING, int = obj_i
         node_number_t node_num;                  // NODE_I64, NODE_CHAR
-        binary_t node_binary;                    // NODE_PLUS
+        binary_t node_binary;                    // NODE_ADD
     } node_n;
 };
 
@@ -109,8 +109,8 @@ struct ast_node_t {
                   .node_type_i = type_i,    \
                   .node_n = {.node_string = n}})
 
-#define NODE_PLUS(lhs_i, rhs_i, type_i)                                      \
-    ((ast_node_t){.node_kind = NODE_PLUS,                                    \
+#define NODE_ADD(lhs_i, rhs_i, type_i)                                       \
+    ((ast_node_t){.node_kind = NODE_ADD,                                     \
                   .node_type_i = type_i,                                     \
                   .node_n = {.node_binary = ((binary_t){.bi_type_i = type_i, \
                                                         .bi_lhs_i = lhs_i,   \

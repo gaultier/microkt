@@ -101,7 +101,7 @@ static void ast_node_dump(const ast_node_t* nodes, int node_i, int indent) {
             ast_node_dump(nodes, node->node_n.node_builtin_print.bp_arg_i, 2);
             break;
         }
-        case NODE_PLUS: {
+        case NODE_ADD: {
             log_debug_with_indent(indent, "ast_node #%d %s", node_i,
                                   ast_node_kind_t_to_str[node->node_kind]);
             ast_node_dump(nodes, node->node_n.node_binary.bi_lhs_i, 2);
@@ -132,7 +132,7 @@ static int ast_node_first_token(const parser_t* parser,
         case NODE_CHAR:
         case NODE_I64:
             return node->node_n.node_num.nu_tok_i;
-        case NODE_PLUS:
+        case NODE_ADD:
             return node->node_n.node_binary.bi_lhs_i;
     }
 }
@@ -148,7 +148,7 @@ static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
         case NODE_I64:
         case NODE_CHAR:
             return node->node_n.node_num.nu_tok_i;
-        case NODE_PLUS:
+        case NODE_ADD:
             return node->node_n.node_binary.bi_rhs_i;
     }
 }
@@ -375,7 +375,7 @@ static res_t parser_parse_addition(parser_t* parser, int* new_node_i) {
         }
 
         buf_push(parser->par_types, lhs_type);
-        const ast_node_t new_node = NODE_PLUS(lhs_i, rhs_i, lhs_type_i);
+        const ast_node_t new_node = NODE_ADD(lhs_i, rhs_i, lhs_type_i);
         buf_push(parser->par_nodes, new_node);
         *new_node_i = (int)buf_size(parser->par_nodes) - 1;
         log_debug("new_node_i=%d", *new_node_i);
