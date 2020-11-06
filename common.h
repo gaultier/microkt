@@ -28,7 +28,7 @@ static const char res_to_str[][100] = {
     [RES_ASM_FILE_READ_FAILED] = "Failed to read asm file %s: %s\n",
     [RES_FAILED_AS] = "Failed to run `%s`: %s\n",
     [RES_FAILED_LD] = "Failed to run `%s`: %s\n",
-    [RES_NON_MATCHING_TYPES] = "Types %s and %s do not match\n",
+    [RES_NON_MATCHING_TYPES] = "%s%s:%d:%d:%sTypes %s and %s do not match\n",
 };
 
 // On macos this macro is defined in some system headers
