@@ -12,6 +12,14 @@ typedef enum {
     TYPE_BUILTIN_PRINT,
 } type_kind_t;
 
+static const char type_to_str[][20] = {
+    [TYPE_BOOL] = "Bool",
+    [TYPE_CHAR] = "Char",
+    [TYPE_I64] = "Int64",
+    [TYPE_STRING] = "String",
+    [TYPE_BUILTIN_PRINT] = "BuiltinPrint",
+};
+
 typedef struct {
     int ty_size;
     type_kind_t ty_kind;

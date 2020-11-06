@@ -369,8 +369,10 @@ static res_t parser_parse_addition(parser_t* parser, int* new_node_i) {
         const type_t rhs_type = parser->par_types[rhs_type_i];
 
         if (lhs_type.ty_kind != rhs_type.ty_kind) {
-            log_debug("non matching types %d %d", lhs_type.ty_kind,
-                      rhs_type.ty_kind);
+            fprintf(stderr, res_to_str[RES_NON_MATCHING_TYPES],
+                    type_to_str[lhs_type.ty_kind],
+                    type_to_str[rhs_type.ty_kind]);
+            // TODO: print location & source
             return RES_NON_MATCHING_TYPES;
         }
 
@@ -390,12 +392,7 @@ static res_t parser_parse_expr(parser_t* parser, int* new_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
-    res_t res = RES_NONE;
-    if ((res = parser_parse_addition(parser, new_node_i)) == RES_OK) {
-        return res;
-    }
-
-    return parser_parse_primary(parser, new_node_i);
+    return parser_parse_addition(parser, new_node_i);
 }
 
 static void parser_print_source_on_error(const parser_t* parser,
@@ -549,9 +546,8 @@ static res_t parser_parse(parser_t* parser) {
         ast_node_dump(parser->par_nodes, new_node_i, 0);
         buf_push(parser->par_stmt_nodes, new_node_i);
 
-    } else {
-        return parser_err_unexpected_token(parser, LEX_TOKEN_ID_BUILTIN_PRINT);
-    }
+    } else
+        return res;
 
     while (!parser_is_at_end(parser)) {
         if ((res = parser_parse_stmt(parser, &new_node_i)) == RES_OK) {
