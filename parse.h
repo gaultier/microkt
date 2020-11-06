@@ -470,7 +470,6 @@ static res_t parser_parse_addition(parser_t* parser, int* new_node_i) {
     log_debug("new_node_i=%d", *new_node_i);
 
     const int tok_i = parser->par_tok_i;
-    log_debug("tok_i=%d", tok_i);
     if (parser_match(parser, LEX_TOKEN_ID_PLUS, new_node_i)) {
         int rhs_i = INT32_MAX;
         if ((res = parser_parse_addition(parser, &rhs_i)) != RES_OK) return res;
