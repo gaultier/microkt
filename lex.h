@@ -410,6 +410,7 @@ static token_t lex_next(lexer_t* lexer) {
                 lex_identifier(lexer, &result);
                 goto outer;
             }
+            case '0':
             case '1':
             case '2':
             case '3':
