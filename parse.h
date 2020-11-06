@@ -263,8 +263,6 @@ static void parser_print_source_on_error(const parser_t* parser,
         &parser->par_source[actual_token_loc->loc_start];
     const int actual_source_len =
         actual_token_loc->loc_end - actual_token_loc->loc_start;
-    log_debug("start=%d end=%d", actual_token_loc->loc_start,
-              actual_token_loc->loc_end);
 
     if (parser->par_is_tty) fprintf(stderr, "%s", color_grey);
 
@@ -480,9 +478,8 @@ static res_t parser_parse_addition(parser_t* parser, int* new_node_i) {
         const type_t rhs_type = parser->par_types[rhs_type_i];
 
         if (lhs_type.ty_kind != rhs_type.ty_kind)
-            log_debug("err tok_i=%d", tok_i);
-        return parser_err_non_matching_types(parser, &lhs_type, &rhs_type,
-                                             tok_i);
+            return parser_err_non_matching_types(parser, &lhs_type, &rhs_type,
+                                                 tok_i);
 
         buf_push(parser->par_types, lhs_type);
         const ast_node_t new_node = NODE_ADD(lhs_i, rhs_i, lhs_type_i);
