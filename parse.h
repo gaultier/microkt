@@ -404,6 +404,8 @@ static res_t parser_parse_addition(parser_t* parser, int* new_node_i) {
     if ((res = parser_parse_primary(parser, &lhs_i)) != RES_OK) return res;
     const int lhs_type_i = parser->par_nodes[lhs_i].node_type_idx;
     const type_t lhs_type = parser->par_types[lhs_type_i];
+    *new_node_i = lhs_i;
+    log_debug("new_node_i=%d", *new_node_i);
 
     if (parser_match(parser, LEX_TOKEN_ID_PLUS, new_node_i)) {
         int rhs_i = INT32_MAX;
@@ -418,14 +420,15 @@ static res_t parser_parse_addition(parser_t* parser, int* new_node_i) {
         }
 
         buf_push(parser->par_types, lhs_type);
-        const ast_node_t new_node = NODE_PLUS(lhs_type_i, lhs_i, rhs_i);
+        const ast_node_t new_node = NODE_PLUS(lhs_i, rhs_i, lhs_type_i);
         buf_push(parser->par_nodes, new_node);
         *new_node_i = (int)buf_size(parser->par_nodes) - 1;
+        log_debug("new_node_i=%d", *new_node_i);
 
         return RES_OK;
     }
 
-    return RES_OK;
+    return res;
 }
 
 static res_t parser_parse_expr(parser_t* parser, int* new_node_i) {
