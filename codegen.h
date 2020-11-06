@@ -90,49 +90,12 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
     PG_ASSERT_COND((void*)expr, !=, NULL, "%p");
 
     switch (expr->node_kind) {
-        case NODE_KEYWORD_BOOL: {
-            const token_index_t index = expr->node_n.node_boolean;
-            const token_id_t tok = parser->par_token_ids[index];
-
-            println("movq $%lld, %%rax", syscall_write);
-            println("movq $1, %%rdi");
-            if (tok == LEX_TOKEN_ID_TRUE) {
-                println("leaq .Ltrue(%%rip), %%rsi");
-                println("movq $4, %%rdx");
-            } else {
-                println("leaq .Lfalse(%%rip), %%rsi");
-                println("movq $5, %%rdx");
-            }
-            println("syscall\n");
-            return;
-        }
-        case NODE_STRING: {
-            const int obj_i = expr->node_n.node_string;
-            const obj_t obj = parser->par_objects[obj_i];
-            PG_ASSERT_COND(obj.obj_kind, ==, OBJ_GLOBAL_VAR, "%d");
-
-            println("movq $%lld, %%rax", syscall_write);
-            println("movq $1, %%rdi");
-            println("leaq .L%d(%%rip), %%rsi", obj.obj_tok_i);
-            println("movq $%d, %%rdx", obj.obj.obj_global_var.gl_source_len);
-            println("syscall\n");
-            return;
-        }
+        case NODE_KEYWORD_BOOL:
+        case NODE_STRING:
+        case NODE_CHAR:
+            UNIMPLEMENTED();
         case NODE_I64: {
-            println("pushq $%lld", expr->node_n.node_num.nu_val);
-            println("popq %%rax");
-            println("call __print_int");
-            return;
-        }
-        case NODE_CHAR: {
-            // FIXME: we assume there is enough space on the stack
-            println("movb $%d, -%d(%%rbp)", (char)expr->node_n.node_num.nu_val,
-                    stack_depth);
-            println("movq $%lld, %%rax", syscall_write);
-            println("movq $1, %%rdi");
-            println("leaq -%d(%%rbp), %%rsi", stack_depth);
-            println("movq $1, %%rdx");
-            println("syscall");
+            println("movq $%lld, %%rax", expr->node_n.node_num.nu_val);
             return;
         }
         default:
@@ -149,7 +112,8 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
             const ast_builtin_print_t builtin_print = AS_PRINT(*stmt);
             const ast_node_t* arg = &parser->par_nodes[builtin_print.bp_arg_i];
             emit_expr(parser, arg);
-            println("xorq %%rax, %%rax\n");
+
+            println("call __print_int");
 
             break;
         }

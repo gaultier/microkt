@@ -1,20 +1,20 @@
 #!/usr/bin/awk -f 
 
 BEGIN {
-    tests[0] = "e2e/print_bool"
-    expected_outputs[0] = "truefalsefalse"
+    tests[0] = "e2e/print_integers"
+    expected_outputs[0] = "19990"
 
-    tests[1] = "e2e/print_string"
-    expected_outputs[1] = "hello world"
-
-    tests[2] = "e2e/print_integers"
-    expected_outputs[2] = "19990"
-
-    tests[3] = "e2e/hello_world"
-    expected_outputs[3] = "hello, world!"
-
-    tests[4] = "e2e/print_char"
-    expected_outputs[4] = "A$"
+#    tests[1] = "e2e/print_bool"
+#    expected_outputs[1] = "truefalsefalse"
+#
+#    tests[2] = "e2e/print_string"
+#    expected_outputs[2] = "hello world"
+#
+#    tests[3] = "e2e/hello_world"
+#    expected_outputs[3] = "hello, world!"
+#
+#    tests[4] = "e2e/print_char"
+#    expected_outputs[4] = "A$"
 
     is_tty = system("test -t 1") == 0
 
