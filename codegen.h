@@ -119,14 +119,14 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             return;
         }
         case NODE_I64: {
-            println("pushq $%lld", parse_node_to_i64(parser, expr));
+            println("pushq $%lld", expr->node_n.node_num.nu_val);
             println("popq %%rax");
             println("call __print_int");
             return;
         }
         case NODE_CHAR: {
             // FIXME: we assume there is enough space on the stack
-            println("movb $%d, -%d(%%rbp)", parse_node_to_char(parser, expr),
+            println("movb $%d, -%d(%%rbp)", (char)expr->node_n.node_num.nu_val,
                     stack_depth);
             println("movq $%lld, %%rax", syscall_write);
             println("movq $1, %%rdi");

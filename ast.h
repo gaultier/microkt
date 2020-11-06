@@ -57,6 +57,11 @@ const char ast_node_kind_t_to_str[][30] = {
     [NODE_CHAR] = "Char",
 };
 
+typedef struct {
+    int64_t nu_val;
+    int nu_tok_i;
+} node_number_t;
+
 struct ast_node_t {
     ast_node_kind_t node_kind;
     int node_type_idx;
@@ -64,7 +69,7 @@ struct ast_node_t {
         ast_builtin_print_t node_builtin_print;  // NODE_BUILTIN_PRINT
         token_index_t node_boolean;              // NODE_KEYWORD_BOOL
         int node_string;                         // NODE_STRING, int = obj_i
-        token_index_t node_i64;                  // NODE_I64, NODE_CHAR
+        node_number_t node_num;                  // NODE_I64, NODE_CHAR
     } node_n;
 };
 

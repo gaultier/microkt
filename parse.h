@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdint.h>
 #include <unistd.h>
 
 #include "ast.h"
@@ -59,6 +60,37 @@ static parser_t parser_init(const char* file_name0, const char* source,
                       .par_is_tty = isatty(2)};
 }
 
+static int64_t parse_tok_to_i64(const parser_t* parser, int tok_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+
+    const loc_t loc = parser->par_token_locs[tok_i];
+    const char* const string = &parser->par_source[loc.loc_start];
+    int string_len = loc.loc_end - loc.loc_start;
+
+    PG_ASSERT_COND(string_len, >, (int)0, "%d");
+    PG_ASSERT_COND(string_len, <, (int)25, "%d");
+
+    // TOOD: limit in the lexer the length of a number literal
+    static char string0[25] = "\0";
+    memcpy(string0, string, (size_t)string_len);
+    return strtoll(string0, NULL, 10);
+}
+
+static int64_t parse_tok_to_char(const parser_t* parser, int tok_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+
+    const loc_t loc = parser->par_token_locs[tok_i];
+    const char* const string = &parser->par_source[loc.loc_start + 1];
+    int string_len = loc.loc_end - loc.loc_start - 2;
+
+    PG_ASSERT_COND(string_len, >, (int)0, "%d");
+    PG_ASSERT_COND(string_len, <, (int)2, "%d");  // TODO: expand
+
+    static char string0[25] = "\0";
+    memcpy(string0, string, (size_t)string_len);
+    return strtoll(string0, NULL, 10);
+}
+
 static void ast_node_dump(const ast_node_t* nodes, token_index_t node_i,
                           int indent) {
     PG_ASSERT_COND((void*)nodes, !=, NULL, "%p");
@@ -93,7 +125,7 @@ static token_index_t ast_node_first_token(const parser_t* parser,
             return parser->par_objects[node->node_n.node_string].obj_tok_i;
         case NODE_CHAR:
         case NODE_I64:
-            return node->node_n.node_i64;
+            return node->node_n.node_num.nu_tok_i;
     }
 }
 
@@ -108,7 +140,7 @@ static token_index_t ast_node_last_token(const parser_t* parser,
             return parser->par_objects[node->node_n.node_string].obj_tok_i;
         case NODE_I64:
         case NODE_CHAR:
-            return node->node_n.node_i64;
+            return node->node_n.node_num.nu_tok_i;
     }
 }
 
@@ -119,15 +151,17 @@ static token_index_t ast_node_last_token(const parser_t* parser,
         .node_n = {.node_builtin_print = {.bp_arg_i = arg,               \
                                           .bp_keyword_print_i = keyword, \
                                           .bp_rparen_i = rparen}}})
-#define NODE_I64(n, type_idx)                \
-    ((ast_node_t){.node_kind = NODE_I64,     \
-                  .node_type_idx = type_idx, \
-                  .node_n = {.node_i64 = n}})
+#define NODE_I64(tok_i, type_idx, val)                                      \
+    ((ast_node_t){.node_kind = NODE_I64,                                    \
+                  .node_type_idx = type_idx,                                \
+                  .node_n = {.node_num = (node_number_t){.nu_tok_i = tok_i, \
+                                                         .nu_val = val}}})
 
-#define NODE_CHAR(n, type_idx)               \
-    ((ast_node_t){.node_kind = NODE_CHAR,    \
-                  .node_type_idx = type_idx, \
-                  .node_n = {.node_i64 = n}})
+#define NODE_CHAR(tok_i, type_idx, val)                                     \
+    ((ast_node_t){.node_kind = NODE_CHAR,                                   \
+                  .node_type_idx = type_idx,                                \
+                  .node_n = {.node_num = (node_number_t){.nu_tok_i = tok_i, \
+                                                         .nu_val = val}}})
 
 #define NODE_BOOL(n, type_idx)                    \
     ((ast_node_t){.node_kind = NODE_KEYWORD_BOOL, \
@@ -283,29 +317,29 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_primary_node_i, !=, NULL, "%p");
 
-    token_index_t token = 0;
+    token_index_t tok_i = 0;
 
-    if (parser_match(parser, LEX_TOKEN_ID_TRUE, &token) ||
-        parser_match(parser, LEX_TOKEN_ID_FALSE, &token)) {
+    if (parser_match(parser, LEX_TOKEN_ID_TRUE, &tok_i) ||
+        parser_match(parser, LEX_TOKEN_ID_FALSE, &tok_i)) {
         buf_push(parser->par_types,
                  ((type_t){.ty_size = 1, .ty_kind = TYPE_BOOL}));
         const int type_idx = buf_size(parser->par_types) - 1;
 
-        const ast_node_t new_node = NODE_BOOL(token, type_idx);
+        const ast_node_t new_node = NODE_BOOL(tok_i, type_idx);
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = (int)buf_size(parser->par_nodes) - 1;
 
         return RES_OK;
     }
-    if (parser_match(parser, LEX_TOKEN_ID_STRING, &token)) {
+    if (parser_match(parser, LEX_TOKEN_ID_STRING, &tok_i)) {
         buf_push(parser->par_types,
                  ((type_t){.ty_size = 1, .ty_kind = TYPE_STRING}));
         const int type_i = buf_size(parser->par_types) - 1;
 
         const char* source = NULL;
         int source_len = 0;
-        parser_tok_source(parser, token, &source, &source_len);
-        const obj_t obj = OBJ_GLOBAL_VAR(type_i, token, source, source_len);
+        parser_tok_source(parser, tok_i, &source, &source_len);
+        const obj_t obj = OBJ_GLOBAL_VAR(type_i, tok_i, source, source_len);
         buf_push(parser->par_objects, obj);
         const int obj_i = buf_size(parser->par_objects) - 1;
 
@@ -318,23 +352,25 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
 
         return RES_OK;
     }
-    if (parser_match(parser, LEX_TOKEN_ID_I64, &token)) {
+    if (parser_match(parser, LEX_TOKEN_ID_I64, &tok_i)) {
         buf_push(parser->par_types,
                  ((type_t){.ty_size = 1, .ty_kind = TYPE_I64}));
         const int type_idx = buf_size(parser->par_types) - 1;
 
-        const ast_node_t new_node = NODE_I64(token, type_idx);
+        const int64_t val = parse_tok_to_i64(parser, tok_i);
+        const ast_node_t new_node = NODE_I64(tok_i, type_idx, val);
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = (int)buf_size(parser->par_nodes) - 1;
 
         return RES_OK;
     }
-    if (parser_match(parser, LEX_TOKEN_ID_CHAR, &token)) {
+    if (parser_match(parser, LEX_TOKEN_ID_CHAR, &tok_i)) {
         buf_push(parser->par_types,
                  ((type_t){.ty_size = 1, .ty_kind = TYPE_CHAR}));
         const int type_idx = buf_size(parser->par_types) - 1;
 
-        const ast_node_t new_node = NODE_CHAR(token, type_idx);
+        const int64_t val = parse_tok_to_char(parser, tok_i);
+        const ast_node_t new_node = NODE_CHAR(tok_i, type_idx, val);
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = (int)buf_size(parser->par_nodes) - 1;
 
@@ -518,38 +554,20 @@ static res_t parser_parse(parser_t* parser) {
     UNREACHABLE();
 }
 
-static int64_t parse_node_to_i64(const parser_t* parser,
-                                 const ast_node_t* node) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)node, !=, NULL, "%p");
-    PG_ASSERT_COND(node->node_kind, ==, NODE_I64, "%d");
+/* static char parse_tok_to_char(const parser_t* parser, const token_t* tok) {
+ */
+/*     PG_ASSERT_COND((void*)parser, !=, NULL, "%p"); */
+/*     PG_ASSERT_COND((void*)tok, !=, NULL, "%p"); */
 
-    const char* string = NULL;
-    int string_len = 0;
-    parser_ast_node_source(parser, node, &string, &string_len);
-    log_debug("`%.*s`", (int)string_len, string);
-    PG_ASSERT_COND(string_len, >, (int)0, "%d");
-    PG_ASSERT_COND(string_len, <, (int)25, "%d");
+/*     const char* string = NULL; */
+/*     int string_len = 0; */
+/*     parser_ast_node_source(parser, node, &string, &string_len); */
+/*     log_debug("`%.*s`", (int)string_len, string); */
+/*     PG_ASSERT_COND(string_len, >, (int)0, "%d"); */
+/*     PG_ASSERT_COND(string_len, <, (int)25, "%d"); */
 
-    // TOOD: limit in the lexer the length of a number literal
-    static char string0[25] = "\0";
-    memcpy(string0, string, (size_t)string_len);
-    return strtoll(string0, NULL, 10);
-}
-static char parse_node_to_char(const parser_t* parser, const ast_node_t* node) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)node, !=, NULL, "%p");
-    PG_ASSERT_COND(node->node_kind, ==, NODE_CHAR, "%d");
+/*     if (string_len > 1) UNIMPLEMENTED(); */
 
-    const char* string = NULL;
-    int string_len = 0;
-    parser_ast_node_source(parser, node, &string, &string_len);
-    log_debug("`%.*s`", (int)string_len, string);
-    PG_ASSERT_COND(string_len, >, (int)0, "%d");
-    PG_ASSERT_COND(string_len, <, (int)25, "%d");
-
-    if (string_len > 1) UNIMPLEMENTED();
-
-    return string[0];
-}
+/*     return string[0]; */
+/* } */
 
