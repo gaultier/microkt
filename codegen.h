@@ -30,7 +30,7 @@ static void fn_prolog() {
     println("movq %%rsp, %%rbp");
 
     // Hardcoded stack size
-    stack_depth = 64;
+    stack_depth = 16;
     println("subq $%d, %%rsp\n", stack_depth);
 }
 
