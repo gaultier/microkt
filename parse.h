@@ -153,50 +153,6 @@ static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
     }
 }
 
-#define NODE_PRINT(arg, keyword, rparen, type_i)                         \
-    ((ast_node_t){                                                       \
-        .node_kind = NODE_BUILTIN_PRINT,                                 \
-        .node_type_i = type_i,                                           \
-        .node_n = {.node_builtin_print = {.bp_arg_i = arg,               \
-                                          .bp_keyword_print_i = keyword, \
-                                          .bp_rparen_i = rparen}}})
-#define NODE_I64(tok_i, type_i, val)                                        \
-    ((ast_node_t){.node_kind = NODE_I64,                                    \
-                  .node_type_i = type_i,                                    \
-                  .node_n = {.node_num = (node_number_t){.nu_tok_i = tok_i, \
-                                                         .nu_val = val}}})
-
-#define NODE_CHAR(tok_i, type_i, val)                                       \
-    ((ast_node_t){.node_kind = NODE_CHAR,                                   \
-                  .node_type_i = type_i,                                    \
-                  .node_n = {.node_num = (node_number_t){.nu_tok_i = tok_i, \
-                                                         .nu_val = val}}})
-
-#define NODE_BOOL(n, type_i)                      \
-    ((ast_node_t){.node_kind = NODE_KEYWORD_BOOL, \
-                  .node_type_i = type_i,          \
-                  .node_n = {.node_boolean = n}})
-
-#define NODE_STRING(n, type_i)              \
-    ((ast_node_t){.node_kind = NODE_STRING, \
-                  .node_type_i = type_i,    \
-                  .node_n = {.node_string = n}})
-
-#define NODE_PLUS(lhs_i, rhs_i, type_i)                                      \
-    ((ast_node_t){.node_kind = NODE_PLUS,                                    \
-                  .node_type_i = type_i,                                     \
-                  .node_n = {.node_binary = ((binary_t){.bi_type_i = type_i, \
-                                                        .bi_lhs_i = lhs_i,   \
-                                                        .bi_rhs_i = rhs_i})}})
-
-#define AS_PRINT(node) ((node).node_n.node_builtin_print)
-
-#define OBJ_GLOBAL_VAR(type_i, tok_i, source, source_len) \
-    ((obj_t){.obj_kind = OBJ_GLOBAL_VAR,                  \
-             .obj_type_i = type_i,                        \
-             .obj_tok_i = tok_i,                          \
-             .obj = {.obj_global_var = (global_var_t){    \
-                         .gl_source = source, .gl_source_len = source_len}}})
 static void parser_tok_source(const parser_t* parser, int tok_i,
                               const char** source, int* source_len) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
