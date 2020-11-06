@@ -1,6 +1,5 @@
 #pragma once
 
-#include <stdint.h>
 #include <unistd.h>
 
 #include "ast.h"
@@ -86,9 +85,7 @@ static int64_t parse_tok_to_char(const parser_t* parser, int tok_i) {
     PG_ASSERT_COND(string_len, >, (int)0, "%d");
     PG_ASSERT_COND(string_len, <, (int)2, "%d");  // TODO: expand
 
-    static char string0[25] = "\0";
-    memcpy(string0, string, (size_t)string_len);
-    return strtoll(string0, NULL, 10);
+    return string[0];
 }
 
 static void ast_node_dump(const ast_node_t* nodes, token_index_t node_i,
