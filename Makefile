@@ -32,7 +32,10 @@ e2e/print_char: e2e/print_char.kts $(BIN_TEST)
 e2e/hello_world: e2e/hello_world.kts $(BIN_TEST)
 	$(BIN_TEST) $<
 
-e2e: e2e/print_integers #e2e/hello_world e2e/print_char e2e/print_bool e2e/print_string 
+e2e/math_integers: e2e/math_integers.kts $(BIN_TEST)
+	$(BIN_TEST) $<
+
+e2e: e2e/print_integers e2e/math_integers #e2e/hello_world e2e/print_char e2e/print_bool e2e/print_string 
 
 test: e2e tests.awk
 	@./tests.awk

@@ -4,6 +4,9 @@ BEGIN {
     tests[0] = "e2e/print_integers"
     expected_outputs[0] = "19990"
 
+    tests[1] = "e2e/math_integers"
+    expected_outputs[1] = "7"
+
 #    tests[1] = "e2e/print_bool"
 #    expected_outputs[1] = "truefalsefalse"
 #
