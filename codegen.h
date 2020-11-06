@@ -13,6 +13,7 @@ static const int64_t syscall_write = 0;  // FIXME
 #endif
 
 static FILE* output_file = NULL;
+static int stack_depth = 0;  // FIXME
 
 __attribute__((format(printf, 1, 2))) static void println(char* fmt, ...) {
     va_list ap;
@@ -78,6 +79,71 @@ static void emit_print_i64() {
         "      ret\n");
 }
 
+static void emit_stmt(const parser_t* parser, int i) {
+    const int stmt_i = parser->par_stmt_nodes[i];
+    const ast_node_t* stmt = &parser->par_nodes[stmt_i];
+
+    switch (stmt->node_kind) {
+        case NODE_BUILTIN_PRINT: {
+            const ast_builtin_print_t builtin_print = AS_PRINT(*stmt);
+            const ast_node_t arg = parser->par_nodes[builtin_print.bp_arg_i];
+
+            if (arg.node_kind == NODE_KEYWORD_BOOL) {
+                const token_index_t index = arg.node_n.node_boolean;
+                const token_id_t tok = parser->par_token_ids[index];
+
+                println("movq $%lld, %%rax", syscall_write);
+                println("movq $1, %%rdi");
+                if (tok == LEX_TOKEN_ID_TRUE) {
+                    println("leaq .Ltrue(%%rip), %%rsi");
+                    println("movq $4, %%rdx");
+                } else {
+                    println("leaq .Lfalse(%%rip), %%rsi");
+                    println("movq $5, %%rdx");
+                }
+                println("syscall\n");
+            } else if (arg.node_kind == NODE_STRING) {
+                const int obj_i = arg.node_n.node_string;
+                const obj_t obj = parser->par_objects[obj_i];
+                PG_ASSERT_COND(obj.obj_kind, ==, OBJ_GLOBAL_VAR, "%d");
+
+                println("movq $%lld, %%rax", syscall_write);
+                println("movq $1, %%rdi");
+                println("leaq .L%d(%%rip), %%rsi", obj.obj_tok_i);
+                println("movq $%d, %%rdx",
+                        obj.obj.obj_global_var.gl_source_len);
+                println("syscall\n");
+            } else if (arg.node_kind == NODE_I64) {
+                stack_depth += 8;
+                println("movq $%lld, -%d(%%rsp)",
+                        parse_node_to_i64(parser, &arg), stack_depth);
+
+                println("movq -%d(%%rsp) , %%rax", stack_depth);
+                println("call __print_int");
+            } else if (arg.node_kind == NODE_CHAR) {
+                stack_depth += 1;
+                println("movq $%d, -%d(%%rsp)",
+                        parse_node_to_char(parser, &arg), stack_depth);
+                println("movq $%lld, %%rax", syscall_write);
+                println("movq $1, %%rdi");
+                println("leaq -%d(%%rsp), %%rsi", stack_depth);
+                println("movq $1, %%rdx");
+                println("syscall");
+            } else
+                UNREACHABLE();
+
+            println("xorq %%rax, %%rax\n");
+
+            break;
+        }
+        case NODE_I64:
+        case NODE_CHAR:
+        case NODE_STRING:
+        case NODE_KEYWORD_BOOL:
+            UNREACHABLE();
+    }
+}
+
 static void emit(const parser_t* parser, FILE* asm_file) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_nodes, !=, NULL, "%p");
@@ -103,72 +169,8 @@ static void emit(const parser_t* parser, FILE* asm_file) {
     println("_main:");
     fn_prolog();
 
-    int stack_depth = 0;
-
     for (int i = 0; i < (int)buf_size(parser->par_stmt_nodes); i++) {
-        const int stmt_i = parser->par_stmt_nodes[i];
-        const ast_node_t* stmt = &parser->par_nodes[stmt_i];
-
-        switch (stmt->node_kind) {
-            case NODE_BUILTIN_PRINT: {
-                const ast_builtin_print_t builtin_print = AS_PRINT(*stmt);
-                const ast_node_t arg =
-                    parser->par_nodes[builtin_print.bp_arg_i];
-
-                if (arg.node_kind == NODE_KEYWORD_BOOL) {
-                    const token_index_t index = arg.node_n.node_boolean;
-                    const token_id_t tok = parser->par_token_ids[index];
-
-                    println("movq $%lld, %%rax", syscall_write);
-                    println("movq $1, %%rdi");
-                    if (tok == LEX_TOKEN_ID_TRUE) {
-                        println("leaq .Ltrue(%%rip), %%rsi");
-                        println("movq $4, %%rdx");
-                    } else {
-                        println("leaq .Lfalse(%%rip), %%rsi");
-                        println("movq $5, %%rdx");
-                    }
-                    println("syscall\n");
-                } else if (arg.node_kind == NODE_STRING) {
-                    const int obj_i = arg.node_n.node_string;
-                    const obj_t obj = parser->par_objects[obj_i];
-                    PG_ASSERT_COND(obj.obj_kind, ==, OBJ_GLOBAL_VAR, "%d");
-
-                    println("movq $%lld, %%rax", syscall_write);
-                    println("movq $1, %%rdi");
-                    println("leaq .L%d(%%rip), %%rsi", obj.obj_tok_i);
-                    println("movq $%d, %%rdx",
-                            obj.obj.obj_global_var.gl_source_len);
-                    println("syscall\n");
-                } else if (arg.node_kind == NODE_I64) {
-                    stack_depth += 8;
-                    println("movq $%lld, -%d(%%rsp)",
-                            parse_node_to_i64(parser, &arg), stack_depth);
-
-                    println("movq -%d(%%rsp) , %%rax", stack_depth);
-                    println("call __print_int");
-                } else if (arg.node_kind == NODE_CHAR) {
-                    stack_depth += 1;
-                    println("movq $%d, -%d(%%rsp)",
-                            parse_node_to_char(parser, &arg), stack_depth);
-                    println("movq $%lld, %%rax", syscall_write);
-                    println("movq $1, %%rdi");
-                    println("leaq -%d(%%rsp), %%rsi", stack_depth);
-                    println("movq $1, %%rdx");
-                    println("syscall");
-                } else
-                    UNREACHABLE();
-
-                println("xorq %%rax, %%rax\n");
-
-                break;
-            }
-            case NODE_I64:
-            case NODE_CHAR:
-            case NODE_STRING:
-            case NODE_KEYWORD_BOOL:
-                UNREACHABLE();
-        }
+        emit_stmt(parser, i);
     }
     fn_epilog();
 }
