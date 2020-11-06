@@ -15,6 +15,7 @@ typedef enum {
     RES_ASM_FILE_READ_FAILED,
     RES_FAILED_AS,
     RES_FAILED_LD,
+    RES_NON_MATCHING_TYPES,
 } res_t;
 
 static const char res_to_str[][100] = {

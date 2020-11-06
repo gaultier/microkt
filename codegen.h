@@ -41,6 +41,8 @@ static void fn_epilog() {
     stack_depth = 0;
 }
 
+static void emit_push() { println("push %%rax"); }
+
 static void emit_print_i64() {
     println(
         "__print_int: \n"
@@ -98,6 +100,19 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             println("movq $%lld, %%rax", expr->node_n.node_num.nu_val);
             return;
         }
+        case NODE_PLUS: {
+            const binary_t bin = expr->node_n.node_binary;
+            const ast_node_t* const lhs = &parser->par_nodes[bin.bi_lhs_i];
+            const ast_node_t* const rhs = &parser->par_nodes[bin.bi_rhs_i];
+
+            emit_expr(parser, lhs);
+            emit_push();
+            emit_expr(parser, rhs);
+            println("popq %%rdi");
+            println("addq %%rdi, %%rax");
+
+            break;
+        }
         default:
             UNREACHABLE();
     }
@@ -121,6 +136,7 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
         case NODE_CHAR:
         case NODE_STRING:
         case NODE_KEYWORD_BOOL:
+        case NODE_PLUS:
             UNREACHABLE();
     }
 }

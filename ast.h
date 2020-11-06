@@ -43,18 +43,25 @@ typedef struct {
     token_index_t bp_rparen_i;
 } ast_builtin_print_t;
 
+typedef struct {
+    int bi_type_i;
+    int bi_lhs_i;
+    int bi_rhs_i;
+} binary_t;
+
 typedef enum {
     NODE_BUILTIN_PRINT,
     NODE_KEYWORD_BOOL,
     NODE_STRING,
     NODE_I64,
     NODE_CHAR,
+    NODE_PLUS,
 } ast_node_kind_t;
 
 const char ast_node_kind_t_to_str[][30] = {
     [NODE_BUILTIN_PRINT] = "print", [NODE_KEYWORD_BOOL] = "bool",
     [NODE_STRING] = "String",       [NODE_I64] = "I64",
-    [NODE_CHAR] = "Char",
+    [NODE_CHAR] = "Char",           [NODE_PLUS] = "Plus",
 };
 
 typedef struct {
@@ -70,6 +77,7 @@ struct ast_node_t {
         token_index_t node_boolean;              // NODE_KEYWORD_BOOL
         int node_string;                         // NODE_STRING, int = obj_i
         node_number_t node_num;                  // NODE_I64, NODE_CHAR
+        binary_t node_binary;                    // NODE_PLUS
     } node_n;
 };
 
