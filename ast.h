@@ -71,7 +71,7 @@ typedef struct {
 
 struct ast_node_t {
     ast_node_kind_t node_kind;
-    int node_type_idx;
+    int node_type_i;
     union {
         ast_builtin_print_t node_builtin_print;  // NODE_BUILTIN_PRINT
         token_index_t node_boolean;              // NODE_KEYWORD_BOOL

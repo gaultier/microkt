@@ -154,38 +154,38 @@ static token_index_t ast_node_last_token(const parser_t* parser,
     }
 }
 
-#define NODE_PRINT(arg, keyword, rparen, type_idx)                       \
+#define NODE_PRINT(arg, keyword, rparen, type_i)                         \
     ((ast_node_t){                                                       \
         .node_kind = NODE_BUILTIN_PRINT,                                 \
-        .node_type_idx = type_idx,                                       \
+        .node_type_i = type_i,                                           \
         .node_n = {.node_builtin_print = {.bp_arg_i = arg,               \
                                           .bp_keyword_print_i = keyword, \
                                           .bp_rparen_i = rparen}}})
-#define NODE_I64(tok_i, type_idx, val)                                      \
+#define NODE_I64(tok_i, type_i, val)                                        \
     ((ast_node_t){.node_kind = NODE_I64,                                    \
-                  .node_type_idx = type_idx,                                \
+                  .node_type_i = type_i,                                    \
                   .node_n = {.node_num = (node_number_t){.nu_tok_i = tok_i, \
                                                          .nu_val = val}}})
 
-#define NODE_CHAR(tok_i, type_idx, val)                                     \
+#define NODE_CHAR(tok_i, type_i, val)                                       \
     ((ast_node_t){.node_kind = NODE_CHAR,                                   \
-                  .node_type_idx = type_idx,                                \
+                  .node_type_i = type_i,                                    \
                   .node_n = {.node_num = (node_number_t){.nu_tok_i = tok_i, \
                                                          .nu_val = val}}})
 
-#define NODE_BOOL(n, type_idx)                    \
+#define NODE_BOOL(n, type_i)                      \
     ((ast_node_t){.node_kind = NODE_KEYWORD_BOOL, \
-                  .node_type_idx = type_idx,      \
+                  .node_type_i = type_i,          \
                   .node_n = {.node_boolean = n}})
 
-#define NODE_STRING(n, type_idx)             \
-    ((ast_node_t){.node_kind = NODE_STRING,  \
-                  .node_type_idx = type_idx, \
+#define NODE_STRING(n, type_i)              \
+    ((ast_node_t){.node_kind = NODE_STRING, \
+                  .node_type_i = type_i,    \
                   .node_n = {.node_string = n}})
 
 #define NODE_PLUS(lhs_i, rhs_i, type_i)                                      \
     ((ast_node_t){.node_kind = NODE_PLUS,                                    \
-                  .node_type_idx = type_i,                                   \
+                  .node_type_i = type_i,                                     \
                   .node_n = {.node_binary = ((binary_t){.bi_type_i = type_i, \
                                                         .bi_lhs_i = lhs_i,   \
                                                         .bi_rhs_i = rhs_i})}})
@@ -340,9 +340,9 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
         parser_match(parser, LEX_TOKEN_ID_FALSE, &tok_i)) {
         buf_push(parser->par_types,
                  ((type_t){.ty_size = 1, .ty_kind = TYPE_BOOL}));
-        const int type_idx = buf_size(parser->par_types) - 1;
+        const int type_i = buf_size(parser->par_types) - 1;
 
-        const ast_node_t new_node = NODE_BOOL(tok_i, type_idx);
+        const ast_node_t new_node = NODE_BOOL(tok_i, type_i);
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = (int)buf_size(parser->par_nodes) - 1;
 
@@ -372,10 +372,10 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
     if (parser_match(parser, LEX_TOKEN_ID_I64, &tok_i)) {
         buf_push(parser->par_types,
                  ((type_t){.ty_size = 8, .ty_kind = TYPE_I64}));
-        const int type_idx = buf_size(parser->par_types) - 1;
+        const int type_i = buf_size(parser->par_types) - 1;
 
         const int64_t val = parse_tok_to_i64(parser, tok_i);
-        const ast_node_t new_node = NODE_I64(tok_i, type_idx, val);
+        const ast_node_t new_node = NODE_I64(tok_i, type_i, val);
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = (int)buf_size(parser->par_nodes) - 1;
 
@@ -384,10 +384,10 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
     if (parser_match(parser, LEX_TOKEN_ID_CHAR, &tok_i)) {
         buf_push(parser->par_types,
                  ((type_t){.ty_size = 1, .ty_kind = TYPE_CHAR}));
-        const int type_idx = buf_size(parser->par_types) - 1;
+        const int type_i = buf_size(parser->par_types) - 1;
 
         const int64_t val = parse_tok_to_char(parser, tok_i);
-        const ast_node_t new_node = NODE_CHAR(tok_i, type_idx, val);
+        const ast_node_t new_node = NODE_CHAR(tok_i, type_i, val);
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = (int)buf_size(parser->par_nodes) - 1;
 
@@ -402,7 +402,7 @@ static res_t parser_parse_addition(parser_t* parser, int* new_node_i) {
 
     int lhs_i = INT32_MAX;
     if ((res = parser_parse_primary(parser, &lhs_i)) != RES_OK) return res;
-    const int lhs_type_i = parser->par_nodes[lhs_i].node_type_idx;
+    const int lhs_type_i = parser->par_nodes[lhs_i].node_type_i;
     const type_t lhs_type = parser->par_types[lhs_type_i];
     *new_node_i = lhs_i;
     log_debug("new_node_i=%d", *new_node_i);
@@ -410,7 +410,7 @@ static res_t parser_parse_addition(parser_t* parser, int* new_node_i) {
     if (parser_match(parser, LEX_TOKEN_ID_PLUS, new_node_i)) {
         int rhs_i = INT32_MAX;
         if ((res = parser_parse_addition(parser, &rhs_i)) != RES_OK) return res;
-        const int rhs_type_i = parser->par_nodes[rhs_i].node_type_idx;
+        const int rhs_type_i = parser->par_nodes[rhs_i].node_type_i;
         const type_t rhs_type = parser->par_types[rhs_type_i];
 
         if (lhs_type.ty_kind != rhs_type.ty_kind) {
@@ -565,9 +565,9 @@ static res_t parser_parse_builtin_print(parser_t* parser, int* new_node_i) {
 
         buf_push(parser->par_types,
                  ((type_t){.ty_size = 1, .ty_kind = TYPE_BUILTIN_PRINT}));
-        const int type_idx = buf_size(parser->par_types) - 1;
+        const int type_i = buf_size(parser->par_types) - 1;
         const ast_node_t new_node =
-            NODE_PRINT(arg_i, keyword_print, rparen, type_idx);
+            NODE_PRINT(arg_i, keyword_print, rparen, type_i);
         buf_push(parser->par_nodes, new_node);
         *new_node_i = (int)buf_size(parser->par_nodes) - 1;
 
