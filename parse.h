@@ -13,10 +13,10 @@ typedef struct {
     const int par_source_len;
     const char* par_file_name0;
     int par_tok_i;
-    ast_node_t* par_nodes;          // Arena of all nodes
-    token_index_t* par_stmt_nodes;  // Array of statements. Each statement is
-                                    // stored as the node index which is the
-                                    // root of the statement in the ast
+    ast_node_t* par_nodes;  // Arena of all nodes
+    int* par_stmt_nodes;    // Array of statements. Each statement is
+                            // stored as the node index which is the
+                            // root of the statement in the ast
     loc_t* par_token_locs;
     lexer_t par_lexer;
     bool par_is_tty;
@@ -120,8 +120,8 @@ static void ast_node_dump(const ast_node_t* nodes, int node_i, int indent) {
     }
 }
 
-static token_index_t ast_node_first_token(const parser_t* parser,
-                                          const ast_node_t* node) {
+static int ast_node_first_token(const parser_t* parser,
+                                const ast_node_t* node) {
     switch (node->node_kind) {
         case NODE_BUILTIN_PRINT:
             return node->node_n.node_builtin_print.bp_keyword_print_i;
@@ -137,8 +137,7 @@ static token_index_t ast_node_first_token(const parser_t* parser,
     }
 }
 
-static token_index_t ast_node_last_token(const parser_t* parser,
-                                         const ast_node_t* node) {
+static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
     switch (node->node_kind) {
         case NODE_BUILTIN_PRINT:
             return node->node_n.node_builtin_print.bp_rparen_i;
@@ -225,9 +224,9 @@ static void parser_ast_node_source(const parser_t* parser,
     PG_ASSERT_COND((void*)source, !=, NULL, "%p");
     PG_ASSERT_COND((void*)source_len, !=, NULL, "%p");
 
-    const token_index_t first = ast_node_first_token(parser, node);
+    const int first = ast_node_first_token(parser, node);
     PG_ASSERT_COND(first, <, (int)buf_size(parser->par_token_locs), "%d");
-    const token_index_t last = ast_node_last_token(parser, node);
+    const int last = ast_node_last_token(parser, node);
     PG_ASSERT_COND(last, <, (int)buf_size(parser->par_token_locs), "%d");
 
     const loc_t first_token = parser->par_token_locs[first];
@@ -298,7 +297,7 @@ static token_id_t parser_peek(parser_t* parser) {
 }
 
 static bool parser_match(parser_t* parser, token_id_t id,
-                         token_index_t* return_token_index) {
+                         int* return_token_index) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_token_ids, !=, NULL, "%p");
     PG_ASSERT_COND((int)buf_size(parser->par_token_ids), >, (int)0, "%d");
@@ -334,7 +333,7 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_primary_node_i, !=, NULL, "%p");
 
-    token_index_t tok_i = INT32_MAX;
+    int tok_i = INT32_MAX;
 
     if (parser_match(parser, LEX_TOKEN_ID_TRUE, &tok_i) ||
         parser_match(parser, LEX_TOKEN_ID_FALSE, &tok_i)) {
@@ -530,7 +529,7 @@ static res_t parser_err_unexpected_token(const parser_t* parser,
 }
 
 static res_t parser_expect_token(parser_t* parser, token_id_t expected,
-                                 token_index_t* token) {
+                                 int* token) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_token_ids, !=, NULL, "%p");
     PG_ASSERT_COND((int)buf_size(parser->par_token_ids), >, (int)0, "%d");
@@ -547,10 +546,10 @@ static res_t parser_parse_builtin_print(parser_t* parser, int* new_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
-    token_index_t keyword_print = INT32_MAX;
+    int keyword_print_i = INT32_MAX;
     res_t res = RES_NONE;
-    if (parser_match(parser, LEX_TOKEN_ID_BUILTIN_PRINT, &keyword_print)) {
-        token_index_t lparen = 0;
+    if (parser_match(parser, LEX_TOKEN_ID_BUILTIN_PRINT, &keyword_print_i)) {
+        int lparen = 0;
         if ((res = parser_expect_token(parser, LEX_TOKEN_ID_LPAREN, &lparen)) !=
             RES_OK)
             return res;
@@ -558,7 +557,7 @@ static res_t parser_parse_builtin_print(parser_t* parser, int* new_node_i) {
         int arg_i = 0;
         if ((res = parser_parse_expr(parser, &arg_i)) != RES_OK) return res;
 
-        token_index_t rparen = 0;
+        int rparen = 0;
         if ((res = parser_expect_token(parser, LEX_TOKEN_ID_RPAREN, &rparen)) !=
             RES_OK)
             return res;
@@ -567,7 +566,7 @@ static res_t parser_parse_builtin_print(parser_t* parser, int* new_node_i) {
                  ((type_t){.ty_size = 1, .ty_kind = TYPE_BUILTIN_PRINT}));
         const int type_i = buf_size(parser->par_types) - 1;
         const ast_node_t new_node =
-            NODE_PRINT(arg_i, keyword_print, rparen, type_i);
+            NODE_PRINT(arg_i, keyword_print_i, rparen, type_i);
         buf_push(parser->par_nodes, new_node);
         *new_node_i = (int)buf_size(parser->par_nodes) - 1;
 

@@ -31,16 +31,15 @@ typedef struct {
         global_var_t obj_global_var;  // OBJ_GLOBAL_VAR
     } obj;
 } obj_t;
-typedef int token_index_t;
 
 struct ast_node_t;
 
 typedef struct ast_node_t ast_node_t;
 
 typedef struct {
-    token_index_t bp_arg_i;  // Index of argument node
-    token_index_t bp_keyword_print_i;
-    token_index_t bp_rparen_i;
+    int bp_arg_i;  // Index of argument node
+    int bp_keyword_print_i;
+    int bp_rparen_i;
 } ast_builtin_print_t;
 
 typedef struct {
@@ -74,7 +73,7 @@ struct ast_node_t {
     int node_type_i;
     union {
         ast_builtin_print_t node_builtin_print;  // NODE_BUILTIN_PRINT
-        token_index_t node_boolean;              // NODE_KEYWORD_BOOL
+        int node_boolean;                        // NODE_KEYWORD_BOOL
         int node_string;                         // NODE_STRING, int = obj_i
         node_number_t node_num;                  // NODE_I64, NODE_CHAR
         binary_t node_binary;                    // NODE_PLUS
