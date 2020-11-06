@@ -377,6 +377,10 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
     return RES_NONE;
 }
 
+static res_t parser_parse_expr(parser_t* parser, int* new_primary_node_i) {
+    return parser_parse_primary(parser, new_primary_node_i);
+}
+
 static void parser_print_source_on_error(const parser_t* parser,
                                          const loc_t* actual_token_loc,
                                          const loc_pos_t* pos_start) {
@@ -490,7 +494,7 @@ static res_t parser_parse_builtin_print(parser_t* parser, int* new_node_i) {
             return res;
 
         int arg_i = 0;
-        if ((res = parser_parse_primary(parser, &arg_i)) != RES_OK) return res;
+        if ((res = parser_parse_expr(parser, &arg_i)) != RES_OK) return res;
 
         token_index_t rparen = 0;
         if ((res = parser_expect_token(parser, LEX_TOKEN_ID_RPAREN, &rparen)) !=
@@ -510,6 +514,10 @@ static res_t parser_parse_builtin_print(parser_t* parser, int* new_node_i) {
     return RES_NONE;
 }
 
+static res_t parser_parse_stmt(parser_t* parser, int* new_node_i) {
+    return parser_parse_builtin_print(parser, new_node_i);
+}
+
 static res_t parser_parse(parser_t* parser) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_token_ids, !=, NULL, "%p");
@@ -520,7 +528,7 @@ static res_t parser_parse(parser_t* parser) {
     int new_node_i = 0;
     res_t res = RES_NONE;
 
-    if ((res = parser_parse_builtin_print(parser, &new_node_i)) == RES_OK) {
+    if ((res = parser_parse_stmt(parser, &new_node_i)) == RES_OK) {
         ast_node_dump(parser->par_nodes, new_node_i, 0);
         buf_push(parser->par_stmt_nodes, new_node_i);
 
@@ -529,7 +537,7 @@ static res_t parser_parse(parser_t* parser) {
     }
 
     while (!parser_is_at_end(parser)) {
-        if ((res = parser_parse_builtin_print(parser, &new_node_i)) == RES_OK) {
+        if ((res = parser_parse_stmt(parser, &new_node_i)) == RES_OK) {
             ast_node_dump(parser->par_nodes, new_node_i, 0);
             buf_push(parser->par_stmt_nodes, new_node_i);
 
@@ -550,21 +558,3 @@ static res_t parser_parse(parser_t* parser) {
     }
     UNREACHABLE();
 }
-
-/* static char parse_tok_to_char(const parser_t* parser, const token_t* tok) {
- */
-/*     PG_ASSERT_COND((void*)parser, !=, NULL, "%p"); */
-/*     PG_ASSERT_COND((void*)tok, !=, NULL, "%p"); */
-
-/*     const char* string = NULL; */
-/*     int string_len = 0; */
-/*     parser_ast_node_source(parser, node, &string, &string_len); */
-/*     log_debug("`%.*s`", (int)string_len, string); */
-/*     PG_ASSERT_COND(string_len, >, (int)0, "%d"); */
-/*     PG_ASSERT_COND(string_len, <, (int)25, "%d"); */
-
-/*     if (string_len > 1) UNIMPLEMENTED(); */
-
-/*     return string[0]; */
-/* } */
-
