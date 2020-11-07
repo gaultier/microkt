@@ -63,12 +63,14 @@ typedef enum {
     NODE_I64,
     NODE_CHAR,
     NODE_ADD,
+    NODE_SUBTRACT,
 } ast_node_kind_t;
 
 const char ast_node_kind_t_to_str[][30] = {
     [NODE_BUILTIN_PRINT] = "print", [NODE_KEYWORD_BOOL] = "bool",
     [NODE_STRING] = "String",       [NODE_I64] = "I64",
     [NODE_CHAR] = "Char",           [NODE_ADD] = "Plus",
+    [NODE_SUBTRACT] = "Subtract",
 };
 
 typedef struct {
@@ -84,7 +86,7 @@ struct ast_node_t {
         int node_boolean;                        // NODE_KEYWORD_BOOL
         int node_string;                         // NODE_STRING, int = obj_i
         node_number_t node_num;                  // NODE_I64, NODE_CHAR
-        binary_t node_binary;                    // NODE_ADD
+        binary_t node_binary;                    // NODE_ADD, NODE_SUBTRACT
     } node_n;
 };
 

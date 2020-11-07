@@ -103,6 +103,7 @@ static void ast_node_dump(const ast_node_t* nodes, int node_i, int indent) {
             ast_node_dump(nodes, node->node_n.node_builtin_print.bp_arg_i, 2);
             break;
         }
+        case NODE_SUBTRACT:
         case NODE_ADD: {
             log_debug_with_indent(indent, "ast_node #%d %s", node_i,
                                   ast_node_kind_t_to_str[node->node_kind]);
@@ -134,6 +135,7 @@ static int ast_node_first_token(const parser_t* parser,
         case NODE_CHAR:
         case NODE_I64:
             return node->node_n.node_num.nu_tok_i;
+        case NODE_SUBTRACT:
         case NODE_ADD:
             return node->node_n.node_binary.bi_lhs_i;
     }
@@ -150,6 +152,7 @@ static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
         case NODE_I64:
         case NODE_CHAR:
             return node->node_n.node_num.nu_tok_i;
+        case NODE_SUBTRACT:
         case NODE_ADD:
             return node->node_n.node_binary.bi_rhs_i;
     }
