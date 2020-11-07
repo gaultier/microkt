@@ -340,6 +340,25 @@ static res_t parser_err_unexpected_token(const parser_t* parser,
     return res;
 }
 
+static res_t parser_err_expected_primary(const parser_t* parser) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+
+    const res_t res = RES_EXPECTED_PRIMARY;
+
+    const loc_t actual_token_loc = parser->par_token_locs[parser->par_tok_i];
+    const loc_pos_t pos_start =
+        lex_pos(&parser->par_lexer, actual_token_loc.loc_start);
+
+    fprintf(stderr, res_to_str[res], (parser->par_is_tty ? color_grey : ""),
+            parser->par_file_name0, pos_start.pos_line, pos_start.pos_column,
+            (parser->par_is_tty ? color_reset : ""),
+            token_id_t_to_str[parser_current(parser)]);
+
+    parser_print_source_on_error(parser, parser->par_tok_i, parser->par_tok_i);
+
+    return res;
+}
+
 static res_t parser_err_non_matching_types(const parser_t* parser, int lhs_i,
                                            int rhs_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
@@ -467,7 +486,7 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
         return RES_OK;
     }
 
-    return RES_NONE;
+    return parser_err_expected_primary(parser);
 }
 
 static res_t parser_parse_addition(parser_t* parser, int* new_node_i) {
@@ -507,6 +526,7 @@ static res_t parser_parse_expr(parser_t* parser, int* new_node_i) {
 
     return parser_parse_addition(parser, new_node_i);
 }
+
 static res_t parser_expect_token(parser_t* parser, token_id_t expected,
                                  int* token) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");

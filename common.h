@@ -16,6 +16,7 @@ typedef enum {
     RES_FAILED_AS,
     RES_FAILED_LD,
     RES_NON_MATCHING_TYPES,
+    RES_EXPECTED_PRIMARY,
 } res_t;
 
 static const char res_to_str[][100] = {
@@ -29,6 +30,7 @@ static const char res_to_str[][100] = {
     [RES_FAILED_AS] = "Failed to run `%s`: %s\n",
     [RES_FAILED_LD] = "Failed to run `%s`: %s\n",
     [RES_NON_MATCHING_TYPES] = "%s%s:%d:%d:%sTypes %s and %s do not match\n",
+    [RES_EXPECTED_PRIMARY] = "%s%s:%d:%d:%sExpected primary, got %s\n",
 };
 
 // On macos this macro is defined in some system headers
