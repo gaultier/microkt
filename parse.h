@@ -41,7 +41,7 @@ static parser_t parser_init(const char* file_name0, const char* source,
         const token_t token = lex_next(&lexer);
 
         buf_push(token_ids, token.tok_id);
-        buf_push(tok_pos_s, token.tok_loc);
+        buf_push(tok_pos_s, token.tok_pos_range);
         token_dump(&token, &lexer);
 
         if (token.tok_id == LEX_TOKEN_ID_EOF) break;
