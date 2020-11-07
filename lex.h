@@ -83,19 +83,21 @@ static const token_id_t* token_get_keyword(const char* source_start, int len) {
 
 static loc_pos_t lex_pos(const lexer_t* lexer, int position) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
+    PG_ASSERT_COND((int)buf_size(lexer->lex_lines), >, 0, "%d");
 
     loc_pos_t pos = {.pos_line = 1};
 
     int i = 0;
+    const int last_line = lexer->lex_lines[buf_size(lexer->lex_lines) - 1];
     for (i = 0; i < (int)buf_size(lexer->lex_lines); i++) {
         const int line_pos = lexer->lex_lines[i];
         if (position < line_pos) break;
 
         pos.pos_line += 1;
-        // TODO: column
     }
 
     pos.pos_column = position - (i > 0 ? lexer->lex_lines[i - 1] : 0);
+    if (pos.pos_line > last_line) pos.pos_line = last_line;
     return pos;
 }
 
@@ -442,13 +444,7 @@ static void token_dump(const token_t* t, const lexer_t* lexer) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
 
 #ifdef WITH_LOGS
-    const loc_pos_t pos_start = lex_pos(lexer, t->tok_loc.loc_start);
-    const loc_pos_t pos_end = lex_pos(lexer, t->tok_loc.loc_end);
-    log_debug(
-        "id=%s loc_start=%d loc_end=%d start_line=%d "
-        "start_column=%d end_line=%d end_column=%d",
-        token_id_t_to_str[t->tok_id], t->tok_loc.loc_start, t->tok_loc.loc_end,
-        pos_start.pos_line, pos_start.pos_column, pos_end.pos_line,
-        pos_end.pos_column);
+    log_debug("id=%s loc_start=%d loc_end=%d", token_id_t_to_str[t->tok_id],
+              t->tok_loc.loc_start, t->tok_loc.loc_end);
 #endif
 }
