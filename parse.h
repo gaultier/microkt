@@ -174,33 +174,6 @@ static void parser_tok_source(const parser_t* parser, int tok_i,
                       : (loc.loc_end - loc.loc_start);
 }
 
-static void parser_ast_node_source(const parser_t* parser,
-                                   const ast_node_t* node, const char** source,
-                                   int* source_len) {
-    PG_ASSERT_COND((void*)node, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)source, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)source_len, !=, NULL, "%p");
-
-    const int first = ast_node_first_token(parser, node);
-    PG_ASSERT_COND(first, <, (int)buf_size(parser->par_token_locs), "%d");
-    const int last = ast_node_last_token(parser, node);
-    PG_ASSERT_COND(last, <, (int)buf_size(parser->par_token_locs), "%d");
-
-    const loc_t first_token = parser->par_token_locs[first];
-    const loc_t last_token = parser->par_token_locs[last];
-
-    // Without quotes for char/string
-    *source = &parser->par_source[(node->node_kind == NODE_STRING ||
-                                   node->node_kind == NODE_CHAR)
-                                      ? first_token.loc_start + 1
-                                      : first_token.loc_start];
-    *source_len =
-        (node->node_kind == NODE_STRING || node->node_kind == NODE_CHAR)
-            ? (last_token.loc_end - first_token.loc_start - 2)
-            : (last_token.loc_end - first_token.loc_start);
-}
-
 static bool parser_is_at_end(const parser_t* parser) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
 
@@ -254,82 +227,58 @@ static token_id_t parser_peek(parser_t* parser) {
     UNREACHABLE();
 }
 
-static int parser_first_line_tok(const parser_t* parser, int tok_i) {
-    PG_ASSERT_COND((void*)parser->par_token_locs, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)parser->par_token_locs, !=, NULL, "%p");
-    PG_ASSERT_COND((int)buf_size(parser->par_token_locs), >, 0, "%d");
-
-    const int line =
-        lex_pos(&parser->par_lexer, parser->par_token_locs[tok_i].loc_start)
-            .pos_line;
-    if (line == 1) return 0;
-
-    int first_line_tok_i = tok_i;
-    while (true) {
-        const loc_t first_line_tok_loc =
-            parser->par_token_locs[first_line_tok_i];
-        const loc_pos_t first_line_tok_loc_pos =
-            lex_pos(&parser->par_lexer, first_line_tok_loc.loc_start);
-
-        if (first_line_tok_loc_pos.pos_line != line)
-            return first_line_tok_i + 1;
-
-        first_line_tok_i -= 1;
-    }
-}
-
-static int parser_last_line_tok(const parser_t* parser, int tok_i) {
-    PG_ASSERT_COND((void*)parser->par_token_locs, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)parser->par_token_locs, !=, NULL, "%p");
-    PG_ASSERT_COND((int)buf_size(parser->par_token_locs), >, 0, "%d");
-
-    const int line =
-        lex_pos(&parser->par_lexer, parser->par_token_locs[tok_i].loc_start)
-            .pos_line;
-    const int last_tok_i = buf_size(parser->par_token_locs) - 1;
-    const int last_line =
-        lex_pos(&parser->par_lexer, parser->par_token_locs[last_tok_i].loc_end)
-            .pos_line;
-    if (line == last_line) return last_tok_i;
-
-    int last_line_tok_i = tok_i;
-    while (true) {
-        const loc_t last_line_tok_loc = parser->par_token_locs[last_line_tok_i];
-        const loc_pos_t last_line_tok_loc_pos =
-            lex_pos(&parser->par_lexer, last_line_tok_loc.loc_end);
-
-        if (last_line_tok_loc_pos.pos_line != line) return last_line_tok_i - 1;
-
-        last_line_tok_i += 1;
-    }
-}
-
 static void parser_print_source_on_error(const parser_t* parser,
                                          int first_tok_i, int last_tok_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
 
-    const int first_line_tok_i = parser_first_line_tok(parser, first_tok_i);
-    const int last_line_tok_i = parser_last_line_tok(parser, last_tok_i);
-    const loc_t first_line_tok_loc = parser->par_token_locs[first_line_tok_i];
-    const loc_t last_line_tok_loc = parser->par_token_locs[last_line_tok_i];
+    const loc_t first_tok_loc = parser->par_token_locs[first_tok_i];
+    const loc_pos_t first_tok_loc_pos =
+        lex_pos(&parser->par_lexer, first_tok_loc.loc_start);
+    const loc_t last_tok_loc = parser->par_token_locs[last_tok_i];
+    const loc_pos_t last_tok_loc_pos =
+        lex_pos(&parser->par_lexer, last_tok_loc.loc_start);
 
-    const loc_pos_t first_line_tok_loc_pos =
-        lex_pos(&parser->par_lexer, first_line_tok_loc.loc_start);
+    // lex_pos returns a human readable line number starting at 1 so we subtract
+    // 1 to start at 0
+    const int first_line = first_tok_loc_pos.pos_line - 1;
+    const int last_line = last_tok_loc_pos.pos_line - 1;
+    PG_ASSERT_COND(first_line, <=, last_line, "%d");
 
-    const char* source = &parser->par_source[first_line_tok_loc.loc_start];
-    int source_len = last_line_tok_loc.loc_end - first_line_tok_loc.loc_start;
+    const int last_line_in_file = buf_size(parser->par_lexer.lex_lines) - 1;
+    PG_ASSERT_COND(first_line, <=, last_line_in_file, "%d");
+    PG_ASSERT_COND(last_line, <=, last_line_in_file, "%d");
+
+    // The position at index 0 is actually on the second line so we subtract 1
+    // to the index
+    // We then add one to position to 'trim' the heading newline from the
+    // source
+    const int first_line_source_pos =
+        parser->par_lexer.lex_lines[first_line - 1] + 1;
+    const int last_line_source_pos =
+        last_line == last_line_in_file ? parser->par_source_len - 1
+                                       : parser->par_lexer.lex_lines[last_line];
+    PG_ASSERT_COND(first_line_source_pos, <, last_line_source_pos, "%d");
+    PG_ASSERT_COND(last_line_source_pos, <, parser->par_source_len, "%d");
+
+    log_debug(
+        "first_line=%d last_line=%d last_line_in_file=%d "
+        "first_line_source_pos=%d last_line_source_pos=%d",
+        first_line, last_line, last_line_in_file, first_line_source_pos,
+        last_line_source_pos);
+
+    const char* source = &parser->par_source[first_line_source_pos];
+    int source_len = last_line_source_pos - first_line_source_pos;
     trim_end(&source, &source_len);
     log_debug(
         "first_tok_i=%d last_tok_i=%d first_line_tok_i=%d last_line_tok_i=%d "
         "source_len=%d",
-        first_tok_i, last_tok_i, first_line_tok_i, last_line_tok_i, source_len);
+        first_tok_i, last_tok_i, first_tok_i, last_tok_i, source_len);
 
     if (parser->par_is_tty) fprintf(stderr, "%s", color_grey);
 
     static char prefix[MAXPATHLEN + 50] = "\0";
     snprintf(prefix, sizeof(prefix), "%s:%d:%d:", parser->par_file_name0,
-             first_line_tok_loc_pos.pos_line,
-             first_line_tok_loc_pos.pos_column);
+             first_tok_loc_pos.pos_line, first_tok_loc_pos.pos_column);
     int prefix_len = strlen(prefix);
     fprintf(stderr, "%s", prefix);
     if (parser->par_is_tty) fprintf(stderr, "%s", color_reset);
