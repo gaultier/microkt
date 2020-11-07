@@ -264,16 +264,14 @@ static void parser_print_source_on_error(const parser_t* parser,
     int source_len = last_line_source_pos - first_line_source_pos;
     trim_end(&source, &source_len);
 
-    if (parser->par_is_tty) fprintf(stderr, "%s", color_grey);
-
     static char prefix[MAXPATHLEN + 50] = "\0";
     snprintf(prefix, sizeof(prefix), "%s:%d:%d:", parser->par_file_name0,
              first_tok_loc_pos.pos_line, first_tok_loc_pos.pos_column);
     int prefix_len = strlen(prefix);
-    fprintf(stderr, "%s", prefix);
-    if (parser->par_is_tty) fprintf(stderr, "%s", color_reset);
 
-    fprintf(stderr, "%.*s\n", (int)source_len, source);
+    fprintf(stderr, "%s%s%s%.*s\n", parser->par_is_tty ? color_grey : "",
+            prefix, parser->par_is_tty ? color_reset : "", (int)source_len,
+            source);
 
     const int source_before_without_squiggly_len =
         first_tok_loc.loc_start - first_line_source_pos;
