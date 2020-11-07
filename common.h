@@ -3,6 +3,7 @@
 #define _POSIX_C_SOURCE 200112L
 #include <assert.h>
 #include <inttypes.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -95,3 +96,15 @@ static const char res_to_str[][100] = {
 static const char color_red[] = "\x1b[31m";
 static const char color_reset[] = "\x1b[0m";
 static const char color_grey[] = "\x1b[90m";
+
+static bool is_space(char c) {
+    return c == ' ' || c == '\n' || c == '\t' || c == '\r';
+}
+
+static void trim_end(const char** string, int* string_len) {
+    PG_ASSERT_COND((void*)string, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)string_len, !=, NULL, "%p");
+
+    while (*string_len > 0 && is_space((*string)[*string_len - 1]))
+        (*string_len)--;
+}

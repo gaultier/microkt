@@ -1,6 +1,5 @@
 #pragma once
 
-#include <stdbool.h>
 #include <string.h>
 
 #include "buf.h"

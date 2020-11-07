@@ -262,10 +262,8 @@ static void parser_print_source_on_error(const parser_t* parser,
     const loc_pos_t first_tok_loc_pos =
         lex_pos(&parser->par_lexer, first_tok_loc.loc_start);
 
-    const char* const actual_source =
-        &parser->par_source[first_tok_loc.loc_start];
-    const int actual_source_len =
-        last_tok_loc.loc_end - first_tok_loc.loc_start;
+    const char* actual_source = &parser->par_source[first_tok_loc.loc_start];
+    int actual_source_len = last_tok_loc.loc_end - first_tok_loc.loc_start;
 
     if (parser->par_is_tty) fprintf(stderr, "%s", color_grey);
 
@@ -296,18 +294,21 @@ static void parser_print_source_on_error(const parser_t* parser,
     // If there is a token after, print it
     if (last_tok_i < (int)buf_size(parser->par_token_ids) - 1) {
         const loc_t after_last_tok_loc = parser->par_token_locs[last_tok_i + 1];
-        const char* const after_last_tok_source =
+        const char* after_last_tok_source =
             &parser->par_source[last_tok_loc.loc_end];
-        const int after_last_tok_source_len =
+        int after_last_tok_source_len =
             // Include spaces here, meaning we consider the end of the
             // actual token until the end of the next token
             after_last_tok_loc.loc_end - last_tok_loc.loc_end;
+
+        trim_end(&after_last_tok_source, &after_last_tok_source_len);
 
         // Do not add to prefix_len here since this is the suffix
 
         fprintf(stderr, "%.*s", (int)after_last_tok_source_len,
                 after_last_tok_source);
-    }
+    } else
+        trim_end(&actual_source, &actual_source_len);
 
     fprintf(stderr, "\n");
     for (int i = 0; i < prefix_len; i++) fprintf(stderr, " ");
