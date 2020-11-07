@@ -17,7 +17,7 @@ typedef struct {
     int* par_stmt_nodes;    // Array of statements. Each statement is
                             // stored as the node index which is the
                             // root of the statement in the ast
-    loc_t* par_token_locs;
+    pos_range_t* par_token_locs;
     lexer_t par_lexer;
     bool par_is_tty;
     obj_t* par_objects;
@@ -34,7 +34,7 @@ static parser_t parser_init(const char* file_name0, const char* source,
     token_id_t* token_ids = NULL;
     buf_grow(token_ids, source_len / 8);
 
-    loc_t* token_locs = NULL;
+    pos_range_t* token_locs = NULL;
     buf_grow(token_locs, source_len / 8);
 
     while (true) {
@@ -66,9 +66,9 @@ static int64_t parse_tok_to_i64(const parser_t* parser, int tok_i) {
     PG_ASSERT_COND((void*)parser->par_token_locs, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_source, !=, NULL, "%p");
 
-    const loc_t loc = parser->par_token_locs[tok_i];
-    const char* const string = &parser->par_source[loc.loc_start];
-    int string_len = loc.loc_end - loc.loc_start;
+    const pos_range_t loc = parser->par_token_locs[tok_i];
+    const char* const string = &parser->par_source[loc.pr_start];
+    int string_len = loc.pr_end - loc.pr_start;
 
     PG_ASSERT_COND(string_len, >, (int)0, "%d");
     PG_ASSERT_COND(string_len, <, (int)25, "%d");
@@ -82,9 +82,9 @@ static int64_t parse_tok_to_i64(const parser_t* parser, int tok_i) {
 static int64_t parse_tok_to_char(const parser_t* parser, int tok_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
 
-    const loc_t loc = parser->par_token_locs[tok_i];
-    const char* const string = &parser->par_source[loc.loc_start + 1];
-    int string_len = loc.loc_end - loc.loc_start - 2;
+    const pos_range_t loc = parser->par_token_locs[tok_i];
+    const char* const string = &parser->par_source[loc.pr_start + 1];
+    int string_len = loc.pr_end - loc.pr_start - 2;
 
     PG_ASSERT_COND(string_len, >, (int)0, "%d");
     PG_ASSERT_COND(string_len, <, (int)2, "%d");  // TODO: expand
@@ -162,16 +162,16 @@ static void parser_tok_source(const parser_t* parser, int tok_i,
     PG_ASSERT_COND((void*)source_len, !=, NULL, "%p");
 
     const token_id_t tok = parser->par_token_ids[tok_i];
-    const loc_t loc = parser->par_token_locs[tok_i];
+    const pos_range_t loc = parser->par_token_locs[tok_i];
 
     // Without quotes for char/string
     *source = &parser->par_source[(tok == LEX_TOKEN_ID_STRING ||
                                    tok == LEX_TOKEN_ID_CHAR)
-                                      ? loc.loc_start + 1
-                                      : loc.loc_start];
+                                      ? loc.pr_start + 1
+                                      : loc.pr_start];
     *source_len = (tok == LEX_TOKEN_ID_STRING || tok == LEX_TOKEN_ID_CHAR)
-                      ? (loc.loc_end - loc.loc_start - 2)
-                      : (loc.loc_end - loc.loc_start);
+                      ? (loc.pr_end - loc.pr_start - 2)
+                      : (loc.pr_end - loc.pr_start);
 }
 
 static bool parser_is_at_end(const parser_t* parser) {
@@ -231,12 +231,12 @@ static void parser_print_source_on_error(const parser_t* parser,
                                          int first_tok_i, int last_tok_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
 
-    const loc_t first_tok_loc = parser->par_token_locs[first_tok_i];
+    const pos_range_t first_tok_loc = parser->par_token_locs[first_tok_i];
     const loc_pos_t first_tok_loc_pos =
-        lex_pos(&parser->par_lexer, first_tok_loc.loc_start);
-    const loc_t last_tok_loc = parser->par_token_locs[last_tok_i];
+        lex_pos(&parser->par_lexer, first_tok_loc.pr_start);
+    const pos_range_t last_tok_loc = parser->par_token_locs[last_tok_i];
     const loc_pos_t last_tok_loc_pos =
-        lex_pos(&parser->par_lexer, last_tok_loc.loc_start);
+        lex_pos(&parser->par_lexer, last_tok_loc.pr_start);
 
     // lex_pos returns a human readable line number starting at 1 so we subtract
     // 1 to start at 0
@@ -274,14 +274,14 @@ static void parser_print_source_on_error(const parser_t* parser,
             source);
 
     const int source_before_without_squiggly_len =
-        first_tok_loc.loc_start - first_line_source_pos;
+        first_tok_loc.pr_start - first_line_source_pos;
 
     for (int i = 0; i < prefix_len + source_before_without_squiggly_len; i++)
         fprintf(stderr, " ");
 
     if (parser->par_is_tty) fprintf(stderr, "%s", color_red);
 
-    const int squiggly_len = last_tok_loc.loc_end - first_tok_loc.loc_start;
+    const int squiggly_len = last_tok_loc.pr_end - first_tok_loc.pr_start;
     for (int i = 0; i < squiggly_len; i++) fprintf(stderr, "^");
     if (parser->par_is_tty) fprintf(stderr, "%s", color_reset);
 
@@ -294,9 +294,10 @@ static res_t parser_err_unexpected_token(const parser_t* parser,
 
     const res_t res = RES_UNEXPECTED_TOKEN;
 
-    const loc_t actual_token_loc = parser->par_token_locs[parser->par_tok_i];
+    const pos_range_t actual_token_loc =
+        parser->par_token_locs[parser->par_tok_i];
     const loc_pos_t pos_start =
-        lex_pos(&parser->par_lexer, actual_token_loc.loc_start);
+        lex_pos(&parser->par_lexer, actual_token_loc.pr_start);
 
     fprintf(stderr, res_to_str[res], (parser->par_is_tty ? color_grey : ""),
             parser->par_file_name0, pos_start.pos_line, pos_start.pos_column,
@@ -314,9 +315,10 @@ static res_t parser_err_expected_primary(const parser_t* parser) {
 
     const res_t res = RES_EXPECTED_PRIMARY;
 
-    const loc_t actual_token_loc = parser->par_token_locs[parser->par_tok_i];
+    const pos_range_t actual_token_loc =
+        parser->par_token_locs[parser->par_tok_i];
     const loc_pos_t pos_start =
-        lex_pos(&parser->par_lexer, actual_token_loc.loc_start);
+        lex_pos(&parser->par_lexer, actual_token_loc.pr_start);
 
     fprintf(stderr, res_to_str[res], (parser->par_is_tty ? color_grey : ""),
             parser->par_file_name0, pos_start.pos_line, pos_start.pos_column,
@@ -341,10 +343,11 @@ static res_t parser_err_non_matching_types(const parser_t* parser, int lhs_i,
     const int lhs_first_tok_i = ast_node_first_token(parser, lhs);
     const int rhs_last_tok_i = ast_node_last_token(parser, rhs);
 
-    const loc_t lhs_first_tok_loc = parser->par_token_locs[lhs_first_tok_i];
+    const pos_range_t lhs_first_tok_loc =
+        parser->par_token_locs[lhs_first_tok_i];
 
     const loc_pos_t lhs_first_tok_loc_pos =
-        lex_pos(&parser->par_lexer, lhs_first_tok_loc.loc_start);
+        lex_pos(&parser->par_lexer, lhs_first_tok_loc.pr_start);
 
     const res_t res = RES_NON_MATCHING_TYPES;
     fprintf(stderr, res_to_str[res], (parser->par_is_tty ? color_grey : ""),
