@@ -5,7 +5,7 @@ BEGIN {
     expected_outputs[0] = "1\n9990\n"
 
     tests[1] = "e2e/math_integers"
-    expected_outputs[1] = "6\n1\n"
+    expected_outputs[1] = "6\n-2\n"
 
 #    tests[1] = "e2e/print_bool"
 #    expected_outputs[1] = "truefalsefalse"
@@ -56,6 +56,7 @@ BEGIN {
         if (exit_code != 0 || actual_output != expected_output) {
             print RED "✘ " test RESET
             print WHITE "Actual output below:\n" RESET GREY actual_output RESET
+            print WHITE "Expected output below:\n" RESET GREY expected_output RESET
 
             ret = 1
         } else {

@@ -48,11 +48,17 @@ static void emit_print_i64() {
         "__println_int: \n"
         "    pushq %%rbp\n"
         "    movq %%rsp, %%rbp\n"
-        "    subq $32, %%rsp # char data[22]\n"
+        "    subq $32, %%rsp # char data[23]\n"
         "  \n"
+
+        "    movq %%rax, %%r9 # Store original value of the argument \n"
+        "    # Abs \n"
+        "    negq %%rax      \n"
+        "    cmovlq %%r9, %%rax\n"
+
         "    xorq %%r8, %%r8 # r8: Loop index and length\n"
         "    leaq -1(%%rsp), %%rsi # end ptr\n"
-        "    movb $0x0a, (%%rsi) \n"
+        "    movb $0x0a, (%%rsi) # Trailing newline \n"
         "    \n"
         "    int_to_string_loop:\n"
         "        cmpq $0, %%rax # While n != 0\n"
@@ -74,6 +80,16 @@ static void emit_print_i64() {
         "\n"
         "    int_to_string_end:\n"
         "      incq %%r8 # Count newline as well \n"
+
+        "      # Print minus sign ? \n"
+        "      cmpq $0, %%r9 \n"
+        "      jge int_to_string_end_epilog \n"
+
+        "      incq %%r8 \n"
+        "      decq %%rsi \n"
+        "      movb $45, (%%rsi) \n"
+
+        "    int_to_string_end_epilog: \n"
         "      movq $0x2000004, %%rax\n"
         "      movq $1, %%rdi\n"
         "      movq %%r8, %%rdx\n"
