@@ -342,16 +342,16 @@ static res_t parser_err_non_matching_types(const parser_t* parser, int lhs_i,
     const int lhs_first_tok_i = ast_node_first_token(parser, lhs);
     const int rhs_last_tok_i = ast_node_last_token(parser, rhs);
 
-    const pos_range_t lhs_first_tok_loc =
+    const pos_range_t lhs_first_tok_range_pos =
         parser->par_token_locs[lhs_first_tok_i];
 
-    const loc_t lhs_first_tok_loc_pos =
-        lex_pos_to_loc(&parser->par_lexer, lhs_first_tok_loc.pr_start);
+    const loc_t lhs_first_tok_loc =
+        lex_pos_to_loc(&parser->par_lexer, lhs_first_tok_range_pos.pr_start);
 
     const res_t res = RES_NON_MATCHING_TYPES;
     fprintf(stderr, res_to_str[res], (parser->par_is_tty ? color_grey : ""),
-            parser->par_file_name0, lhs_first_tok_loc_pos.loc_line,
-            lhs_first_tok_loc_pos.loc_column,
+            parser->par_file_name0, lhs_first_tok_loc.loc_line,
+            lhs_first_tok_loc.loc_column,
             (parser->par_is_tty ? color_reset : ""),
             type_to_str[lhs_type->ty_kind], type_to_str[rhs_type->ty_kind]);
 
