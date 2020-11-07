@@ -260,19 +260,9 @@ static void parser_print_source_on_error(const parser_t* parser,
     PG_ASSERT_COND(first_line_source_pos, <, last_line_source_pos, "%d");
     PG_ASSERT_COND(last_line_source_pos, <, parser->par_source_len, "%d");
 
-    log_debug(
-        "first_line=%d last_line=%d last_line_in_file=%d "
-        "first_line_source_pos=%d last_line_source_pos=%d",
-        first_line, last_line, last_line_in_file, first_line_source_pos,
-        last_line_source_pos);
-
     const char* source = &parser->par_source[first_line_source_pos];
     int source_len = last_line_source_pos - first_line_source_pos;
     trim_end(&source, &source_len);
-    log_debug(
-        "first_tok_i=%d last_tok_i=%d first_line_tok_i=%d last_line_tok_i=%d "
-        "source_len=%d",
-        first_tok_i, last_tok_i, first_tok_i, last_tok_i, source_len);
 
     if (parser->par_is_tty) fprintf(stderr, "%s", color_grey);
 
