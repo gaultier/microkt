@@ -327,9 +327,8 @@ static res_t parser_err_unexpected_token(const parser_t* parser,
 
     fprintf(stderr, res_to_str[res], (parser->par_is_tty ? color_grey : ""),
             parser->par_file_name0, loc_start.loc_line, loc_start.loc_column,
-            (parser->par_is_tty ? color_reset : ""),
-            token_id_t_to_str[expected],
-            token_id_t_to_str[parser_current(parser)]);
+            (parser->par_is_tty ? color_reset : ""), token_id_to_str[expected],
+            token_id_to_str[parser_current(parser)]);
 
     parser_print_source_on_error(parser, parser->par_tok_i, parser->par_tok_i);
 
@@ -348,7 +347,7 @@ static res_t parser_err_expected_primary(const parser_t* parser) {
     fprintf(stderr, res_to_str[res], (parser->par_is_tty ? color_grey : ""),
             parser->par_file_name0, loc_start.loc_line, loc_start.loc_column,
             (parser->par_is_tty ? color_reset : ""),
-            token_id_t_to_str[parser_current(parser)]);
+            token_id_to_str[parser_current(parser)]);
 
     parser_print_source_on_error(parser, parser->par_tok_i, parser->par_tok_i);
 
@@ -395,14 +394,14 @@ static bool parser_match(parser_t* parser, token_id_t id,
                    "%d");
 
     if (parser_is_at_end(parser)) {
-        log_debug("did not match %s, at end", token_id_t_to_str[id]);
+        log_debug("did not match %s, at end", token_id_to_str[id]);
         return false;
     }
 
     const token_id_t current_id = parser_peek(parser);
     if (id != current_id) {
-        log_debug("did not match %s, got %s", token_id_t_to_str[id],
-                  token_id_t_to_str[current_id]);
+        log_debug("did not match %s, got %s", token_id_to_str[id],
+                  token_id_to_str[current_id]);
         return false;
     }
 
@@ -413,7 +412,7 @@ static bool parser_match(parser_t* parser, token_id_t id,
     *return_token_index = parser->par_tok_i - 1;
 
     log_debug("matched %s, now current token: %s at tok_i=%d",
-              token_id_t_to_str[id], token_id_t_to_str[parser_current(parser)],
+              token_id_to_str[id], token_id_to_str[parser_current(parser)],
               parser->par_tok_i);
 
     return true;
@@ -589,7 +588,7 @@ static res_t parser_expect_token(parser_t* parser, token_id_t expected,
     PG_ASSERT_COND((void*)token, !=, NULL, "%p");
 
     if (!parser_match(parser, expected, token)) {
-        log_debug("expected token not found: %s", token_id_t_to_str[expected]);
+        log_debug("expected token not found: %s", token_id_to_str[expected]);
         return parser_err_unexpected_token(parser, expected);
     }
     return RES_OK;

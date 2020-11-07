@@ -24,7 +24,7 @@ typedef enum {
     LEX_TOKEN_ID_INVALID,
 } token_id_t;
 
-const char token_id_t_to_str[][30] = {
+const char token_id_to_str[][30] = {
     [LEX_TOKEN_ID_BUILTIN_PRINTLN] = "Println",
     [LEX_TOKEN_ID_LPAREN] = "(",
     [LEX_TOKEN_ID_RPAREN] = ")",
@@ -466,7 +466,7 @@ static void token_dump(const token_t* t, const lexer_t* lexer) {
     PG_ASSERT_COND((void*)t, !=, NULL, "%p");
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
 
-    log_debug("id=%s %d..%d `%.*s`", token_id_t_to_str[t->tok_id],
+    log_debug("id=%s %d..%d `%.*s`", token_id_to_str[t->tok_id],
               t->tok_pos_range.pr_start, t->tok_pos_range.pr_end,
               t->tok_pos_range.pr_end - t->tok_pos_range.pr_start,
               &lexer->lex_source[t->tok_pos_range.pr_start]);
