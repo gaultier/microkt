@@ -37,10 +37,12 @@ const char token_id_t_to_str[][30] = {
     [LEX_TOKEN_ID_INVALID] = "Invalid",
 };
 
+// Position of a token in the file in term of file offsets. Start at 0.
 typedef struct {
     int pr_start, pr_end;
 } pos_range_t;
 
+// Human readable line and column, computed from a file offset. Start at 1.
 typedef struct {
     int loc_line, loc_column;
 } loc_t;
