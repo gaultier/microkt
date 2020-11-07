@@ -2,10 +2,10 @@
 
 BEGIN {
     tests[0] = "e2e/print_integers"
-    expected_outputs[0] = "19990"
+    expected_outputs[0] = "1\n9990\n"
 
     tests[1] = "e2e/math_integers"
-    expected_outputs[1] = "6"
+    expected_outputs[1] = "6\n1\n"
 
 #    tests[1] = "e2e/print_bool"
 #    expected_outputs[1] = "truefalsefalse"
@@ -45,11 +45,12 @@ BEGIN {
         exit_code = system("./" test " > " output_file)
         
         actual_output = ""
-        o = ""
-        while (1) {
-            res == getline o < output_file
-            actual_output = actual_output o
-            if (res != 1) { break }
+        while(1) {
+           res = getline < output_file
+           if (res == -1) { exit 1 }
+           if (res == 0) { break }
+
+           actual_output = actual_output $0 "\n"
         }
 
         if (exit_code != 0 || actual_output != expected_output) {
