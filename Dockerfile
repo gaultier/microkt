@@ -6,7 +6,7 @@ WORKDIR /microktc
 
 COPY . .
 
-RUN make microktc test BIN_TEST=microktc
+RUN make microktc test BIN_TEST=./microktc
 
 FROM alpine
 RUN apk add --no-cache gcc

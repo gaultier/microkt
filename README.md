@@ -20,4 +20,6 @@ make test
 # Docker
 docker build -t microktc .
 docker run -it microktc sh -c 'microktc /usr/local/share/microktc/math.kts && /usr/local/share/microktc/math'
+-210
+
 ```

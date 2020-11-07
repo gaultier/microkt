@@ -3,5 +3,5 @@
 !*.c
 !*.asm
 !*.awk
-!**.kts
+!e2e/*.kts
 !Makefile
