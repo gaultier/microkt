@@ -9,7 +9,7 @@ make
 # Run the tests:
 make test
 
-# Compile files so:
+# Compile a source file:
 ./microktc e2e/math_integers.kts
 
 # And then run the executable:
