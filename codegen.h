@@ -11,7 +11,7 @@
 #ifdef __APPLE__
 static const int64_t syscall_write = 0x2000004;
 #else
-static const int64_t syscall_write = 0;  // FIXME
+static const int64_t syscall_write = 1;
 #endif
 
 static FILE* output_file = NULL;
