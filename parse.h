@@ -17,7 +17,7 @@ typedef struct {
     int* par_stmt_nodes;    // Array of statements. Each statement is
                             // stored as the node index which is the
                             // root of the statement in the ast
-    pos_range_t* par_token_locs;
+    pos_range_t* par_tok_range_pos_s;
     lexer_t par_lexer;
     bool par_is_tty;
     obj_t* par_objects;
@@ -34,19 +34,19 @@ static parser_t parser_init(const char* file_name0, const char* source,
     token_id_t* token_ids = NULL;
     buf_grow(token_ids, source_len / 8);
 
-    pos_range_t* token_locs = NULL;
-    buf_grow(token_locs, source_len / 8);
+    pos_range_t* tok_pos_s = NULL;
+    buf_grow(tok_pos_s, source_len / 8);
 
     while (true) {
         const token_t token = lex_next(&lexer);
 
         buf_push(token_ids, token.tok_id);
-        buf_push(token_locs, token.tok_loc);
+        buf_push(tok_pos_s, token.tok_loc);
         token_dump(&token, &lexer);
 
         if (token.tok_id == LEX_TOKEN_ID_EOF) break;
     }
-    PG_ASSERT_COND((int)buf_size(token_ids), ==, (int)buf_size(token_locs),
+    PG_ASSERT_COND((int)buf_size(token_ids), ==, (int)buf_size(tok_pos_s),
                    "%d");
 
     return (parser_t){.par_file_name0 = file_name0,
@@ -55,7 +55,7 @@ static parser_t parser_init(const char* file_name0, const char* source,
                       .par_token_ids = token_ids,
                       .par_nodes = NULL,
                       .par_stmt_nodes = NULL,
-                      .par_token_locs = token_locs,
+                      .par_tok_range_pos_s = tok_pos_s,
                       .par_tok_i = 0,
                       .par_lexer = lexer,
                       .par_is_tty = isatty(2)};
@@ -63,10 +63,10 @@ static parser_t parser_init(const char* file_name0, const char* source,
 
 static int64_t parse_tok_to_i64(const parser_t* parser, int tok_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)parser->par_token_locs, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)parser->par_tok_range_pos_s, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_source, !=, NULL, "%p");
 
-    const pos_range_t loc = parser->par_token_locs[tok_i];
+    const pos_range_t loc = parser->par_tok_range_pos_s[tok_i];
     const char* const string = &parser->par_source[loc.pr_start];
     int string_len = loc.pr_end - loc.pr_start;
 
@@ -82,7 +82,7 @@ static int64_t parse_tok_to_i64(const parser_t* parser, int tok_i) {
 static int64_t parse_tok_to_char(const parser_t* parser, int tok_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
 
-    const pos_range_t loc = parser->par_token_locs[tok_i];
+    const pos_range_t loc = parser->par_tok_range_pos_s[tok_i];
     const char* const string = &parser->par_source[loc.pr_start + 1];
     int string_len = loc.pr_end - loc.pr_start - 2;
 
@@ -162,7 +162,7 @@ static void parser_tok_source(const parser_t* parser, int tok_i,
     PG_ASSERT_COND((void*)source_len, !=, NULL, "%p");
 
     const token_id_t tok = parser->par_token_ids[tok_i];
-    const pos_range_t loc = parser->par_token_locs[tok_i];
+    const pos_range_t loc = parser->par_tok_range_pos_s[tok_i];
 
     // Without quotes for char/string
     *source = &parser->par_source[(tok == LEX_TOKEN_ID_STRING ||
@@ -231,10 +231,12 @@ static void parser_print_source_on_error(const parser_t* parser,
                                          int first_tok_i, int last_tok_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
 
-    const pos_range_t first_tok_range_pos = parser->par_token_locs[first_tok_i];
+    const pos_range_t first_tok_range_pos =
+        parser->par_tok_range_pos_s[first_tok_i];
     const loc_t first_tok_loc =
         lex_pos_to_loc(&parser->par_lexer, first_tok_range_pos.pr_start);
-    const pos_range_t last_tok_range_pos = parser->par_token_locs[last_tok_i];
+    const pos_range_t last_tok_range_pos =
+        parser->par_tok_range_pos_s[last_tok_i];
     const loc_t last_tok_loc =
         lex_pos_to_loc(&parser->par_lexer, last_tok_range_pos.pr_start);
 
@@ -295,7 +297,8 @@ static res_t parser_err_unexpected_token(const parser_t* parser,
 
     const res_t res = RES_UNEXPECTED_TOKEN;
 
-    const pos_range_t pos_range = parser->par_token_locs[parser->par_tok_i];
+    const pos_range_t pos_range =
+        parser->par_tok_range_pos_s[parser->par_tok_i];
     const loc_t loc_start =
         lex_pos_to_loc(&parser->par_lexer, pos_range.pr_start);
 
@@ -315,7 +318,8 @@ static res_t parser_err_expected_primary(const parser_t* parser) {
 
     const res_t res = RES_EXPECTED_PRIMARY;
 
-    const pos_range_t pos_range = parser->par_token_locs[parser->par_tok_i];
+    const pos_range_t pos_range =
+        parser->par_tok_range_pos_s[parser->par_tok_i];
     const loc_t loc_start =
         lex_pos_to_loc(&parser->par_lexer, pos_range.pr_start);
 
@@ -343,7 +347,7 @@ static res_t parser_err_non_matching_types(const parser_t* parser, int lhs_i,
     const int rhs_last_tok_i = ast_node_last_token(parser, rhs);
 
     const pos_range_t lhs_first_tok_range_pos =
-        parser->par_token_locs[lhs_first_tok_i];
+        parser->par_tok_range_pos_s[lhs_first_tok_i];
 
     const loc_t lhs_first_tok_loc =
         lex_pos_to_loc(&parser->par_lexer, lhs_first_tok_range_pos.pr_start);
