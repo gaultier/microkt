@@ -492,6 +492,23 @@ static res_t parser_parse_addition(parser_t* parser, int* new_node_i) {
 
         return RES_OK;
     }
+    if (parser_match(parser, LEX_TOKEN_ID_MINUS, new_node_i)) {
+        int rhs_i = INT32_MAX;
+        if ((res = parser_parse_addition(parser, &rhs_i)) != RES_OK) return res;
+        const int rhs_type_i = parser->par_nodes[rhs_i].node_type_i;
+        const type_t rhs_type = parser->par_types[rhs_type_i];
+
+        if (lhs_type.ty_kind != rhs_type.ty_kind)
+            return parser_err_non_matching_types(parser, lhs_i, rhs_i);
+
+        buf_push(parser->par_types, lhs_type);
+        const ast_node_t new_node = NODE_SUBTRACT(lhs_i, rhs_i, lhs_type_i);
+        buf_push(parser->par_nodes, new_node);
+        *new_node_i = (int)buf_size(parser->par_nodes) - 1;
+        log_debug("new_node_i=%d", *new_node_i);
+
+        return RES_OK;
+    }
 
     return res;
 }

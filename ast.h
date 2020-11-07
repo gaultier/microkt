@@ -126,6 +126,13 @@ struct ast_node_t {
                                                         .bi_lhs_i = lhs_i,   \
                                                         .bi_rhs_i = rhs_i})}})
 
+#define NODE_SUBTRACT(lhs_i, rhs_i, type_i)                                  \
+    ((ast_node_t){.node_kind = NODE_SUBTRACT,                                \
+                  .node_type_i = type_i,                                     \
+                  .node_n = {.node_binary = ((binary_t){.bi_type_i = type_i, \
+                                                        .bi_lhs_i = lhs_i,   \
+                                                        .bi_rhs_i = rhs_i})}})
+
 #define AS_PRINT(node) ((node).node_n.node_builtin_print)
 
 #define OBJ_GLOBAL_VAR(type_i, tok_i, source, source_len) \
