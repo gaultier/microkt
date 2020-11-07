@@ -10,8 +10,10 @@
 // TODO: use platform headers for that?
 #ifdef __APPLE__
 static const int64_t syscall_write = 0x2000004;
+static const int64_t syscall_exit = 0x2000001;
 #else
 static const int64_t syscall_write = 1;
+static const int64_t syscall_exit = 60;
 #endif
 
 static FILE* output_file = NULL;
@@ -34,11 +36,17 @@ static void fn_prolog() {
     println("subq $%d, %%rsp\n", stack_depth);
 }
 
-static void fn_epilog() {
-    println("addq $%d, %%rsp", stack_depth);  // Hardcoded stack size
-    println("popq %%rbp");
-    println("ret\n");
-    stack_depth = 0;
+// static void fn_epilog() {
+//    println("addq $%d, %%rsp", stack_depth);  // Hardcoded stack size
+//    println("popq %%rbp");
+//    println("ret\n");
+//    stack_depth = 0;
+//}
+
+static void emit_program_epilog() {
+    println("movq $%lld, %%rax", syscall_exit);
+    println("movq $0, %%rdi");
+    println("syscall");
 }
 
 static void emit_push() { println("push %%rax"); }
@@ -181,8 +189,6 @@ static void emit(const parser_t* parser, FILE* asm_file) {
 
     output_file = asm_file;
     println(".data");
-    println(".Ltrue: .ascii \"true\"");
-    println(".Lfalse: .ascii \"false\"");
 
     for (int i = 0; i < (int)buf_size(parser->par_objects); i++) {
         const obj_t obj = parser->par_objects[i];
@@ -204,5 +210,5 @@ static void emit(const parser_t* parser, FILE* asm_file) {
         const ast_node_t* stmt = &parser->par_nodes[stmt_i];
         emit_stmt(parser, stmt);
     }
-    fn_epilog();
+    emit_program_epilog();
 }

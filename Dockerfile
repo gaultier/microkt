@@ -15,6 +15,6 @@ RUN make microktc
 FROM alpine
 RUN apk add --no-cache gcc
 COPY --from=builder /microktc /usr/local/bin/
-RUN mkdir -p  /usr/local/share/microktc/ && echo 'print("hello, world!")' > /usr/local/share/microktc/hello_world.kts
+RUN mkdir -p  /usr/local/share/microktc/ && echo 'print(123 + 456 - 789)' > /usr/local/share/microktc/math.kts
 
 CMD ["microktc"]
