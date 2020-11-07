@@ -49,7 +49,7 @@ typedef struct {
 
 typedef struct {
     token_id_t tok_id;
-    pos_range_t tok_loc;
+    pos_range_t pos_range;
 } token_t;
 
 typedef struct {
@@ -202,12 +202,13 @@ static void lex_identifier(lexer_t* lexer, token_t* result) {
     }
 
     PG_ASSERT_COND(lexer->lex_index, <, lexer->lex_source_len, "%d");
-    PG_ASSERT_COND(lexer->lex_index, >=, result->tok_loc.pr_start, "%d");
+    PG_ASSERT_COND(lexer->lex_index, >=, result->pos_range.pr_start, "%d");
 
     const token_id_t* id = NULL;
 
-    if ((id = token_get_keyword(lexer->lex_source + result->tok_loc.pr_start,
-                                lexer->lex_index - result->tok_loc.pr_start))) {
+    if ((id = token_get_keyword(
+             lexer->lex_source + result->pos_range.pr_start,
+             lexer->lex_index - result->pos_range.pr_start))) {
         result->tok_id = *id;
     } else {
         result->tok_id = LEX_TOKEN_ID_IDENTIFIER;
@@ -306,7 +307,7 @@ static token_t lex_next(lexer_t* lexer) {
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
 
     token_t result = {.tok_id = LEX_TOKEN_ID_EOF,
-                      .tok_loc = {.pr_start = lexer->lex_index}};
+                      .pos_range = {.pr_start = lexer->lex_index}};
 
     while (lexer->lex_index < lexer->lex_source_len) {
         const char c = lexer->lex_source[lexer->lex_index];
@@ -315,11 +316,11 @@ static token_t lex_next(lexer_t* lexer) {
             case ' ':
             case '\r':
             case '\t': {
-                result.tok_loc.pr_start = lexer->lex_index + 1;
+                result.pos_range.pr_start = lexer->lex_index + 1;
                 break;
             }
             case '\n': {
-                result.tok_loc.pr_start = lexer->lex_index + 1;
+                result.pos_range.pr_start = lexer->lex_index + 1;
                 lex_newline(lexer);
                 continue;
             }
@@ -435,7 +436,7 @@ static token_t lex_next(lexer_t* lexer) {
         lex_advance(lexer);
     }
 outer:
-    result.tok_loc.pr_end = lexer->lex_index;
+    result.pos_range.pr_end = lexer->lex_index;
 
     return result;
 }
@@ -446,6 +447,6 @@ static void token_dump(const token_t* t, const lexer_t* lexer) {
 
 #ifdef WITH_LOGS
     log_debug("id=%s pr_start=%d pr_end=%d", token_id_t_to_str[t->tok_id],
-              t->tok_loc.pr_start, t->tok_loc.pr_end);
+              t->pos_range.pr_start, t->pos_range.pr_end);
 #endif
 }
