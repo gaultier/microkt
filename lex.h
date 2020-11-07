@@ -17,6 +17,7 @@ typedef enum {
     LEX_TOKEN_ID_COMMENT,
     LEX_TOKEN_ID_CHAR,
     LEX_TOKEN_ID_PLUS,
+    LEX_TOKEN_ID_MINUS,
     LEX_TOKEN_ID_EOF,
     LEX_TOKEN_ID_INVALID,
 } token_id_t;
@@ -33,6 +34,7 @@ const char token_id_t_to_str[][30] = {
     [LEX_TOKEN_ID_CHAR] = "Char",
     [LEX_TOKEN_ID_I64] = "Int",
     [LEX_TOKEN_ID_PLUS] = "+",
+    [LEX_TOKEN_ID_MINUS] = "-",
     [LEX_TOKEN_ID_EOF] = "Eof",
     [LEX_TOKEN_ID_INVALID] = "Invalid",
 };
@@ -336,6 +338,12 @@ static token_t lex_next(lexer_t* lexer) {
             case '+': {
                 lex_match(lexer, '+');
                 result.tok_id = LEX_TOKEN_ID_PLUS;
+
+                goto outer;
+            }
+            case '-': {
+                lex_match(lexer, '-');
+                result.tok_id = LEX_TOKEN_ID_MINUS;
 
                 goto outer;
             }
