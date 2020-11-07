@@ -295,13 +295,12 @@ static res_t parser_err_unexpected_token(const parser_t* parser,
 
     const res_t res = RES_UNEXPECTED_TOKEN;
 
-    const pos_range_t actual_token_loc =
-        parser->par_token_locs[parser->par_tok_i];
-    const loc_t pos_start =
-        lex_pos_to_loc(&parser->par_lexer, actual_token_loc.pr_start);
+    const pos_range_t pos_range = parser->par_token_locs[parser->par_tok_i];
+    const loc_t loc_start =
+        lex_pos_to_loc(&parser->par_lexer, pos_range.pr_start);
 
     fprintf(stderr, res_to_str[res], (parser->par_is_tty ? color_grey : ""),
-            parser->par_file_name0, pos_start.loc_line, pos_start.loc_column,
+            parser->par_file_name0, loc_start.loc_line, loc_start.loc_column,
             (parser->par_is_tty ? color_reset : ""),
             token_id_t_to_str[expected],
             token_id_t_to_str[parser_current(parser)]);
@@ -316,13 +315,12 @@ static res_t parser_err_expected_primary(const parser_t* parser) {
 
     const res_t res = RES_EXPECTED_PRIMARY;
 
-    const pos_range_t actual_token_loc =
-        parser->par_token_locs[parser->par_tok_i];
-    const loc_t pos_start =
-        lex_pos_to_loc(&parser->par_lexer, actual_token_loc.pr_start);
+    const pos_range_t pos_range = parser->par_token_locs[parser->par_tok_i];
+    const loc_t loc_start =
+        lex_pos_to_loc(&parser->par_lexer, pos_range.pr_start);
 
     fprintf(stderr, res_to_str[res], (parser->par_is_tty ? color_grey : ""),
-            parser->par_file_name0, pos_start.loc_line, pos_start.loc_column,
+            parser->par_file_name0, loc_start.loc_line, loc_start.loc_column,
             (parser->par_is_tty ? color_reset : ""),
             token_id_t_to_str[parser_current(parser)]);
 
