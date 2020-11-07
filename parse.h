@@ -232,16 +232,16 @@ static void parser_print_source_on_error(const parser_t* parser,
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
 
     const pos_range_t first_tok_loc = parser->par_token_locs[first_tok_i];
-    const loc_pos_t first_tok_loc_pos =
-        lex_pos(&parser->par_lexer, first_tok_loc.pr_start);
+    const loc_t first_tok_loc_pos =
+        lex_pos_to_loc(&parser->par_lexer, first_tok_loc.pr_start);
     const pos_range_t last_tok_loc = parser->par_token_locs[last_tok_i];
-    const loc_pos_t last_tok_loc_pos =
-        lex_pos(&parser->par_lexer, last_tok_loc.pr_start);
+    const loc_t last_tok_loc_pos =
+        lex_pos_to_loc(&parser->par_lexer, last_tok_loc.pr_start);
 
-    // lex_pos returns a human readable line number starting at 1 so we subtract
-    // 1 to start at 0
-    const int first_line = first_tok_loc_pos.pos_line - 1;
-    const int last_line = last_tok_loc_pos.pos_line - 1;
+    // lex_pos_to_loc returns a human readable line number starting at 1 so we
+    // subtract 1 to start at 0
+    const int first_line = first_tok_loc_pos.loc_line - 1;
+    const int last_line = last_tok_loc_pos.loc_line - 1;
     PG_ASSERT_COND(first_line, <=, last_line, "%d");
 
     const int last_line_in_file = buf_size(parser->par_lexer.lex_lines) - 1;
@@ -266,7 +266,7 @@ static void parser_print_source_on_error(const parser_t* parser,
 
     static char prefix[MAXPATHLEN + 50] = "\0";
     snprintf(prefix, sizeof(prefix), "%s:%d:%d:", parser->par_file_name0,
-             first_tok_loc_pos.pos_line, first_tok_loc_pos.pos_column);
+             first_tok_loc_pos.loc_line, first_tok_loc_pos.loc_column);
     int prefix_len = strlen(prefix);
 
     fprintf(stderr, "%s%s%s%.*s\n", parser->par_is_tty ? color_grey : "",
@@ -296,11 +296,11 @@ static res_t parser_err_unexpected_token(const parser_t* parser,
 
     const pos_range_t actual_token_loc =
         parser->par_token_locs[parser->par_tok_i];
-    const loc_pos_t pos_start =
-        lex_pos(&parser->par_lexer, actual_token_loc.pr_start);
+    const loc_t pos_start =
+        lex_pos_to_loc(&parser->par_lexer, actual_token_loc.pr_start);
 
     fprintf(stderr, res_to_str[res], (parser->par_is_tty ? color_grey : ""),
-            parser->par_file_name0, pos_start.pos_line, pos_start.pos_column,
+            parser->par_file_name0, pos_start.loc_line, pos_start.loc_column,
             (parser->par_is_tty ? color_reset : ""),
             token_id_t_to_str[expected],
             token_id_t_to_str[parser_current(parser)]);
@@ -317,11 +317,11 @@ static res_t parser_err_expected_primary(const parser_t* parser) {
 
     const pos_range_t actual_token_loc =
         parser->par_token_locs[parser->par_tok_i];
-    const loc_pos_t pos_start =
-        lex_pos(&parser->par_lexer, actual_token_loc.pr_start);
+    const loc_t pos_start =
+        lex_pos_to_loc(&parser->par_lexer, actual_token_loc.pr_start);
 
     fprintf(stderr, res_to_str[res], (parser->par_is_tty ? color_grey : ""),
-            parser->par_file_name0, pos_start.pos_line, pos_start.pos_column,
+            parser->par_file_name0, pos_start.loc_line, pos_start.loc_column,
             (parser->par_is_tty ? color_reset : ""),
             token_id_t_to_str[parser_current(parser)]);
 
@@ -346,13 +346,13 @@ static res_t parser_err_non_matching_types(const parser_t* parser, int lhs_i,
     const pos_range_t lhs_first_tok_loc =
         parser->par_token_locs[lhs_first_tok_i];
 
-    const loc_pos_t lhs_first_tok_loc_pos =
-        lex_pos(&parser->par_lexer, lhs_first_tok_loc.pr_start);
+    const loc_t lhs_first_tok_loc_pos =
+        lex_pos_to_loc(&parser->par_lexer, lhs_first_tok_loc.pr_start);
 
     const res_t res = RES_NON_MATCHING_TYPES;
     fprintf(stderr, res_to_str[res], (parser->par_is_tty ? color_grey : ""),
-            parser->par_file_name0, lhs_first_tok_loc_pos.pos_line,
-            lhs_first_tok_loc_pos.pos_column,
+            parser->par_file_name0, lhs_first_tok_loc_pos.loc_line,
+            lhs_first_tok_loc_pos.loc_column,
             (parser->par_is_tty ? color_reset : ""),
             type_to_str[lhs_type->ty_kind], type_to_str[rhs_type->ty_kind]);
 

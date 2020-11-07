@@ -42,8 +42,8 @@ typedef struct {
 } pos_range_t;
 
 typedef struct {
-    int pos_line, pos_column;
-} loc_pos_t;
+    int loc_line, loc_column;
+} loc_t;
 
 typedef struct {
     token_id_t tok_id;
@@ -81,11 +81,11 @@ static const token_id_t* token_get_keyword(const char* source_start, int len) {
     return NULL;
 }
 
-static loc_pos_t lex_pos(const lexer_t* lexer, int position) {
+static loc_t lex_pos_to_loc(const lexer_t* lexer, int position) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
     PG_ASSERT_COND((int)buf_size(lexer->lex_lines), >, 0, "%d");
 
-    loc_pos_t pos = {.pos_line = 1};
+    loc_t loc = {.loc_line = 1};
 
     int i = 0;
     const int last_line = lexer->lex_lines[buf_size(lexer->lex_lines) - 1];
@@ -93,12 +93,12 @@ static loc_pos_t lex_pos(const lexer_t* lexer, int position) {
         const int line_pos = lexer->lex_lines[i];
         if (position < line_pos) break;
 
-        pos.pos_line += 1;
+        loc.loc_line += 1;
     }
 
-    pos.pos_column = position - (i > 0 ? lexer->lex_lines[i - 1] : 0);
-    if (pos.pos_line > last_line) pos.pos_line = last_line;
-    return pos;
+    loc.loc_column = position - (i > 0 ? lexer->lex_lines[i - 1] : 0);
+    if (loc.loc_line > last_line) loc.loc_line = last_line;
+    return loc;
 }
 
 // TODO: expand
