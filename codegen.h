@@ -98,7 +98,7 @@ static void emit_print_i64() {
         "      movb $45, (%%rsi) \n"
 
         "    __println_int_end_epilog: \n"
-        "      movq $0x2000004, %%rax\n"
+        "      movq $%lld, %%rax\n"
         "      movq $1, %%rdi\n"
         "      movq %%r8, %%rdx\n"
         "      movq %%rsp, %%rsi\n"
@@ -110,7 +110,8 @@ static void emit_print_i64() {
         "      # Epilog\n"
         "      addq $32, %%rsp\n"
         "      popq %%rbp\n"
-        "      ret\n");
+        "      ret\n",
+        syscall_write);
 }
 
 static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
