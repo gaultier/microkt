@@ -5,7 +5,7 @@ BEGIN {
     expected_outputs[0] = "1\n9990\n"
 
     tests[1] = "e2e/math_integers"
-    expected_outputs[1] = "6\n-2\n12\n"
+    expected_outputs[1] = "6\n-2\n12\n400\n"
 
 #    tests[1] = "e2e/print_bool"
 #    expected_outputs[1] = "truefalsefalse"
