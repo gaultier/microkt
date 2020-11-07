@@ -231,17 +231,17 @@ static void parser_print_source_on_error(const parser_t* parser,
                                          int first_tok_i, int last_tok_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
 
-    const pos_range_t first_tok_loc = parser->par_token_locs[first_tok_i];
-    const loc_t first_tok_loc_pos =
-        lex_pos_to_loc(&parser->par_lexer, first_tok_loc.pr_start);
-    const pos_range_t last_tok_loc = parser->par_token_locs[last_tok_i];
-    const loc_t last_tok_loc_pos =
-        lex_pos_to_loc(&parser->par_lexer, last_tok_loc.pr_start);
+    const pos_range_t first_tok_range_pos = parser->par_token_locs[first_tok_i];
+    const loc_t first_tok_loc =
+        lex_pos_to_loc(&parser->par_lexer, first_tok_range_pos.pr_start);
+    const pos_range_t last_tok_range_pos = parser->par_token_locs[last_tok_i];
+    const loc_t last_tok_loc =
+        lex_pos_to_loc(&parser->par_lexer, last_tok_range_pos.pr_start);
 
     // lex_pos_to_loc returns a human readable line number starting at 1 so we
     // subtract 1 to start at 0
-    const int first_line = first_tok_loc_pos.loc_line - 1;
-    const int last_line = last_tok_loc_pos.loc_line - 1;
+    const int first_line = first_tok_loc.loc_line - 1;
+    const int last_line = last_tok_loc.loc_line - 1;
     PG_ASSERT_COND(first_line, <=, last_line, "%d");
 
     const int last_line_in_file = buf_size(parser->par_lexer.lex_lines) - 1;
@@ -266,7 +266,7 @@ static void parser_print_source_on_error(const parser_t* parser,
 
     static char prefix[MAXPATHLEN + 50] = "\0";
     snprintf(prefix, sizeof(prefix), "%s:%d:%d:", parser->par_file_name0,
-             first_tok_loc_pos.loc_line, first_tok_loc_pos.loc_column);
+             first_tok_loc.loc_line, first_tok_loc.loc_column);
     int prefix_len = strlen(prefix);
 
     fprintf(stderr, "%s%s%s%.*s\n", parser->par_is_tty ? color_grey : "",
@@ -274,14 +274,15 @@ static void parser_print_source_on_error(const parser_t* parser,
             source);
 
     const int source_before_without_squiggly_len =
-        first_tok_loc.pr_start - first_line_source_pos;
+        first_tok_range_pos.pr_start - first_line_source_pos;
 
     for (int i = 0; i < prefix_len + source_before_without_squiggly_len; i++)
         fprintf(stderr, " ");
 
     if (parser->par_is_tty) fprintf(stderr, "%s", color_red);
 
-    const int squiggly_len = last_tok_loc.pr_end - first_tok_loc.pr_start;
+    const int squiggly_len =
+        last_tok_range_pos.pr_end - first_tok_range_pos.pr_start;
     for (int i = 0; i < squiggly_len; i++) fprintf(stderr, "^");
     if (parser->par_is_tty) fprintf(stderr, "%s", color_reset);
 
