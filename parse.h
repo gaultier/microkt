@@ -283,12 +283,18 @@ static void parser_print_source_on_error(const parser_t* parser,
     fprintf(stderr, "%s", prefix);
     if (parser->par_is_tty) fprintf(stderr, "%s", color_reset);
 
-    fprintf(stderr, "%.*s", (int)source_len, source);
-    fprintf(stderr, "\n");
-    for (int i = 0; i < prefix_len; i++) fprintf(stderr, " ");
+    fprintf(stderr, "%.*s\n", (int)source_len, source);
+
+    const int source_before_without_squiggly_len =
+        first_tok_loc.loc_start - first_line_source_pos;
+
+    for (int i = 0; i < prefix_len + source_before_without_squiggly_len; i++)
+        fprintf(stderr, " ");
 
     if (parser->par_is_tty) fprintf(stderr, "%s", color_red);
-    for (int i = 0; i < source_len; i++) fprintf(stderr, "^");
+
+    const int squiggly_len = last_tok_loc.loc_end - first_tok_loc.loc_start;
+    for (int i = 0; i < squiggly_len; i++) fprintf(stderr, "^");
     if (parser->par_is_tty) fprintf(stderr, "%s", color_reset);
 
     fprintf(stderr, "\n");
