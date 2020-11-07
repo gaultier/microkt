@@ -45,13 +45,14 @@ static void emit_push() { println("push %%rax"); }
 
 static void emit_print_i64() {
     println(
-        "__print_int: \n"
+        "__println_int: \n"
         "    pushq %%rbp\n"
         "    movq %%rsp, %%rbp\n"
-        "    subq $32, %%rsp # char data[21]\n"
+        "    subq $32, %%rsp # char data[22]\n"
         "  \n"
         "    xorq %%r8, %%r8 # r8: Loop index and length\n"
-        "    movq %%rsp, %%rsi # end ptr\n"
+        "    leaq -1(%%rsp), %%rsi # end ptr\n"
+        "    movb $0x0a, (%%rsi) \n"
         "    \n"
         "    int_to_string_loop:\n"
         "        cmpq $0, %%rax # While n != 0\n"
@@ -72,6 +73,7 @@ static void emit_print_i64() {
         "        jmp int_to_string_loop\n"
         "\n"
         "    int_to_string_end:\n"
+        "      incq %%r8 # Count newline as well \n"
         "      movq $0x2000004, %%rax\n"
         "      movq $1, %%rdi\n"
         "      movq %%r8, %%rdx\n"
@@ -142,7 +144,7 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
                 &parser->par_nodes[builtin_println.bp_arg_i];
             emit_expr(parser, arg);
 
-            println("call __print_int");
+            println("call __println_int");
 
             break;
         }
