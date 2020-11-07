@@ -34,11 +34,6 @@ static const char res_to_str[][100] = {
     [RES_EXPECTED_PRIMARY] = "%s%s:%d:%d:%sExpected primary, got %s\n",
 };
 
-// On macos this macro is defined in some system headers
-#ifndef MIN
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-#endif
-
 #define STR(s) #s
 
 #define PG_ASSERT_COND(a, cond, b, fmt)                           \

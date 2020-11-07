@@ -77,8 +77,9 @@ static const token_id_t* token_get_keyword(const char* source_start, int len) {
     const int keywords_len = sizeof(keywords) / sizeof(keywords[0]);
     for (int i = 0; i < keywords_len; i++) {
         const keyword_t* k = &keywords[i];
-        if (memcmp(source_start, k->key_str,
-                   MIN((size_t)len, sizeof(k->key_str))) == 0)
+        const int keyword_len = strlen(k->key_str);
+
+        if (len == keyword_len && memcmp(source_start, k->key_str, len) == 0)
             return &k->key_id;
     }
 
