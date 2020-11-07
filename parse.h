@@ -74,8 +74,11 @@ static int64_t parse_tok_to_i64(const parser_t* parser, int tok_i) {
     PG_ASSERT_COND(string_len, <, (int)25, "%d");
 
     // TOOD: limit in the lexer the length of a number literal
-    static char string0[25] = "\0";
+    static char string0[25] = "0";
     memcpy(string0, string, (size_t)string_len);
+
+    log_debug("%d..%d `%s`", pos_range.pr_start, pos_range.pr_end, string0);
+
     return strtoll(string0, NULL, 10);
 }
 
@@ -103,6 +106,8 @@ static void ast_node_dump(const ast_node_t* nodes, int node_i, int indent) {
             ast_node_dump(nodes, node->node_n.node_builtin_println.bp_arg_i, 2);
             break;
         }
+        case NODE_MULTIPLY:
+        case NODE_DIVIDE:
         case NODE_SUBTRACT:
         case NODE_ADD: {
             log_debug_with_indent(indent, "ast_node #%d %s", node_i,
@@ -135,6 +140,8 @@ static int ast_node_first_token(const parser_t* parser,
         case NODE_CHAR:
         case NODE_I64:
             return node->node_n.node_num.nu_tok_i;
+        case NODE_MULTIPLY:
+        case NODE_DIVIDE:
         case NODE_SUBTRACT:
         case NODE_ADD:
             return node->node_n.node_binary.bi_lhs_i;
@@ -152,6 +159,8 @@ static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
         case NODE_I64:
         case NODE_CHAR:
             return node->node_n.node_num.nu_tok_i;
+        case NODE_MULTIPLY:
+        case NODE_DIVIDE:
         case NODE_SUBTRACT:
         case NODE_ADD:
             return node->node_n.node_binary.bi_rhs_i;
@@ -465,11 +474,62 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
     return parser_err_expected_primary(parser);
 }
 
-static res_t parser_parse_addition(parser_t* parser, int* new_node_i) {
+static res_t parser_parse_multiplication(parser_t* parser, int* new_node_i) {
     res_t res = RES_NONE;
 
     int lhs_i = INT32_MAX;
     if ((res = parser_parse_primary(parser, &lhs_i)) != RES_OK) return res;
+    const int lhs_type_i = parser->par_nodes[lhs_i].node_type_i;
+    const type_t lhs_type = parser->par_types[lhs_type_i];
+    *new_node_i = lhs_i;
+    log_debug("new_node_i=%d", *new_node_i);
+
+    if (parser_match(parser, LEX_TOKEN_ID_STAR, new_node_i)) {
+        int rhs_i = INT32_MAX;
+        if ((res = parser_parse_multiplication(parser, &rhs_i)) != RES_OK)
+            return res;
+        const int rhs_type_i = parser->par_nodes[rhs_i].node_type_i;
+        const type_t rhs_type = parser->par_types[rhs_type_i];
+
+        if (lhs_type.ty_kind != rhs_type.ty_kind)
+            return parser_err_non_matching_types(parser, lhs_i, rhs_i);
+
+        buf_push(parser->par_types, lhs_type);
+        const ast_node_t new_node = NODE_MULTIPLY(lhs_i, rhs_i, lhs_type_i);
+        buf_push(parser->par_nodes, new_node);
+        *new_node_i = (int)buf_size(parser->par_nodes) - 1;
+        log_debug("new_node_i=%d", *new_node_i);
+
+        return RES_OK;
+    }
+    if (parser_match(parser, LEX_TOKEN_ID_SLASH, new_node_i)) {
+        int rhs_i = INT32_MAX;
+        if ((res = parser_parse_multiplication(parser, &rhs_i)) != RES_OK)
+            return res;
+        const int rhs_type_i = parser->par_nodes[rhs_i].node_type_i;
+        const type_t rhs_type = parser->par_types[rhs_type_i];
+
+        if (lhs_type.ty_kind != rhs_type.ty_kind)
+            return parser_err_non_matching_types(parser, lhs_i, rhs_i);
+
+        buf_push(parser->par_types, lhs_type);
+        const ast_node_t new_node = NODE_DIVIDE(lhs_i, rhs_i, lhs_type_i);
+        buf_push(parser->par_nodes, new_node);
+        *new_node_i = (int)buf_size(parser->par_nodes) - 1;
+        log_debug("new_node_i=%d", *new_node_i);
+
+        return RES_OK;
+    }
+
+    return res;
+}
+
+static res_t parser_parse_addition(parser_t* parser, int* new_node_i) {
+    res_t res = RES_NONE;
+
+    int lhs_i = INT32_MAX;
+    if ((res = parser_parse_multiplication(parser, &lhs_i)) != RES_OK)
+        return res;
     const int lhs_type_i = parser->par_nodes[lhs_i].node_type_i;
     const type_t lhs_type = parser->par_types[lhs_type_i];
     *new_node_i = lhs_i;

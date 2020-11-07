@@ -64,6 +64,8 @@ typedef enum {
     NODE_CHAR,
     NODE_ADD,
     NODE_SUBTRACT,
+    NODE_MULTIPLY,
+    NODE_DIVIDE,
 } ast_node_kind_t;
 
 const char ast_node_kind_t_to_str[][30] = {
@@ -74,6 +76,8 @@ const char ast_node_kind_t_to_str[][30] = {
     [NODE_CHAR] = "Char",
     [NODE_ADD] = "Plus",
     [NODE_SUBTRACT] = "Subtract",
+    [NODE_MULTIPLY] = "Multiply",
+    [NODE_DIVIDE] = "Divide",
 };
 
 typedef struct {
@@ -89,7 +93,8 @@ struct ast_node_t {
         int node_boolean;                            // NODE_KEYWORD_BOOL
         int node_string;                             // NODE_STRING, int = obj_i
         node_number_t node_num;                      // NODE_I64, NODE_CHAR
-        binary_t node_binary;                        // NODE_ADD, NODE_SUBTRACT
+        binary_t
+            node_binary;  // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY, NODE_DIVIDE
     } node_n;
 };
 
@@ -135,6 +140,22 @@ struct ast_node_t {
                   .node_n = {.node_binary = ((binary_t){.bi_type_i = type_i, \
                                                         .bi_lhs_i = lhs_i,   \
                                                         .bi_rhs_i = rhs_i})}})
+
+#define NODE_MULTIPLY(lhs_i, rhs_i, type_i)                                  \
+    ((ast_node_t){.node_kind = NODE_MULTIPLY,                                \
+                  .node_type_i = type_i,                                     \
+                  .node_n = {.node_binary = ((binary_t){.bi_type_i = type_i, \
+                                                        .bi_lhs_i = lhs_i,   \
+                                                        .bi_rhs_i = rhs_i})}})
+
+#define NODE_DIVIDE(lhs_i, rhs_i, type_i)                                    \
+    ((ast_node_t){.node_kind = NODE_DIVIDE,                                  \
+                  .node_type_i = type_i,                                     \
+                  .node_n = {.node_binary = ((binary_t){.bi_type_i = type_i, \
+                                                        .bi_lhs_i = lhs_i,   \
+                                                        .bi_rhs_i = rhs_i})}})
+
+#define AS_BINARY(node) ((node).node_n.node_binary)
 
 #define AS_PRINTLN(node) ((node).node_n.node_builtin_println)
 

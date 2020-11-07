@@ -127,6 +127,21 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             println("movq $%lld, %%rax", expr->node_n.node_num.nu_val);
             return;
         }
+        case NODE_DIVIDE:
+            UNIMPLEMENTED();
+        case NODE_MULTIPLY: {
+            const binary_t bin = expr->node_n.node_binary;
+            const ast_node_t* const lhs = &parser->par_nodes[bin.bi_lhs_i];
+            const ast_node_t* const rhs = &parser->par_nodes[bin.bi_rhs_i];
+
+            emit_expr(parser, rhs);
+            emit_push();
+            emit_expr(parser, lhs);
+            println("popq %%rdi");
+            println("imul %%rdi, %%rax");
+
+            break;
+        }
         case NODE_SUBTRACT: {
             const binary_t bin = expr->node_n.node_binary;
             const ast_node_t* const lhs = &parser->par_nodes[bin.bi_lhs_i];
@@ -177,10 +192,13 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
         case NODE_CHAR:
         case NODE_STRING:
         case NODE_KEYWORD_BOOL:
+        case NODE_MULTIPLY:
+        case NODE_DIVIDE:
         case NODE_SUBTRACT:
         case NODE_ADD:
             UNREACHABLE();
     }
+    println("\n");
 }
 
 static void emit(const parser_t* parser, FILE* asm_file) {

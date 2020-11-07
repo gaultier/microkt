@@ -17,6 +17,8 @@ typedef enum {
     LEX_TOKEN_ID_COMMENT,
     LEX_TOKEN_ID_CHAR,
     LEX_TOKEN_ID_PLUS,
+    LEX_TOKEN_ID_STAR,
+    LEX_TOKEN_ID_SLASH,
     LEX_TOKEN_ID_MINUS,
     LEX_TOKEN_ID_EOF,
     LEX_TOKEN_ID_INVALID,
@@ -35,6 +37,8 @@ const char token_id_t_to_str[][30] = {
     [LEX_TOKEN_ID_I64] = "Int",
     [LEX_TOKEN_ID_PLUS] = "+",
     [LEX_TOKEN_ID_MINUS] = "-",
+    [LEX_TOKEN_ID_STAR] = "*",
+    [LEX_TOKEN_ID_SLASH] = "/",
     [LEX_TOKEN_ID_EOF] = "Eof",
     [LEX_TOKEN_ID_INVALID] = "Invalid",
 };
@@ -333,12 +337,20 @@ static token_t lex_next(lexer_t* lexer) {
                     result.tok_id = LEX_TOKEN_ID_COMMENT;
                     goto outer;
                 } else {
-                    UNREACHABLE();  // TODO
+                    lex_match(lexer, '/');
+                    result.tok_id = LEX_TOKEN_ID_SLASH;
+                    goto outer;
                 }
             }
             case '+': {
                 lex_match(lexer, '+');
                 result.tok_id = LEX_TOKEN_ID_PLUS;
+
+                goto outer;
+            }
+            case '*': {
+                lex_match(lexer, '*');
+                result.tok_id = LEX_TOKEN_ID_STAR;
 
                 goto outer;
             }
@@ -454,8 +466,8 @@ static void token_dump(const token_t* t, const lexer_t* lexer) {
     PG_ASSERT_COND((void*)t, !=, NULL, "%p");
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
 
-#ifdef WITH_LOGS
-    log_debug("id=%s pr_start=%d pr_end=%d", token_id_t_to_str[t->tok_id],
-              t->tok_pos_range.pr_start, t->tok_pos_range.pr_end);
-#endif
+    log_debug("id=%s %d..%d `%.*s`", token_id_t_to_str[t->tok_id],
+              t->tok_pos_range.pr_start, t->tok_pos_range.pr_end,
+              t->tok_pos_range.pr_end - t->tok_pos_range.pr_start,
+              &lexer->lex_source[t->tok_pos_range.pr_start]);
 }
