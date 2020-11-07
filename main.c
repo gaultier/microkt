@@ -26,6 +26,9 @@ static void base_source_file_name(const char* file_name0,
 static res_t run(const char* file_name0) {
     PG_ASSERT_COND((void*)file_name0, !=, NULL, "%p");
 
+    static char base_file_name0[MAXPATHLEN + 1] = "";
+    static char argv0[3 * MAXPATHLEN] = "";
+
     res_t res = RES_NONE;
     if (!is_file_name_valid(file_name0)) {
         res = RES_INVALID_SOURCE_FILE_NAME;
@@ -80,11 +83,11 @@ static res_t run(const char* file_name0) {
     fclose(file);
 
     // as
-    static char base_file_name0[MAXPATHLEN + 1] = "\0";
+    memset(base_file_name0, 0, sizeof(base_file_name0));
     memcpy(base_file_name0, file_name0, (size_t)file_name_len);
     base_source_file_name(file_name0, base_file_name0);
     {
-        static char argv0[3 * MAXPATHLEN] = "\0";
+        memset(argv0, 0, sizeof(argv0));
         snprintf(argv0, sizeof(argv0), "as %s -o %s.o", asm_file_name0,
                  base_file_name0);
         fflush(stdout);
@@ -111,7 +114,7 @@ static res_t run(const char* file_name0) {
 #else
         const char ld_additional_args[] = "";
 #endif
-        static char argv0[3 * MAXPATHLEN] = "\0";
+        memset(argv0, 0, sizeof(argv0));
         snprintf(argv0, sizeof(argv0), "ld %s.o %s -o %s -e _main",
                  base_file_name0, ld_additional_args, base_file_name0);
         log_debug("%s", argv0);

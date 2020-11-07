@@ -66,15 +66,17 @@ static int64_t parse_tok_to_i64(const parser_t* parser, int tok_i) {
     PG_ASSERT_COND((void*)parser->par_tok_pos_ranges, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_source, !=, NULL, "%p");
 
+    static char string0[25];
+
     const pos_range_t pos_range = parser->par_tok_pos_ranges[tok_i];
     const char* const string = &parser->par_source[pos_range.pr_start];
-    int string_len = pos_range.pr_end - pos_range.pr_start;
+    const int string_len = pos_range.pr_end - pos_range.pr_start;
 
     PG_ASSERT_COND(string_len, >, (int)0, "%d");
     PG_ASSERT_COND(string_len, <, (int)25, "%d");
 
     // TOOD: limit in the lexer the length of a number literal
-    static char string0[25] = "0";
+    memset(string0, 0, sizeof(string0));
     memcpy(string0, string, (size_t)string_len);
 
     log_debug("%d..%d `%s`", pos_range.pr_start, pos_range.pr_end, string0);
