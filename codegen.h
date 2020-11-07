@@ -136,9 +136,10 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
     PG_ASSERT_COND((void*)stmt, !=, NULL, "%p");
 
     switch (stmt->node_kind) {
-        case NODE_BUILTIN_PRINT: {
-            const ast_builtin_print_t builtin_print = AS_PRINT(*stmt);
-            const ast_node_t* arg = &parser->par_nodes[builtin_print.bp_arg_i];
+        case NODE_BUILTIN_PRINTLN: {
+            const ast_builtin_println_t builtin_println = AS_PRINTLN(*stmt);
+            const ast_node_t* arg =
+                &parser->par_nodes[builtin_println.bp_arg_i];
             emit_expr(parser, arg);
 
             println("call __print_int");

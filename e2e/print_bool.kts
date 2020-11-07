@@ -1,9 +1,9 @@
 
 // A comment
-print(true)
+println(true)
 
-  print(false) // And another
+  println(false) // And another
 
-    print(false)        
+    println(false)        
 
     // A final comment

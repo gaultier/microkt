@@ -1,3 +1,3 @@
-print(1)
+println(1)
 
-  print(9990)
+  println(9990)

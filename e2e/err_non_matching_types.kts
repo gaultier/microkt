@@ -1,3 +1,3 @@
-print(0)
-print(1  + 0   + true)
-print(0)
+println(0)
+println(1  + 0   + true)
+println(0)

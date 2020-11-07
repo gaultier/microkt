@@ -1,3 +1,3 @@
-print('A')
+println('A')
 
-print('$')
+println('$')

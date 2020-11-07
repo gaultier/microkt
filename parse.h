@@ -97,10 +97,10 @@ static void ast_node_dump(const ast_node_t* nodes, int node_i, int indent) {
 
     const ast_node_t* node = &nodes[node_i];
     switch (node->node_kind) {
-        case NODE_BUILTIN_PRINT: {
+        case NODE_BUILTIN_PRINTLN: {
             log_debug_with_indent(indent, "ast_node #%d %s", node_i,
                                   ast_node_kind_t_to_str[node->node_kind]);
-            ast_node_dump(nodes, node->node_n.node_builtin_print.bp_arg_i, 2);
+            ast_node_dump(nodes, node->node_n.node_builtin_println.bp_arg_i, 2);
             break;
         }
         case NODE_SUBTRACT:
@@ -126,8 +126,8 @@ static void ast_node_dump(const ast_node_t* nodes, int node_i, int indent) {
 static int ast_node_first_token(const parser_t* parser,
                                 const ast_node_t* node) {
     switch (node->node_kind) {
-        case NODE_BUILTIN_PRINT:
-            return node->node_n.node_builtin_print.bp_keyword_print_i;
+        case NODE_BUILTIN_PRINTLN:
+            return node->node_n.node_builtin_println.bp_keyword_print_i;
         case NODE_KEYWORD_BOOL:
             return node->node_n.node_boolean;
         case NODE_STRING:
@@ -143,8 +143,8 @@ static int ast_node_first_token(const parser_t* parser,
 
 static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
     switch (node->node_kind) {
-        case NODE_BUILTIN_PRINT:
-            return node->node_n.node_builtin_print.bp_rparen_i;
+        case NODE_BUILTIN_PRINTLN:
+            return node->node_n.node_builtin_println.bp_rparen_i;
         case NODE_KEYWORD_BOOL:
             return node->node_n.node_boolean;
         case NODE_STRING:
@@ -534,13 +534,13 @@ static res_t parser_expect_token(parser_t* parser, token_id_t expected,
     return RES_OK;
 }
 
-static res_t parser_parse_builtin_print(parser_t* parser, int* new_node_i) {
+static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
     int keyword_print_i = INT32_MAX;
     res_t res = RES_NONE;
-    if (parser_match(parser, LEX_TOKEN_ID_BUILTIN_PRINT, &keyword_print_i)) {
+    if (parser_match(parser, LEX_TOKEN_ID_BUILTIN_PRINTLN, &keyword_print_i)) {
         int lparen = 0;
         if ((res = parser_expect_token(parser, LEX_TOKEN_ID_LPAREN, &lparen)) !=
             RES_OK)
@@ -555,10 +555,10 @@ static res_t parser_parse_builtin_print(parser_t* parser, int* new_node_i) {
             return res;
 
         buf_push(parser->par_types,
-                 ((type_t){.ty_size = 1, .ty_kind = TYPE_BUILTIN_PRINT}));
+                 ((type_t){.ty_size = 1, .ty_kind = TYPE_BUILTIN_PRINTLN}));
         const int type_i = buf_size(parser->par_types) - 1;
         const ast_node_t new_node =
-            NODE_PRINT(arg_i, keyword_print_i, rparen, type_i);
+            NODE_PRINTLN(arg_i, keyword_print_i, rparen, type_i);
         buf_push(parser->par_nodes, new_node);
         *new_node_i = (int)buf_size(parser->par_nodes) - 1;
 
@@ -568,7 +568,7 @@ static res_t parser_parse_builtin_print(parser_t* parser, int* new_node_i) {
 }
 
 static res_t parser_parse_stmt(parser_t* parser, int* new_node_i) {
-    return parser_parse_builtin_print(parser, new_node_i);
+    return parser_parse_builtin_println(parser, new_node_i);
 }
 
 static res_t parser_parse(parser_t* parser) {
@@ -595,7 +595,7 @@ static res_t parser_parse(parser_t* parser) {
 
             continue;
         }
-        log_debug("failed to parse builtin_print: res=%d tok_i=%d", res,
+        log_debug("failed to parse builtin_println: res=%d tok_i=%d", res,
                   parser->par_tok_i);
 
         const token_id_t current = parser_current(parser);

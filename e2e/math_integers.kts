@@ -1,2 +1,2 @@
-print(3 + 2 + 1 + 0)
-print( 9-  8)
+println(3 + 2 + 1 + 0)
+println( 9-  8)

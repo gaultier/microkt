@@ -9,7 +9,7 @@ typedef enum {
     TYPE_CHAR,
     TYPE_I64,
     TYPE_STRING,
-    TYPE_BUILTIN_PRINT,
+    TYPE_BUILTIN_PRINTLN,
 } type_kind_t;
 
 static const char type_to_str[][20] = {
@@ -17,7 +17,7 @@ static const char type_to_str[][20] = {
     [TYPE_CHAR] = "Char",
     [TYPE_I64] = "Int64",
     [TYPE_STRING] = "String",
-    [TYPE_BUILTIN_PRINT] = "BuiltinPrint",
+    [TYPE_BUILTIN_PRINTLN] = "BuiltinPrint",
 };
 
 typedef struct {
@@ -48,7 +48,7 @@ typedef struct {
     int bp_arg_i;  // Index of argument node
     int bp_keyword_print_i;
     int bp_rparen_i;
-} ast_builtin_print_t;
+} ast_builtin_println_t;
 
 typedef struct {
     int bi_type_i;
@@ -57,7 +57,7 @@ typedef struct {
 } binary_t;
 
 typedef enum {
-    NODE_BUILTIN_PRINT,
+    NODE_BUILTIN_PRINTLN,
     NODE_KEYWORD_BOOL,
     NODE_STRING,
     NODE_I64,
@@ -67,9 +67,12 @@ typedef enum {
 } ast_node_kind_t;
 
 const char ast_node_kind_t_to_str[][30] = {
-    [NODE_BUILTIN_PRINT] = "print", [NODE_KEYWORD_BOOL] = "bool",
-    [NODE_STRING] = "String",       [NODE_I64] = "I64",
-    [NODE_CHAR] = "Char",           [NODE_ADD] = "Plus",
+    [NODE_BUILTIN_PRINTLN] = "print",
+    [NODE_KEYWORD_BOOL] = "bool",
+    [NODE_STRING] = "String",
+    [NODE_I64] = "I64",
+    [NODE_CHAR] = "Char",
+    [NODE_ADD] = "Plus",
     [NODE_SUBTRACT] = "Subtract",
 };
 
@@ -82,21 +85,21 @@ struct ast_node_t {
     ast_node_kind_t node_kind;
     int node_type_i;
     union {
-        ast_builtin_print_t node_builtin_print;  // NODE_BUILTIN_PRINT
-        int node_boolean;                        // NODE_KEYWORD_BOOL
-        int node_string;                         // NODE_STRING, int = obj_i
-        node_number_t node_num;                  // NODE_I64, NODE_CHAR
-        binary_t node_binary;                    // NODE_ADD, NODE_SUBTRACT
+        ast_builtin_println_t node_builtin_println;  // NODE_BUILTIN_PRINTLN
+        int node_boolean;                            // NODE_KEYWORD_BOOL
+        int node_string;                             // NODE_STRING, int = obj_i
+        node_number_t node_num;                      // NODE_I64, NODE_CHAR
+        binary_t node_binary;                        // NODE_ADD, NODE_SUBTRACT
     } node_n;
 };
 
-#define NODE_PRINT(arg, keyword, rparen, type_i)                         \
-    ((ast_node_t){                                                       \
-        .node_kind = NODE_BUILTIN_PRINT,                                 \
-        .node_type_i = type_i,                                           \
-        .node_n = {.node_builtin_print = {.bp_arg_i = arg,               \
-                                          .bp_keyword_print_i = keyword, \
-                                          .bp_rparen_i = rparen}}})
+#define NODE_PRINTLN(arg, keyword, rparen, type_i)                         \
+    ((ast_node_t){                                                         \
+        .node_kind = NODE_BUILTIN_PRINTLN,                                 \
+        .node_type_i = type_i,                                             \
+        .node_n = {.node_builtin_println = {.bp_arg_i = arg,               \
+                                            .bp_keyword_print_i = keyword, \
+                                            .bp_rparen_i = rparen}}})
 #define NODE_I64(tok_i, type_i, val)                                        \
     ((ast_node_t){.node_kind = NODE_I64,                                    \
                   .node_type_i = type_i,                                    \
@@ -133,7 +136,7 @@ struct ast_node_t {
                                                         .bi_lhs_i = lhs_i,   \
                                                         .bi_rhs_i = rhs_i})}})
 
-#define AS_PRINT(node) ((node).node_n.node_builtin_print)
+#define AS_PRINTLN(node) ((node).node_n.node_builtin_println)
 
 #define OBJ_GLOBAL_VAR(type_i, tok_i, source, source_len) \
     ((obj_t){.obj_kind = OBJ_GLOBAL_VAR,                  \

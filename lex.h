@@ -6,7 +6,7 @@
 #include "common.h"
 
 typedef enum {
-    LEX_TOKEN_ID_BUILTIN_PRINT,
+    LEX_TOKEN_ID_BUILTIN_PRINTLN,
     LEX_TOKEN_ID_LPAREN,
     LEX_TOKEN_ID_RPAREN,
     LEX_TOKEN_ID_TRUE,
@@ -23,7 +23,7 @@ typedef enum {
 } token_id_t;
 
 const char token_id_t_to_str[][30] = {
-    [LEX_TOKEN_ID_BUILTIN_PRINT] = "Print",
+    [LEX_TOKEN_ID_BUILTIN_PRINTLN] = "Println",
     [LEX_TOKEN_ID_LPAREN] = "(",
     [LEX_TOKEN_ID_RPAREN] = ")",
     [LEX_TOKEN_ID_TRUE] = "true",
@@ -62,7 +62,7 @@ typedef struct {
 static const keyword_t keywords[] = {
     {.key_id = LEX_TOKEN_ID_TRUE, .key_str = "true"},
     {.key_id = LEX_TOKEN_ID_FALSE, .key_str = "false"},
-    {.key_id = LEX_TOKEN_ID_BUILTIN_PRINT, .key_str = "print"},
+    {.key_id = LEX_TOKEN_ID_BUILTIN_PRINTLN, .key_str = "println"},
 };
 
 typedef struct {
