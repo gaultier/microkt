@@ -56,17 +56,17 @@ static void emit_print_i64() {
         "    subq $32, %%rsp # char data[23]\n"
         "  \n"
 
-        "    movq %%rax, %%r9 # Store original value of the argument \n"
+        "    movq %%rdi, %%r9 # Store original value of the argument \n"
         "    # Abs \n"
-        "    negq %%rax      \n"
-        "    cmovlq %%r9, %%rax\n"
+        "    negq %%rdi      \n"
+        "    cmovlq %%r9, %%rdi\n"
 
         "    xorq %%r8, %%r8 # r8: Loop index and length\n"
         "    leaq -1(%%rsp), %%rsi # end ptr\n"
         "    movb $0x0a, (%%rsi) # Trailing newline \n"
         "    \n"
         "    __println_int_loop:\n"
-        "        cmpq $0, %%rax # While n != 0\n"
+        "        cmpq $0, %%rdi # While n != 0\n"
         "        jz __println_int_end\n"
         "\n"
         "        decq %%rsi # end--\n"
@@ -74,7 +74,9 @@ static void emit_print_i64() {
         "        # n / 10\n"
         "        movq $10, %%rcx \n"
         "        xorq %%rdx, %%rdx\n"
+        "        movq %%rdi, %%rax\n"
         "        idiv %%rcx\n"
+        "        movq %%rax, %%rdi\n"
         "    \n"
         "        # *end = rem + '0'\n"
         "        add $48, %%rdx # Convert integer to character by adding '0'\n"
@@ -209,6 +211,7 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
                 &parser->par_nodes[builtin_println.bp_arg_i];
             emit_expr(parser, arg);
 
+            println("movq %%rax, %%rdi");
             println("call __println_int");
 
             break;
