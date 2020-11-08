@@ -50,6 +50,15 @@ static void emit_push() { println("push %%rax"); }
 
 static void emit_print_i64() {
     println(
+        "__print_string:\n"
+        "    movq $%lld, %%rax\n"
+        "    movq %%rsi, %%rdx\n"
+        "    movq %%rdi, %%rsi\n"
+        "    movq $1, %%rdi\n"
+        "    syscall\n"
+        "    xorq %%rax, %%rax\n"
+        "    ret\n"
+        "               \n"
         "__println_int: \n"
         "    pushq %%rbp\n"
         "    movq %%rsp, %%rbp\n"
@@ -110,7 +119,7 @@ static void emit_print_i64() {
         "      addq $32, %%rsp\n"
         "      popq %%rbp\n"
         "      ret\n",
-        syscall_write);
+        syscall_write, syscall_write);
 }
 
 static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
