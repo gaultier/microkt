@@ -388,8 +388,8 @@ static res_t parser_err_non_matching_types(const parser_t* parser, int lhs_i,
     return res;
 }
 
-static bool parser_match(parser_t* parser, token_id_t id,
-                         int* return_token_index) {
+static bool parser_match(parser_t* parser, int* return_token_index,
+                         token_id_t id) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_token_ids, !=, NULL, "%p");
     PG_ASSERT_COND((int)buf_size(parser->par_token_ids), >, (int)0, "%d");
@@ -421,10 +421,10 @@ static bool parser_match(parser_t* parser, token_id_t id,
     return true;
 }
 
-static bool parser_match_2(parser_t* parser, token_id_t id1, token_id_t id2,
-                           int* return_token_index) {
-    return parser_match(parser, id1, return_token_index) ||
-           parser_match(parser, id2, return_token_index);
+static bool parser_match_2(parser_t* parser, int* return_token_index,
+                           token_id_t id1, token_id_t id2) {
+    return parser_match(parser, return_token_index, id1) ||
+           parser_match(parser, return_token_index, id2);
 }
 
 static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
@@ -433,8 +433,8 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
 
     int tok_i = INT32_MAX;
 
-    if (parser_match(parser, LEX_TOKEN_ID_TRUE, &tok_i) ||
-        parser_match(parser, LEX_TOKEN_ID_FALSE, &tok_i)) {
+    if (parser_match(parser, &tok_i, LEX_TOKEN_ID_TRUE) ||
+        parser_match(parser, &tok_i, LEX_TOKEN_ID_FALSE)) {
         buf_push(parser->par_types,
                  ((type_t){.ty_size = 1, .ty_kind = TYPE_BOOL}));
         const int type_i = buf_size(parser->par_types) - 1;
@@ -445,7 +445,7 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
 
         return RES_OK;
     }
-    if (parser_match(parser, LEX_TOKEN_ID_STRING, &tok_i)) {
+    if (parser_match(parser, &tok_i, LEX_TOKEN_ID_STRING)) {
         buf_push(parser->par_types,
                  ((type_t){.ty_size = 1, .ty_kind = TYPE_STRING}));
         const int type_i = buf_size(parser->par_types) - 1;
@@ -466,7 +466,7 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
 
         return RES_OK;
     }
-    if (parser_match(parser, LEX_TOKEN_ID_I64, &tok_i)) {
+    if (parser_match(parser, &tok_i, LEX_TOKEN_ID_I64)) {
         buf_push(parser->par_types,
                  ((type_t){.ty_size = 8, .ty_kind = TYPE_I64}));
         const int type_i = buf_size(parser->par_types) - 1;
@@ -478,7 +478,7 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
 
         return RES_OK;
     }
-    if (parser_match(parser, LEX_TOKEN_ID_CHAR, &tok_i)) {
+    if (parser_match(parser, &tok_i, LEX_TOKEN_ID_CHAR)) {
         buf_push(parser->par_types,
                  ((type_t){.ty_size = 1, .ty_kind = TYPE_CHAR}));
         const int type_i = buf_size(parser->par_types) - 1;
@@ -508,8 +508,8 @@ static res_t parser_parse_multiplication(parser_t* parser, int* new_node_i) {
     *new_node_i = lhs_i;
     log_debug("new_node_i=%d", *new_node_i);
 
-    while (parser_match_2(parser, LEX_TOKEN_ID_STAR, LEX_TOKEN_ID_SLASH,
-                          new_node_i)) {
+    while (parser_match_2(parser, new_node_i, LEX_TOKEN_ID_STAR,
+                          LEX_TOKEN_ID_SLASH)) {
         const int tok_id = parser_previous(parser);
 
         int rhs_i = INT32_MAX;
@@ -547,8 +547,8 @@ static res_t parser_parse_addition(parser_t* parser, int* new_node_i) {
     *new_node_i = lhs_i;
     log_debug("new_node_i=%d", *new_node_i);
 
-    while (parser_match_2(parser, LEX_TOKEN_ID_PLUS, LEX_TOKEN_ID_MINUS,
-                          new_node_i)) {
+    while (parser_match_2(parser, new_node_i, LEX_TOKEN_ID_PLUS,
+                          LEX_TOKEN_ID_MINUS)) {
         const int tok_id = parser_previous(parser);
 
         int rhs_i = INT32_MAX;
@@ -583,14 +583,14 @@ static res_t parser_parse_expr(parser_t* parser, int* new_node_i) {
     return parser_parse_addition(parser, new_node_i);
 }
 
-static res_t parser_expect_token(parser_t* parser, token_id_t expected,
-                                 int* token) {
+static res_t parser_expect_token(parser_t* parser, int* token,
+                                 token_id_t expected) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_token_ids, !=, NULL, "%p");
     PG_ASSERT_COND((int)buf_size(parser->par_token_ids), >, (int)0, "%d");
     PG_ASSERT_COND((void*)token, !=, NULL, "%p");
 
-    if (!parser_match(parser, expected, token)) {
+    if (!parser_match(parser, token, expected)) {
         log_debug("expected token not found: %s", token_id_to_str[expected]);
         return parser_err_unexpected_token(parser, expected);
     }
@@ -603,9 +603,9 @@ static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i) {
 
     int keyword_print_i = INT32_MAX;
     res_t res = RES_NONE;
-    if (parser_match(parser, LEX_TOKEN_ID_BUILTIN_PRINTLN, &keyword_print_i)) {
+    if (parser_match(parser, &keyword_print_i, LEX_TOKEN_ID_BUILTIN_PRINTLN)) {
         int lparen = 0;
-        if ((res = parser_expect_token(parser, LEX_TOKEN_ID_LPAREN, &lparen)) !=
+        if ((res = parser_expect_token(parser, &lparen, LEX_TOKEN_ID_LPAREN)) !=
             RES_OK)
             return res;
 
@@ -613,7 +613,7 @@ static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i) {
         if ((res = parser_parse_expr(parser, &arg_i)) != RES_OK) return res;
 
         int rparen = 0;
-        if ((res = parser_expect_token(parser, LEX_TOKEN_ID_RPAREN, &rparen)) !=
+        if ((res = parser_expect_token(parser, &rparen, LEX_TOKEN_ID_RPAREN)) !=
             RES_OK)
             return res;
 
