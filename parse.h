@@ -111,6 +111,7 @@ static void ast_node_dump(const ast_node_t* nodes, int node_i, int indent) {
         }
         case NODE_MULTIPLY:
         case NODE_DIVIDE:
+        case NODE_MODULO:
         case NODE_SUBTRACT:
         case NODE_ADD: {
             log_debug_with_indent(indent, "ast_node #%d %s", node_i,
@@ -145,6 +146,7 @@ static int ast_node_first_token(const parser_t* parser,
             return node->node_n.node_num.nu_tok_i;
         case NODE_MULTIPLY:
         case NODE_DIVIDE:
+        case NODE_MODULO:
         case NODE_SUBTRACT:
         case NODE_ADD:
             return node->node_n.node_binary.bi_lhs_i;
@@ -164,6 +166,7 @@ static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
             return node->node_n.node_num.nu_tok_i;
         case NODE_MULTIPLY:
         case NODE_DIVIDE:
+        case NODE_MODULO:
         case NODE_SUBTRACT:
         case NODE_ADD:
             return node->node_n.node_binary.bi_rhs_i;
