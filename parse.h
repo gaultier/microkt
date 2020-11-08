@@ -512,8 +512,8 @@ static res_t parser_parse_multiplication(parser_t* parser, int* new_node_i) {
     *new_node_i = lhs_i;
     log_debug("new_node_i=%d", *new_node_i);
 
-    while (parser_match(parser, new_node_i, 2, LEX_TOKEN_ID_STAR,
-                        LEX_TOKEN_ID_SLASH)) {
+    while (parser_match(parser, new_node_i, 3, LEX_TOKEN_ID_STAR,
+                        LEX_TOKEN_ID_SLASH, LEX_TOKEN_ID_PERCENT)) {
         const int tok_id = parser_previous(parser);
 
         int rhs_i = INT32_MAX;
@@ -530,7 +530,9 @@ static res_t parser_parse_multiplication(parser_t* parser, int* new_node_i) {
         const ast_node_t new_node =
             (tok_id == LEX_TOKEN_ID_STAR)
                 ? NODE_MULTIPLY(lhs_i, rhs_i, lhs_type_i)
-                : NODE_DIVIDE(lhs_i, rhs_i, lhs_type_i);
+                : ((tok_id == LEX_TOKEN_ID_SLASH)
+                       ? NODE_DIVIDE(lhs_i, rhs_i, lhs_type_i)
+                       : NODE_MODULO(lhs_i, rhs_i, lhs_type_i));
 
         buf_push(parser->par_nodes, new_node);
         *new_node_i = lhs_i = (int)buf_size(parser->par_nodes) - 1;
