@@ -7,6 +7,9 @@ BEGIN {
     tests[1] = "e2e/math_integers"
     expected_outputs[1] = "6\n-2\n12\n200\n4\n"
 
+    tests[2] = "e2e/print_char"
+    expected_outputs[2] = "A$"
+
 #    tests[1] = "e2e/print_bool"
 #    expected_outputs[1] = "truefalsefalse"
 #
@@ -16,8 +19,6 @@ BEGIN {
 #    tests[3] = "e2e/hello_world"
 #    expected_outputs[3] = "hello, world!"
 #
-#    tests[4] = "e2e/print_char"
-#    expected_outputs[4] = "A$"
 
     is_tty = system("test -t 1") == 0
 

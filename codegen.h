@@ -2,6 +2,8 @@
 
 #include <stdint.h>
 
+#include "ast.h"
+#include "common.h"
 #include "parse.h"
 
 // TODO: use platform headers for that?
@@ -50,7 +52,7 @@ static void emit_push() { println("push %%rax"); }
 
 static void emit_print_i64() {
     println(
-        "__print_string:\n"
+        "__println_string:\n"
         "    movq $%lld, %%rax\n"
         "    movq %%rsi, %%rdx\n"
         "    movq %%rdi, %%rsi\n"
@@ -59,16 +61,16 @@ static void emit_print_i64() {
         "    xorq %%rax, %%rax\n"
         "    ret\n"
 
-        "__print_char:\n"
+        "__println_char:\n"
         "    pushq %%rbp\n"
         "    movq %%rsp, %%rbp\n"
         "    subq $16, %%rsp # char data[1]\n"
 
         "    movq $%lld, %%rax\n"
-        "    movq %%rdi, -1(%%rsp)\n"
-        "    leaq -1(%%rsp), %%rsi\n"
-        "    movq 1, %%rdi\n"
-        "    movq 1, %%rdx\n"
+        "    movq %%rdi, (%%rsp)\n"
+        "    movq %%rsp, %%rsi\n"
+        "    movq $1, %%rdi\n"
+        "    movq $1, %%rdx\n"
         "    syscall\n"
         "    xorq %%rax, %%rax\n"
 
@@ -146,8 +148,12 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
     switch (expr->node_kind) {
         case NODE_KEYWORD_BOOL:
         case NODE_STRING:
-        case NODE_CHAR:
             UNIMPLEMENTED();
+        case NODE_CHAR: {
+            /* println("subq $1, %%rsp"); */
+            println("movq $65, %%rax");  // FIXME
+            return;
+        }
         case NODE_I64: {
             println("movq $%lld, %%rax", expr->node_n.node_num.nu_val);
             return;
@@ -238,7 +244,15 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
             emit_expr(parser, arg);
 
             println("movq %%rax, %%rdi");
-            println("call __println_int");
+
+            const type_kind_t type =
+                parser->par_types[arg->node_type_i].ty_kind;
+            if (type == TYPE_I64)
+                println("call __println_int");
+            else if (type == TYPE_CHAR)
+                println("call __println_char");
+            else
+                UNIMPLEMENTED();
 
             break;
         }
