@@ -69,8 +69,9 @@ static void emit_print_i64() {
         "    movq $%lld, %%rax\n"
         "    movq %%rdi, (%%rsp)\n"
         "    movq %%rsp, %%rsi\n"
+        "    movq $0x0a, 1(%%rsp)\n"
         "    movq $1, %%rdi\n"
-        "    movq $1, %%rdx\n"
+        "    movq $2, %%rdx\n"
         "    syscall\n"
         "    xorq %%rax, %%rax\n"
 
@@ -150,8 +151,7 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
         case NODE_STRING:
             UNIMPLEMENTED();
         case NODE_CHAR: {
-            /* println("subq $1, %%rsp"); */
-            println("movq $65, %%rax");  // FIXME
+            println("movq $%d, %%rax", (char)expr->node_n.node_num.nu_val);
             return;
         }
         case NODE_I64: {

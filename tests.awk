@@ -8,7 +8,7 @@ BEGIN {
     expected_outputs[1] = "6\n-2\n12\n200\n4\n"
 
     tests[2] = "e2e/print_char"
-    expected_outputs[2] = "A$"
+    expected_outputs[2] = "A\n$\n"
 
 #    tests[1] = "e2e/print_bool"
 #    expected_outputs[1] = "truefalsefalse"
