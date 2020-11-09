@@ -58,7 +58,24 @@ static void emit_print_i64() {
         "    syscall\n"
         "    xorq %%rax, %%rax\n"
         "    ret\n"
-        "               \n"
+
+        "__print_char:\n"
+        "    pushq %%rbp\n"
+        "    movq %%rsp, %%rbp\n"
+        "    subq $16, %%rsp # char data[1]\n"
+
+        "    movq $%lld, %%rax\n"
+        "    movq %%rdi, -1(%%rsp)\n"
+        "    leaq -1(%%rsp), %%rsi\n"
+        "    movq 1, %%rdi\n"
+        "    movq 1, %%rdx\n"
+        "    syscall\n"
+        "    xorq %%rax, %%rax\n"
+
+        "    addq $16, %%rsp\n"
+        "    popq %%rbp\n"
+        "    ret\n"
+
         "__println_int: \n"
         "    pushq %%rbp\n"
         "    movq %%rsp, %%rbp\n"
@@ -119,7 +136,7 @@ static void emit_print_i64() {
         "      addq $32, %%rsp\n"
         "      popq %%rbp\n"
         "      ret\n",
-        syscall_write, syscall_write);
+        syscall_write, syscall_write, syscall_write);
 }
 
 static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
