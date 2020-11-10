@@ -6,43 +6,43 @@
 #include "common.h"
 
 typedef enum {
-    TOKEN_ID_BUILTIN_PRINTLN,
-    TOKEN_ID_LPAREN,
-    TOKEN_ID_RPAREN,
-    TOKEN_ID_TRUE,
-    TOKEN_ID_FALSE,
-    TOKEN_ID_IDENTIFIER,
-    TOKEN_ID_STRING,
-    TOKEN_ID_I64,
-    TOKEN_ID_COMMENT,
-    TOKEN_ID_CHAR,
-    TOKEN_ID_PLUS,
-    TOKEN_ID_STAR,
-    TOKEN_ID_SLASH,
-    TOKEN_ID_MINUS,
-    TOKEN_ID_PERCENT,
-    TOKEN_ID_EOF,
-    TOKEN_ID_INVALID,
+    TOK_ID_BUILTIN_PRINTLN,
+    TOK_ID_LPAREN,
+    TOK_ID_RPAREN,
+    TOK_ID_TRUE,
+    TOK_ID_FALSE,
+    TOK_ID_IDENTIFIER,
+    TOK_ID_STRING,
+    TOK_ID_I64,
+    TOK_ID_COMMENT,
+    TOK_ID_CHAR,
+    TOK_ID_PLUS,
+    TOK_ID_STAR,
+    TOK_ID_SLASH,
+    TOK_ID_MINUS,
+    TOK_ID_PERCENT,
+    TOK_ID_EOF,
+    TOK_ID_INVALID,
 } token_id_t;
 
 const char token_id_to_str[][30] = {
-    [TOKEN_ID_BUILTIN_PRINTLN] = "Println",
-    [TOKEN_ID_LPAREN] = "(",
-    [TOKEN_ID_RPAREN] = ")",
-    [TOKEN_ID_TRUE] = "true",
-    [TOKEN_ID_FALSE] = "false",
-    [TOKEN_ID_IDENTIFIER] = "Identifier",
-    [TOKEN_ID_STRING] = "String",
-    [TOKEN_ID_COMMENT] = "Comment",
-    [TOKEN_ID_CHAR] = "Char",
-    [TOKEN_ID_I64] = "Int",
-    [TOKEN_ID_PLUS] = "+",
-    [TOKEN_ID_MINUS] = "-",
-    [TOKEN_ID_STAR] = "*",
-    [TOKEN_ID_SLASH] = "/",
-    [TOKEN_ID_PERCENT] = "%",
-    [TOKEN_ID_EOF] = "Eof",
-    [TOKEN_ID_INVALID] = "Invalid",
+    [TOK_ID_BUILTIN_PRINTLN] = "Println",
+    [TOK_ID_LPAREN] = "(",
+    [TOK_ID_RPAREN] = ")",
+    [TOK_ID_TRUE] = "true",
+    [TOK_ID_FALSE] = "false",
+    [TOK_ID_IDENTIFIER] = "Identifier",
+    [TOK_ID_STRING] = "String",
+    [TOK_ID_COMMENT] = "Comment",
+    [TOK_ID_CHAR] = "Char",
+    [TOK_ID_I64] = "Int",
+    [TOK_ID_PLUS] = "+",
+    [TOK_ID_MINUS] = "-",
+    [TOK_ID_STAR] = "*",
+    [TOK_ID_SLASH] = "/",
+    [TOK_ID_PERCENT] = "%",
+    [TOK_ID_EOF] = "Eof",
+    [TOK_ID_INVALID] = "Invalid",
 };
 
 // Position of a token in the file in term of file offsets. Start at 0.
@@ -66,9 +66,9 @@ typedef struct {
 } keyword_t;
 
 static const keyword_t keywords[] = {
-    {.key_id = TOKEN_ID_TRUE, .key_str = "true"},
-    {.key_id = TOKEN_ID_FALSE, .key_str = "false"},
-    {.key_id = TOKEN_ID_BUILTIN_PRINTLN, .key_str = "println"},
+    {.key_id = TOK_ID_TRUE, .key_str = "true"},
+    {.key_id = TOK_ID_FALSE, .key_str = "false"},
+    {.key_id = TOK_ID_BUILTIN_PRINTLN, .key_str = "println"},
 };
 
 typedef struct {
@@ -220,7 +220,7 @@ static void lex_identifier(lexer_t* lexer, token_t* result) {
              lexer->lex_index - result->tok_pos_range.pr_start))) {
         result->tok_id = *id;
     } else {
-        result->tok_id = TOKEN_ID_IDENTIFIER;
+        result->tok_id = TOK_ID_IDENTIFIER;
     }
 }
 
@@ -239,7 +239,7 @@ static res_t lex_number(lexer_t* lexer, token_t* result) {
         lex_advance(lexer);
     }
 
-    result->tok_id = TOKEN_ID_I64;
+    result->tok_id = TOK_ID_I64;
     return RES_OK;
 }
 
@@ -266,10 +266,10 @@ static void lex_string(lexer_t* lexer, token_t* result) {
             "Unterminated string, missing trailing quote: c=`%c` "
             "lex_index=%d",
             c, lexer->lex_index);
-        result->tok_id = TOKEN_ID_INVALID;
+        result->tok_id = TOK_ID_INVALID;
     } else {
         PG_ASSERT_COND(c, ==, '"', "%c");
-        result->tok_id = TOKEN_ID_STRING;
+        result->tok_id = TOK_ID_STRING;
         lex_advance(lexer);
     }
 }
@@ -299,10 +299,10 @@ static void lex_char(lexer_t* lexer, token_t* result) {
             "Unterminated char, missing trailing quote: c=`%c` "
             "lex_index=%d",
             c, lexer->lex_index);
-        result->tok_id = TOKEN_ID_INVALID;
+        result->tok_id = TOK_ID_INVALID;
     } else {
         PG_ASSERT_COND(c, ==, '\'', "%c");
-        result->tok_id = TOKEN_ID_CHAR;
+        result->tok_id = TOK_ID_CHAR;
         lex_advance(lexer);
     }
 
@@ -315,7 +315,7 @@ static token_t lex_next(lexer_t* lexer) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
 
-    token_t result = {.tok_id = TOKEN_ID_EOF,
+    token_t result = {.tok_id = TOK_ID_EOF,
                       .tok_pos_range = {.pr_start = lexer->lex_index}};
 
     while (lexer->lex_index < lexer->lex_source_len) {
@@ -336,45 +336,45 @@ static token_t lex_next(lexer_t* lexer) {
             case '/': {
                 if (lex_peek_next(lexer) == '/') {
                     lex_advance_until_newline_or_eof(lexer);
-                    result.tok_id = TOKEN_ID_COMMENT;
+                    result.tok_id = TOK_ID_COMMENT;
                     goto outer;
                 } else {
                     lex_match(lexer, '/');
-                    result.tok_id = TOKEN_ID_SLASH;
+                    result.tok_id = TOK_ID_SLASH;
                     goto outer;
                 }
             }
             case '+': {
                 lex_match(lexer, '+');
-                result.tok_id = TOKEN_ID_PLUS;
+                result.tok_id = TOK_ID_PLUS;
 
                 goto outer;
             }
             case '*': {
                 lex_match(lexer, '*');
-                result.tok_id = TOKEN_ID_STAR;
+                result.tok_id = TOK_ID_STAR;
 
                 goto outer;
             }
             case '-': {
                 lex_match(lexer, '-');
-                result.tok_id = TOKEN_ID_MINUS;
+                result.tok_id = TOK_ID_MINUS;
 
                 goto outer;
             }
             case '%': {
                 lex_match(lexer, '%');
-                result.tok_id = TOKEN_ID_PERCENT;
+                result.tok_id = TOK_ID_PERCENT;
 
                 goto outer;
             }
             case '(': {
-                result.tok_id = TOKEN_ID_LPAREN;
+                result.tok_id = TOK_ID_LPAREN;
                 lex_advance(lexer);
                 goto outer;
             }
             case ')': {
-                result.tok_id = TOKEN_ID_RPAREN;
+                result.tok_id = TOK_ID_RPAREN;
                 lex_advance(lexer);
                 goto outer;
             }
@@ -457,7 +457,7 @@ static token_t lex_next(lexer_t* lexer) {
                 goto outer;
             }
             default: {
-                result.tok_id = TOKEN_ID_INVALID;
+                result.tok_id = TOK_ID_INVALID;
                 lex_advance(lexer);
                 goto outer;
             }

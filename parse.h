@@ -44,7 +44,7 @@ static parser_t parser_init(const char* file_name0, const char* source,
         buf_push(tok_pos_s, token.tok_pos_range);
         token_dump(&token, &lexer);
 
-        if (token.tok_id == TOKEN_ID_EOF) break;
+        if (token.tok_id == TOK_ID_EOF) break;
     }
     PG_ASSERT_COND((int)buf_size(token_ids), ==, (int)buf_size(tok_pos_s),
                    "%d");
@@ -181,11 +181,10 @@ static void parser_tok_source(const parser_t* parser, int tok_i,
     const pos_range_t pos_range = parser->par_tok_pos_ranges[tok_i];
 
     // Without quotes for char/string
-    *source =
-        &parser->par_source[(tok == TOKEN_ID_STRING || tok == TOKEN_ID_CHAR)
-                                ? pos_range.pr_start + 1
-                                : pos_range.pr_start];
-    *source_len = (tok == TOKEN_ID_STRING || tok == TOKEN_ID_CHAR)
+    *source = &parser->par_source[(tok == TOK_ID_STRING || tok == TOK_ID_CHAR)
+                                      ? pos_range.pr_start + 1
+                                      : pos_range.pr_start];
+    *source_len = (tok == TOK_ID_STRING || tok == TOK_ID_CHAR)
                       ? (pos_range.pr_end - pos_range.pr_start - 2)
                       : (pos_range.pr_end - pos_range.pr_start);
 }
@@ -241,7 +240,7 @@ static token_id_t parser_peek(parser_t* parser) {
     while (i < (int)buf_size(parser->par_token_ids)) {
         const token_id_t id = parser->par_token_ids[i];
         log_debug("peeking at pos=%d", i);
-        if (id == TOKEN_ID_COMMENT) {
+        if (id == TOK_ID_COMMENT) {
             log_debug("Skipping over comment at pos=%d", i);
             i += 1;
             continue;
@@ -438,7 +437,7 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
 
     int tok_i = INT32_MAX;
 
-    if (parser_match(parser, &tok_i, 2, TOKEN_ID_TRUE, TOKEN_ID_FALSE)) {
+    if (parser_match(parser, &tok_i, 2, TOK_ID_TRUE, TOK_ID_FALSE)) {
         buf_push(parser->par_types,
                  ((type_t){.ty_size = 1, .ty_kind = TYPE_BOOL}));
         const int type_i = buf_size(parser->par_types) - 1;
@@ -453,7 +452,7 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
 
         return RES_OK;
     }
-    if (parser_match(parser, &tok_i, 1, TOKEN_ID_STRING)) {
+    if (parser_match(parser, &tok_i, 1, TOK_ID_STRING)) {
         buf_push(parser->par_types,
                  ((type_t){.ty_size = 1, .ty_kind = TYPE_STRING}));
         const int type_i = buf_size(parser->par_types) - 1;
@@ -474,7 +473,7 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
 
         return RES_OK;
     }
-    if (parser_match(parser, &tok_i, 1, TOKEN_ID_I64)) {
+    if (parser_match(parser, &tok_i, 1, TOK_ID_I64)) {
         buf_push(parser->par_types,
                  ((type_t){.ty_size = 8, .ty_kind = TYPE_I64}));
         const int type_i = buf_size(parser->par_types) - 1;
@@ -486,7 +485,7 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
 
         return RES_OK;
     }
-    if (parser_match(parser, &tok_i, 1, TOKEN_ID_CHAR)) {
+    if (parser_match(parser, &tok_i, 1, TOK_ID_CHAR)) {
         buf_push(parser->par_types,
                  ((type_t){.ty_size = 1, .ty_kind = TYPE_CHAR}));
         const int type_i = buf_size(parser->par_types) - 1;
@@ -516,8 +515,8 @@ static res_t parser_parse_multiplication(parser_t* parser, int* new_node_i) {
     *new_node_i = lhs_i;
     log_debug("new_node_i=%d", *new_node_i);
 
-    while (parser_match(parser, new_node_i, 3, TOKEN_ID_STAR, TOKEN_ID_SLASH,
-                        TOKEN_ID_PERCENT)) {
+    while (parser_match(parser, new_node_i, 3, TOK_ID_STAR, TOK_ID_SLASH,
+                        TOK_ID_PERCENT)) {
         const int tok_id = parser_previous(parser);
 
         int rhs_i = INT32_MAX;
@@ -532,9 +531,9 @@ static res_t parser_parse_multiplication(parser_t* parser, int* new_node_i) {
         buf_push(parser->par_types, lhs_type);
 
         const ast_node_t new_node =
-            (tok_id == TOKEN_ID_STAR)
+            (tok_id == TOK_ID_STAR)
                 ? NODE_MULTIPLY(lhs_i, rhs_i, lhs_type_i)
-                : ((tok_id == TOKEN_ID_SLASH)
+                : ((tok_id == TOK_ID_SLASH)
                        ? NODE_DIVIDE(lhs_i, rhs_i, lhs_type_i)
                        : NODE_MODULO(lhs_i, rhs_i, lhs_type_i));
 
@@ -557,7 +556,7 @@ static res_t parser_parse_addition(parser_t* parser, int* new_node_i) {
     *new_node_i = lhs_i;
     log_debug("new_node_i=%d", *new_node_i);
 
-    while (parser_match(parser, new_node_i, 2, TOKEN_ID_PLUS, TOKEN_ID_MINUS)) {
+    while (parser_match(parser, new_node_i, 2, TOK_ID_PLUS, TOK_ID_MINUS)) {
         const int tok_id = parser_previous(parser);
 
         int rhs_i = INT32_MAX;
@@ -573,8 +572,8 @@ static res_t parser_parse_addition(parser_t* parser, int* new_node_i) {
         buf_push(parser->par_types, lhs_type);
 
         const ast_node_t new_node =
-            (tok_id == TOKEN_ID_PLUS) ? NODE_ADD(lhs_i, rhs_i, lhs_type_i)
-                                      : NODE_SUBTRACT(lhs_i, rhs_i, lhs_type_i);
+            (tok_id == TOK_ID_PLUS) ? NODE_ADD(lhs_i, rhs_i, lhs_type_i)
+                                    : NODE_SUBTRACT(lhs_i, rhs_i, lhs_type_i);
 
         buf_push(parser->par_nodes, new_node);
         *new_node_i = lhs_i = (int)buf_size(parser->par_nodes) - 1;
@@ -611,9 +610,9 @@ static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i) {
 
     int keyword_print_i = INT32_MAX;
     res_t res = RES_NONE;
-    if (parser_match(parser, &keyword_print_i, 1, TOKEN_ID_BUILTIN_PRINTLN)) {
+    if (parser_match(parser, &keyword_print_i, 1, TOK_ID_BUILTIN_PRINTLN)) {
         int lparen = 0;
-        if ((res = parser_expect_token(parser, &lparen, TOKEN_ID_LPAREN)) !=
+        if ((res = parser_expect_token(parser, &lparen, TOK_ID_LPAREN)) !=
             RES_OK)
             return res;
 
@@ -621,7 +620,7 @@ static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i) {
         if ((res = parser_parse_expr(parser, &arg_i)) != RES_OK) return res;
 
         int rparen = 0;
-        if ((res = parser_expect_token(parser, &rparen, TOKEN_ID_RPAREN)) !=
+        if ((res = parser_expect_token(parser, &rparen, TOK_ID_RPAREN)) !=
             RES_OK)
             return res;
 
@@ -670,11 +669,11 @@ static res_t parser_parse(parser_t* parser) {
                   parser->par_tok_i);
 
         const token_id_t current = parser_current(parser);
-        if (current == TOKEN_ID_COMMENT) {
+        if (current == TOK_ID_COMMENT) {
             parser->par_tok_i += 1;
             continue;
         }
-        if (current == TOKEN_ID_EOF)
+        if (current == TOK_ID_EOF)
             return RES_OK;
         else
             return res;
