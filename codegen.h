@@ -271,7 +271,6 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
                 log_debug("BuiltinPrint s=`%.*s` len=%d", var.gl_source_len,
                           var.gl_source, var.gl_source_len);
 
-                println("leaq .L%d(%%rip), %%rdi", obj_i);
                 println("movq $%d, %%rsi", var.gl_source_len);
                 println("call __println_string");
             } else
