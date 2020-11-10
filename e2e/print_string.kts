@@ -1,3 +1,3 @@
-println("hello ")
+println("hello\n")
 println("world")
 

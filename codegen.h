@@ -148,8 +148,11 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
 
     switch (expr->node_kind) {
         case NODE_KEYWORD_BOOL:
-        case NODE_STRING:
-            UNIMPLEMENTED();
+        case NODE_STRING: {
+            const int obj_i = expr->node_n.node_string;
+            println("leaq .L%d(%%rip), %%rax", obj_i);
+            return;
+        }
         case NODE_CHAR: {
             println("movq $%d, %%rax", (char)expr->node_n.node_num.nu_val);
             return;
@@ -251,7 +254,16 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
                 println("call __println_int");
             else if (type == TYPE_CHAR)
                 println("call __println_char");
-            else
+            else if (type == TYPE_STRING) {
+                const int obj_i = arg->node_n.node_string;
+                const obj_t obj = parser->par_objects[obj_i];
+                PG_ASSERT_COND(obj.obj_kind, ==, OBJ_GLOBAL_VAR, "%d");
+
+                const global_var_t var = obj.obj.obj_global_var;
+                println("leaq .L%d(%%rip), %%rdi", obj_i);
+                println("movq $%d, %%rsi", var.gl_source_len);
+                println("call __println_string");
+            } else
                 UNIMPLEMENTED();
 
             break;
@@ -283,8 +295,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
         if (obj.obj_kind != OBJ_GLOBAL_VAR) UNIMPLEMENTED();
 
         const global_var_t var = obj.obj.obj_global_var;
-        println(".L%d: .ascii \"%.*s\"", obj.obj_tok_i, var.gl_source_len,
-                var.gl_source);
+        println(".L%d: .ascii \"%.*s\"", i, var.gl_source_len, var.gl_source);
     }
 
     println("\n.text");

@@ -10,14 +10,14 @@ BEGIN {
     tests[2] = "e2e/print_char"
     expected_outputs[2] = "A\n$\n"
 
+    tests[3] = "e2e/print_string"
+    expected_outputs[3] = "hello\nworld\n"
+
+    tests[4] = "e2e/hello_world"
+    expected_outputs[4] = "hello, world!\n"
+#
 #    tests[1] = "e2e/print_bool"
 #    expected_outputs[1] = "truefalsefalse"
-#
-#    tests[2] = "e2e/print_string"
-#    expected_outputs[2] = "hello world"
-#
-#    tests[3] = "e2e/hello_world"
-#    expected_outputs[3] = "hello, world!"
 #
 
     is_tty = system("test -t 1") == 0
