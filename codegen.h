@@ -249,9 +249,9 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             const ast_node_t* const lhs = &parser->par_nodes[bin.bi_lhs_i];
             const ast_node_t* const rhs = &parser->par_nodes[bin.bi_rhs_i];
 
-            emit_expr(parser, lhs);
-            emit_push();
             emit_expr(parser, rhs);
+            emit_push();
+            emit_expr(parser, lhs);
             println("popq %%rdi");
             println("addq %%rdi, %%rax");
 
@@ -264,9 +264,9 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             const ast_node_t* const lhs = &parser->par_nodes[bin.bi_lhs_i];
             const ast_node_t* const rhs = &parser->par_nodes[bin.bi_rhs_i];
 
-            emit_expr(parser, lhs);
-            emit_push();
             emit_expr(parser, rhs);
+            emit_push();
+            emit_expr(parser, lhs);
             println("popq %%rdi");
             println("cmp %%rdi, %%rax");
 

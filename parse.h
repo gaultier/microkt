@@ -628,9 +628,9 @@ static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
         else if (tok_id == TOK_ID_EQ)
             new_node = NODE_BINARY(NODE_EQ, lhs_i, rhs_i, type_i);
         else if (tok_id == TOK_ID_GE)
-            new_node = NODE_BINARY(NODE_LT, rhs_i, lhs_i, type_i);
-        else if (tok_id == TOK_ID_GT)
             new_node = NODE_BINARY(NODE_LE, rhs_i, lhs_i, type_i);
+        else if (tok_id == TOK_ID_GT)
+            new_node = NODE_BINARY(NODE_LT, rhs_i, lhs_i, type_i);
         else
             UNREACHABLE();
 
