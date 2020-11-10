@@ -180,7 +180,7 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             return;
         }
         case NODE_CHAR: {
-            println("movb $%d, %%ah", (char)expr->node_n.node_num.nu_val);
+            println("movb $%d, %%al", (char)expr->node_n.node_num.nu_val);
             return;
         }
         case NODE_I64: {
