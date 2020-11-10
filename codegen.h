@@ -171,14 +171,16 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
     PG_ASSERT_COND((void*)expr, !=, NULL, "%p");
 
     switch (expr->node_kind) {
-        case NODE_KEYWORD_BOOL:
+        case NODE_KEYWORD_BOOL: {
+            println("movb $%d, %%ah", (int8_t)expr->node_n.node_num.nu_val);
+        }
         case NODE_STRING: {
             const int obj_i = expr->node_n.node_string;
             println("leaq .L%d(%%rip), %%rax", obj_i);
             return;
         }
         case NODE_CHAR: {
-            println("movq $%d, %%rax", (char)expr->node_n.node_num.nu_val);
+            println("movb $%d, %%ah", (char)expr->node_n.node_num.nu_val);
             return;
         }
         case NODE_I64: {

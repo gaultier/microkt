@@ -443,10 +443,11 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
     if (parser_match(parser, &tok_i, 2, LEX_TOKEN_ID_TRUE,
                      LEX_TOKEN_ID_FALSE)) {
         buf_push(parser->par_types,
-                 ((type_t){.ty_size = 1, .ty_kind = TYPE_BOOL}));
+                 ((type_t){.ty_size = 1, .ty_kind = TYPE_I64}));
         const int type_i = buf_size(parser->par_types) - 1;
 
-        const ast_node_t new_node = NODE_BOOL(tok_i, type_i);
+        const int8_t val = 1;
+        const ast_node_t new_node = NODE_I64(tok_i, type_i, val);
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = (int)buf_size(parser->par_nodes) - 1;
 
