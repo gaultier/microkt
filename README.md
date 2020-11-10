@@ -12,10 +12,11 @@ make
 make test
 
 # Compile a source file:
-./microktc e2e/math_integers.kts
+./microktc e2e/hello_world.kts
 
 # And then run the executable:
-./e2e/math_integers
+./e2e/hello_world
+hello, world!
 
 # Docker
 docker build -t microktc .
