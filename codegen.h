@@ -276,6 +276,10 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
                 println("setle %%al");
             else if (expr->node_kind == NODE_EQ)
                 println("sete %%al");
+            else
+                UNREACHABLE();
+
+            println("movzb %%al, %%rax");
 
             break;
         }

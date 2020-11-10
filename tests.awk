@@ -20,7 +20,7 @@ BEGIN {
     expected_outputs[5] = "true\nfalse\nfalse\n"
 
     tests[6] = "e2e/comparison"
-    expected_outputs[6] = "true\ntrue\nfalse\ntrue\n"
+    expected_outputs[6] = "true\ntrue\nfalse\ntrue\nfalse\nfalse\ntrue\n"
 
     is_tty = system("test -t 1") == 0
 

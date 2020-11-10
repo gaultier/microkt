@@ -625,8 +625,6 @@ static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
             new_node = NODE_BINARY(NODE_LT, lhs_i, rhs_i, type_i);
         else if (tok_id == TOK_ID_LE)
             new_node = NODE_BINARY(NODE_LE, lhs_i, rhs_i, type_i);
-        else if (tok_id == TOK_ID_EQ)
-            new_node = NODE_BINARY(NODE_EQ, lhs_i, rhs_i, type_i);
         else if (tok_id == TOK_ID_GE)
             new_node = NODE_BINARY(NODE_LE, rhs_i, lhs_i, type_i);
         else if (tok_id == TOK_ID_GT)
@@ -642,11 +640,54 @@ static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
     return res;
 }
 
+static res_t parser_parse_equality(parser_t* parser, int* new_node_i) {
+    res_t res = RES_NONE;
+
+    int lhs_i = INT32_MAX;
+    if ((res = parser_parse_comparison(parser, &lhs_i)) != RES_OK) return res;
+    const int lhs_type_i = parser->par_nodes[lhs_i].node_type_i;
+    const type_t lhs_type = parser->par_types[lhs_type_i];
+    *new_node_i = lhs_i;
+    log_debug("new_node_i=%d", *new_node_i);
+
+    // TODO: NEQ ...
+    while (parser_match(parser, new_node_i, 1, TOK_ID_EQ_EQ)) {
+        const int tok_id = parser_previous(parser);
+
+        int rhs_i = INT32_MAX;
+        if ((res = parser_parse_comparison(parser, &rhs_i)) != RES_OK)
+            return res;
+
+        const int rhs_type_i = parser->par_nodes[rhs_i].node_type_i;
+        const type_t rhs_type = parser->par_types[rhs_type_i];
+
+        if (lhs_type.ty_kind != rhs_type.ty_kind)
+            return parser_err_non_matching_types(parser, lhs_i, rhs_i);
+
+        buf_push(parser->par_types,
+                 ((type_t){.ty_size = 1, .ty_kind = TYPE_BOOL}));
+        const int type_i = buf_size(parser->par_types) - 1;
+
+        ast_node_t new_node;
+
+        if (tok_id == TOK_ID_EQ_EQ)
+            new_node = NODE_BINARY(NODE_EQ, lhs_i, rhs_i, type_i);
+        else
+            UNREACHABLE();
+
+        buf_push(parser->par_nodes, new_node);
+        *new_node_i = lhs_i = (int)buf_size(parser->par_nodes) - 1;
+        log_debug("new_node_i=%d", *new_node_i);
+    }
+
+    return res;
+}
+
 static res_t parser_parse_expr(parser_t* parser, int* new_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
-    return parser_parse_comparison(parser, new_node_i);
+    return parser_parse_equality(parser, new_node_i);
 }
 
 static res_t parser_expect_token(parser_t* parser, int* token,
