@@ -1,22 +1,22 @@
 #!/usr/bin/awk -f 
 
 BEGIN {
-    tests[0] = "e2e/print_integers"
+    tests[0] = "e2e/integers"
     expected_outputs[0] = "1\n9990\n"
 
     tests[1] = "e2e/math_integers"
     expected_outputs[1] = "6\n-2\n12\n200\n4\n"
 
-    tests[2] = "e2e/print_char"
+    tests[2] = "e2e/char"
     expected_outputs[2] = "A\n$\n"
 
-    tests[3] = "e2e/print_string"
+    tests[3] = "e2e/string"
     expected_outputs[3] = "hello!\nworld\n"
 
     tests[4] = "e2e/hello_world"
     expected_outputs[4] = "hello, world!\n"
 
-    tests[5] = "e2e/print_bool"
+    tests[5] = "e2e/bool"
     expected_outputs[5] = "true\nfalse\nfalse\n"
 
     tests[6] = "e2e/comparison"
