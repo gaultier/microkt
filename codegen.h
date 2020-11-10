@@ -55,11 +55,19 @@ static void emit_print_i64() {
         "__println_string:\n"
         "    movq $%lld, %%rax\n"
         "    movq %%rsi, %%rdx\n"
-        "    movq %%rdi, %%rsi\n"
+        "    movq %%rdi, %%rsi\n\n"
         "    movq $1, %%rdi\n"
+
+        "    # Put a newline in place of the nul terminator\n"
+        "    # s[len++] =0x0a \n"
+        "    addq %%rdx, %%rsi\n"
+        "    movq $0x0a, (%%rsi)\n"
+        "    subq %%rdx, %%rsi\n\n"
+        "    incq %%rdx\n"
+
         "    syscall\n"
         "    xorq %%rax, %%rax\n"
-        "    ret\n"
+        "    ret\n\n"
 
         "__println_char:\n"
         "    pushq %%rbp\n"
@@ -77,7 +85,7 @@ static void emit_print_i64() {
 
         "    addq $16, %%rsp\n"
         "    popq %%rbp\n"
-        "    ret\n"
+        "    ret\n\n"
 
         "__println_int: \n"
         "    pushq %%rbp\n"
@@ -260,6 +268,9 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
                 PG_ASSERT_COND(obj.obj_kind, ==, OBJ_GLOBAL_VAR, "%d");
 
                 const global_var_t var = obj.obj.obj_global_var;
+                log_debug("BuiltinPrint s=`%.*s` len=%d", var.gl_source_len,
+                          var.gl_source, var.gl_source_len);
+
                 println("leaq .L%d(%%rip), %%rdi", obj_i);
                 println("movq $%d, %%rsi", var.gl_source_len);
                 println("call __println_string");
@@ -295,7 +306,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
         if (obj.obj_kind != OBJ_GLOBAL_VAR) UNIMPLEMENTED();
 
         const global_var_t var = obj.obj.obj_global_var;
-        println(".L%d: .ascii \"%.*s\"", i, var.gl_source_len, var.gl_source);
+        println(".L%d: .asciz \"%.*s\"", i, var.gl_source_len, var.gl_source);
     }
 
     println("\n.text");

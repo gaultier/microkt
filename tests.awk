@@ -11,7 +11,7 @@ BEGIN {
     expected_outputs[2] = "A\n$\n"
 
     tests[3] = "e2e/print_string"
-    expected_outputs[3] = "hello\nworld\n"
+    expected_outputs[3] = "hello!\nworld\n"
 
     tests[4] = "e2e/hello_world"
     expected_outputs[4] = "hello, world!\n"
