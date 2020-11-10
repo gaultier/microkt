@@ -280,15 +280,18 @@ static void parser_print_source_on_error(const parser_t* parser,
     // The position at index 0 is actually on the second line so we subtract 1
     // to the index
     // We then add one to position to 'trim' the heading newline from the
-    // source
+    // source, if we are not on the first line (where there is no heading
+    // newline)
     const int first_line_source_pos =
-        parser->par_lexer.lex_lines[first_line - 1] + 1;
+        parser->par_lexer.lex_lines[first_line - 1] +
+        ((first_line == 0) ? 0 : 1);
     const int last_line_source_pos =
         last_line == last_line_in_file ? parser->par_source_len - 1
                                        : parser->par_lexer.lex_lines[last_line];
     PG_ASSERT_COND(first_line_source_pos, <, last_line_source_pos, "%d");
     PG_ASSERT_COND(last_line_source_pos, <, parser->par_source_len, "%d");
 
+    log_debug("first_line_source_pos=%d", first_line_source_pos);
     const char* source = &parser->par_source[first_line_source_pos];
     int source_len = last_line_source_pos - first_line_source_pos;
     trim_end(&source, &source_len);
