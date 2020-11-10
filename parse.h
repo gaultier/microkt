@@ -140,8 +140,7 @@ static int ast_node_first_token(const parser_t* parser,
         case NODE_KEYWORD_BOOL:
             return node->node_n.node_boolean;
         case NODE_STRING:
-            return parser->par_objects[node->node_n.node_string.s_obj_i]
-                .obj_tok_i;
+            return parser->par_objects[node->node_n.node_string].obj_tok_i;
         case NODE_CHAR:
         case NODE_I64:
             return node->node_n.node_num.nu_tok_i;
@@ -161,8 +160,7 @@ static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
         case NODE_KEYWORD_BOOL:
             return node->node_n.node_boolean;
         case NODE_STRING:
-            return parser->par_objects[node->node_n.node_string.s_obj_i]
-                .obj_tok_i;
+            return parser->par_objects[node->node_n.node_string].obj_tok_i;
         case NODE_I64:
         case NODE_CHAR:
             return node->node_n.node_num.nu_tok_i;
@@ -463,8 +461,7 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
         buf_push(parser->par_objects, obj);
         const int obj_i = buf_size(parser->par_objects) - 1;
 
-        const ast_node_t new_node =
-            NODE_STRING(source, source_len, obj_i, type_i);
+        const ast_node_t new_node = NODE_STRING(obj_i, type_i);
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = (int)buf_size(parser->par_nodes) - 1;
 

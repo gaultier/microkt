@@ -56,11 +56,6 @@ typedef struct {
     int bi_rhs_i;
 } binary_t;
 
-typedef struct {
-    const char* s_str;
-    int s_len, s_obj_i;
-} string_t;
-
 typedef enum {
     NODE_BUILTIN_PRINTLN,
     NODE_KEYWORD_BOOL,
@@ -98,7 +93,7 @@ struct ast_node_t {
     union {
         ast_builtin_println_t node_builtin_println;  // NODE_BUILTIN_PRINTLN
         int node_boolean;                            // NODE_KEYWORD_BOOL
-        string_t node_string;                        // NODE_STRING
+        int node_string;                             // NODE_STRING, int = obj_i
         node_number_t node_num;                      // NODE_I64, NODE_CHAR
         binary_t node_binary;  // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
                                // NODE_DIVIDE, NODE_MODULO
@@ -129,12 +124,10 @@ struct ast_node_t {
                   .node_type_i = type_i,          \
                   .node_n = {.node_boolean = n}})
 
-#define NODE_STRING(str, len, obj_i, type_i) \
-    ((ast_node_t){                           \
-        .node_kind = NODE_STRING,            \
-        .node_type_i = type_i,               \
-        .node_n = {                          \
-            .node_string = {.s_str = str, .s_len = len, .s_obj_i = obj_i}}})
+#define NODE_STRING(n, type_i)              \
+    ((ast_node_t){.node_kind = NODE_STRING, \
+                  .node_type_i = type_i,    \
+                  .node_n = {.node_string = n}})
 
 #define NODE_ADD(lhs_i, rhs_i, type_i)                                       \
     ((ast_node_t){.node_kind = NODE_ADD,                                     \
