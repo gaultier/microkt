@@ -109,6 +109,9 @@ static void ast_node_dump(const ast_node_t* nodes, int node_i, int indent) {
                           indent + 2);
             break;
         }
+        case NODE_LT:
+        case NODE_LE:
+        case NODE_EQ:
         case NODE_MULTIPLY:
         case NODE_DIVIDE:
         case NODE_MODULO:
@@ -143,6 +146,9 @@ static int ast_node_first_token(const parser_t* parser,
         case NODE_CHAR:
         case NODE_I64:
             return node->node_n.node_num.nu_tok_i;
+        case NODE_LT:
+        case NODE_LE:
+        case NODE_EQ:
         case NODE_MULTIPLY:
         case NODE_DIVIDE:
         case NODE_MODULO:
@@ -162,6 +168,9 @@ static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
         case NODE_I64:
         case NODE_CHAR:
             return node->node_n.node_num.nu_tok_i;
+        case NODE_LT:
+        case NODE_LE:
+        case NODE_EQ:
         case NODE_MULTIPLY:
         case NODE_DIVIDE:
         case NODE_MODULO:
@@ -583,11 +592,49 @@ static res_t parser_parse_addition(parser_t* parser, int* new_node_i) {
     return res;
 }
 
+static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
+    res_t res = RES_NONE;
+
+    int lhs_i = INT32_MAX;
+    if ((res = parser_parse_addition(parser, &lhs_i)) != RES_OK) return res;
+    const int lhs_type_i = parser->par_nodes[lhs_i].node_type_i;
+    const type_t lhs_type = parser->par_types[lhs_type_i];
+    *new_node_i = lhs_i;
+    log_debug("new_node_i=%d", *new_node_i);
+
+    while (parser_match(parser, new_node_i, 4, TOK_ID_LESSER,
+                        TOK_ID_LESSER_EQUAL, TOK_ID_GREATER,
+                        TOK_ID_GREATER_EQUAL)) {
+        const int tok_id = parser_previous(parser);
+
+        int rhs_i = INT32_MAX;
+        if ((res = parser_parse_addition(parser, &rhs_i)) != RES_OK) return res;
+
+        const int rhs_type_i = parser->par_nodes[rhs_i].node_type_i;
+        const type_t rhs_type = parser->par_types[rhs_type_i];
+
+        if (lhs_type.ty_kind != rhs_type.ty_kind)
+            return parser_err_non_matching_types(parser, lhs_i, rhs_i);
+
+        buf_push(parser->par_types,
+                 ((type_t){.ty_size = 1, .ty_kind = TYPE_BOOL}));
+        const int type_i = buf_size(parser->par_types) - 1;
+
+        const ast_node_t new_node = NODE_BINARY(tok_id, lhs_i, rhs_i, type_i);
+
+        buf_push(parser->par_nodes, new_node);
+        *new_node_i = lhs_i = (int)buf_size(parser->par_nodes) - 1;
+        log_debug("new_node_i=%d", *new_node_i);
+    }
+
+    return res;
+}
+
 static res_t parser_parse_expr(parser_t* parser, int* new_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
-    return parser_parse_addition(parser, new_node_i);
+    return parser_parse_comparison(parser, new_node_i);
 }
 
 static res_t parser_expect_token(parser_t* parser, int* token,

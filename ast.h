@@ -67,6 +67,9 @@ typedef enum {
     NODE_MULTIPLY,
     NODE_DIVIDE,
     NODE_MODULO,
+    NODE_LT,
+    NODE_LE,
+    NODE_EQ,
 } ast_node_kind_t;
 
 const char ast_node_kind_t_to_str[][30] = {
@@ -80,6 +83,9 @@ const char ast_node_kind_t_to_str[][30] = {
     [NODE_MULTIPLY] = "Multiply",
     [NODE_MODULO] = "Modulo",
     [NODE_DIVIDE] = "Divide",
+    [NODE_LT] = "LT",
+    [NODE_LE] = "LE",
+    [NODE_EQ] = "EQ",
 };
 
 typedef struct {
@@ -127,6 +133,13 @@ struct ast_node_t {
     ((ast_node_t){.node_kind = NODE_STRING, \
                   .node_type_i = type_i,    \
                   .node_n = {.node_string = n}})
+
+#define NODE_BINARY(kind, lhs_i, rhs_i, type_i)                              \
+    ((ast_node_t){.node_kind = kind,                                         \
+                  .node_type_i = type_i,                                     \
+                  .node_n = {.node_binary = ((binary_t){.bi_type_i = type_i, \
+                                                        .bi_lhs_i = lhs_i,   \
+                                                        .bi_rhs_i = rhs_i})}})
 
 #define NODE_ADD(lhs_i, rhs_i, type_i)                                       \
     ((ast_node_t){.node_kind = NODE_ADD,                                     \
