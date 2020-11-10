@@ -317,8 +317,8 @@ static void emit(const parser_t* parser, FILE* asm_file) {
 
     output_file = asm_file;
     println(".data");
-    println(".Ltrue: .ascii \"true\"");
-    println(".Lfalse: .ascii \"false\"");
+    println(".Ltrue: .ascii \"true\\n\"");
+    println(".Lfalse: .ascii \"false\\n\"");
 
     for (int i = 0; i < (int)buf_size(parser->par_objects); i++) {
         const obj_t obj = parser->par_objects[i];

@@ -446,7 +446,10 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
                  ((type_t){.ty_size = 1, .ty_kind = TYPE_I64}));
         const int type_i = buf_size(parser->par_types) - 1;
 
-        const int8_t val = 1;
+        const pos_range_t pos_range = parser->par_tok_pos_ranges[tok_i];
+        const char* const source = &parser->par_source[pos_range.pr_start];
+        // The source is either `true` or `false` hence the len is either 4 or 5
+        const int8_t val = (memcmp("true", source, 4) == 0);
         const ast_node_t new_node = NODE_I64(tok_i, type_i, val);
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = (int)buf_size(parser->par_nodes) - 1;

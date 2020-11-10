@@ -17,8 +17,8 @@ microktc_debug: $(SRC) $(HEADERS)
 clean:
 	rm -rf microktc microktc_debug ./*.dSYM e2e/*.o e2e/*.asm e2e/print_bool e2e/print_string e2e/print_integers e2e/hello_world e2e/print_char e2e/math_integers
 
-# e2e/print_bool: e2e/print_bool.kts $(BIN_TEST)
-# 	$(BIN_TEST) $<
+e2e/print_bool: e2e/print_bool.kts $(BIN_TEST)
+	$(BIN_TEST) $<
 
 e2e/print_string: e2e/print_string.kts $(BIN_TEST)
 	$(BIN_TEST) $<
@@ -35,7 +35,7 @@ e2e/hello_world: e2e/hello_world.kts $(BIN_TEST)
 e2e/math_integers: e2e/math_integers.kts $(BIN_TEST)
 	$(BIN_TEST) $<
 
-e2e: e2e/print_integers e2e/math_integers e2e/print_char e2e/hello_world e2e/print_string #e2e/print_bool 
+e2e: e2e/print_integers e2e/math_integers e2e/print_char e2e/hello_world e2e/print_string e2e/print_bool 
 
 test: e2e tests.awk
 	@./tests.awk
