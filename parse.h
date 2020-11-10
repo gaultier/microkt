@@ -137,10 +137,9 @@ static int ast_node_first_token(const parser_t* parser,
     switch (node->node_kind) {
         case NODE_BUILTIN_PRINTLN:
             return node->node_n.node_builtin_println.bp_keyword_print_i;
-        case NODE_KEYWORD_BOOL:
-            return node->node_n.node_boolean;
         case NODE_STRING:
             return parser->par_objects[node->node_n.node_string].obj_tok_i;
+        case NODE_KEYWORD_BOOL:
         case NODE_CHAR:
         case NODE_I64:
             return node->node_n.node_num.nu_tok_i;
@@ -157,10 +156,9 @@ static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
     switch (node->node_kind) {
         case NODE_BUILTIN_PRINTLN:
             return node->node_n.node_builtin_println.bp_rparen_i;
-        case NODE_KEYWORD_BOOL:
-            return node->node_n.node_boolean;
         case NODE_STRING:
             return parser->par_objects[node->node_n.node_string].obj_tok_i;
+        case NODE_KEYWORD_BOOL:
         case NODE_I64:
         case NODE_CHAR:
             return node->node_n.node_num.nu_tok_i;
@@ -443,7 +441,7 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
     if (parser_match(parser, &tok_i, 2, LEX_TOKEN_ID_TRUE,
                      LEX_TOKEN_ID_FALSE)) {
         buf_push(parser->par_types,
-                 ((type_t){.ty_size = 1, .ty_kind = TYPE_I64}));
+                 ((type_t){.ty_size = 1, .ty_kind = TYPE_BOOL}));
         const int type_i = buf_size(parser->par_types) - 1;
 
         const pos_range_t pos_range = parser->par_tok_pos_ranges[tok_i];

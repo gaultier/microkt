@@ -56,8 +56,9 @@ static void emit_print_i64() {
         "    test %%rdi, %%rdi\n"
         "    leaq .Lfalse(%%rip), %%rax\n"
         "    leaq .Ltrue(%%rip), %%rsi\n"
-        "    movq $5, %%rdi\n"
-        "    movq $4, %%rdx\n"
+        "    # len +1 to include the newline\n"
+        "    movq $6, %%rdi\n"
+        "    movq $5, %%rdx\n"
         "    cmoveq %%rax, %%rsi\n\n"
         "    cmoveq %%rdi, %%rdx\n\n"
 
@@ -280,6 +281,8 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
                 println("call __println_int");
             else if (type == TYPE_CHAR)
                 println("call __println_char");
+            else if (type == TYPE_BOOL)
+                println("call __println_bool");
             else if (type == TYPE_STRING) {
                 const int obj_i = arg->node_n.node_string;
                 const obj_t obj = parser->par_objects[obj_i];

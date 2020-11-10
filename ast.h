@@ -92,11 +92,10 @@ struct ast_node_t {
     int node_type_i;
     union {
         ast_builtin_println_t node_builtin_println;  // NODE_BUILTIN_PRINTLN
-        int node_boolean;                            // NODE_KEYWORD_BOOL
         int node_string;                             // NODE_STRING, int = obj_i
-        node_number_t node_num;                      // NODE_I64, NODE_CHAR
-        binary_t node_binary;  // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
-                               // NODE_DIVIDE, NODE_MODULO
+        node_number_t node_num;  // NODE_I64, NODE_CHAR, NODE_BOOL
+        binary_t node_binary;    // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
+                                 // NODE_DIVIDE, NODE_MODULO
     } node_n;
 };
 
