@@ -603,9 +603,8 @@ static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
     *new_node_i = lhs_i;
     log_debug("new_node_i=%d", *new_node_i);
 
-    while (parser_match(parser, new_node_i, 4, TOK_ID_LESSER,
-                        TOK_ID_LESSER_EQUAL, TOK_ID_GREATER,
-                        TOK_ID_GREATER_EQUAL)) {
+    while (parser_match(parser, new_node_i, 4, TOK_ID_LT, TOK_ID_LE, TOK_ID_GT,
+                        TOK_ID_GE)) {
         const int tok_id = parser_previous(parser);
 
         int rhs_i = INT32_MAX;
@@ -623,15 +622,15 @@ static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
 
         ast_node_t new_node;
 
-        if (tok_id == TOK_ID_LESSER)
+        if (tok_id == TOK_ID_LT)
             new_node = NODE_BINARY(NODE_LT, lhs_i, rhs_i, type_i);
-        else if (tok_id == TOK_ID_LESSER_EQUAL)
+        else if (tok_id == TOK_ID_LE)
             new_node = NODE_BINARY(NODE_LE, lhs_i, rhs_i, type_i);
-        else if (tok_id == TOK_ID_EQUAL_EQUAL)
+        else if (tok_id == TOK_ID_EQ)
             new_node = NODE_BINARY(NODE_EQ, lhs_i, rhs_i, type_i);
-        else if (tok_id == TOK_ID_GREATER_EQUAL)
+        else if (tok_id == TOK_ID_GE)
             new_node = NODE_BINARY(NODE_LT, rhs_i, lhs_i, type_i);
-        else if (tok_id == TOK_ID_GREATER)
+        else if (tok_id == TOK_ID_GT)
             new_node = NODE_BINARY(NODE_LE, rhs_i, lhs_i, type_i);
         else
             UNREACHABLE();

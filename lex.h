@@ -21,11 +21,11 @@ typedef enum {
     TOK_ID_SLASH,
     TOK_ID_MINUS,
     TOK_ID_PERCENT,
-    TOK_ID_LESSER,
-    TOK_ID_GREATER,
-    TOK_ID_LESSER_EQUAL,
-    TOK_ID_GREATER_EQUAL,
-    TOK_ID_EQUAL_EQUAL,
+    TOK_ID_LT,
+    TOK_ID_GT,
+    TOK_ID_LE,
+    TOK_ID_GE,
+    TOK_ID_EQ,
     TOK_ID_EOF,
     TOK_ID_INVALID,
 } token_id_t;
@@ -46,11 +46,11 @@ const char token_id_to_str[][30] = {
     [TOK_ID_STAR] = "*",
     [TOK_ID_SLASH] = "/",
     [TOK_ID_PERCENT] = "%",
-    [TOK_ID_LESSER] = "<",
-    [TOK_ID_LESSER_EQUAL] = "<=",
-    [TOK_ID_GREATER] = ">",
-    [TOK_ID_GREATER_EQUAL] = ">=",
-    [TOK_ID_EQUAL_EQUAL] = "==",
+    [TOK_ID_LT] = "<",
+    [TOK_ID_LE] = "<=",
+    [TOK_ID_GT] = ">",
+    [TOK_ID_GE] = ">=",
+    [TOK_ID_EQ] = "==",
     [TOK_ID_EOF] = "Eof",
     [TOK_ID_INVALID] = "Invalid",
 };
@@ -361,14 +361,12 @@ static token_t lex_next(lexer_t* lexer) {
             }
             case '<': {
                 lex_match(lexer, '<');
-                result.tok_id =
-                    lex_match(lexer, '=') ? TOK_ID_LESSER_EQUAL : TOK_ID_LESSER;
+                result.tok_id = lex_match(lexer, '=') ? TOK_ID_LE : TOK_ID_LT;
                 goto outer;
             }
             case '>': {
                 lex_match(lexer, '>');
-                result.tok_id = lex_match(lexer, '=') ? TOK_ID_GREATER_EQUAL
-                                                      : TOK_ID_GREATER;
+                result.tok_id = lex_match(lexer, '=') ? TOK_ID_GE : TOK_ID_GT;
                 goto outer;
             }
             case '+': {
