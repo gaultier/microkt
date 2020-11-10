@@ -80,8 +80,6 @@ static int64_t parse_tok_to_i64(const parser_t* parser, int tok_i) {
     memset(string0, 0, sizeof(string0));
     memcpy(string0, string, (size_t)string_len);
 
-    log_debug("%d..%d `%s`", pos_range.pr_start, pos_range.pr_end, string0);
-
     return strtoll(string0, NULL, 10);
 }
 
@@ -249,7 +247,6 @@ static token_id_t parser_peek(parser_t* parser) {
 
     while (i < (int)buf_size(parser->par_token_ids)) {
         const token_id_t id = parser->par_token_ids[i];
-        log_debug("peeking at pos=%d", i);
         if (id == TOK_ID_COMMENT) {
             log_debug("Skipping over comment at pos=%d", i);
             i += 1;
@@ -298,7 +295,6 @@ static void parser_print_source_on_error(const parser_t* parser,
     PG_ASSERT_COND(first_line_source_pos, <, last_line_source_pos, "%d");
     PG_ASSERT_COND(last_line_source_pos, <, parser->par_source_len, "%d");
 
-    log_debug("first_line_source_pos=%d", first_line_source_pos);
     const char* source = &parser->par_source[first_line_source_pos];
     int source_len = last_line_source_pos - first_line_source_pos;
     trim_end(&source, &source_len);
@@ -414,15 +410,9 @@ static bool parser_match(parser_t* parser, int* return_token_index,
     for (; id_count; id_count--) {
         token_id_t id = va_arg(ap, token_id_t);
 
-        if (parser_is_at_end(parser)) {
-            log_debug("did not match %s, at end", token_id_to_str[id]);
-            return false;
-        }
-        if (id != current_id) {
-            log_debug("did not match %s, got %s", token_id_to_str[id],
-                      token_id_to_str[current_id]);
-            continue;
-        }
+        if (parser_is_at_end(parser)) return false;
+
+        if (id != current_id) continue;
 
         parser_advance_until_after(parser, id);
         PG_ASSERT_COND(parser->par_tok_i, <,
