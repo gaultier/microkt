@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #include "ast.h"
+#include "common.h"
 #include "lex.h"
 
 typedef struct {
@@ -620,7 +621,20 @@ static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
                  ((type_t){.ty_size = 1, .ty_kind = TYPE_BOOL}));
         const int type_i = buf_size(parser->par_types) - 1;
 
-        const ast_node_t new_node = NODE_BINARY(tok_id, lhs_i, rhs_i, type_i);
+        ast_node_t new_node;
+
+        if (tok_id == TOK_ID_LESSER)
+            new_node = NODE_BINARY(NODE_LT, lhs_i, rhs_i, type_i);
+        else if (tok_id == TOK_ID_LESSER_EQUAL)
+            new_node = NODE_BINARY(NODE_LE, lhs_i, rhs_i, type_i);
+        else if (tok_id == TOK_ID_EQUAL_EQUAL)
+            new_node = NODE_BINARY(NODE_EQ, lhs_i, rhs_i, type_i);
+        else if (tok_id == TOK_ID_GREATER_EQUAL)
+            new_node = NODE_BINARY(NODE_LT, rhs_i, lhs_i, type_i);
+        else if (tok_id == TOK_ID_GREATER)
+            new_node = NODE_BINARY(NODE_LE, rhs_i, lhs_i, type_i);
+        else
+            UNREACHABLE();
 
         buf_push(parser->par_nodes, new_node);
         *new_node_i = lhs_i = (int)buf_size(parser->par_nodes) - 1;
