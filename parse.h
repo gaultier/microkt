@@ -540,12 +540,11 @@ static res_t parser_parse_multiplication(parser_t* parser, int* new_node_i) {
 
         buf_push(parser->par_types, lhs_type);
 
-        const ast_node_t new_node =
+        const ast_node_t new_node = NODE_BINARY(
             (tok_id == TOK_ID_STAR)
-                ? NODE_MULTIPLY(lhs_i, rhs_i, lhs_type_i)
-                : ((tok_id == TOK_ID_SLASH)
-                       ? NODE_DIVIDE(lhs_i, rhs_i, lhs_type_i)
-                       : NODE_MODULO(lhs_i, rhs_i, lhs_type_i));
+                ? NODE_MULTIPLY
+                : (tok_id == TOK_ID_SLASH ? NODE_DIVIDE : NODE_MODULO),
+            lhs_i, rhs_i, lhs_type_i);
 
         buf_push(parser->par_nodes, new_node);
         *new_node_i = lhs_i = (int)buf_size(parser->par_nodes) - 1;
@@ -582,8 +581,8 @@ static res_t parser_parse_addition(parser_t* parser, int* new_node_i) {
         buf_push(parser->par_types, lhs_type);
 
         const ast_node_t new_node =
-            (tok_id == TOK_ID_PLUS) ? NODE_ADD(lhs_i, rhs_i, lhs_type_i)
-                                    : NODE_SUBTRACT(lhs_i, rhs_i, lhs_type_i);
+            NODE_BINARY(tok_id == TOK_ID_PLUS ? NODE_ADD : NODE_SUBTRACT, lhs_i,
+                        rhs_i, lhs_type_i);
 
         buf_push(parser->par_nodes, new_node);
         *new_node_i = lhs_i = (int)buf_size(parser->par_nodes) - 1;

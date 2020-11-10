@@ -141,40 +141,6 @@ struct ast_node_t {
                                                         .bi_lhs_i = lhs_i,   \
                                                         .bi_rhs_i = rhs_i})}})
 
-#define NODE_ADD(lhs_i, rhs_i, type_i)                                       \
-    ((ast_node_t){.node_kind = NODE_ADD,                                     \
-                  .node_type_i = type_i,                                     \
-                  .node_n = {.node_binary = ((binary_t){.bi_type_i = type_i, \
-                                                        .bi_lhs_i = lhs_i,   \
-                                                        .bi_rhs_i = rhs_i})}})
-
-#define NODE_SUBTRACT(lhs_i, rhs_i, type_i)                                  \
-    ((ast_node_t){.node_kind = NODE_SUBTRACT,                                \
-                  .node_type_i = type_i,                                     \
-                  .node_n = {.node_binary = ((binary_t){.bi_type_i = type_i, \
-                                                        .bi_lhs_i = lhs_i,   \
-                                                        .bi_rhs_i = rhs_i})}})
-
-#define NODE_MULTIPLY(lhs_i, rhs_i, type_i)                                  \
-    ((ast_node_t){.node_kind = NODE_MULTIPLY,                                \
-                  .node_type_i = type_i,                                     \
-                  .node_n = {.node_binary = ((binary_t){.bi_type_i = type_i, \
-                                                        .bi_lhs_i = lhs_i,   \
-                                                        .bi_rhs_i = rhs_i})}})
-
-#define NODE_DIVIDE(lhs_i, rhs_i, type_i)                                    \
-    ((ast_node_t){.node_kind = NODE_DIVIDE,                                  \
-                  .node_type_i = type_i,                                     \
-                  .node_n = {.node_binary = ((binary_t){.bi_type_i = type_i, \
-                                                        .bi_lhs_i = lhs_i,   \
-                                                        .bi_rhs_i = rhs_i})}})
-
-#define NODE_MODULO(lhs_i, rhs_i, type_i)                                    \
-    ((ast_node_t){.node_kind = NODE_MODULO,                                  \
-                  .node_type_i = type_i,                                     \
-                  .node_n = {.node_binary = ((binary_t){.bi_type_i = type_i, \
-                                                        .bi_lhs_i = lhs_i,   \
-                                                        .bi_rhs_i = rhs_i})}})
 #define AS_BINARY(node) ((node).node_n.node_binary)
 
 #define AS_PRINTLN(node) ((node).node_n.node_builtin_println)
