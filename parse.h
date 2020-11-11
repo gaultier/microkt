@@ -484,7 +484,7 @@ static res_t parser_err_non_matching_types(const parser_t* parser, int lhs_i,
             parser->par_file_name0, lhs_first_tok_loc.loc_line,
             lhs_first_tok_loc.loc_column,
             (parser->par_is_tty ? color_reset : ""),
-            type_to_str[lhs_type->ty_kind], type_to_str[rhs_type->ty_kind]);
+            type_to_str[rhs_type->ty_kind], type_to_str[lhs_type->ty_kind]);
 
     parser_print_source_on_error(parser, lhs_first_tok_i, rhs_last_tok_i);
 

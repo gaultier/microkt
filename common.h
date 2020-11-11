@@ -30,7 +30,8 @@ static const char res_to_str[][100] = {
     [RES_ASM_FILE_READ_FAILED] = "Failed to read asm file %s: %s\n",
     [RES_FAILED_AS] = "Failed to run `%s`: %s\n",
     [RES_FAILED_LD] = "Failed to run `%s`: %s\n",
-    [RES_NON_MATCHING_TYPES] = "%s%s:%d:%d:%sTypes %s and %s do not match\n",
+    [RES_NON_MATCHING_TYPES] =
+        "%s%s:%d:%d:%sTypes do not match. Expected %s, got %s\n",
     [RES_EXPECTED_PRIMARY] = "%s%s:%d:%d:%sExpected primary, got %s\n",
 };
 
