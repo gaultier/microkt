@@ -454,7 +454,7 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
     }
     if (parser_match(parser, &tok_i, 1, TOK_ID_STRING)) {
         buf_push(parser->par_types,
-                 ((type_t){.ty_size = 1, .ty_kind = TYPE_STRING}));
+                 ((type_t){.ty_size = 8, .ty_kind = TYPE_STRING}));
         const int type_i = buf_size(parser->par_types) - 1;
 
         const char* source = NULL;
@@ -715,7 +715,7 @@ static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i) {
             return res;
 
         buf_push(parser->par_types,
-                 ((type_t){.ty_size = 1, .ty_kind = TYPE_BUILTIN_PRINTLN}));
+                 ((type_t){.ty_size = 8, .ty_kind = TYPE_BUILTIN_PRINTLN}));
         const int type_i = buf_size(parser->par_types) - 1;
         const ast_node_t new_node =
             NODE_PRINTLN(arg_i, keyword_print_i, rparen, type_i);
