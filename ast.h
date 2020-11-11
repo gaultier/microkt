@@ -52,10 +52,6 @@ typedef struct {
     int bi_type_i, bi_lhs_i, bi_rhs_i;
 } binary_t;
 
-typedef struct {
-    int un_type_i, un_lhs_i;
-} unary_t;
-
 typedef enum {
     NODE_BUILTIN_PRINTLN,
     NODE_KEYWORD_BOOL,
@@ -113,8 +109,8 @@ struct ast_node_t {
         node_number_t node_num;  // NODE_I64, NODE_CHAR, NODE_BOOL
         binary_t node_binary;    // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
         // NODE_DIVIDE, NODE_MODULO
-        unary_t node_unary;  // NODE_NEG
-        if_t node_if;        // NODE_IF
+        int node_unary;  // NODE_NEG
+        if_t node_if;    // NODE_IF
     } node_n;
 };
 
@@ -153,6 +149,11 @@ struct ast_node_t {
                   .node_n = {.node_binary = ((binary_t){.bi_type_i = type_i, \
                                                         .bi_lhs_i = lhs_i,   \
                                                         .bi_rhs_i = rhs_i})}})
+
+#define NODE_UNARY(kind, type_i, lhs_i)  \
+    ((ast_node_t){.node_kind = kind,     \
+                  .node_type_i = type_i, \
+                  .node_n = {.node_unary = lhs_i}})
 
 #define NODE_IF(first_tok_i, last_tok_i, node_cond_i, node_if_i, node_else_i) \
     ((ast_node_t){                                                            \
