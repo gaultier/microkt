@@ -807,7 +807,7 @@ static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i) {
         int lparen = 0;
         if ((res = parser_expect_token(parser, &lparen, TOK_ID_LPAREN)) !=
             RES_OK)
-            return res;
+            return parser_err_unexpected_token(parser, TOK_ID_LPAREN);
 
         int arg_i = 0;
         if ((res = parser_parse_expr(parser, &arg_i)) != RES_OK) return res;
@@ -815,7 +815,7 @@ static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i) {
         int rparen = 0;
         if ((res = parser_expect_token(parser, &rparen, TOK_ID_RPAREN)) !=
             RES_OK)
-            return res;
+            return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
 
         buf_push(parser->par_types,
                  ((type_t){.ty_size = 8, .ty_kind = TYPE_BUILTIN_PRINTLN}));
@@ -849,7 +849,7 @@ static res_t parser_parse(parser_t* parser) {
         buf_push(parser->par_stmt_nodes, new_node_i);
 
     } else
-        return res;
+        return parser_err_unexpected_token(parser, TOK_ID_BUILTIN_PRINTLN);
 
     while (!parser_is_at_end(parser)) {
         if ((res = parser_parse_stmt(parser, &new_node_i)) == RES_OK) {
