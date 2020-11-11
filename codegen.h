@@ -286,6 +286,8 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
 
             break;
         }
+        case NODE_NEG:
+            UNIMPLEMENTED();
         default:
             UNREACHABLE();
     }
@@ -341,6 +343,7 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
         case NODE_DIVIDE:
         case NODE_SUBTRACT:
         case NODE_ADD:
+        case NODE_NEG:
             UNREACHABLE();
     }
     println("\n");

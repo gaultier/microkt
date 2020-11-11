@@ -45,16 +45,17 @@ struct ast_node_t;
 typedef struct ast_node_t ast_node_t;
 
 typedef struct {
-    int bp_arg_i;  // Index of argument node
-    int bp_keyword_print_i;
-    int bp_rparen_i;
+    int bp_arg_i, bp_keyword_print_i, bp_rparen_i;
 } ast_builtin_println_t;
 
 typedef struct {
-    int bi_type_i;
-    int bi_lhs_i;
-    int bi_rhs_i;
+    int bi_type_i, bi_lhs_i, bi_rhs_i;
 } binary_t;
+
+typedef struct {
+    int un_type_i;
+    int un_lhs_i;
+} unary_t;
 
 typedef enum {
     NODE_BUILTIN_PRINTLN,
@@ -71,6 +72,7 @@ typedef enum {
     NODE_LE,
     NODE_EQ,
     NODE_NEQ,
+    NODE_NEG,
 } ast_node_kind_t;
 
 const char ast_node_kind_t_to_str[][30] = {
@@ -88,6 +90,7 @@ const char ast_node_kind_t_to_str[][30] = {
     [NODE_LE] = "LE",
     [NODE_EQ] = "EQ",
     [NODE_NEQ] = "NEQ",
+    [NODE_NEG] = "NEG",
 };
 
 typedef struct {
@@ -103,7 +106,8 @@ struct ast_node_t {
         int node_string;                             // NODE_STRING, int = obj_i
         node_number_t node_num;  // NODE_I64, NODE_CHAR, NODE_BOOL
         binary_t node_binary;    // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
-                                 // NODE_DIVIDE, NODE_MODULO
+        // NODE_DIVIDE, NODE_MODULO
+        unary_t node_unary;  // NODE_NEG
     } node_n;
 };
 
