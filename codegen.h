@@ -283,8 +283,13 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
 
             break;
         }
-        case NODE_NEG: {
-            println("neg %%rax");
+        case NODE_NOT: {
+            const ast_node_t* const lhs =
+                &parser->par_nodes[expr->node_n.node_unary];
+            emit_expr(parser, lhs);
+            println("cmp $0, %%rax");
+            println("sete %%al");
+            println("movzx %%al, %%rax");
             break;
         }
         case NODE_IF:
@@ -346,7 +351,7 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
         case NODE_DIVIDE:
         case NODE_SUBTRACT:
         case NODE_ADD:
-        case NODE_NEG:
+        case NODE_NOT:
             UNREACHABLE();
     }
     println("\n");

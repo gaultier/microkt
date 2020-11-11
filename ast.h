@@ -67,7 +67,7 @@ typedef enum {
     NODE_LE,
     NODE_EQ,
     NODE_NEQ,
-    NODE_NEG,
+    NODE_NOT,
     NODE_IF,
 } ast_node_kind_t;
 
@@ -86,7 +86,7 @@ const char ast_node_kind_t_to_str[][30] = {
     [NODE_LE] = "Le",
     [NODE_EQ] = "Eq",
     [NODE_NEQ] = "Neq",
-    [NODE_NEG] = "Neg",
+    [NODE_NOT] = "Not",
     [NODE_IF] = "If",
 };
 
@@ -109,7 +109,7 @@ struct ast_node_t {
         node_number_t node_num;  // NODE_I64, NODE_CHAR, NODE_BOOL
         binary_t node_binary;    // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
         // NODE_DIVIDE, NODE_MODULO
-        int node_unary;  // NODE_NEG
+        int node_unary;  // NODE_NOT
         if_t node_if;    // NODE_IF
     } node_n;
 };

@@ -135,7 +135,7 @@ static void ast_node_dump(const ast_node_t* nodes, int node_i, int indent) {
 
             break;
         }
-        case NODE_NEG: {
+        case NODE_NOT: {
             log_debug_with_indent(indent, "ast_node #%d %s", node_i,
                                   ast_node_kind_t_to_str[node->node_kind]);
             ast_node_dump(nodes, node->node_n.node_unary, indent + 2);
@@ -174,7 +174,7 @@ static int ast_node_first_token(const parser_t* parser,
         case NODE_SUBTRACT:
         case NODE_ADD:
             return node->node_n.node_binary.bi_lhs_i;
-        case NODE_NEG:
+        case NODE_NOT:
             return node->node_n.node_unary;
         case NODE_IF:
             return node->node_n.node_if.if_first_tok_i;
@@ -201,7 +201,7 @@ static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
         case NODE_SUBTRACT:
         case NODE_ADD:
             return node->node_n.node_binary.bi_rhs_i;
-        case NODE_NEG:
+        case NODE_NOT:
             return node->node_n.node_unary;
         case NODE_IF:
             return node->node_n.node_if.if_last_tok_i;
@@ -548,7 +548,7 @@ static res_t parser_parse_unary(parser_t* parser, int* new_node_i) {
             UNIMPLEMENTED();
         }
 
-        const ast_node_t new_node = NODE_UNARY(NODE_NEG, type_i, node_i);
+        const ast_node_t new_node = NODE_UNARY(NODE_NOT, type_i, node_i);
         buf_push(parser->par_nodes, new_node);
         *new_node_i = node_i = (int)buf_size(parser->par_nodes) - 1;
         log_debug("new_node_i=%d", *new_node_i);
