@@ -590,6 +590,16 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
             RES_OK)
             return parser_err_unexpected_token(parser, TOK_ID_RCURLY);
 
+        buf_push(parser->par_types,
+                 ((type_t){.ty_size = 8, .ty_kind = TYPE_STRING}));  // FIXME
+        const int type_i = buf_size(parser->par_types) - 1;
+
+        const ast_node_t new_node = NODE_IF(
+            first_tok_i, last_tok_i, node_cond_i, node_if_i, node_else_i);
+
+        buf_push(parser->par_nodes, new_node);
+        *new_primary_node_i = (int)buf_size(parser->par_nodes) - 1;
+
         return RES_OK;
     }
 

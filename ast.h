@@ -157,7 +157,7 @@ struct ast_node_t {
 
 #define NODE_IF(first_tok_i, last_tok_i, node_cond_i, node_if_i, node_else_i) \
     ((ast_node_t){                                                            \
-        .node_kind = kind,                                                    \
+        .node_kind = NODE_IF,                                                 \
         .node_type_i = 0,                                                     \
         .node_n = {.node_if = ((if_t){.if_first_tok_i = first_tok_i,          \
                                       .if_last_tok_i = last_tok_i,            \
