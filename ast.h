@@ -53,8 +53,7 @@ typedef struct {
 } binary_t;
 
 typedef struct {
-    int un_type_i;
-    int un_lhs_i;
+    int un_type_i, un_lhs_i;
 } unary_t;
 
 typedef enum {

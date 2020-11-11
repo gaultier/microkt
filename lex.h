@@ -89,9 +89,7 @@ static const keyword_t keywords[] = {
 
 typedef struct {
     const char* lex_source;
-    const int lex_source_len;
-    int lex_index;
-    int* lex_lines;
+    int lex_source_len, lex_index, *lex_lines;
 } lexer_t;
 
 // TODO: trie?
