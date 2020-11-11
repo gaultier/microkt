@@ -29,6 +29,7 @@ typedef enum {
     TOK_ID_NEQ,
     TOK_ID_EQ_EQ,
     TOK_ID_NOT,
+    TOK_ID_IF,
     TOK_ID_EOF,
     TOK_ID_INVALID,
 } token_id_t;
@@ -57,6 +58,7 @@ const char token_id_to_str[][30] = {
     [TOK_ID_NEQ] = "!=",
     [TOK_ID_EQ_EQ] = "==",
     [TOK_ID_NOT] = "!",
+    [TOK_ID_IF] = "if",
     [TOK_ID_EOF] = "Eof",
     [TOK_ID_INVALID] = "Invalid",
 };
@@ -85,6 +87,7 @@ static const keyword_t keywords[] = {
     {.key_id = TOK_ID_TRUE, .key_str = "true"},
     {.key_id = TOK_ID_FALSE, .key_str = "false"},
     {.key_id = TOK_ID_BUILTIN_PRINTLN, .key_str = "println"},
+    {.key_id = TOK_ID_IF, .key_str = "if"},
 };
 
 typedef struct {
