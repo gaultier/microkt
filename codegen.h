@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common.h"
 #include "parse.h"
 
 // TODO: use platform headers for that?
@@ -284,6 +285,8 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
         }
         case NODE_NEG:
             UNIMPLEMENTED();
+        case NODE_IF:
+            UNIMPLEMENTED();
         default:
             UNREACHABLE();
     }
@@ -326,6 +329,8 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
 
             break;
         }
+        case NODE_IF:
+            UNIMPLEMENTED();
         case NODE_I64:
         case NODE_CHAR:
         case NODE_STRING:

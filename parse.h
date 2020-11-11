@@ -123,6 +123,17 @@ static void ast_node_dump(const ast_node_t* nodes, int node_i, int indent) {
 
             break;
         }
+        case NODE_IF: {
+            log_debug_with_indent(indent, "ast_node #%d %s", node_i,
+                                  ast_node_kind_t_to_str[node->node_kind]);
+            ast_node_dump(nodes, node->node_n.node_if.if_node_cond_i,
+                          indent + 2);
+            ast_node_dump(nodes, node->node_n.node_if.if_node_if_i, indent + 2);
+            ast_node_dump(nodes, node->node_n.node_if.if_node_else_i,
+                          indent + 2);
+
+            break;
+        }
         case NODE_NEG: {
             log_debug_with_indent(indent, "ast_node #%d %s", node_i,
                                   ast_node_kind_t_to_str[node->node_kind]);
@@ -164,6 +175,8 @@ static int ast_node_first_token(const parser_t* parser,
             return node->node_n.node_binary.bi_lhs_i;
         case NODE_NEG:
             return node->node_n.node_unary.un_lhs_i;
+        case NODE_IF:
+            return node->node_n.node_if.if_first_tok_i;
     }
 }
 
@@ -189,6 +202,8 @@ static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
             return node->node_n.node_binary.bi_rhs_i;
         case NODE_NEG:
             return node->node_n.node_unary.un_lhs_i;
+        case NODE_IF:
+            return node->node_n.node_if.if_last_tok_i;
     }
 }
 

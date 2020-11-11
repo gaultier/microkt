@@ -72,11 +72,12 @@ typedef enum {
     NODE_EQ,
     NODE_NEQ,
     NODE_NEG,
+    NODE_IF,
 } ast_node_kind_t;
 
 const char ast_node_kind_t_to_str[][30] = {
-    [NODE_BUILTIN_PRINTLN] = "print",
-    [NODE_KEYWORD_BOOL] = "bool",
+    [NODE_BUILTIN_PRINTLN] = "Print",
+    [NODE_KEYWORD_BOOL] = "Bool",
     [NODE_STRING] = "String",
     [NODE_I64] = "I64",
     [NODE_CHAR] = "Char",
@@ -85,17 +86,23 @@ const char ast_node_kind_t_to_str[][30] = {
     [NODE_MULTIPLY] = "Multiply",
     [NODE_MODULO] = "Modulo",
     [NODE_DIVIDE] = "Divide",
-    [NODE_LT] = "LT",
-    [NODE_LE] = "LE",
-    [NODE_EQ] = "EQ",
-    [NODE_NEQ] = "NEQ",
-    [NODE_NEG] = "NEG",
+    [NODE_LT] = "Lt",
+    [NODE_LE] = "Le",
+    [NODE_EQ] = "Eq",
+    [NODE_NEQ] = "Neq",
+    [NODE_NEG] = "Neg",
+    [NODE_IF] = "If",
 };
 
 typedef struct {
     int64_t nu_val;
     int nu_tok_i;
 } node_number_t;
+
+typedef struct {
+    int if_first_tok_i, if_last_tok_i, if_node_cond_i, if_node_if_i,
+        if_node_else_i;
+} if_t;
 
 struct ast_node_t {
     ast_node_kind_t node_kind;
@@ -107,6 +114,7 @@ struct ast_node_t {
         binary_t node_binary;    // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
         // NODE_DIVIDE, NODE_MODULO
         unary_t node_unary;  // NODE_NEG
+        if_t node_if;        // NODE_IF
     } node_n;
 };
 
@@ -145,6 +153,16 @@ struct ast_node_t {
                   .node_n = {.node_binary = ((binary_t){.bi_type_i = type_i, \
                                                         .bi_lhs_i = lhs_i,   \
                                                         .bi_rhs_i = rhs_i})}})
+
+#define NODE_IF(first_tok_i, last_tok_i, node_cond_i, node_if_i, node_else_i) \
+    ((ast_node_t){                                                            \
+        .node_kind = kind,                                                    \
+        .node_type_i = 0,                                                     \
+        .node_n = {.node_if = ((if_t){.if_first_tok_i = first_tok_i,          \
+                                      .if_last_tok_i = last_tok_i,            \
+                                      .if_node_cond_i = node_cond_i,          \
+                                      .if_node_if_i = node_if_i,              \
+                                      .if_node_else_i = node_else_i})}})
 
 #define AS_BINARY(node) ((node).node_n.node_binary)
 
