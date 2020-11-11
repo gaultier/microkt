@@ -25,6 +25,8 @@ typedef struct {
     type_t* par_types;
 } parser_t;
 
+static res_t parser_parse_expr(parser_t* parser, int* new_node_i);
+
 static parser_t parser_init(const char* file_name0, const char* source,
                             int source_len) {
     PG_ASSERT_COND((void*)file_name0, !=, NULL, "%p");
@@ -373,6 +375,57 @@ static res_t parser_err_unexpected_token(const parser_t* parser,
     return res;
 }
 
+static bool parser_match(parser_t* parser, int* return_token_index,
+                         int id_count, ...) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)parser->par_token_ids, !=, NULL, "%p");
+    PG_ASSERT_COND((int)buf_size(parser->par_token_ids), >, (int)0, "%d");
+    PG_ASSERT_COND((int)buf_size(parser->par_token_ids), >, parser->par_tok_i,
+                   "%d");
+
+    const token_id_t current_id = parser_peek(parser);
+
+    va_list ap;
+    va_start(ap, id_count);
+
+    for (; id_count; id_count--) {
+        token_id_t id = va_arg(ap, token_id_t);
+
+        if (parser_is_at_end(parser)) return false;
+
+        if (id != current_id) continue;
+
+        parser_advance_until_after(parser, id);
+        PG_ASSERT_COND(parser->par_tok_i, <,
+                       (int)buf_size(parser->par_token_ids), "%d");
+
+        *return_token_index = parser->par_tok_i - 1;
+
+        log_debug("matched %s, now current token: %s at tok_i=%d",
+                  token_id_to_str[id], token_id_to_str[parser_current(parser)],
+                  parser->par_tok_i);
+
+        return true;
+    }
+    va_end(ap);
+
+    return false;
+}
+
+static res_t parser_expect_token(parser_t* parser, int* token,
+                                 token_id_t expected) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)parser->par_token_ids, !=, NULL, "%p");
+    PG_ASSERT_COND((int)buf_size(parser->par_token_ids), >, (int)0, "%d");
+    PG_ASSERT_COND((void*)token, !=, NULL, "%p");
+
+    if (!parser_match(parser, token, 1, expected)) {
+        log_debug("expected token not found: %s", token_id_to_str[expected]);
+        return parser_err_unexpected_token(parser, expected);
+    }
+    return RES_OK;
+}
+
 static res_t parser_err_expected_primary(const parser_t* parser) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
 
@@ -421,43 +474,6 @@ static res_t parser_err_non_matching_types(const parser_t* parser, int lhs_i,
     parser_print_source_on_error(parser, lhs_first_tok_i, rhs_last_tok_i);
 
     return res;
-}
-
-static bool parser_match(parser_t* parser, int* return_token_index,
-                         int id_count, ...) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)parser->par_token_ids, !=, NULL, "%p");
-    PG_ASSERT_COND((int)buf_size(parser->par_token_ids), >, (int)0, "%d");
-    PG_ASSERT_COND((int)buf_size(parser->par_token_ids), >, parser->par_tok_i,
-                   "%d");
-
-    const token_id_t current_id = parser_peek(parser);
-
-    va_list ap;
-    va_start(ap, id_count);
-
-    for (; id_count; id_count--) {
-        token_id_t id = va_arg(ap, token_id_t);
-
-        if (parser_is_at_end(parser)) return false;
-
-        if (id != current_id) continue;
-
-        parser_advance_until_after(parser, id);
-        PG_ASSERT_COND(parser->par_tok_i, <,
-                       (int)buf_size(parser->par_token_ids), "%d");
-
-        *return_token_index = parser->par_tok_i - 1;
-
-        log_debug("matched %s, now current token: %s at tok_i=%d",
-                  token_id_to_str[id], token_id_to_str[parser_current(parser)],
-                  parser->par_tok_i);
-
-        return true;
-    }
-    va_end(ap);
-
-    return false;
 }
 
 static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
@@ -523,6 +539,56 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
         const ast_node_t new_node = NODE_CHAR(tok_i, type_i, val);
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = (int)buf_size(parser->par_nodes) - 1;
+
+        return RES_OK;
+    }
+    if (parser_match(parser, &tok_i, 1, TOK_ID_IF)) {
+        int first_tok_i, last_tok_i, dummy = -1;
+        res_t res = RES_NONE;
+
+        if ((res = parser_expect_token(parser, &first_tok_i, TOK_ID_LPAREN)) !=
+            RES_OK)
+            return parser_err_unexpected_token(parser, TOK_ID_LPAREN);
+
+        int node_cond_i, node_if_i, node_else_i = -1;
+        if ((res = parser_parse_expr(parser, &node_cond_i)) != RES_OK) {
+            log_debug("failed to parse if-cond %d", res);
+            return res;
+        }
+
+        if ((res = parser_expect_token(parser, &first_tok_i, TOK_ID_RPAREN)) !=
+            RES_OK)
+            return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
+
+        if ((res = parser_expect_token(parser, &first_tok_i, TOK_ID_LCURLY)) !=
+            RES_OK)
+            return parser_err_unexpected_token(parser, TOK_ID_LCURLY);
+
+        if ((res = parser_parse_expr(parser, &node_if_i)) != RES_OK) {
+            log_debug("failed to parse if-branch %d", res);
+            return res;
+        }
+
+        if ((res = parser_expect_token(parser, &dummy, TOK_ID_RCURLY)) !=
+            RES_OK)
+            return parser_err_unexpected_token(parser, TOK_ID_RCURLY);
+
+        if ((res = parser_expect_token(parser, &first_tok_i, TOK_ID_ELSE)) !=
+            RES_OK)
+            return parser_err_unexpected_token(parser, TOK_ID_ELSE);
+
+        if ((res = parser_expect_token(parser, &dummy, TOK_ID_LCURLY)) !=
+            RES_OK)
+            return parser_err_unexpected_token(parser, TOK_ID_LCURLY);
+
+        if ((res = parser_parse_expr(parser, &node_else_i)) != RES_OK) {
+            log_debug("failed to parse else-branch %d", res);
+            return res;
+        }
+
+        if ((res = parser_expect_token(parser, &last_tok_i, TOK_ID_RCURLY)) !=
+            RES_OK)
+            return parser_err_unexpected_token(parser, TOK_ID_RCURLY);
 
         return RES_OK;
     }
@@ -729,20 +795,6 @@ static res_t parser_parse_expr(parser_t* parser, int* new_node_i) {
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
     return parser_parse_equality(parser, new_node_i);
-}
-
-static res_t parser_expect_token(parser_t* parser, int* token,
-                                 token_id_t expected) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)parser->par_token_ids, !=, NULL, "%p");
-    PG_ASSERT_COND((int)buf_size(parser->par_token_ids), >, (int)0, "%d");
-    PG_ASSERT_COND((void*)token, !=, NULL, "%p");
-
-    if (!parser_match(parser, token, 1, expected)) {
-        log_debug("expected token not found: %s", token_id_to_str[expected]);
-        return parser_err_unexpected_token(parser, expected);
-    }
-    return RES_OK;
 }
 
 static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i) {

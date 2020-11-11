@@ -25,6 +25,9 @@ BEGIN {
     tests[7] = "e2e/negation"
     expected_outputs[7] = "false\ntrue\n"
 
+    tests[8] = "e2e/if"
+    expected_outputs[8] = "hello\n"
+
     is_tty = system("test -t 1") == 0
 
     if (is_tty) {
