@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ast.h"
 #include "common.h"
 #include "parse.h"
 
@@ -292,8 +293,22 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             println("movzx %%al, %%rax");
             break;
         }
-        case NODE_IF:
-            UNIMPLEMENTED();
+        case NODE_IF: {
+            const if_t node = expr->node_n.node_if;
+
+            emit_expr(parser, &parser->par_nodes[node.if_node_cond_i]);
+            println("cmp $0, %%rax");
+            println("je .L.else.%d", node.if_node_cond_i);
+
+            emit_expr(parser, &parser->par_nodes[node.if_node_if_i]);
+            println("jmp .L.end.%d\n", node.if_node_cond_i);
+
+            println(".L.else.%d:", node.if_node_cond_i);
+            emit_expr(parser, &parser->par_nodes[node.if_node_else_i]);
+
+            println(".L.end.%d:", node.if_node_cond_i);
+            break;
+        }
         default:
             UNREACHABLE();
     }
