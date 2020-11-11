@@ -1,9 +1,5 @@
 #pragma once
 
-#include <stdint.h>
-
-#include "ast.h"
-#include "common.h"
 #include "parse.h"
 
 // TODO: use platform headers for that?
