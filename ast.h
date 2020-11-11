@@ -70,6 +70,7 @@ typedef enum {
     NODE_LT,
     NODE_LE,
     NODE_EQ,
+    NODE_NEQ,
 } ast_node_kind_t;
 
 const char ast_node_kind_t_to_str[][30] = {
@@ -86,6 +87,7 @@ const char ast_node_kind_t_to_str[][30] = {
     [NODE_LT] = "LT",
     [NODE_LE] = "LE",
     [NODE_EQ] = "EQ",
+    [NODE_NEQ] = "NEQ",
 };
 
 typedef struct {

@@ -26,7 +26,9 @@ typedef enum {
     TOK_ID_LE,
     TOK_ID_GE,
     TOK_ID_EQ,
+    TOK_ID_NEQ,
     TOK_ID_EQ_EQ,
+    TOK_ID_NOT,
     TOK_ID_EOF,
     TOK_ID_INVALID,
 } token_id_t;
@@ -52,7 +54,9 @@ const char token_id_to_str[][30] = {
     [TOK_ID_GT] = ">",
     [TOK_ID_GE] = ">=",
     [TOK_ID_EQ] = "=",
+    [TOK_ID_NEQ] = "!=",
     [TOK_ID_EQ_EQ] = "==",
+    [TOK_ID_NOT] = "!",
     [TOK_ID_EOF] = "Eof",
     [TOK_ID_INVALID] = "Invalid",
 };
@@ -360,6 +364,11 @@ static token_t lex_next(lexer_t* lexer) {
                 lex_match(lexer, '=');
                 result.tok_id =
                     lex_match(lexer, '=') ? TOK_ID_EQ_EQ : TOK_ID_EQ;
+                goto outer;
+            }
+            case '!': {
+                lex_match(lexer, '!');
+                result.tok_id = lex_match(lexer, '=') ? TOK_ID_NEQ : TOK_ID_NOT;
                 goto outer;
             }
             case '<': {

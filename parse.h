@@ -111,6 +111,7 @@ static void ast_node_dump(const ast_node_t* nodes, int node_i, int indent) {
         case NODE_LT:
         case NODE_LE:
         case NODE_EQ:
+        case NODE_NEQ:
         case NODE_MULTIPLY:
         case NODE_DIVIDE:
         case NODE_MODULO:
@@ -148,6 +149,7 @@ static int ast_node_first_token(const parser_t* parser,
         case NODE_LT:
         case NODE_LE:
         case NODE_EQ:
+        case NODE_NEQ:
         case NODE_MULTIPLY:
         case NODE_DIVIDE:
         case NODE_MODULO:
@@ -170,6 +172,7 @@ static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
         case NODE_LT:
         case NODE_LE:
         case NODE_EQ:
+        case NODE_NEQ:
         case NODE_MULTIPLY:
         case NODE_DIVIDE:
         case NODE_MODULO:
@@ -640,8 +643,7 @@ static res_t parser_parse_equality(parser_t* parser, int* new_node_i) {
     *new_node_i = lhs_i;
     log_debug("new_node_i=%d", *new_node_i);
 
-    // TODO: NEQ ...
-    while (parser_match(parser, new_node_i, 1, TOK_ID_EQ_EQ)) {
+    while (parser_match(parser, new_node_i, 2, TOK_ID_EQ_EQ, TOK_ID_NEQ)) {
         const int tok_id = parser_previous(parser);
 
         int rhs_i = INT32_MAX;
@@ -660,10 +662,8 @@ static res_t parser_parse_equality(parser_t* parser, int* new_node_i) {
 
         ast_node_t new_node;
 
-        if (tok_id == TOK_ID_EQ_EQ)
-            new_node = NODE_BINARY(NODE_EQ, lhs_i, rhs_i, type_i);
-        else
-            UNREACHABLE();
+        new_node = NODE_BINARY(tok_id == TOK_ID_EQ_EQ ? NODE_EQ : NODE_NEQ,
+                               lhs_i, rhs_i, type_i);
 
         buf_push(parser->par_nodes, new_node);
         *new_node_i = lhs_i = (int)buf_size(parser->par_nodes) - 1;

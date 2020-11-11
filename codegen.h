@@ -259,6 +259,7 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
         }
         case NODE_LT:
         case NODE_EQ:
+        case NODE_NEQ:
         case NODE_LE: {
             const binary_t bin = expr->node_n.node_binary;
             const ast_node_t* const lhs = &parser->par_nodes[bin.bi_lhs_i];
@@ -276,6 +277,8 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
                 println("setle %%al");
             else if (expr->node_kind == NODE_EQ)
                 println("sete %%al");
+            else if (expr->node_kind == NODE_NEQ)
+                println("setne %%al");
             else
                 UNREACHABLE();
 
@@ -332,6 +335,7 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
         case NODE_LT:
         case NODE_LE:
         case NODE_EQ:
+        case NODE_NEQ:
         case NODE_MULTIPLY:
         case NODE_MODULO:
         case NODE_DIVIDE:
