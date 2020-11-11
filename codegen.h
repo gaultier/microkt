@@ -300,7 +300,7 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             println("cmp $0, %%rax");
             println("je .L.else.%d", node.if_node_cond_i);
 
-            emit_expr(parser, &parser->par_nodes[node.if_node_if_i]);
+            emit_expr(parser, &parser->par_nodes[node.if_node_then_i]);
             println("jmp .L.end.%d\n", node.if_node_cond_i);
 
             println(".L.else.%d:", node.if_node_cond_i);
@@ -346,8 +346,10 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
 
                 println("movq $%d, %%rsi", var.gl_source_len);
                 println("call __println_string");
-            } else
+            } else {
+                log_debug("Type %s unimplemented", type_to_str[type]);
                 UNIMPLEMENTED();
+            }
 
             break;
         }

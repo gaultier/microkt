@@ -96,7 +96,7 @@ typedef struct {
 } node_number_t;
 
 typedef struct {
-    int if_first_tok_i, if_last_tok_i, if_node_cond_i, if_node_if_i,
+    int if_first_tok_i, if_last_tok_i, if_node_cond_i, if_node_then_i,
         if_node_else_i;
 } if_t;
 
@@ -155,15 +155,15 @@ struct ast_node_t {
                   .node_type_i = type_i, \
                   .node_n = {.node_unary = lhs_i}})
 
-#define NODE_IF(type_i, first_tok_i, last_tok_i, node_cond_i, node_if_i, \
-                node_else_i)                                             \
-    ((ast_node_t){                                                       \
-        .node_kind = NODE_IF,                                            \
-        .node_type_i = type_i,                                           \
-        .node_n = {.node_if = ((if_t){.if_first_tok_i = first_tok_i,     \
-                                      .if_last_tok_i = last_tok_i,       \
-                                      .if_node_cond_i = node_cond_i,     \
-                                      .if_node_if_i = node_if_i,         \
+#define NODE_IF(type_i, first_tok_i, last_tok_i, node_cond_i, node_then_i, \
+                node_else_i)                                               \
+    ((ast_node_t){                                                         \
+        .node_kind = NODE_IF,                                              \
+        .node_type_i = type_i,                                             \
+        .node_n = {.node_if = ((if_t){.if_first_tok_i = first_tok_i,       \
+                                      .if_last_tok_i = last_tok_i,         \
+                                      .if_node_cond_i = node_cond_i,       \
+                                      .if_node_then_i = node_then_i,       \
                                       .if_node_else_i = node_else_i})}})
 
 #define AS_BINARY(node) ((node).node_n.node_binary)

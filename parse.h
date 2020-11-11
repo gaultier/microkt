@@ -98,15 +98,19 @@ static int64_t parse_tok_to_char(const parser_t* parser, int tok_i) {
     return string[0];
 }
 
-static void ast_node_dump(const ast_node_t* nodes, int node_i, int indent) {
+static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
+                          int node_i, int indent) {
     PG_ASSERT_COND((void*)nodes, !=, NULL, "%p");
 
     const ast_node_t* node = &nodes[node_i];
     switch (node->node_kind) {
         case NODE_BUILTIN_PRINTLN: {
-            log_debug_with_indent(indent, "ast_node #%d %s", node_i,
-                                  ast_node_kind_t_to_str[node->node_kind]);
-            ast_node_dump(nodes, node->node_n.node_builtin_println.bp_arg_i,
+            log_debug_with_indent(
+                indent, "ast_node #%d %s type %s", node_i,
+                ast_node_kind_t_to_str[node->node_kind],
+                type_to_str[parser->par_types[node->node_type_i].ty_kind]);
+            ast_node_dump(nodes, parser,
+                          node->node_n.node_builtin_println.bp_arg_i,
                           indent + 2);
             break;
         }
@@ -119,28 +123,37 @@ static void ast_node_dump(const ast_node_t* nodes, int node_i, int indent) {
         case NODE_MODULO:
         case NODE_SUBTRACT:
         case NODE_ADD: {
-            log_debug_with_indent(indent, "ast_node #%d %s", node_i,
-                                  ast_node_kind_t_to_str[node->node_kind]);
-            ast_node_dump(nodes, node->node_n.node_binary.bi_lhs_i, indent + 2);
-            ast_node_dump(nodes, node->node_n.node_binary.bi_rhs_i, indent + 2);
+            log_debug_with_indent(
+                indent, "ast_node #%d %s type %s", node_i,
+                ast_node_kind_t_to_str[node->node_kind],
+                type_to_str[parser->par_types[node->node_type_i].ty_kind]);
+            ast_node_dump(nodes, parser, node->node_n.node_binary.bi_lhs_i,
+                          indent + 2);
+            ast_node_dump(nodes, parser, node->node_n.node_binary.bi_rhs_i,
+                          indent + 2);
 
             break;
         }
         case NODE_IF: {
-            log_debug_with_indent(indent, "ast_node #%d %s", node_i,
-                                  ast_node_kind_t_to_str[node->node_kind]);
-            ast_node_dump(nodes, node->node_n.node_if.if_node_cond_i,
+            log_debug_with_indent(
+                indent, "ast_node #%d %s type %s", node_i,
+                ast_node_kind_t_to_str[node->node_kind],
+                type_to_str[parser->par_types[node->node_type_i].ty_kind]);
+            ast_node_dump(nodes, parser, node->node_n.node_if.if_node_cond_i,
                           indent + 2);
-            ast_node_dump(nodes, node->node_n.node_if.if_node_if_i, indent + 2);
-            ast_node_dump(nodes, node->node_n.node_if.if_node_else_i,
+            ast_node_dump(nodes, parser, node->node_n.node_if.if_node_then_i,
+                          indent + 2);
+            ast_node_dump(nodes, parser, node->node_n.node_if.if_node_else_i,
                           indent + 2);
 
             break;
         }
         case NODE_NOT: {
-            log_debug_with_indent(indent, "ast_node #%d %s", node_i,
-                                  ast_node_kind_t_to_str[node->node_kind]);
-            ast_node_dump(nodes, node->node_n.node_unary, indent + 2);
+            log_debug_with_indent(
+                indent, "ast_node #%d %s type %s", node_i,
+                ast_node_kind_t_to_str[node->node_kind],
+                type_to_str[parser->par_types[node->node_type_i].ty_kind]);
+            ast_node_dump(nodes, parser, node->node_n.node_unary, indent + 2);
 
             break;
         }
@@ -148,8 +161,10 @@ static void ast_node_dump(const ast_node_t* nodes, int node_i, int indent) {
         case NODE_I64:
         case NODE_CHAR:
         case NODE_STRING: {
-            log_debug_with_indent(indent, "ast_node #%d %s", node_i,
-                                  ast_node_kind_t_to_str[node->node_kind]);
+            log_debug_with_indent(
+                indent, "ast_node #%d %s type %s", node_i,
+                ast_node_kind_t_to_str[node->node_kind],
+                type_to_str[parser->par_types[node->node_type_i].ty_kind]);
             break;
         }
     }
@@ -550,7 +565,7 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
             RES_OK)
             return parser_err_unexpected_token(parser, TOK_ID_LPAREN);
 
-        int node_cond_i, node_if_i, node_else_i = -1;
+        int node_cond_i, node_then_i, node_else_i = -1;
         if ((res = parser_parse_expr(parser, &node_cond_i)) != RES_OK) {
             log_debug("failed to parse if-cond %d", res);
             return res;
@@ -564,7 +579,7 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
             RES_OK)
             return parser_err_unexpected_token(parser, TOK_ID_LCURLY);
 
-        if ((res = parser_parse_expr(parser, &node_if_i)) != RES_OK) {
+        if ((res = parser_parse_expr(parser, &node_then_i)) != RES_OK) {
             log_debug("failed to parse if-branch %d", res);
             return res;
         }
@@ -596,7 +611,8 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
             return parser_err_non_matching_types(parser, cond_type_kind,
                                                  TYPE_BOOL);
 
-        const type_kind_t then_type_kind = parser->par_types[node_if_i].ty_kind;
+        const type_kind_t then_type_kind =
+            parser->par_types[node_then_i].ty_kind;
         const type_kind_t else_type_kind =
             parser->par_types[node_else_i].ty_kind;
         if (then_type_kind != else_type_kind)
@@ -605,7 +621,7 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
 
         const ast_node_t new_node =
             NODE_IF(then_type_kind, first_tok_i, last_tok_i, node_cond_i,
-                    node_if_i, node_else_i);
+                    node_then_i, node_else_i);
 
         buf_push(parser->par_nodes, new_node);
         *new_primary_node_i = (int)buf_size(parser->par_nodes) - 1;
@@ -865,7 +881,7 @@ static res_t parser_parse(parser_t* parser) {
     res_t res = RES_NONE;
 
     if ((res = parser_parse_stmt(parser, &new_node_i)) == RES_OK) {
-        ast_node_dump(parser->par_nodes, new_node_i, 0);
+        ast_node_dump(parser->par_nodes, parser, new_node_i, 0);
         buf_push(parser->par_stmt_nodes, new_node_i);
 
     } else
@@ -873,7 +889,7 @@ static res_t parser_parse(parser_t* parser) {
 
     while (!parser_is_at_end(parser)) {
         if ((res = parser_parse_stmt(parser, &new_node_i)) == RES_OK) {
-            ast_node_dump(parser->par_nodes, new_node_i, 0);
+            ast_node_dump(parser->par_nodes, parser, new_node_i, 0);
             buf_push(parser->par_stmt_nodes, new_node_i);
 
             continue;
