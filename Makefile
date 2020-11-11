@@ -39,7 +39,10 @@ e2e/math_integers: e2e/math_integers.kts $(BIN_TEST)
 e2e/comparison: e2e/comparison.kts $(BIN_TEST)
 	$(BIN_TEST) $<
 
-e2e: e2e/integers e2e/math_integers e2e/char e2e/hello_world e2e/string e2e/bool e2e/comparison
+e2e/negation: e2e/negation.kts $(BIN_TEST)
+	$(BIN_TEST) $<
+
+e2e: e2e/integers e2e/math_integers e2e/char e2e/hello_world e2e/string e2e/bool e2e/comparison e2e/negation
 
 test: e2e tests.awk
 	@./tests.awk

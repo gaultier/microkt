@@ -283,8 +283,10 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
 
             break;
         }
-        case NODE_NEG:
-            UNIMPLEMENTED();
+        case NODE_NEG: {
+            println("neg %%rax");
+            break;
+        }
         case NODE_IF:
             UNIMPLEMENTED();
         default:

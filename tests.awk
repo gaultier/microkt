@@ -22,6 +22,9 @@ BEGIN {
     tests[6] = "e2e/comparison"
     expected_outputs[6] = "true\ntrue\nfalse\ntrue\nfalse\nfalse\ntrue\ntrue\nfalse\ntrue\n"
 
+    tests[7] = "e2e/negation"
+    expected_outputs[7] = "false\ntrue\n"
+
     is_tty = system("test -t 1") == 0
 
     if (is_tty) {
