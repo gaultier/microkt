@@ -470,15 +470,17 @@ static res_t parser_err_expected_primary(const parser_t* parser) {
     return res;
 }
 
-static res_t parser_err_non_matching_types(const parser_t* parser, int lhs_i,
-                                           int rhs_i) {
+static res_t parser_err_non_matching_types(const parser_t* parser,
+                                           int lhs_node_i, int rhs_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
 
-    const ast_node_t* const lhs = &parser->par_nodes[lhs_i];
-    const ast_node_t* const rhs = &parser->par_nodes[rhs_i];
+    const ast_node_t* const lhs = &parser->par_nodes[lhs_node_i];
+    const ast_node_t* const rhs = &parser->par_nodes[rhs_node_i];
 
-    const type_t* const lhs_type = &parser->par_types[lhs->node_type_i];
-    const type_t* const rhs_type = &parser->par_types[rhs->node_type_i];
+    const type_kind_t lhs_type_kind =
+        parser->par_types[lhs->node_type_i].ty_kind;
+    const type_kind_t rhs_type_kind =
+        parser->par_types[rhs->node_type_i].ty_kind;
 
     const int lhs_first_tok_i = ast_node_first_token(parser, lhs);
     const int rhs_last_tok_i = ast_node_last_token(parser, rhs);
@@ -493,8 +495,8 @@ static res_t parser_err_non_matching_types(const parser_t* parser, int lhs_i,
     fprintf(stderr, res_to_str[res], (parser->par_is_tty ? color_grey : ""),
             parser->par_file_name0, lhs_first_tok_loc.loc_line,
             lhs_first_tok_loc.loc_column,
-            (parser->par_is_tty ? color_reset : ""),
-            type_to_str[rhs_type->ty_kind], type_to_str[lhs_type->ty_kind]);
+            (parser->par_is_tty ? color_reset : ""), type_to_str[rhs_type_kind],
+            type_to_str[lhs_type_kind]);
 
     parser_print_source_on_error(parser, lhs_first_tok_i, rhs_last_tok_i);
 
@@ -625,8 +627,7 @@ static res_t parser_parse_primary(parser_t* parser, int* new_node_i) {
         if (cond_type_kind != TYPE_BOOL) {
             log_debug("if-cond type is not bool, got %s",
                       type_to_str[cond_type_kind]);
-            return parser_err_non_matching_types(parser, cond_type_kind,
-                                                 TYPE_BOOL);
+            UNIMPLEMENTED();
         }
 
         const ast_node_t* const node_then = &parser->par_nodes[node_then_i];
@@ -638,8 +639,8 @@ static res_t parser_parse_primary(parser_t* parser, int* new_node_i) {
         if (then_type_kind != else_type_kind) {
             log_debug("if branch types don't match, got %s and %s",
                       type_to_str[then_type_kind], type_to_str[else_type_kind]);
-            return parser_err_non_matching_types(parser, then_type_kind,
-                                                 else_type_kind);
+            return parser_err_non_matching_types(parser, node_then_i,
+                                                 node_else_i);
         }
 
         const ast_node_t new_node =
@@ -689,6 +690,8 @@ static res_t parser_parse_multiplication(parser_t* parser, int* new_node_i) {
 
     int lhs_i = -1;
     if ((res = parser_parse_unary(parser, &lhs_i)) != RES_OK) return res;
+    PG_ASSERT_COND(lhs_i, >=, 0, "%d");
+
     const int lhs_type_i = parser->par_nodes[lhs_i].node_type_i;
     const type_kind_t lhs_type_kind = parser->par_types[lhs_type_i].ty_kind;
     *new_node_i = lhs_i;
@@ -700,16 +703,28 @@ static res_t parser_parse_multiplication(parser_t* parser, int* new_node_i) {
 
         int rhs_i = -1;
         if ((res = parser_parse_unary(parser, &rhs_i)) != RES_OK) return res;
+        PG_ASSERT_COND(rhs_i, >=, 0, "%d");
 
         const int rhs_type_i = parser->par_nodes[rhs_i].node_type_i;
         const type_kind_t rhs_type_kind = parser->par_types[rhs_type_i].ty_kind;
 
-        if (lhs_type_kind != TYPE_I64)
-            return parser_err_non_matching_types(parser, lhs_i, TYPE_I64);
-        if (rhs_type_kind != TYPE_I64)
-            return parser_err_non_matching_types(parser, rhs_i, TYPE_I64);
-        if (lhs_type_kind != rhs_type_kind)
+        if (lhs_type_kind != TYPE_I64) {
+            log_debug("non matching types: lhs should be numerical, was: %s",
+                      type_to_str[lhs_type_kind]);
+            UNIMPLEMENTED();
+        }
+
+        if (rhs_type_kind != TYPE_I64) {
+            log_debug("non matching types: rhs should be numerical, was: %s",
+                      type_to_str[rhs_type_kind]);
+            UNIMPLEMENTED();
+        }
+
+        if (lhs_type_kind != rhs_type_kind) {
+            log_debug("non matching types: lhs=%s rhs=%s",
+                      type_to_str[lhs_type_kind], type_to_str[rhs_type_kind]);
             return parser_err_non_matching_types(parser, lhs_i, rhs_i);
+        }
 
         const ast_node_t new_node = NODE_BINARY(
             (tok_id == TOK_ID_STAR)
@@ -732,7 +747,7 @@ static res_t parser_parse_addition(parser_t* parser, int* new_node_i) {
     if ((res = parser_parse_multiplication(parser, &lhs_i)) != RES_OK)
         return res;
     const int lhs_type_i = parser->par_nodes[lhs_i].node_type_i;
-    const type_t lhs_type = parser->par_types[lhs_type_i];
+    const type_kind_t lhs_type_kind = parser->par_types[lhs_type_i].ty_kind;
     *new_node_i = lhs_i;
     log_debug("new_node_i=%d", *new_node_i);
 
@@ -744,12 +759,10 @@ static res_t parser_parse_addition(parser_t* parser, int* new_node_i) {
             return res;
 
         const int rhs_type_i = parser->par_nodes[rhs_i].node_type_i;
-        const type_t rhs_type = parser->par_types[rhs_type_i];
+        const type_kind_t rhs_type_kind = parser->par_types[rhs_type_i].ty_kind;
 
-        if (lhs_type.ty_kind != rhs_type.ty_kind)
+        if (lhs_type_kind != rhs_type_kind)
             return parser_err_non_matching_types(parser, lhs_i, rhs_i);
-
-        buf_push(parser->par_types, lhs_type);
 
         const ast_node_t new_node =
             NODE_BINARY(tok_id == TOK_ID_PLUS ? NODE_ADD : NODE_SUBTRACT, lhs_i,
@@ -769,7 +782,7 @@ static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
     int lhs_i = -1;
     if ((res = parser_parse_addition(parser, &lhs_i)) != RES_OK) return res;
     const int lhs_type_i = parser->par_nodes[lhs_i].node_type_i;
-    const type_t lhs_type = parser->par_types[lhs_type_i];
+    const type_kind_t lhs_type_kind = parser->par_types[lhs_type_i].ty_kind;
     *new_node_i = lhs_i;
     log_debug("new_node_i=%d", *new_node_i);
 
@@ -781,9 +794,9 @@ static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
         if ((res = parser_parse_addition(parser, &rhs_i)) != RES_OK) return res;
 
         const int rhs_type_i = parser->par_nodes[rhs_i].node_type_i;
-        const type_t rhs_type = parser->par_types[rhs_type_i];
+        const type_kind_t rhs_type_kind = parser->par_types[rhs_type_i].ty_kind;
 
-        if (lhs_type.ty_kind != rhs_type.ty_kind)
+        if (lhs_type_kind != rhs_type_kind)
             return parser_err_non_matching_types(parser, lhs_i, rhs_i);
 
         buf_push(parser->par_types,
@@ -817,7 +830,7 @@ static res_t parser_parse_equality(parser_t* parser, int* new_node_i) {
     int lhs_i = -1;
     if ((res = parser_parse_comparison(parser, &lhs_i)) != RES_OK) return res;
     const int lhs_type_i = parser->par_nodes[lhs_i].node_type_i;
-    const type_t lhs_type = parser->par_types[lhs_type_i];
+    const type_kind_t lhs_type_kind = parser->par_types[lhs_type_i].ty_kind;
     *new_node_i = lhs_i;
     log_debug("new_node_i=%d", *new_node_i);
 
@@ -829,9 +842,9 @@ static res_t parser_parse_equality(parser_t* parser, int* new_node_i) {
             return res;
 
         const int rhs_type_i = parser->par_nodes[rhs_i].node_type_i;
-        const type_t rhs_type = parser->par_types[rhs_type_i];
+        const type_kind_t rhs_type_kind = parser->par_types[rhs_type_i].ty_kind;
 
-        if (lhs_type.ty_kind != rhs_type.ty_kind)
+        if (lhs_type_kind != rhs_type_kind)
             return parser_err_non_matching_types(parser, lhs_i, rhs_i);
 
         buf_push(parser->par_types,
