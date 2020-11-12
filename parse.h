@@ -566,9 +566,9 @@ static res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
         return res;
     }
 
-    if ((res = parser_expect_token(parser, &first_tok_i, TOK_ID_ELSE)) !=
-        RES_OK)
-        return parser_err_unexpected_token(parser, TOK_ID_ELSE);
+    int dummy = -1;
+    if (!parser_match(parser, &dummy, 1, TOK_ID_ELSE))
+        return RES_OK;  // Else is optional
 
     if ((res = parser_parse_control_structure_body(parser, &node_else_i)) !=
         RES_OK) {
