@@ -9,3 +9,21 @@ println(if   (false) { 'A' } else { 'B' })
 
 println(if   (true) { "hello" } else { "world" })
 println(if   (false) { "hello" } else { "world" })
+
+// Nested ifs + if..else-if..else
+println( 
+  if (1 <= 2) {
+    if ( 99 == 98) {
+      1000 
+    }
+    else {
+      if (42 == 42) {
+        999 // This
+      } else {
+        500
+      }
+    }
+  } else {
+    0
+  }
+)
