@@ -176,6 +176,12 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
         case NODE_STRING: {
             const int obj_i = expr->node_n.node_string;
             println("leaq .L%d(%%rip), %%rax", obj_i);
+
+            const obj_t obj = parser->par_objects[obj_i];
+            PG_ASSERT_COND(obj.obj_kind, ==, OBJ_GLOBAL_VAR, "%d");
+
+            const global_var_t var = obj.obj.obj_global_var;
+            println("movq $%d, %%r8", var.gl_source_len);
             return;
         }
         case NODE_CHAR: {
@@ -336,15 +342,8 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
             else if (type == TYPE_BOOL)
                 println("call __println_bool");
             else if (type == TYPE_STRING) {
-                const int obj_i = arg->node_n.node_string;
-                const obj_t obj = parser->par_objects[obj_i];
-                PG_ASSERT_COND(obj.obj_kind, ==, OBJ_GLOBAL_VAR, "%d");
-
-                const global_var_t var = obj.obj.obj_global_var;
-                log_debug("BuiltinPrint s=`%.*s` len=%d", var.gl_source_len,
-                          var.gl_source, var.gl_source_len);
-
-                println("movq $%d, %%rsi", var.gl_source_len);
+                println("movq %%r8, %%rsi");
+                println("movq %%rax, %%rdi");
                 println("call __println_string");
             } else {
                 log_debug("Type %s unimplemented", type_to_str[type]);
