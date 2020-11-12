@@ -491,12 +491,12 @@ static res_t parser_err_non_matching_types(const parser_t* parser, int lhs_i,
     return res;
 }
 
-static res_t parser_parse_expr_in_opt_curly(parser_t* parser, int* new_node_i,
-                                            int* first_tok_i, int* last_tok_i) {
+static res_t parser_parse_expr_in_opt_curly(parser_t* parser, int* new_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
-    const bool lparen = parser_match(parser, first_tok_i, 1, TOK_ID_LCURLY);
+    int dummy = -1;
+    const bool lparen = parser_match(parser, &dummy, 1, TOK_ID_LCURLY);
 
     res_t res = RES_NONE;
     if ((res = parser_parse_expr(parser, new_node_i)) != RES_OK) {
@@ -504,7 +504,7 @@ static res_t parser_parse_expr_in_opt_curly(parser_t* parser, int* new_node_i,
         return res;
     }
 
-    const bool rparen = parser_match(parser, last_tok_i, 1, TOK_ID_RCURLY);
+    const bool rparen = parser_match(parser, &dummy, 1, TOK_ID_RCURLY);
     if (lparen ^ rparen)
         return parser_err_unexpected_token(parser, TOK_ID_RCURLY);
 
@@ -578,7 +578,7 @@ static res_t parser_parse_primary(parser_t* parser, int* new_node_i) {
         return RES_OK;
     }
     if (parser_match(parser, &tok_i, 1, TOK_ID_IF)) {
-        int first_tok_i, last_tok_i, dummy = -1;
+        int first_tok_i = -1, last_tok_i = -1;
         res_t res = RES_NONE;
 
         if ((res = parser_expect_token(parser, &first_tok_i, TOK_ID_LPAREN)) !=
@@ -594,8 +594,8 @@ static res_t parser_parse_primary(parser_t* parser, int* new_node_i) {
             RES_OK)
             return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
 
-        if ((res = parser_parse_expr_in_opt_curly(
-                 parser, &node_then_i, &first_tok_i, &dummy)) != RES_OK) {
+        if ((res = parser_parse_expr_in_opt_curly(parser, &node_then_i)) !=
+            RES_OK) {
             log_debug("failed to parse if-branch %d", res);
             return res;
         }
@@ -604,8 +604,8 @@ static res_t parser_parse_primary(parser_t* parser, int* new_node_i) {
             RES_OK)
             return parser_err_unexpected_token(parser, TOK_ID_ELSE);
 
-        if ((res = parser_parse_expr_in_opt_curly(parser, &node_else_i, &dummy,
-                                                  &last_tok_i)) != RES_OK) {
+        if ((res = parser_parse_expr_in_opt_curly(parser, &node_else_i)) !=
+            RES_OK) {
             log_debug("failed to parse else-branch %d", res);
             return res;
         }
