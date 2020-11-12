@@ -10,7 +10,7 @@ println(if   (false) { 'A' } else { 'B' })
 println(if   (true) { "hello" } else { "world" })
 println(if   (false) { "hello" } else { "world" })
 
-// Nested ifs + if..else-if..else
+// Nested ifs + if..else-if..else with optional curlies
 println( 
   if (1 <= 2) {
     if ( 99 == 98)       1000 
