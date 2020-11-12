@@ -954,7 +954,7 @@ static res_t parser_parse(parser_t* parser) {
         buf_push(parser->par_stmt_nodes, new_node_i);
 
     } else
-        return parser_err_unexpected_token(parser, TOK_ID_BUILTIN_PRINTLN);
+        return res;
 
     while (!parser_is_at_end(parser)) {
         if ((res = parser_parse_stmt(parser, &new_node_i)) == RES_OK) {
