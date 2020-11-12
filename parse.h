@@ -172,6 +172,9 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
 
 static int ast_node_first_token(const parser_t* parser,
                                 const ast_node_t* node) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)node, !=, NULL, "%p");
+
     switch (node->node_kind) {
         case NODE_BUILTIN_PRINTLN:
             return node->node_n.node_builtin_println.bp_keyword_print_i;
@@ -196,10 +199,14 @@ static int ast_node_first_token(const parser_t* parser,
         case NODE_IF:
             return node->node_n.node_if.if_first_tok_i;
     }
+    log_debug("node kind=%d", node->node_kind);
     UNREACHABLE();
 }
 
 static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)node, !=, NULL, "%p");
+
     switch (node->node_kind) {
         case NODE_BUILTIN_PRINTLN:
             return node->node_n.node_builtin_println.bp_rparen_i;
@@ -224,6 +231,7 @@ static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
         case NODE_IF:
             return node->node_n.node_if.if_last_tok_i;
     }
+    log_debug("node kind=%d", node->node_kind);
     UNREACHABLE();
 }
 
@@ -682,7 +690,7 @@ static res_t parser_parse_multiplication(parser_t* parser, int* new_node_i) {
     int lhs_i = -1;
     if ((res = parser_parse_unary(parser, &lhs_i)) != RES_OK) return res;
     const int lhs_type_i = parser->par_nodes[lhs_i].node_type_i;
-    const type_t lhs_type = parser->par_types[lhs_type_i];
+    const type_kind_t lhs_type_kind = parser->par_types[lhs_type_i].ty_kind;
     *new_node_i = lhs_i;
     log_debug("new_node_i=%d", *new_node_i);
 
@@ -694,12 +702,14 @@ static res_t parser_parse_multiplication(parser_t* parser, int* new_node_i) {
         if ((res = parser_parse_unary(parser, &rhs_i)) != RES_OK) return res;
 
         const int rhs_type_i = parser->par_nodes[rhs_i].node_type_i;
-        const type_t rhs_type = parser->par_types[rhs_type_i];
+        const type_kind_t rhs_type_kind = parser->par_types[rhs_type_i].ty_kind;
 
-        if (lhs_type.ty_kind != rhs_type.ty_kind)
+        if (lhs_type_kind != TYPE_I64)
+            return parser_err_non_matching_types(parser, lhs_i, TYPE_I64);
+        if (rhs_type_kind != TYPE_I64)
+            return parser_err_non_matching_types(parser, rhs_i, TYPE_I64);
+        if (lhs_type_kind != rhs_type_kind)
             return parser_err_non_matching_types(parser, lhs_i, rhs_i);
-
-        buf_push(parser->par_types, lhs_type);
 
         const ast_node_t new_node = NODE_BINARY(
             (tok_id == TOK_ID_STAR)
