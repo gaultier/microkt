@@ -496,18 +496,15 @@ static res_t parser_parse_expr_in_opt_curly(parser_t* parser, int* new_node_i,
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
+    const bool lparen = parser_match(parser, first_tok_i, 1, TOK_ID_LCURLY);
+
     res_t res = RES_NONE;
-
-    parser_expect_token(parser, first_tok_i, TOK_ID_LCURLY);
-
     if ((res = parser_parse_expr(parser, new_node_i)) != RES_OK) {
         log_debug("failed to parse expr in optional curlies %d", res);
         return res;
     }
 
-    if ((res = parser_expect_token(parser, last_tok_i, TOK_ID_RCURLY)) !=
-            RES_OK &&
-        *first_tok_i != -1)
+    if (!parser_match(parser, last_tok_i, 1, TOK_ID_RCURLY) && lparen)
         return parser_err_unexpected_token(parser, TOK_ID_RCURLY);
 
     return res;
