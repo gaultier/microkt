@@ -30,3 +30,8 @@ if (true) {
 } else { println("this should not show up") }
 
 if (false) { println("this should not show up") } else { println("hello there") }
+
+// Optional else
+if (true) {
+  println("I have the high ground")
+} 

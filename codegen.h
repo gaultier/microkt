@@ -307,12 +307,15 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             println("je .L.else.%d", node.if_node_cond_i);
 
             emit_expr(parser, &parser->par_nodes[node.if_node_then_i]);
+
             println("jmp .L.end.%d\n", node.if_node_cond_i);
 
             println(".L.else.%d:", node.if_node_cond_i);
-            emit_expr(parser, &parser->par_nodes[node.if_node_else_i]);
+            if (node.if_node_else_i >= 0)
+                emit_expr(parser, &parser->par_nodes[node.if_node_else_i]);
 
             println(".L.end.%d:", node.if_node_cond_i);
+
             return;
         }
         case NODE_BUILTIN_PRINTLN: {

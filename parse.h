@@ -147,8 +147,10 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
                           indent + 2);
             ast_node_dump(nodes, parser, node->node_n.node_if.if_node_then_i,
                           indent + 2);
-            ast_node_dump(nodes, parser, node->node_n.node_if.if_node_else_i,
-                          indent + 2);
+
+            if (node->node_n.node_if.if_node_else_i >= 0)
+                ast_node_dump(nodes, parser,
+                              node->node_n.node_if.if_node_else_i, indent + 2);
 
             break;
         }
@@ -541,7 +543,7 @@ static res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
-    int first_tok_i = -1, last_tok_i = -1;
+    int first_tok_i = -1, last_tok_i = -1, dummy = -1;
     if (!parser_match(parser, &first_tok_i, 1, TOK_ID_IF))
         return parser_err_unexpected_token(parser, TOK_ID_IF);
 
@@ -551,28 +553,9 @@ static res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
         RES_OK)
         return parser_err_unexpected_token(parser, TOK_ID_LPAREN);
 
-    int node_cond_i, node_then_i, node_else_i = -1;
+    int node_cond_i = -1, node_then_i = -1, node_else_i = -1;
     if ((res = parser_parse_expr(parser, &node_cond_i)) != RES_OK) {
         log_debug("failed to parse if-cond %d", res);
-        return res;
-    }
-    if ((res = parser_expect_token(parser, &first_tok_i, TOK_ID_RPAREN)) !=
-        RES_OK)
-        return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
-
-    if ((res = parser_parse_control_structure_body(parser, &node_then_i)) !=
-        RES_OK) {
-        log_debug("failed to parse if-branch %d", res);
-        return res;
-    }
-
-    int dummy = -1;
-    if (!parser_match(parser, &dummy, 1, TOK_ID_ELSE))
-        return RES_OK;  // Else is optional
-
-    if ((res = parser_parse_control_structure_body(parser, &node_else_i)) !=
-        RES_OK) {
-        log_debug("failed to parse else-branch %d", res);
         return res;
     }
 
@@ -585,21 +568,42 @@ static res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
         return parser_err_unexpected_type(parser, node_cond_i, TYPE_BOOL);
     }
 
+    if ((res = parser_expect_token(parser, &dummy, TOK_ID_RPAREN)) != RES_OK)
+        return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
+
+    if ((res = parser_parse_control_structure_body(parser, &node_then_i)) !=
+        RES_OK) {
+        log_debug("failed to parse if-branch %d", res);
+        return res;
+    }
     const ast_node_t* const node_then = &parser->par_nodes[node_then_i];
-    const ast_node_t* const node_else = &parser->par_nodes[node_else_i];
-    const type_kind_t then_type_kind =
-        parser->par_types[node_then->node_type_i].ty_kind;
-    const type_kind_t else_type_kind =
-        parser->par_types[node_else->node_type_i].ty_kind;
-    if (then_type_kind != else_type_kind) {
-        log_debug("if branch types don't match, got %s and %s",
-                  type_to_str[then_type_kind], type_to_str[else_type_kind]);
-        return parser_err_non_matching_types(parser, node_then_i, node_else_i);
+    const int then_type_i = node_then->node_type_i;
+    const type_kind_t then_type_kind = parser->par_types[then_type_i].ty_kind;
+
+    // Else is optional
+
+    if (parser_match(parser, &dummy, 1, TOK_ID_ELSE)) {
+        if ((res = parser_parse_control_structure_body(parser, &node_else_i)) !=
+            RES_OK) {
+            log_debug("failed to parse else-branch %d", res);
+            return res;
+        }
+
+        const ast_node_t* const node_else = &parser->par_nodes[node_else_i];
+        const type_kind_t else_type_kind =
+            parser->par_types[node_else->node_type_i].ty_kind;
+        if (then_type_kind != else_type_kind) {
+            log_debug("if branch types don't match, got %s and %s",
+                      type_to_str[then_type_kind], type_to_str[else_type_kind]);
+            return parser_err_non_matching_types(parser, node_then_i,
+                                                 node_else_i);
+        }
+    } else {
+        log_debug("optional else missing for if node_then_i=%d", node_then_i);
     }
 
-    const ast_node_t new_node =
-        NODE_IF(node_then->node_type_i, first_tok_i, last_tok_i, node_cond_i,
-                node_then_i, node_else_i);
+    const ast_node_t new_node = NODE_IF(then_type_i, first_tok_i, last_tok_i,
+                                        node_cond_i, node_then_i, node_else_i);
 
     buf_push(parser->par_nodes, new_node);
     *new_node_i = (int)buf_size(parser->par_nodes) - 1;
