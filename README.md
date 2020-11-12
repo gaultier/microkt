@@ -20,7 +20,8 @@ Hello, world!
 
 # Docker
 docker build -t microktc .
-docker run -it microktc sh -c 'microktc /usr/local/share/microktc/hello_world.kts && /usr/local/share/microktc/hello_world'
+docker run -it microktc sh -c 'microktc /usr/local/share/microktc/hello_world.kts \
+    && /usr/local/share/microktc/hello_world'
 
 Hello, world!
 ```
