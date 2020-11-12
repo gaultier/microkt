@@ -16,11 +16,11 @@ make test
 
 # And then run the executable:
 ./e2e/hello_world
-hello, world!
+Hello, world!
 
 # Docker
 docker build -t microktc .
-docker run -it microktc sh -c 'microktc /usr/local/share/microktc/math.kts && /usr/local/share/microktc/math'
--210
+docker run -it microktc sh -c 'microktc /usr/local/share/microktc/hello_world.kts && /usr/local/share/microktc/hello_world'
 
+Hello, world!
 ```

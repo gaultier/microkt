@@ -14,7 +14,7 @@ BEGIN {
     expected_outputs[3] = "hello!\nworld\n"
 
     tests[4] = "e2e/hello_world"
-    expected_outputs[4] = "hello, world!\n"
+    expected_outputs[4] = "Hello, world!\n"
 
     tests[5] = "e2e/bool"
     expected_outputs[5] = "true\nfalse\nfalse\n"
