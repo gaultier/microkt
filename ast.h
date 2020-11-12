@@ -1,9 +1,5 @@
 #pragma once
 
-#include <stdint.h>
-
-#include "common.h"
-
 typedef enum {
     TYPE_BOOL,
     TYPE_CHAR,

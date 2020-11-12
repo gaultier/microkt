@@ -1,11 +1,9 @@
 #pragma once
 
 #include <stdarg.h>
-#include <stdint.h>
 #include <unistd.h>
 
 #include "ast.h"
-#include "common.h"
 #include "lex.h"
 
 typedef struct {
