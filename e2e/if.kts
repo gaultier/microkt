@@ -10,6 +10,11 @@ println(if   (false) { 'A' } else { 'B' })
 println(if   (true) { "hello" } else { "world" })
 println(if   (false) { "hello" } else { "world" })
 
+// Optional curlies
+println(if   (false) 1 else { 2 })
+println(if   (false) { 1 } else  2 )
+println(if   (false)  1  else  2 )
+
 // Nested ifs + if..else-if..else with optional curlies
 println( 
   if (1 <= 2) {

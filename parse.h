@@ -506,8 +506,7 @@ static res_t parser_parse_expr_in_opt_curly(parser_t* parser, int* new_node_i) {
         return res;
     }
 
-    const bool rparen = parser_match(parser, &dummy, 1, TOK_ID_RCURLY);
-    if (lparen ^ rparen)
+    if (lparen && !parser_match(parser, &dummy, 1, TOK_ID_RCURLY))
         return parser_err_unexpected_token(parser, TOK_ID_RCURLY);
 
     return res;
