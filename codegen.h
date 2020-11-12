@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ast.h"
 #include "parse.h"
 
 // TODO: use platform headers for that?
@@ -314,18 +315,8 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             println(".L.end.%d:", node.if_node_cond_i);
             return;
         }
-        default:
-            UNREACHABLE();
-    }
-}
-
-static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)stmt, !=, NULL, "%p");
-
-    switch (stmt->node_kind) {
         case NODE_BUILTIN_PRINTLN: {
-            const ast_builtin_println_t builtin_println = AS_PRINTLN(*stmt);
+            const ast_builtin_println_t builtin_println = AS_PRINTLN(*expr);
             const ast_node_t* arg =
                 &parser->par_nodes[builtin_println.bp_arg_i];
             emit_expr(parser, arg);
@@ -351,8 +342,21 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
 
             break;
         }
-        case NODE_IF:
-            UNIMPLEMENTED();
+        default:
+            UNREACHABLE();
+    }
+}
+
+static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)stmt, !=, NULL, "%p");
+
+    switch (stmt->node_kind) {
+        case NODE_BUILTIN_PRINTLN:
+        case NODE_IF: {
+            emit_expr(parser, stmt);
+            break;
+        }
         case NODE_I64:
         case NODE_CHAR:
         case NODE_STRING:

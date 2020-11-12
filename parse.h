@@ -29,6 +29,7 @@ static res_t parser_parse_stmt(parser_t* parser, int* new_node_i);
 static res_t parser_parse_control_structure_body(parser_t* parser,
                                                  int* new_node_i);
 static res_t parser_parse_block(parser_t* parser, int* new_node_i);
+static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i);
 
 static parser_t parser_init(const char* file_name0, const char* source,
                             int source_len) {
@@ -542,6 +543,10 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
 
     int tok_i = -1;
 
+    // FIXME: hack
+    if (parser_peek(parser) == TOK_ID_BUILTIN_PRINTLN)
+        return parser_parse_builtin_println(parser, new_node_i);
+
     if (parser_match(parser, &tok_i, 2, TOK_ID_TRUE, TOK_ID_FALSE)) {
         buf_push(parser->par_types,
                  ((type_t){.ty_size = 1, .ty_kind = TYPE_BOOL}));
@@ -1049,12 +1054,7 @@ static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i) {
 }
 
 static res_t parser_parse_stmt(parser_t* parser, int* new_node_i) {
-    res_t res = RES_NONE;
-
     if (parser_peek(parser) == TOK_ID_EOF) return RES_NONE;
-
-    if ((res = parser_parse_builtin_println(parser, new_node_i)) != RES_NONE)
-        return res;
 
     return parser_parse_expr(parser, new_node_i);
 }
