@@ -963,8 +963,6 @@ static res_t parser_parse(parser_t* parser) {
 
             continue;
         }
-        log_debug("failed to parse builtin_println: res=%d tok_i=%d", res,
-                  parser->par_tok_i);
 
         const token_id_t current = parser_current(parser);
         if (current == TOK_ID_COMMENT) {
