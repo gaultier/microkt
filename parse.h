@@ -196,6 +196,7 @@ static int ast_node_first_token(const parser_t* parser,
         case NODE_IF:
             return node->node_n.node_if.if_first_tok_i;
     }
+    UNREACHABLE();
 }
 
 static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
@@ -223,6 +224,7 @@ static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
         case NODE_IF:
             return node->node_n.node_if.if_last_tok_i;
     }
+    UNREACHABLE();
 }
 
 static void parser_tok_source(const parser_t* parser, int tok_i,

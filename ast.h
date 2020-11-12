@@ -91,7 +91,7 @@ const char ast_node_kind_t_to_str[][30] = {
 };
 
 typedef struct {
-    int64_t nu_val;
+    long long int nu_val;
     int nu_tok_i;
 } node_number_t;
 

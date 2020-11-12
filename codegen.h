@@ -6,11 +6,11 @@
 
 // TODO: use platform headers for that?
 #ifdef __APPLE__
-static const int64_t syscall_write = 0x2000004;
-static const int64_t syscall_exit = 0x2000001;
+static const long long int syscall_write = 0x2000004;
+static const long long int syscall_exit = 0x2000001;
 #else
-static const int64_t syscall_write = 1;
-static const int64_t syscall_exit = 60;
+static const long long int syscall_write = 1;
+static const long long int syscall_exit = 60;
 #endif
 
 static FILE* output_file = NULL;
@@ -172,6 +172,7 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
     switch (expr->node_kind) {
         case NODE_KEYWORD_BOOL: {
             println("movb $%d, %%ah", (int8_t)expr->node_n.node_num.nu_val);
+            return;
         }
         case NODE_STRING: {
             const int obj_i = expr->node_n.node_string;
@@ -206,7 +207,7 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             println("idivq %%rdi");
             println("movq %%rdx, %%rax");
 
-            break;
+            return;
         }
         case NODE_DIVIDE: {
             const binary_t bin = expr->node_n.node_binary;
@@ -220,7 +221,7 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             println("cqo");  // ?
             println("idivq %%rdi");
 
-            break;
+            return;
         }
         case NODE_MULTIPLY: {
             const binary_t bin = expr->node_n.node_binary;
@@ -233,7 +234,7 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             println("popq %%rdi");
             println("imul %%rdi, %%rax");
 
-            break;
+            return;
         }
         case NODE_SUBTRACT: {
             const binary_t bin = expr->node_n.node_binary;
@@ -246,7 +247,7 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             println("popq %%rdi");
             println("subq %%rdi, %%rax");
 
-            break;
+            return;
         }
         case NODE_ADD: {
             const binary_t bin = expr->node_n.node_binary;
@@ -259,7 +260,7 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             println("popq %%rdi");
             println("addq %%rdi, %%rax");
 
-            break;
+            return;
         }
         case NODE_LT:
         case NODE_EQ:
@@ -288,7 +289,7 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
 
             println("movzb %%al, %%rax");
 
-            break;
+            return;
         }
         case NODE_NOT: {
             const ast_node_t* const lhs =
@@ -297,7 +298,7 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             println("cmp $0, %%rax");
             println("sete %%al");
             println("movzx %%al, %%rax");
-            break;
+            return;
         }
         case NODE_IF: {
             const if_t node = expr->node_n.node_if;
@@ -313,7 +314,7 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             emit_expr(parser, &parser->par_nodes[node.if_node_else_i]);
 
             println(".L.end.%d:", node.if_node_cond_i);
-            break;
+            return;
         }
         default:
             UNREACHABLE();
