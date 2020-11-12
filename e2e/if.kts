@@ -13,14 +13,8 @@ println(if   (false) { "hello" } else { "world" })
 // Nested ifs + if..else-if..else with optional curlies
 println( 
   if (1 <= 2) {
-    if ( 99 == 98)       1000 
-    else {
-      if (42 == 42) {
-        999 // This
-      } else {
-        500
-      }
-    }
+    if ( 99 == 98) 1000 
+    else if (42 == 42) 999 // This
+    else 500
   } else     0
-
 )
