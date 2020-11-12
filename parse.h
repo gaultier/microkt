@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include "ast.h"
+#include "common.h"
 #include "lex.h"
 
 typedef struct {
@@ -24,6 +25,10 @@ typedef struct {
 } parser_t;
 
 static res_t parser_parse_expr(parser_t* parser, int* new_node_i);
+static res_t parser_parse_stmt(parser_t* parser, int* new_node_i);
+static res_t parser_parse_control_structure_body(parser_t* parser,
+                                                 int* new_node_i);
+static res_t parser_parse_block(parser_t* parser, int* new_node_i);
 
 static parser_t parser_init(const char* file_name0, const char* source,
                             int source_len) {
@@ -531,26 +536,7 @@ static res_t parser_err_unexpected_type(const parser_t* parser, int lhs_node_i,
     return res;
 }
 
-static res_t parser_parse_expr_in_opt_curly(parser_t* parser, int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
-
-    int dummy = -1;
-    const bool lparen = parser_match(parser, &dummy, 1, TOK_ID_LCURLY);
-
-    res_t res = RES_NONE;
-    if ((res = parser_parse_expr(parser, new_node_i)) != RES_OK) {
-        log_debug("failed to parse expr in optional curlies %d", res);
-        return res;
-    }
-
-    if (lparen && !parser_match(parser, &dummy, 1, TOK_ID_RCURLY))
-        return parser_err_unexpected_token(parser, TOK_ID_RCURLY);
-
-    return res;
-}
-
-static res_t parser_parse_primary(parser_t* parser, int* new_node_i) {
+static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
@@ -633,7 +619,7 @@ static res_t parser_parse_primary(parser_t* parser, int* new_node_i) {
             RES_OK)
             return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
 
-        if ((res = parser_parse_expr_in_opt_curly(parser, &node_then_i)) !=
+        if ((res = parser_parse_control_structure_body(parser, &node_then_i)) !=
             RES_OK) {
             log_debug("failed to parse if-branch %d", res);
             return res;
@@ -643,7 +629,7 @@ static res_t parser_parse_primary(parser_t* parser, int* new_node_i) {
             RES_OK)
             return parser_err_unexpected_token(parser, TOK_ID_ELSE);
 
-        if ((res = parser_parse_expr_in_opt_curly(parser, &node_else_i)) !=
+        if ((res = parser_parse_control_structure_body(parser, &node_else_i)) !=
             RES_OK) {
             log_debug("failed to parse else-branch %d", res);
             return res;
@@ -684,14 +670,28 @@ static res_t parser_parse_primary(parser_t* parser, int* new_node_i) {
     return parser_err_expected_primary(parser);
 }
 
-static res_t parser_parse_unary(parser_t* parser, int* new_node_i) {
+static res_t parser_parse_postfix_unary_expr(parser_t* parser,
+                                             int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
+    // TODO
+
+    return parser_parse_primary_expr(parser, new_node_i);
+}
+
+static res_t parser_parse_prefix_unary_expr(parser_t* parser, int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
     res_t res = RES_NONE;
 
     int tok_i = -1;
     if (parser_match(parser, &tok_i, 1, TOK_ID_NOT)) {
         int node_i = -1;
 
-        if ((res = parser_parse_primary(parser, &node_i)) != RES_OK) {
+        if ((res = parser_parse_postfix_unary_expr(parser, &node_i)) !=
+            RES_OK) {
             return res;
         }
 
@@ -709,14 +709,24 @@ static res_t parser_parse_unary(parser_t* parser, int* new_node_i) {
         return RES_OK;
     }
 
-    return parser_parse_primary(parser, new_node_i);
+    return parser_parse_postfix_unary_expr(parser, new_node_i);
 }
 
-static res_t parser_parse_multiplication(parser_t* parser, int* new_node_i) {
+static res_t parser_parse_as_expr(parser_t* parser, int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
+    // TODO
+
+    return parser_parse_prefix_unary_expr(parser, new_node_i);
+}
+
+static res_t parser_parse_multiplicative_expr(parser_t* parser,
+                                              int* new_node_i) {
     res_t res = RES_NONE;
 
     int lhs_i = -1;
-    if ((res = parser_parse_unary(parser, &lhs_i)) != RES_OK) return res;
+    if ((res = parser_parse_as_expr(parser, &lhs_i)) != RES_OK) return res;
     PG_ASSERT_COND(lhs_i, >=, 0, "%d");
 
     const int lhs_type_i = parser->par_nodes[lhs_i].node_type_i;
@@ -737,7 +747,7 @@ static res_t parser_parse_multiplication(parser_t* parser, int* new_node_i) {
         const int tok_id = parser_previous(parser);
 
         int rhs_i = -1;
-        if ((res = parser_parse_unary(parser, &rhs_i)) != RES_OK) return res;
+        if ((res = parser_parse_as_expr(parser, &rhs_i)) != RES_OK) return res;
         PG_ASSERT_COND(rhs_i, >=, 0, "%d");
 
         const int rhs_type_i = parser->par_nodes[rhs_i].node_type_i;
@@ -769,11 +779,11 @@ static res_t parser_parse_multiplication(parser_t* parser, int* new_node_i) {
     return res;
 }
 
-static res_t parser_parse_addition(parser_t* parser, int* new_node_i) {
+static res_t parser_parse_additive_expr(parser_t* parser, int* new_node_i) {
     res_t res = RES_NONE;
 
     int lhs_i = -1;
-    if ((res = parser_parse_multiplication(parser, &lhs_i)) != RES_OK)
+    if ((res = parser_parse_multiplicative_expr(parser, &lhs_i)) != RES_OK)
         return res;
     const int lhs_type_i = parser->par_nodes[lhs_i].node_type_i;
     const type_kind_t lhs_type_kind = parser->par_types[lhs_type_i].ty_kind;
@@ -784,7 +794,7 @@ static res_t parser_parse_addition(parser_t* parser, int* new_node_i) {
         const int tok_id = parser_previous(parser);
 
         int rhs_i = -1;
-        if ((res = parser_parse_multiplication(parser, &rhs_i)) != RES_OK)
+        if ((res = parser_parse_multiplicative_expr(parser, &rhs_i)) != RES_OK)
             return res;
 
         const int rhs_type_i = parser->par_nodes[rhs_i].node_type_i;
@@ -805,11 +815,62 @@ static res_t parser_parse_addition(parser_t* parser, int* new_node_i) {
     return res;
 }
 
+static res_t parser_parse_range_expr(parser_t* parser, int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
+    // TODO
+
+    return parser_parse_additive_expr(parser, new_node_i);
+}
+
+static res_t parser_parse_infix_fn_call(parser_t* parser, int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
+    // TODO
+
+    return parser_parse_range_expr(parser, new_node_i);
+}
+
+static res_t parser_parse_elvis_expr(parser_t* parser, int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
+    // TODO
+
+    return parser_parse_infix_fn_call(parser, new_node_i);
+}
+
+static res_t parser_parse_infix_op(parser_t* parser, int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
+    // TODO
+
+    return parser_parse_elvis_expr(parser, new_node_i);
+}
+
+static res_t parser_parse_generical_call_like_comparsion(parser_t* parser,
+                                                         int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
+    // TODO
+
+    return parser_parse_infix_op(parser, new_node_i);
+}
+
 static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
     res_t res = RES_NONE;
 
     int lhs_i = -1;
-    if ((res = parser_parse_addition(parser, &lhs_i)) != RES_OK) return res;
+    if ((res = parser_parse_generical_call_like_comparsion(parser, &lhs_i)) !=
+        RES_OK)
+        return res;
     const int lhs_type_i = parser->par_nodes[lhs_i].node_type_i;
     const type_kind_t lhs_type_kind = parser->par_types[lhs_type_i].ty_kind;
     *new_node_i = lhs_i;
@@ -820,7 +881,9 @@ static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
         const int tok_id = parser_previous(parser);
 
         int rhs_i = -1;
-        if ((res = parser_parse_addition(parser, &rhs_i)) != RES_OK) return res;
+        if ((res = parser_parse_generical_call_like_comparsion(
+                 parser, &rhs_i)) != RES_OK)
+            return res;
 
         const int rhs_type_i = parser->par_nodes[rhs_i].node_type_i;
         const type_kind_t rhs_type_kind = parser->par_types[rhs_type_i].ty_kind;
@@ -854,6 +917,9 @@ static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
 }
 
 static res_t parser_parse_equality(parser_t* parser, int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
     res_t res = RES_NONE;
 
     int lhs_i = -1;
@@ -893,11 +959,60 @@ static res_t parser_parse_equality(parser_t* parser, int* new_node_i) {
     return res;
 }
 
+static res_t parser_parse_conjunction(parser_t* parser, int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
+    // TODO
+
+    return parser_parse_equality(parser, new_node_i);
+}
+
+static res_t parser_parse_disjunction(parser_t* parser, int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
+    // TODO
+
+    return parser_parse_conjunction(parser, new_node_i);
+}
+
 static res_t parser_parse_expr(parser_t* parser, int* new_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
-    return parser_parse_equality(parser, new_node_i);
+    return parser_parse_disjunction(parser, new_node_i);
+}
+
+static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
+    int dummy = -1;
+    if (!parser_match(parser, &dummy, 1, TOK_ID_LCURLY))
+        return parser_err_unexpected_token(parser, TOK_ID_LCURLY);
+
+    res_t res = RES_NONE;
+    if ((res = parser_parse_expr(parser, new_node_i)) != RES_OK) {
+        log_debug("failed to parse expr in optional curlies %d", res);
+        return res;
+    }
+
+    if (!parser_match(parser, &dummy, 1, TOK_ID_RCURLY))
+        return parser_err_unexpected_token(parser, TOK_ID_RCURLY);
+
+    return res;
+}
+
+static res_t parser_parse_control_structure_body(parser_t* parser,
+                                                 int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
+    if (parser_peek(parser) == TOK_ID_LCURLY)
+        return parser_parse_block(parser, new_node_i);
+
+    return parser_parse_stmt(parser, new_node_i);
 }
 
 static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i) {
@@ -934,7 +1049,14 @@ static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i) {
 }
 
 static res_t parser_parse_stmt(parser_t* parser, int* new_node_i) {
-    return parser_parse_builtin_println(parser, new_node_i);
+    res_t res = RES_NONE;
+
+    if (parser_peek(parser) == TOK_ID_EOF) return RES_NONE;
+
+    if ((res = parser_parse_builtin_println(parser, new_node_i)) != RES_NONE)
+        return res;
+
+    return parser_parse_expr(parser, new_node_i);
 }
 
 static res_t parser_parse(parser_t* parser) {
@@ -960,7 +1082,8 @@ static res_t parser_parse(parser_t* parser) {
             buf_push(parser->par_stmt_nodes, new_node_i);
 
             continue;
-        }
+        } else if (res == RES_NONE)
+            return RES_OK;
 
         const token_id_t current = parser_current(parser);
         if (current == TOK_ID_COMMENT) {

@@ -23,3 +23,9 @@ println(
     else 500
   } else     0
 )
+
+// If as stmt
+if (true) {
+  println("hi")
+} else { println("this should not show up") }
+
