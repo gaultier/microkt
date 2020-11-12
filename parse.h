@@ -491,6 +491,16 @@ static res_t parser_err_non_matching_types(const parser_t* parser, int lhs_i,
     return res;
 }
 
+static res_t parser_parse_expr_in_opt_curly(parser_t* parser, int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
+    res_t res = RES_NONE;
+    int tok_i = -1;
+
+    return res;
+}
+
 static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_primary_node_i, !=, NULL, "%p");
