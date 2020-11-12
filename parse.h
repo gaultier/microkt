@@ -491,12 +491,24 @@ static res_t parser_err_non_matching_types(const parser_t* parser, int lhs_i,
     return res;
 }
 
-static res_t parser_parse_expr_in_opt_curly(parser_t* parser, int* new_node_i) {
+static res_t parser_parse_expr_in_opt_curly(parser_t* parser, int* new_node_i,
+                                            int* first_tok_i, int* last_tok_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
     res_t res = RES_NONE;
-    int tok_i = -1;
+
+    parser_expect_token(parser, first_tok_i, TOK_ID_LCURLY);
+
+    if ((res = parser_parse_expr(parser, new_node_i)) != RES_OK) {
+        log_debug("failed to parse expr in optional curlies %d", res);
+        return res;
+    }
+
+    if ((res = parser_expect_token(parser, last_tok_i, TOK_ID_RCURLY)) !=
+            RES_OK &&
+        *first_tok_i != -1)
+        return parser_err_unexpected_token(parser, TOK_ID_RCURLY);
 
     return res;
 }
@@ -580,23 +592,15 @@ static res_t parser_parse_primary(parser_t* parser, int* new_node_i) {
             log_debug("failed to parse if-cond %d", res);
             return res;
         }
-
         if ((res = parser_expect_token(parser, &first_tok_i, TOK_ID_RPAREN)) !=
             RES_OK)
             return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
 
-        if ((res = parser_expect_token(parser, &first_tok_i, TOK_ID_LCURLY)) !=
-            RES_OK)
-            return parser_err_unexpected_token(parser, TOK_ID_LCURLY);
-
-        if ((res = parser_parse_expr(parser, &node_then_i)) != RES_OK) {
+        if ((res = parser_parse_expr_in_opt_curly(
+                 parser, &node_then_i, &first_tok_i, &dummy)) != RES_OK) {
             log_debug("failed to parse if-branch %d", res);
             return res;
         }
-
-        if ((res = parser_expect_token(parser, &dummy, TOK_ID_RCURLY)) !=
-            RES_OK)
-            return parser_err_unexpected_token(parser, TOK_ID_RCURLY);
 
         if ((res = parser_expect_token(parser, &first_tok_i, TOK_ID_ELSE)) !=
             RES_OK)
