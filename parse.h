@@ -501,11 +501,11 @@ static res_t parser_parse_expr_in_opt_curly(parser_t* parser, int* new_node_i) {
     return res;
 }
 
-static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
+static res_t parser_parse_primary(parser_t* parser, int* new_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_primary_node_i, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
-    int tok_i = INT32_MAX;
+    int tok_i = -1;
 
     if (parser_match(parser, &tok_i, 2, TOK_ID_TRUE, TOK_ID_FALSE)) {
         buf_push(parser->par_types,
@@ -518,7 +518,7 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
         const int8_t val = (memcmp("true", source, 4) == 0);
         const ast_node_t new_node = NODE_I64(tok_i, type_i, val);
         buf_push(parser->par_nodes, new_node);
-        *new_primary_node_i = (int)buf_size(parser->par_nodes) - 1;
+        *new_node_i = (int)buf_size(parser->par_nodes) - 1;
 
         return RES_OK;
     }
@@ -536,7 +536,7 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
 
         const ast_node_t new_node = NODE_STRING(obj_i, type_i);
         buf_push(parser->par_nodes, new_node);
-        *new_primary_node_i = (int)buf_size(parser->par_nodes) - 1;
+        *new_node_i = (int)buf_size(parser->par_nodes) - 1;
 
         log_debug("new object: type=TYPE_STRING tok_i=%d source_len=%d",
                   obj.obj_tok_i, source_len);
@@ -551,7 +551,7 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
         const int64_t val = parse_tok_to_i64(parser, tok_i);
         const ast_node_t new_node = NODE_I64(tok_i, type_i, val);
         buf_push(parser->par_nodes, new_node);
-        *new_primary_node_i = (int)buf_size(parser->par_nodes) - 1;
+        *new_node_i = (int)buf_size(parser->par_nodes) - 1;
 
         return RES_OK;
     }
@@ -563,7 +563,7 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
         const int64_t val = parse_tok_to_char(parser, tok_i);
         const ast_node_t new_node = NODE_CHAR(tok_i, type_i, val);
         buf_push(parser->par_nodes, new_node);
-        *new_primary_node_i = (int)buf_size(parser->par_nodes) - 1;
+        *new_node_i = (int)buf_size(parser->par_nodes) - 1;
 
         return RES_OK;
     }
@@ -643,7 +643,7 @@ static res_t parser_parse_primary(parser_t* parser, int* new_primary_node_i) {
                     node_cond_i, node_then_i, node_else_i);
 
         buf_push(parser->par_nodes, new_node);
-        *new_primary_node_i = (int)buf_size(parser->par_nodes) - 1;
+        *new_node_i = (int)buf_size(parser->par_nodes) - 1;
 
         return RES_OK;
     }
@@ -683,7 +683,7 @@ static res_t parser_parse_unary(parser_t* parser, int* new_node_i) {
 static res_t parser_parse_multiplication(parser_t* parser, int* new_node_i) {
     res_t res = RES_NONE;
 
-    int lhs_i = INT32_MAX;
+    int lhs_i = -1;
     if ((res = parser_parse_unary(parser, &lhs_i)) != RES_OK) return res;
     const int lhs_type_i = parser->par_nodes[lhs_i].node_type_i;
     const type_t lhs_type = parser->par_types[lhs_type_i];
@@ -694,7 +694,7 @@ static res_t parser_parse_multiplication(parser_t* parser, int* new_node_i) {
                         TOK_ID_PERCENT)) {
         const int tok_id = parser_previous(parser);
 
-        int rhs_i = INT32_MAX;
+        int rhs_i = -1;
         if ((res = parser_parse_unary(parser, &rhs_i)) != RES_OK) return res;
 
         const int rhs_type_i = parser->par_nodes[rhs_i].node_type_i;
@@ -722,7 +722,7 @@ static res_t parser_parse_multiplication(parser_t* parser, int* new_node_i) {
 static res_t parser_parse_addition(parser_t* parser, int* new_node_i) {
     res_t res = RES_NONE;
 
-    int lhs_i = INT32_MAX;
+    int lhs_i = -1;
     if ((res = parser_parse_multiplication(parser, &lhs_i)) != RES_OK)
         return res;
     const int lhs_type_i = parser->par_nodes[lhs_i].node_type_i;
@@ -733,7 +733,7 @@ static res_t parser_parse_addition(parser_t* parser, int* new_node_i) {
     while (parser_match(parser, new_node_i, 2, TOK_ID_PLUS, TOK_ID_MINUS)) {
         const int tok_id = parser_previous(parser);
 
-        int rhs_i = INT32_MAX;
+        int rhs_i = -1;
         if ((res = parser_parse_multiplication(parser, &rhs_i)) != RES_OK)
             return res;
 
@@ -760,7 +760,7 @@ static res_t parser_parse_addition(parser_t* parser, int* new_node_i) {
 static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
     res_t res = RES_NONE;
 
-    int lhs_i = INT32_MAX;
+    int lhs_i = -1;
     if ((res = parser_parse_addition(parser, &lhs_i)) != RES_OK) return res;
     const int lhs_type_i = parser->par_nodes[lhs_i].node_type_i;
     const type_t lhs_type = parser->par_types[lhs_type_i];
@@ -771,7 +771,7 @@ static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
                         TOK_ID_GE)) {
         const int tok_id = parser_previous(parser);
 
-        int rhs_i = INT32_MAX;
+        int rhs_i = -1;
         if ((res = parser_parse_addition(parser, &rhs_i)) != RES_OK) return res;
 
         const int rhs_type_i = parser->par_nodes[rhs_i].node_type_i;
@@ -808,7 +808,7 @@ static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
 static res_t parser_parse_equality(parser_t* parser, int* new_node_i) {
     res_t res = RES_NONE;
 
-    int lhs_i = INT32_MAX;
+    int lhs_i = -1;
     if ((res = parser_parse_comparison(parser, &lhs_i)) != RES_OK) return res;
     const int lhs_type_i = parser->par_nodes[lhs_i].node_type_i;
     const type_t lhs_type = parser->par_types[lhs_type_i];
@@ -818,7 +818,7 @@ static res_t parser_parse_equality(parser_t* parser, int* new_node_i) {
     while (parser_match(parser, new_node_i, 2, TOK_ID_EQ_EQ, TOK_ID_NEQ)) {
         const int tok_id = parser_previous(parser);
 
-        int rhs_i = INT32_MAX;
+        int rhs_i = -1;
         if ((res = parser_parse_comparison(parser, &rhs_i)) != RES_OK)
             return res;
 
@@ -856,7 +856,7 @@ static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
-    int keyword_print_i = INT32_MAX;
+    int keyword_print_i = -1;
     res_t res = RES_NONE;
     if (parser_match(parser, &keyword_print_i, 1, TOK_ID_BUILTIN_PRINTLN)) {
         int lparen = 0;
@@ -896,7 +896,7 @@ static res_t parser_parse(parser_t* parser) {
     PG_ASSERT_COND((int)buf_size(parser->par_token_ids), >, parser->par_tok_i,
                    "%d");
 
-    int new_node_i = INT32_MAX;
+    int new_node_i = -1;
     res_t res = RES_NONE;
 
     if ((res = parser_parse_stmt(parser, &new_node_i)) == RES_OK) {
