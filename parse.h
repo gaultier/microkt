@@ -603,18 +603,11 @@ static res_t parser_parse_primary(parser_t* parser, int* new_node_i) {
             RES_OK)
             return parser_err_unexpected_token(parser, TOK_ID_ELSE);
 
-        if ((res = parser_expect_token(parser, &dummy, TOK_ID_LCURLY)) !=
-            RES_OK)
-            return parser_err_unexpected_token(parser, TOK_ID_LCURLY);
-
-        if ((res = parser_parse_expr(parser, &node_else_i)) != RES_OK) {
+        if ((res = parser_parse_expr_in_opt_curly(parser, &node_else_i, &dummy,
+                                                  &last_tok_i)) != RES_OK) {
             log_debug("failed to parse else-branch %d", res);
             return res;
         }
-
-        if ((res = parser_expect_token(parser, &last_tok_i, TOK_ID_RCURLY)) !=
-            RES_OK)
-            return parser_err_unexpected_token(parser, TOK_ID_RCURLY);
 
         const ast_node_t* const node_cond = &parser->par_nodes[node_cond_i];
         const type_kind_t cond_type_kind =
