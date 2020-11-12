@@ -6,3 +6,6 @@ println(if   (false) { false } else { true })
 
 println(if   (true) { 'A' } else { 'B' })
 println(if   (false) { 'A' } else { 'B' })
+
+println(if   (true) { "hello" } else { "world" })
+println(if   (false) { "hello" } else { "world" })

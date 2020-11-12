@@ -109,7 +109,7 @@ struct ast_node_t {
         node_number_t node_num;  // NODE_I64, NODE_CHAR, NODE_BOOL
         binary_t node_binary;    // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
         // NODE_DIVIDE, NODE_MODULO
-        int node_unary;  // NODE_NOT
+        int node_unary;  // NODE_NOT, int = node_i
         if_t node_if;    // NODE_IF
     } node_n;
 };
