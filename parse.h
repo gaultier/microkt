@@ -4,7 +4,6 @@
 #include <unistd.h>
 
 #include "ast.h"
-#include "common.h"
 #include "lex.h"
 
 typedef struct {
@@ -68,7 +67,7 @@ static parser_t parser_init(const char* file_name0, const char* source,
                       .par_is_tty = isatty(2)};
 }
 
-static int64_t parse_tok_to_i64(const parser_t* parser, int tok_i) {
+static long long int parse_tok_to_i64(const parser_t* parser, int tok_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_tok_pos_ranges, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_source, !=, NULL, "%p");
@@ -89,7 +88,7 @@ static int64_t parse_tok_to_i64(const parser_t* parser, int tok_i) {
     return strtoll(string0, NULL, 10);
 }
 
-static int64_t parse_tok_to_char(const parser_t* parser, int tok_i) {
+static long long int parse_tok_to_char(const parser_t* parser, int tok_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
 
     const pos_range_t pos_range = parser->par_tok_pos_ranges[tok_i];
@@ -662,7 +661,7 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
                  ((type_t){.ty_size = 8, .ty_kind = TYPE_I64}));
         const int type_i = buf_size(parser->par_types) - 1;
 
-        const int64_t val = parse_tok_to_i64(parser, tok_i);
+        const long long int val = parse_tok_to_i64(parser, tok_i);
         const ast_node_t new_node = NODE_I64(tok_i, type_i, val);
         buf_push(parser->par_nodes, new_node);
         *new_node_i = (int)buf_size(parser->par_nodes) - 1;
@@ -674,7 +673,7 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
                  ((type_t){.ty_size = 1, .ty_kind = TYPE_CHAR}));
         const int type_i = buf_size(parser->par_types) - 1;
 
-        const int64_t val = parse_tok_to_char(parser, tok_i);
+        const long long int val = parse_tok_to_char(parser, tok_i);
         const ast_node_t new_node = NODE_CHAR(tok_i, type_i, val);
         buf_push(parser->par_nodes, new_node);
         *new_node_i = (int)buf_size(parser->par_nodes) - 1;
