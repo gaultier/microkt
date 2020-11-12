@@ -26,7 +26,7 @@ BEGIN {
     expected_outputs[7] = "false\ntrue\n"
 
     tests[8] = "e2e/if"
-    expected_outputs[8] = "42\n99\nfalse\ntrue\n"
+    expected_outputs[8] = "42\n99\nfalse\ntrue\nA\nB\n"
 
     is_tty = system("test -t 1") == 0
 
