@@ -29,3 +29,4 @@ if (true) {
   println("hi")
 } else { println("this should not show up") }
 
+if (false) { println("this should not show up") } else { println("hello there") }
