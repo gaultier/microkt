@@ -1000,6 +1000,23 @@ static res_t parser_parse_expr(parser_t* parser, int* new_node_i) {
     return parser_parse_disjunction(parser, new_node_i);
 }
 
+static res_t parser_parse_stmts(parser_t* parser, int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
+    res_t res = RES_NONE;
+    // TODO: loop
+    res = parser_parse_stmt(parser, new_node_i);
+    if (res == RES_OK)
+        return res;
+    else if (res == RES_NONE)
+        return RES_OK;
+    else {
+        log_debug("failed to parse stmts: res=%d", res);
+        return res;
+    }
+}
+
 static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
@@ -1009,7 +1026,7 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
         return parser_err_unexpected_token(parser, TOK_ID_LCURLY);
 
     res_t res = RES_NONE;
-    if ((res = parser_parse_expr(parser, new_node_i)) != RES_OK) {
+    if ((res = parser_parse_stmts(parser, new_node_i)) != RES_OK) {
         log_debug("failed to parse expr in optional curlies %d", res);
         return res;
     }

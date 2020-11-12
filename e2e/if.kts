@@ -35,3 +35,8 @@ if (false) { println("this should not show up") } else { println("hello there") 
 if (true) {
   println("I have the high ground")
 } 
+
+// Empty else
+if (true) {
+  println("I hate sand")
+}  else {}
