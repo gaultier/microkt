@@ -18,7 +18,11 @@ static int stack_depth = 0;  // FIXME
 
 static void emit_stmt(const parser_t* parser, const ast_node_t* stmt);
 
-__attribute__((format(printf, 1, 2))) static void println(char* fmt, ...) {
+#if defined(__clang__) || defined(__GNUC__) || defined(__GNUG__)
+__attribute__((format(printf, 1, 2)))
+#endif
+static void
+println(char* fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
     vfprintf(output_file, fmt, ap);
