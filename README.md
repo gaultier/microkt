@@ -10,13 +10,13 @@ Have a look at the `test` directory to get a feeling of what's supported.
 # Only requires a C99 compiler and a POSIX environment (make, awk).
 make
 
-# Run the tests:
+# Run the tests
 make test
 
-# Compile a source file:
+# Compile a source file
 ./microktc test/hello_world.kts
 
-# And then run the executable:
+# And then run the executable
 ./test/hello_world
 Hello, world!
 
