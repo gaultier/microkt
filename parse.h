@@ -1173,6 +1173,10 @@ static res_t parser_parse_property_declaration(parser_t* parser,
     buf_push(parser->par_nodes, new_node);
     *new_node_i = buf_size(parser->par_nodes) - 1;
 
+    // TODO: add obj
+    // TODO: parse type
+    // TODO: add asm offset
+
     return RES_OK;
 }
 
