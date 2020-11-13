@@ -12,7 +12,7 @@ Have a look at the `test` directory to get a feeling of what's supported.
 - Produces small native executables under 10 Kib: while the generated machine code is not optimized, they are fast by virtue of being native executables
 - Produces portable executables that don't even depend on the C standard library. Portable here means portable within the same OS and architecture but across OS versions. An executable produced today should work on a 15 year old Linux system just fine because of the stable ABI guarantees Linux offers. On macOS, we link with libSystem as recommended by Apple which guarantees some level compatibility with past and future macOS versions
 - Friendly error messages
-- Minimal resource requirement
+- Tiny memory usage
 
 ## Non features
 
