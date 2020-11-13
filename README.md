@@ -1,4 +1,4 @@
-# microktc
+# microkt
 
 A WIP tiny compiler for a subset of the Kotlin language, with zero dependencies. It compiles a (very small) subset of the Kotlin language to a native executable. 
 
@@ -19,8 +19,8 @@ make test
 Hello, world!
 
 # Docker
-docker build -t microktc .
-docker run -it microktc sh -c 'microktc /usr/local/share/microktc/hello_world.kts \
+docker build -t microkt .
+docker run -it microkt sh -c 'microktc /usr/local/share/microktc/hello_world.kts \
     && /usr/local/share/microktc/hello_world'
 
 Hello, world!

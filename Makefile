@@ -6,10 +6,10 @@ CFLAGS+=-Wall -Wextra -pedantic -g -std=c99 -march=native
 
 BIN_TEST:=./microktc_debug
 
-all: microktc microktc_debug test
-
 microktc: $(SRC) $(HEADERS)
 	$(CC) $(CFLAGS) -O2 $(SRC) -o $@
+
+all: microktc microktc_debug test
 
 microktc_debug: $(SRC) $(HEADERS)
 	$(CC) $(CFLAGS) -O0 -fsanitize=address -DWITH_LOGS $(SRC) -o $@
