@@ -350,7 +350,7 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
                 UNIMPLEMENTED();
             }
 
-            break;
+            return;
         }
         case NODE_BLOCK: {
             const block_t block = expr->node_n.node_block;
@@ -361,12 +361,13 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
                 emit_stmt(parser, stmt);
             }
 
-            break;
+            return;
         }
-        default:
-            log_debug("node_kind=%s", ast_node_kind_t_to_str[expr->node_kind]);
+        case NODE_VAR_DEF:
             UNREACHABLE();
     }
+    log_debug("node_kind=%s", ast_node_kind_t_to_str[expr->node_kind]);
+    UNREACHABLE();
 }
 
 static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
@@ -392,13 +393,14 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
         case NODE_NOT:
         case NODE_IF: {
             emit_expr(parser, stmt);
-            break;
+            println("\n");
+            return;
         }
-        default:
-            log_debug("node_kind=%s", ast_node_kind_t_to_str[stmt->node_kind]);
-            UNREACHABLE();
+        case NODE_VAR_DEF:
+            UNIMPLEMENTED();
     }
-    println("\n");
+    log_debug("node_kind=%s", ast_node_kind_t_to_str[stmt->node_kind]);
+    UNREACHABLE();
 }
 
 static void emit(const parser_t* parser, FILE* asm_file) {

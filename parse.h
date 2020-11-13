@@ -194,6 +194,21 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
 
             break;
         }
+        case NODE_VAR_DEF: {
+            const var_def_t var_def = node->node_n.node_var_def;
+
+            log_debug_with_indent(
+                indent, "ast_node #%d %s type %s `%.*s`", node_i,
+                ast_node_kind_t_to_str[node->node_kind],
+                type_to_str[parser->par_types[node->node_type_i].ty_kind],
+                var_def.vd_name_len, var_def.vd_name);
+
+            if (var_def.vd_node_init_val_i >= 0)
+                ast_node_dump(nodes, parser, var_def.vd_node_init_val_i,
+                              indent + 2);
+
+            break;
+        }
     }
 }
 
@@ -227,6 +242,8 @@ static int ast_node_first_token(const parser_t* parser,
             return node->node_n.node_if.if_first_tok_i;
         case NODE_BLOCK:
             return node->node_n.node_block.bl_first_tok_i;
+        case NODE_VAR_DEF:
+            return node->node_n.node_var_def.vd_first_tok_i;
     }
     log_debug("node kind=%d", node->node_kind);
     UNREACHABLE();
@@ -261,6 +278,8 @@ static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
             return node->node_n.node_if.if_last_tok_i;
         case NODE_BLOCK:
             return node->node_n.node_block.bl_last_tok_i;
+        case NODE_VAR_DEF:
+            return node->node_n.node_var_def.vd_first_tok_i;
     }
     log_debug("node kind=%d", node->node_kind);
     UNREACHABLE();

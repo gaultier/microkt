@@ -64,6 +64,7 @@ typedef enum {
     NODE_NEQ,
     NODE_NOT,
     NODE_IF,
+    NODE_VAR_DEF,
     NODE_BLOCK,  // block
 } ast_node_kind_t;
 
@@ -85,6 +86,7 @@ const char ast_node_kind_t_to_str[][30] = {
     [NODE_NOT] = "Not",
     [NODE_IF] = "If",
     [NODE_BLOCK] = "Block",
+    [NODE_VAR_DEF] = "VarDef",
 };
 
 typedef struct {
@@ -101,6 +103,11 @@ typedef struct {
     int bl_first_tok_i, bl_last_tok_i, *bl_nodes_i;
 } block_t;
 
+typedef struct {
+    int vd_first_tok_i, vd_last_tok_i, vd_name_len, vd_node_init_val_i;
+    char* vd_name;
+} var_def_t;
+
 struct ast_node_t {
     ast_node_kind_t node_kind;
     int node_type_i;
@@ -110,9 +117,10 @@ struct ast_node_t {
         node_number_t node_num;  // NODE_I64, NODE_CHAR, NODE_BOOL
         binary_t node_binary;    // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
         // NODE_DIVIDE, NODE_MODULO
-        int node_unary;      // NODE_NOT, int = node_i
-        if_t node_if;        // NODE_IF
-        block_t node_block;  // NODE_BLOCK
+        int node_unary;          // NODE_NOT, int = node_i
+        if_t node_if;            // NODE_IF
+        block_t node_block;      // NODE_BLOCK
+        var_def_t node_var_def;  // NODE_VAR_DEF
     } node_n;
 };
 
