@@ -43,7 +43,7 @@ make
 # Run the tests
 make test
 
-# Compile a source file
+# Compile a source file (requires `as` and `ld` in the PATH)
 ./microktc test/hello_world.kts
 
 # And then run the executable
