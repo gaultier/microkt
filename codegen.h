@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ast.h"
+#include "common.h"
 #include "parse.h"
 
 // TODO: use platform headers for that?
@@ -14,6 +15,8 @@ static const long long int syscall_exit = 60;
 
 static FILE* output_file = NULL;
 static int stack_depth = 0;  // FIXME
+
+static void emit_stmt(const parser_t* parser, const ast_node_t* stmt);
 
 __attribute__((format(printf, 1, 2))) static void println(char* fmt, ...) {
     va_list ap;
@@ -345,7 +348,19 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
 
             break;
         }
+        case NODE_BLOCK: {
+            const block_t block = expr->node_n.node_block;
+
+            for (int i = 0; i < (int)buf_size(block.bl_nodes_i); i++) {
+                const int stmt_node_i = block.bl_nodes_i[i];
+                const ast_node_t* const stmt = &parser->par_nodes[stmt_node_i];
+                emit_stmt(parser, stmt);
+            }
+
+            break;
+        }
         default:
+            log_debug("node_kind=%s", ast_node_kind_t_to_str[expr->node_kind]);
             UNREACHABLE();
     }
 }
@@ -356,21 +371,7 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
 
     switch (stmt->node_kind) {
         case NODE_BUILTIN_PRINTLN:
-        case NODE_IF: {
-            emit_expr(parser, stmt);
-            break;
-        }
-        case NODE_BLOCK: {
-            const block_t block = stmt->node_n.node_block;
-
-            for (int i = 0; i < (int)buf_size(block.bl_nodes_i); i++) {
-                const int stmt_node_i = block.bl_nodes_i[i];
-                const ast_node_t* const stmt = &parser->par_nodes[stmt_node_i];
-                emit_stmt(parser, stmt);
-            }
-
-            break;
-        }
+        case NODE_BLOCK:
         case NODE_I64:
         case NODE_CHAR:
         case NODE_STRING:
@@ -385,6 +386,12 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
         case NODE_SUBTRACT:
         case NODE_ADD:
         case NODE_NOT:
+        case NODE_IF: {
+            emit_expr(parser, stmt);
+            break;
+        }
+        default:
+            log_debug("node_kind=%s", ast_node_kind_t_to_str[stmt->node_kind]);
             UNREACHABLE();
     }
     println("\n");

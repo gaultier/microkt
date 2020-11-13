@@ -7,6 +7,8 @@
 #include "common.h"
 #include "lex.h"
 
+static const int TYPE_UNIT_I = 0;  // see parser_init
+
 typedef struct {
     token_id_t* par_token_ids;
     const char* par_source;
@@ -56,6 +58,12 @@ static parser_t parser_init(const char* file_name0, const char* source,
     PG_ASSERT_COND((int)buf_size(token_ids), ==, (int)buf_size(tok_pos_s),
                    "%d");
 
+    type_t* types = NULL;
+    buf_grow(types, 100);
+    buf_push(types,
+             ((type_t){.ty_kind = TYPE_UNIT,  // Hence TYPE_UNIT_I = 0
+                       .ty_size = 0}));
+
     return (parser_t){.par_file_name0 = file_name0,
                       .par_source = source,
                       .par_source_len = source_len,
@@ -65,7 +73,8 @@ static parser_t parser_init(const char* file_name0, const char* source,
                       .par_tok_pos_ranges = tok_pos_s,
                       .par_tok_i = 0,
                       .par_lexer = lexer,
-                      .par_is_tty = isatty(2)};
+                      .par_is_tty = isatty(2),
+                      .par_types = types};
 }
 
 static long long int parse_tok_to_i64(const parser_t* parser, int tok_i) {
@@ -610,7 +619,9 @@ static res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
         const ast_node_t* const node_else = &parser->par_nodes[node_else_i];
         const type_kind_t else_type_kind =
             parser->par_types[node_else->node_type_i].ty_kind;
-        if (then_type_kind != else_type_kind) {
+        // Unit gets a pass for now (until we have assignements)
+        if (then_type_kind != else_type_kind && then_type_kind != TYPE_UNIT &&
+            else_type_kind != TYPE_UNIT) {
             log_debug("if branch types don't match, got %s and %s",
                       type_to_str[then_type_kind], type_to_str[else_type_kind]);
             return parser_err_non_matching_types(parser, node_then_i,
@@ -1058,8 +1069,13 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
     if (!parser_match(parser, &last_tok_i, 1, TOK_ID_RCURLY))
         return parser_err_unexpected_token(parser, TOK_ID_RCURLY);
 
+    const int last_node_i = buf_size(nodes_i) > 0 ? nodes_i[0] : -1;
+    const int type_i = last_node_i >= 0
+                           ? parser->par_nodes[last_node_i].node_type_i
+                           : TYPE_UNIT_I;
+
     const ast_node_t block =
-        NODE_BLOCK(TYPE_UNKNOWN, first_tok_i, last_tok_i, nodes_i);
+        NODE_BLOCK(type_i, first_tok_i, last_tok_i, nodes_i);
     buf_push(parser->par_nodes, block);
     *new_node_i = buf_size(parser->par_nodes) - 1;
 

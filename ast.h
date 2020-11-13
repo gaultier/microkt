@@ -1,7 +1,7 @@
 #pragma once
 
 typedef enum {
-    TYPE_UNKNOWN,
+    TYPE_UNIT,
     TYPE_BOOL,
     TYPE_CHAR,
     TYPE_I64,
@@ -10,9 +10,9 @@ typedef enum {
 } type_kind_t;
 
 static const char type_to_str[][20] = {
-    [TYPE_UNKNOWN] = "Unknown", [TYPE_BOOL] = "Bool",
-    [TYPE_CHAR] = "Char",       [TYPE_I64] = "Int64",
-    [TYPE_STRING] = "String",   [TYPE_BUILTIN_PRINTLN] = "BuiltinPrint",
+    [TYPE_UNIT] = "Unknown",  [TYPE_BOOL] = "Bool",
+    [TYPE_CHAR] = "Char",     [TYPE_I64] = "Int64",
+    [TYPE_STRING] = "String", [TYPE_BUILTIN_PRINTLN] = "BuiltinPrint",
 };
 
 typedef struct {
