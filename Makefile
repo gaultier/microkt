@@ -45,7 +45,10 @@ test/negation: test/negation.kts $(BIN_TEST)
 test/if: test/if.kts $(BIN_TEST)
 	$(BIN_TEST) $<
 
-tests: test/integers test/math_integers test/char test/hello_world test/string test/bool test/comparison test/negation test/if
+test/var: test/var.kts $(BIN_TEST)
+	$(BIN_TEST) $<
+
+tests: test/integers test/math_integers test/char test/hello_world test/string test/bool test/comparison test/negation test/if test/var
 
 test: tests tests.awk
 	@./tests.awk
