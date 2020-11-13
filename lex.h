@@ -33,6 +33,9 @@ typedef enum {
     TOK_ID_ELSE,
     TOK_ID_LCURLY,
     TOK_ID_RCURLY,
+    TOK_ID_VAL,
+    TOK_ID_VAR,
+    TOK_ID_COLON,
     TOK_ID_EOF,
     TOK_ID_INVALID,
 } token_id_t;
@@ -65,6 +68,9 @@ const char token_id_to_str[][30] = {
     [TOK_ID_ELSE] = "else",
     [TOK_ID_LCURLY] = "{",
     [TOK_ID_RCURLY] = "}",
+    [TOK_ID_VAL] = "val",
+    [TOK_ID_VAR] = "var",
+    [TOK_ID_COLON] = ":",
     [TOK_ID_EOF] = "Eof",
     [TOK_ID_INVALID] = "Invalid",
 };
@@ -95,6 +101,8 @@ static const keyword_t keywords[] = {
     {.key_id = TOK_ID_BUILTIN_PRINTLN, .key_str = "println"},
     {.key_id = TOK_ID_IF, .key_str = "if"},
     {.key_id = TOK_ID_ELSE, .key_str = "else"},
+    {.key_id = TOK_ID_VAL, .key_str = "val"},
+    {.key_id = TOK_ID_VAR, .key_str = "var"},
 };
 
 typedef struct {
@@ -387,6 +395,12 @@ static token_t lex_next(lexer_t* lexer) {
             case '>': {
                 lex_match(lexer, '>');
                 result.tok_id = lex_match(lexer, '=') ? TOK_ID_GE : TOK_ID_GT;
+                goto outer;
+            }
+            case ':': {
+                lex_match(lexer, ':');
+                result.tok_id = TOK_ID_COLON;
+
                 goto outer;
             }
             case '{': {

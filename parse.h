@@ -196,15 +196,19 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
         }
         case NODE_VAR_DEF: {
             const var_def_t var_def = node->node_n.node_var_def;
+            const pos_range_t pos_range =
+                parser->par_tok_pos_ranges[var_def.vd_name_tok_i];
+            const char* const name = &parser->par_source[pos_range.pr_start];
+            const int name_len = pos_range.pr_end - pos_range.pr_start;
 
             log_debug_with_indent(
                 indent, "ast_node #%d %s type %s `%.*s`", node_i,
                 ast_node_kind_t_to_str[node->node_kind],
                 type_to_str[parser->par_types[node->node_type_i].ty_kind],
-                var_def.vd_name_len, var_def.vd_name);
+                name_len, name);
 
-            if (var_def.vd_node_init_val_i >= 0)
-                ast_node_dump(nodes, parser, var_def.vd_node_init_val_i,
+            if (var_def.vd_init_node_i >= 0)
+                ast_node_dump(nodes, parser, var_def.vd_init_node_i,
                               indent + 2);
 
             break;
@@ -1128,8 +1132,67 @@ static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i) {
     return RES_NONE;
 }
 
+static res_t parser_parse_property_declaration(parser_t* parser,
+                                               int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
+    int first_tok_i = -1, name_tok_i = -1, type_tok_i = -1, dummy = -1,
+        last_tok_i = -1, init_node_i = -1;
+
+    if (parser_match(parser, &first_tok_i, 1, TOK_ID_VAR)) UNIMPLEMENTED();
+
+    if (!parser_match(parser, &first_tok_i, 1, TOK_ID_VAL)) return RES_NONE;
+
+    if (parser_expect_token(parser, &name_tok_i, TOK_ID_IDENTIFIER) != RES_OK)
+        return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
+
+    if (parser_expect_token(parser, &name_tok_i, TOK_ID_COLON) != RES_OK)
+        return parser_err_unexpected_token(parser, TOK_ID_COLON);
+
+    if (parser_expect_token(parser, &type_tok_i, TOK_ID_IDENTIFIER) != RES_OK)
+        return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
+
+    if (parser_expect_token(parser, &dummy, TOK_ID_EQ) != RES_OK)
+        return parser_err_unexpected_token(parser, TOK_ID_EQ);
+
+    res_t res = RES_NONE;
+    res = parser_parse_expr(parser, new_node_i);
+    if (res == RES_NONE) {
+        log_debug("var def without initial value%s", "");
+        UNIMPLEMENTED();  // TODO make meaningful error
+    }
+    if (res != RES_OK) return res;
+
+    const type_t type = {.ty_kind = TYPE_UNIT, .ty_size = 0};  // FIXME
+    buf_push(parser->par_types, type);
+    const int type_i = buf_size(parser->par_types) - 1;
+
+    const ast_node_t new_node =
+        NODE_VAR_DEF(type_i, first_tok_i, name_tok_i, last_tok_i, init_node_i);
+    buf_push(parser->par_nodes, new_node);
+    *new_node_i = buf_size(parser->par_nodes) - 1;
+
+    return RES_OK;
+}
+
+static res_t parser_parse_declaration(parser_t* parser, int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
+    return parser_parse_property_declaration(parser, new_node_i);
+}
 static res_t parser_parse_stmt(parser_t* parser, int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
     if (parser_peek(parser) == TOK_ID_EOF) return RES_NONE;
+
+    res_t res = RES_NONE;
+    if ((res = parser_parse_declaration(parser, new_node_i)) != RES_NONE)
+        return res;
+
+    // TODO
 
     return parser_parse_expr(parser, new_node_i);
 }
