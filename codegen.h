@@ -96,6 +96,7 @@ static void emit_print_i64() {
         "    movq $%lld, %%rax\n"
         "    movq %%rdi, (%%rsp)\n"
         "    movq %%rsp, %%rsi\n"
+        "    # Put a newline in place of the nul terminator\n"
         "    movq $0x0a, 1(%%rsp)\n"
         "    movq $1, %%rdi\n"
         "    movq $2, %%rdx\n"
