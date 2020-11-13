@@ -26,7 +26,7 @@ BEGIN {
     expected_outputs[7] = "false\ntrue\n"
 
     tests[8] = "e2e/if"
-    expected_outputs[8] = "42\n99\nfalse\ntrue\nA\nB\nhello\nworld\n2\n2\n2\n999\nhi\nhello there\nI have the high ground\nI hate sand\n"
+    expected_outputs[8] = "42\n99\nfalse\ntrue\nA\nB\nhello\nworld\n2\n2\n2\n999\nhi\nhello there\nI have the high ground\nmay the force be with you\nI hate sand\n"
 
     is_tty = system("test -t 1") == 0
 
