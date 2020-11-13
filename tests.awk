@@ -1,31 +1,31 @@
 #!/usr/bin/awk -f 
 
 BEGIN {
-    tests[0] = "e2e/integers"
+    tests[0] = "test/integers"
     expected_outputs[0] = "1\n9990\n"
 
-    tests[1] = "e2e/math_integers"
+    tests[1] = "test/math_integers"
     expected_outputs[1] = "6\n-2\n12\n200\n4\n"
 
-    tests[2] = "e2e/char"
+    tests[2] = "test/char"
     expected_outputs[2] = "A\n$\n"
 
-    tests[3] = "e2e/string"
+    tests[3] = "test/string"
     expected_outputs[3] = "hello!\nworld\n"
 
-    tests[4] = "e2e/hello_world"
+    tests[4] = "test/hello_world"
     expected_outputs[4] = "Hello, world!\n"
 
-    tests[5] = "e2e/bool"
+    tests[5] = "test/bool"
     expected_outputs[5] = "true\nfalse\nfalse\n"
 
-    tests[6] = "e2e/comparison"
+    tests[6] = "test/comparison"
     expected_outputs[6] = "true\ntrue\nfalse\ntrue\nfalse\nfalse\ntrue\ntrue\nfalse\ntrue\n"
 
-    tests[7] = "e2e/negation"
+    tests[7] = "test/negation"
     expected_outputs[7] = "false\ntrue\n"
 
-    tests[8] = "e2e/if"
+    tests[8] = "test/if"
     expected_outputs[8] = "42\n99\nfalse\ntrue\nA\nB\nhello\nworld\n2\n2\n2\n999\nhi\nhello there\nI have the high ground\nmay the force be with you\nI hate sand\n"
 
     is_tty = system("test -t 1") == 0

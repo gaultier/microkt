@@ -1,6 +1,6 @@
-.PHONY: clean test all test
+.PHONY: clean test all test tests
 
-SRC:=$(wildcard *.c)
+SRC:=main.c
 HEADERS:=$(wildcard *.h)
 CFLAGS+=-Wall -Wextra -pedantic -g -std=c99 -march=native
 
@@ -45,7 +45,7 @@ test/negation: test/negation.kts $(BIN_TEST)
 test/if: test/if.kts $(BIN_TEST)
 	$(BIN_TEST) $<
 
-test: test/integers test/math_integers test/char test/hello_world test/string test/bool test/comparison test/negation test/if
+tests: test/integers test/math_integers test/char test/hello_world test/string test/bool test/comparison test/negation test/if
 
-test: test tests.awk
+test: tests tests.awk
 	@./tests.awk

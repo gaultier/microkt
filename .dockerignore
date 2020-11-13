@@ -1,7 +1,6 @@
 *
 !*.h
 !*.c
-!*.asm
 !*.awk
-!e2e/*.kts
+!test/*.kts
 !Makefile

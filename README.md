@@ -12,10 +12,10 @@ make
 make test
 
 # Compile a source file:
-./microktc e2e/hello_world.kts
+./microktc test/hello_world.kts
 
 # And then run the executable:
-./e2e/hello_world
+./test/hello_world
 Hello, world!
 
 # Docker
