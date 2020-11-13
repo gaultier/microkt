@@ -91,7 +91,7 @@ static void emit_print_i64() {
         "__println_char:\n"
         "    pushq %%rbp\n"
         "    movq %%rsp, %%rbp\n"
-        "    subq $16, %%rsp # char data[1]\n"
+        "    subq $16, %%rsp # char data[2]\n"
 
         "    movq $%lld, %%rax\n"
         "    movq %%rdi, (%%rsp)\n"
