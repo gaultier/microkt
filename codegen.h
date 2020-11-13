@@ -81,9 +81,7 @@ static void emit_print_i64() {
 
         "    # Put a newline in place of the nul terminator\n"
         "    # s[len++] =0x0a \n"
-        "    addq %%rdx, %%rsi\n"
-        "    movb $0x0a, (%%rsi)\n"
-        "    subq %%rdx, %%rsi\n"
+        "    movb $0x0a, (%%rsi, %%rdx)\n"
         "    incq %%rdx\n\n"
 
         "    syscall\n"
