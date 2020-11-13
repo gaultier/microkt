@@ -16,7 +16,7 @@ microktc_debug: $(SRC) $(HEADERS)
 
 clean:
 	rm -rf microktc microktc_debug ./*.dSYM
-	find test -not -name '*.kts' -delete
+	find ./test/ -not -name '*.kts' -delete
 
 test/bool: test/bool.kts $(BIN_TEST)
 	$(BIN_TEST) $<
