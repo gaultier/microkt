@@ -57,3 +57,8 @@ docker run -it microkt sh -c 'microktc /usr/local/share/microktc/hello_world.kts
 
 Hello, world!
 ```
+
+
+## License
+
+BSD-3
