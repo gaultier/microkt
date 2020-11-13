@@ -1,6 +1,7 @@
 #pragma once
 
 typedef enum {
+    TYPE_UNKNOWN,
     TYPE_BOOL,
     TYPE_CHAR,
     TYPE_I64,
@@ -9,11 +10,9 @@ typedef enum {
 } type_kind_t;
 
 static const char type_to_str[][20] = {
-    [TYPE_BOOL] = "Bool",
-    [TYPE_CHAR] = "Char",
-    [TYPE_I64] = "Int64",
-    [TYPE_STRING] = "String",
-    [TYPE_BUILTIN_PRINTLN] = "BuiltinPrint",
+    [TYPE_UNKNOWN] = "Unknown", [TYPE_BOOL] = "Bool",
+    [TYPE_CHAR] = "Char",       [TYPE_I64] = "Int64",
+    [TYPE_STRING] = "String",   [TYPE_BUILTIN_PRINTLN] = "BuiltinPrint",
 };
 
 typedef struct {
@@ -65,6 +64,7 @@ typedef enum {
     NODE_NEQ,
     NODE_NOT,
     NODE_IF,
+    NODE_BLOCK,  // block
 } ast_node_kind_t;
 
 const char ast_node_kind_t_to_str[][30] = {
@@ -84,6 +84,7 @@ const char ast_node_kind_t_to_str[][30] = {
     [NODE_NEQ] = "Neq",
     [NODE_NOT] = "Not",
     [NODE_IF] = "If",
+    [NODE_BLOCK] = "Block",
 };
 
 typedef struct {
@@ -96,6 +97,10 @@ typedef struct {
         if_node_else_i;
 } if_t;
 
+typedef struct {
+    int bl_first_tok_i, bl_last_tok_i, *bl_nodes_i;
+} block_t;
+
 struct ast_node_t {
     ast_node_kind_t node_kind;
     int node_type_i;
@@ -105,8 +110,9 @@ struct ast_node_t {
         node_number_t node_num;  // NODE_I64, NODE_CHAR, NODE_BOOL
         binary_t node_binary;    // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
         // NODE_DIVIDE, NODE_MODULO
-        int node_unary;  // NODE_NOT, int = node_i
-        if_t node_if;    // NODE_IF
+        int node_unary;      // NODE_NOT, int = node_i
+        if_t node_if;        // NODE_IF
+        block_t node_block;  // NODE_BLOCK
     } node_n;
 };
 
@@ -161,6 +167,13 @@ struct ast_node_t {
                                       .if_node_cond_i = node_cond_i,       \
                                       .if_node_then_i = node_then_i,       \
                                       .if_node_else_i = node_else_i})}})
+
+#define NODE_BLOCK(type_i, first_tok_i, last_tok_i, nodes_i)               \
+    ((ast_node_t){.node_kind = NODE_BLOCK,                                 \
+                  .node_type_i = type_i,                                   \
+                  .node_n = {.node_block = {.bl_first_tok_i = first_tok_i, \
+                                            .bl_last_tok_i = last_tok_i,   \
+                                            .bl_nodes_i = nodes_i}}})
 
 #define AS_BINARY(node) ((node).node_n.node_binary)
 

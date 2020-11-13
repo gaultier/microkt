@@ -360,6 +360,17 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
             emit_expr(parser, stmt);
             break;
         }
+        case NODE_BLOCK: {
+            const block_t block = stmt->node_n.node_block;
+
+            for (int i = 0; i < (int)buf_size(block.bl_nodes_i); i++) {
+                const int stmt_node_i = block.bl_nodes_i[i];
+                const ast_node_t* const stmt = &parser->par_nodes[stmt_node_i];
+                emit_stmt(parser, stmt);
+            }
+
+            break;
+        }
         case NODE_I64:
         case NODE_CHAR:
         case NODE_STRING:

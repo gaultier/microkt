@@ -36,6 +36,9 @@ if (true) {
   println("I have the high ground")
 } 
 
+// Empty if
+if (false) {} else println("may the force be with you")
+
 // Empty else
 if (true) {
   println("I hate sand")

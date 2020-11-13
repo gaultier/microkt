@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include "ast.h"
+#include "common.h"
 #include "lex.h"
 
 typedef struct {
@@ -172,6 +173,18 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
                 type_to_str[parser->par_types[node->node_type_i].ty_kind]);
             break;
         }
+        case NODE_BLOCK: {
+            log_debug_with_indent(
+                indent, "ast_node #%d %s type %s", node_i,
+                ast_node_kind_t_to_str[node->node_kind],
+                type_to_str[parser->par_types[node->node_type_i].ty_kind]);
+
+            const block_t block = node->node_n.node_block;
+            for (int i = 0; i < (int)buf_size(block.bl_nodes_i); i++)
+                ast_node_dump(nodes, parser, block.bl_nodes_i[i], indent + 2);
+
+            break;
+        }
     }
 }
 
@@ -203,6 +216,8 @@ static int ast_node_first_token(const parser_t* parser,
             return node->node_n.node_unary;
         case NODE_IF:
             return node->node_n.node_if.if_first_tok_i;
+        case NODE_BLOCK:
+            return node->node_n.node_block.bl_first_tok_i;
     }
     log_debug("node kind=%d", node->node_kind);
     UNREACHABLE();
@@ -235,6 +250,8 @@ static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
             return node->node_n.node_unary;
         case NODE_IF:
             return node->node_n.node_if.if_last_tok_i;
+        case NODE_BLOCK:
+            return node->node_n.node_block.bl_last_tok_i;
     }
     log_debug("node kind=%d", node->node_kind);
     UNREACHABLE();
@@ -332,8 +349,8 @@ static void parser_print_source_on_error(const parser_t* parser,
     const loc_t last_tok_loc =
         lex_pos_to_loc(&parser->par_lexer, last_tok_pos_range.pr_start);
 
-    // lex_pos_to_loc returns a human readable line number starting at 1 so we
-    // subtract 1 to start at 0
+    // lex_pos_to_loc returns a human readable line number starting at 1 so
+    // we subtract 1 to start at 0
     const int first_line = first_tok_loc.loc_line - 1;
     const int last_line = last_tok_loc.loc_line - 1;
     PG_ASSERT_COND(first_line, <=, last_line, "%d");
@@ -342,11 +359,10 @@ static void parser_print_source_on_error(const parser_t* parser,
     PG_ASSERT_COND(first_line, <=, last_line_in_file, "%d");
     PG_ASSERT_COND(last_line, <=, last_line_in_file, "%d");
 
-    // The position at index 0 is actually on the second line so we subtract 1
-    // to the index
-    // We then add one to position to 'trim' the heading newline from the
-    // source, if we are not on the first line (where there is no heading
-    // newline)
+    // The position at index 0 is actually on the second line so we subtract
+    // 1 to the index We then add one to position to 'trim' the heading
+    // newline from the source, if we are not on the first line (where there
+    // is no heading newline)
     const int first_line_source_pos =
         parser->par_lexer.lex_lines[first_line - 1] +
         ((first_line == 0) ? 0 : 1);
@@ -557,6 +573,7 @@ static res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
         log_debug("failed to parse if-cond %d", res);
         return res;
     }
+    PG_ASSERT_COND(node_cond_i, >=, 0, "%d");
 
     const ast_node_t* const node_cond = &parser->par_nodes[node_cond_i];
     const type_kind_t cond_type_kind =
@@ -575,6 +592,8 @@ static res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
         log_debug("failed to parse if-branch %d", res);
         return res;
     }
+    PG_ASSERT_COND(node_then_i, >=, 0, "%d");
+
     const ast_node_t* const node_then = &parser->par_nodes[node_then_i];
     const int then_type_i = node_then->node_type_i;
     const type_kind_t then_type_kind = parser->par_types[then_type_i].ty_kind;
@@ -627,7 +646,8 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
 
         const pos_range_t pos_range = parser->par_tok_pos_ranges[tok_i];
         const char* const source = &parser->par_source[pos_range.pr_start];
-        // The source is either `true` or `false` hence the len is either 4 or 5
+        // The source is either `true` or `false` hence the len is either 4
+        // or 5
         const int8_t val = (memcmp("true", source, 4) == 0);
         const ast_node_t new_node = NODE_I64(tok_i, type_i, val);
         buf_push(parser->par_nodes, new_node);
@@ -683,7 +703,7 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
     if (parser_peek(parser) == TOK_ID_IF)
         return parser_parse_if_expr(parser, new_node_i);
 
-    return parser_err_expected_primary(parser);
+    return RES_NONE;
 }
 
 static res_t parser_parse_postfix_unary_expr(parser_t* parser,
@@ -1000,20 +1020,23 @@ static res_t parser_parse_expr(parser_t* parser, int* new_node_i) {
     return parser_parse_disjunction(parser, new_node_i);
 }
 
-static res_t parser_parse_stmts(parser_t* parser, int* new_node_i) {
+static res_t parser_parse_stmts(parser_t* parser, int** new_nodes_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_nodes_i, !=, NULL, "%p");
 
     res_t res = RES_NONE;
-    // TODO: loop
-    res = parser_parse_stmt(parser, new_node_i);
-    if (res == RES_OK)
-        return res;
-    else if (res == RES_NONE)
-        return RES_OK;
-    else {
-        log_debug("failed to parse stmts: res=%d", res);
-        return res;
+    while (1) {
+        int new_node_i = -1;
+        res = parser_parse_stmt(parser, &new_node_i);
+        if (res == RES_OK) {
+            buf_push(*new_nodes_i, new_node_i);
+            continue;
+        } else if (res == RES_NONE)
+            return RES_OK;
+        else {
+            log_debug("failed to parse stmts: res=%d", res);
+            return res;
+        }
     }
 }
 
@@ -1021,18 +1044,26 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
-    int dummy = -1;
-    if (!parser_match(parser, &dummy, 1, TOK_ID_LCURLY))
+    int first_tok_i = -1, last_tok_i = -1;
+    if (!parser_match(parser, &first_tok_i, 1, TOK_ID_LCURLY))
         return parser_err_unexpected_token(parser, TOK_ID_LCURLY);
 
     res_t res = RES_NONE;
-    if ((res = parser_parse_stmts(parser, new_node_i)) != RES_OK) {
+    int* nodes_i = NULL;
+    if ((res = parser_parse_stmts(parser, &nodes_i)) != RES_OK) {
         log_debug("failed to parse expr in optional curlies %d", res);
         return res;
     }
 
-    if (!parser_match(parser, &dummy, 1, TOK_ID_RCURLY))
+    if (!parser_match(parser, &last_tok_i, 1, TOK_ID_RCURLY))
         return parser_err_unexpected_token(parser, TOK_ID_RCURLY);
+
+    const ast_node_t block =
+        NODE_BLOCK(TYPE_UNKNOWN, first_tok_i, last_tok_i, nodes_i);
+    buf_push(parser->par_nodes, block);
+    *new_node_i = buf_size(parser->par_nodes) - 1;
+
+    log_debug("new block %d", *new_node_i);
 
     return res;
 }
