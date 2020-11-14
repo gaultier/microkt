@@ -44,11 +44,11 @@ static bool parser_check_keyword(const parser_t* parser,
     PG_ASSERT_COND((void*)(source_start + suffix_len), <,
                    (void*)(parser->par_source + parser->par_source_len), "%p");
 
-    const int remaining_len = (parser->par_source + parser->par_source_len) -
-                              (source_start + suffix_len);
+    const int remaining_len =
+        (parser->par_source + parser->par_source_len) - (source_start);
 
     if (remaining_len >= suffix_len &&
-        memcmp(source_start, parser->par_source, suffix_len)) {
+        memcmp(source_start, suffix, suffix_len) == 0) {
         *type_kind = expected;
         return true;
     } else
@@ -152,7 +152,7 @@ static parser_t parser_init(const char* file_name0, const char* source,
                       .par_types = types};
 }
 
-static long long int parse_tok_to_i64(const parser_t* parser, int tok_i) {
+static long long int parse_tok_to_long(const parser_t* parser, int tok_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_tok_pos_ranges, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_source, !=, NULL, "%p");
@@ -248,7 +248,7 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
             break;
         }
         case NODE_KEYWORD_BOOL:
-        case NODE_I64:
+        case NODE_LONG:
         case NODE_CHAR:
         case NODE_STRING: {
             log_debug_with_indent(
@@ -303,7 +303,7 @@ static int ast_node_first_token(const parser_t* parser,
             return parser->par_objects[node->node_n.node_string].obj_tok_i;
         case NODE_KEYWORD_BOOL:
         case NODE_CHAR:
-        case NODE_I64:
+        case NODE_LONG:
             return node->node_n.node_num.nu_tok_i;
         case NODE_LT:
         case NODE_LE:
@@ -338,7 +338,7 @@ static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
         case NODE_STRING:
             return parser->par_objects[node->node_n.node_string].obj_tok_i;
         case NODE_KEYWORD_BOOL:
-        case NODE_I64:
+        case NODE_LONG:
         case NODE_CHAR:
             return node->node_n.node_num.nu_tok_i;
         case NODE_LT:
@@ -739,7 +739,7 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         // The source is either `true` or `false` hence the len is either 4
         // or 5
         const int8_t val = (memcmp("true", source, 4) == 0);
-        const ast_node_t new_node = NODE_I64(tok_i, type_i, val);
+        const ast_node_t new_node = NODE_LONG(tok_i, type_i, val);
         buf_push(parser->par_nodes, new_node);
         *new_node_i = (int)buf_size(parser->par_nodes) - 1;
 
@@ -766,13 +766,13 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
 
         return RES_OK;
     }
-    if (parser_match(parser, &tok_i, 1, TOK_ID_I64)) {
+    if (parser_match(parser, &tok_i, 1, TOK_ID_LONG)) {
         buf_push(parser->par_types,
                  ((type_t){.ty_size = 8, .ty_kind = TYPE_LONG}));
         const int type_i = buf_size(parser->par_types) - 1;
 
-        const long long int val = parse_tok_to_i64(parser, tok_i);
-        const ast_node_t new_node = NODE_I64(tok_i, type_i, val);
+        const long long int val = parse_tok_to_long(parser, tok_i);
+        const ast_node_t new_node = NODE_LONG(tok_i, type_i, val);
         buf_push(parser->par_nodes, new_node);
         *new_node_i = (int)buf_size(parser->par_nodes) - 1;
 
@@ -1227,6 +1227,7 @@ static res_t parser_parse_property_declaration(parser_t* parser,
 
     if (parser_expect_token(parser, &type_tok_i, TOK_ID_IDENTIFIER) != RES_OK)
         return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
+    PG_ASSERT_COND(type_tok_i, >=, 0, "%d");
 
     if (parser_expect_token(parser, &dummy, TOK_ID_EQ) != RES_OK)
         return parser_err_unexpected_token(parser, TOK_ID_EQ);
@@ -1239,7 +1240,14 @@ static res_t parser_parse_property_declaration(parser_t* parser,
     }
     if (res != RES_OK) return res;
 
-    const type_t type = {.ty_kind = TYPE_UNIT, .ty_size = 0};  // FIXME
+    type_kind_t type_kind = TYPE_ANY;
+    if (!parser_parse_identifier_to_type_kind(parser, type_tok_i, &type_kind)) {
+        log_debug("user types not yet supported: type_tok_i=%d", type_tok_i);
+        UNIMPLEMENTED();
+    }
+    log_debug("parsed type %s", type_to_str[type_kind]);
+
+    const type_t type = {.ty_kind = type_kind, .ty_size = 0};  // FIXME
     buf_push(parser->par_types, type);
     const int type_i = buf_size(parser->par_types) - 1;
 
@@ -1249,7 +1257,6 @@ static res_t parser_parse_property_declaration(parser_t* parser,
     *new_node_i = buf_size(parser->par_nodes) - 1;
 
     // TODO: add obj
-    // TODO: parse type
     // TODO: add asm offset
 
     return RES_OK;

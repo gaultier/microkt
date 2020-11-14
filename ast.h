@@ -1,6 +1,7 @@
 #pragma once
 
 typedef enum {
+    TYPE_ANY,
     TYPE_UNIT,
     TYPE_BOOL,
     TYPE_CHAR,
@@ -13,15 +14,11 @@ typedef enum {
 } type_kind_t;
 
 static const char type_to_str[][20] = {
-    [TYPE_UNIT] = "Unknown",
-    [TYPE_BOOL] = "Bool",
-    [TYPE_CHAR] = "Char",
-    [TYPE_BYTE] = "Byte",
-    [TYPE_INT] = "Int",
-    [TYPE_SHORT] = "Short",
-    [TYPE_LONG] = "Int64",
-    [TYPE_STRING] = "String",
-    [TYPE_BUILTIN_PRINTLN] = "BuiltinPrint",
+    [TYPE_ANY] = "Any",       [TYPE_UNIT] = "Unknown",
+    [TYPE_BOOL] = "Bool",     [TYPE_CHAR] = "Char",
+    [TYPE_BYTE] = "Byte",     [TYPE_INT] = "Int",
+    [TYPE_SHORT] = "Short",   [TYPE_LONG] = "Int64",
+    [TYPE_STRING] = "String", [TYPE_BUILTIN_PRINTLN] = "BuiltinPrint",
 };
 
 typedef struct {
@@ -60,7 +57,7 @@ typedef enum {
     NODE_BUILTIN_PRINTLN,
     NODE_KEYWORD_BOOL,
     NODE_STRING,
-    NODE_I64,
+    NODE_LONG,
     NODE_CHAR,
     NODE_ADD,
     NODE_SUBTRACT,
@@ -81,7 +78,7 @@ const char ast_node_kind_t_to_str[][30] = {
     [NODE_BUILTIN_PRINTLN] = "Print",
     [NODE_KEYWORD_BOOL] = "Bool",
     [NODE_STRING] = "String",
-    [NODE_I64] = "I64",
+    [NODE_LONG] = "LONG",
     [NODE_CHAR] = "Char",
     [NODE_ADD] = "Plus",
     [NODE_SUBTRACT] = "Subtract",
@@ -122,7 +119,7 @@ struct ast_node_t {
     union {
         ast_builtin_println_t node_builtin_println;  // NODE_BUILTIN_PRINTLN
         int node_string;                             // NODE_STRING, int = obj_i
-        node_number_t node_num;  // NODE_I64, NODE_CHAR, NODE_BOOL
+        node_number_t node_num;  // NODE_LONG, NODE_CHAR, NODE_BOOL
         binary_t node_binary;    // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
         // NODE_DIVIDE, NODE_MODULO
         int node_unary;          // NODE_NOT, int = node_i
@@ -139,8 +136,8 @@ struct ast_node_t {
         .node_n = {.node_builtin_println = {.bp_arg_i = arg,               \
                                             .bp_keyword_print_i = keyword, \
                                             .bp_rparen_i = rparen}}})
-#define NODE_I64(tok_i, type_i, val)                                        \
-    ((ast_node_t){.node_kind = NODE_I64,                                    \
+#define NODE_LONG(tok_i, type_i, val)                                       \
+    ((ast_node_t){.node_kind = NODE_LONG,                                   \
                   .node_type_i = type_i,                                    \
                   .node_n = {.node_num = (node_number_t){.nu_tok_i = tok_i, \
                                                          .nu_val = val}}})

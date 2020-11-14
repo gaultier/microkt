@@ -54,7 +54,7 @@ static void emit_program_epilog() {
 
 static void emit_push() { println("push %%rax"); }
 
-static void emit_print_i64() {
+static void emit_print_long() {
     println(
         "__println_bool:\n"
         "    test %%rdi, %%rdi\n"
@@ -194,7 +194,7 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             println("movb $%d, %%al", (char)expr->node_n.node_num.nu_val);
             return;
         }
-        case NODE_I64: {
+        case NODE_LONG: {
             println("movq $%lld, %%rax", expr->node_n.node_num.nu_val);
             return;
         }
@@ -376,7 +376,7 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
     switch (stmt->node_kind) {
         case NODE_BUILTIN_PRINTLN:
         case NODE_BLOCK:
-        case NODE_I64:
+        case NODE_LONG:
         case NODE_CHAR:
         case NODE_STRING:
         case NODE_KEYWORD_BOOL:
@@ -421,7 +421,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
     }
 
     println("\n.text");
-    emit_print_i64();
+    emit_print_long();
     println(".global _main");
     println("_main:");
     fn_prolog();
