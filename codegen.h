@@ -395,8 +395,17 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
             println("\n");
             return;
         }
-        case NODE_VAR_DEF:
-            UNIMPLEMENTED();
+        case NODE_VAR_DEF: {
+            // FIXME
+            const var_def_t var_def = stmt->node_n.node_var_def;
+            if (var_def.vd_init_node_i >= 0) {
+                const ast_node_t* const init_node =
+                    &parser->par_nodes[var_def.vd_init_node_i];
+
+                emit_expr(parser, init_node);
+            }
+            return;
+        }
     }
     log_debug("node_kind=%s", ast_node_kind_t_to_str[stmt->node_kind]);
     UNREACHABLE();
