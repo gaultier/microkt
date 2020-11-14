@@ -403,6 +403,8 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
                     &parser->par_nodes[var_def.vd_init_node_i];
 
                 emit_expr(parser, init_node);
+
+                println("push %%rax");
             }
             return;
         }
