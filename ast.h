@@ -7,7 +7,7 @@ typedef enum {
     TYPE_BYTE,
     TYPE_INT,
     TYPE_SHORT,
-    TYPE_I64,
+    TYPE_LONG,
     TYPE_STRING,
     TYPE_BUILTIN_PRINTLN,
 } type_kind_t;
@@ -19,7 +19,7 @@ static const char type_to_str[][20] = {
     [TYPE_BYTE] = "Byte",
     [TYPE_INT] = "Int",
     [TYPE_SHORT] = "Short",
-    [TYPE_I64] = "Int64",
+    [TYPE_LONG] = "Int64",
     [TYPE_STRING] = "String",
     [TYPE_BUILTIN_PRINTLN] = "BuiltinPrint",
 };

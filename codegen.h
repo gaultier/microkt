@@ -334,7 +334,7 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
 
             const type_kind_t type =
                 parser->par_types[arg->node_type_i].ty_kind;
-            if (type == TYPE_I64)
+            if (type == TYPE_LONG)
                 println("call __println_int");
             else if (type == TYPE_CHAR)
                 println("call __println_char");

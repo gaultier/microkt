@@ -768,7 +768,7 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
     }
     if (parser_match(parser, &tok_i, 1, TOK_ID_I64)) {
         buf_push(parser->par_types,
-                 ((type_t){.ty_size = 8, .ty_kind = TYPE_I64}));
+                 ((type_t){.ty_size = 8, .ty_kind = TYPE_LONG}));
         const int type_i = buf_size(parser->par_types) - 1;
 
         const long long int val = parse_tok_to_i64(parser, tok_i);
@@ -864,10 +864,10 @@ static res_t parser_parse_multiplicative_expr(parser_t* parser,
 
     while (parser_match(parser, new_node_i, 3, TOK_ID_STAR, TOK_ID_SLASH,
                         TOK_ID_PERCENT)) {
-        if (lhs_type_kind != TYPE_I64) {
+        if (lhs_type_kind != TYPE_LONG) {
             log_debug("non matching types: lhs should be numerical, was: %s",
                       type_to_str[lhs_type_kind]);
-            return parser_err_unexpected_type(parser, lhs_i, TYPE_I64);
+            return parser_err_unexpected_type(parser, lhs_i, TYPE_LONG);
         }
 
         const int tok_id = parser_previous(parser);
@@ -879,10 +879,10 @@ static res_t parser_parse_multiplicative_expr(parser_t* parser,
         const int rhs_type_i = parser->par_nodes[rhs_i].node_type_i;
         const type_kind_t rhs_type_kind = parser->par_types[rhs_type_i].ty_kind;
 
-        if (rhs_type_kind != TYPE_I64) {
+        if (rhs_type_kind != TYPE_LONG) {
             log_debug("non matching types: rhs should be numerical, was: %s",
                       type_to_str[rhs_type_kind]);
-            return parser_err_unexpected_type(parser, lhs_i, TYPE_I64);
+            return parser_err_unexpected_type(parser, lhs_i, TYPE_LONG);
         }
 
         if (lhs_type_kind != rhs_type_kind) {
