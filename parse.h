@@ -32,6 +32,81 @@ static res_t parser_parse_control_structure_body(parser_t* parser,
                                                  int* new_node_i);
 static res_t parser_parse_block(parser_t* parser, int* new_node_i);
 static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i);
+static void parser_tok_source(const parser_t* parser, int tok_i,
+                              const char** source, int* source_len);
+
+static bool parser_check_keyword(const parser_t* parser,
+                                 const char* source_start, const char suffix[],
+                                 int suffix_len, type_kind_t* type_kind,
+                                 type_kind_t expected) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)type_kind, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)(source_start + suffix_len), <,
+                   (void*)(parser->par_source + parser->par_source_len), "%p");
+
+    const int remaining_len = (parser->par_source + parser->par_source_len) -
+                              (source_start + suffix_len);
+
+    if (remaining_len >= suffix_len &&
+        memcmp(source_start, parser->par_source, suffix_len)) {
+        *type_kind = expected;
+        return true;
+    } else
+        return false;
+}
+
+static bool parser_parse_identifier_to_type_kind(const parser_t* parser,
+                                                 int tok_i,
+                                                 type_kind_t* type_kind) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+
+    const char* source = NULL;
+    int source_len = 0;
+    parser_tok_source(parser, tok_i, &source, &source_len);
+
+    if (source_len <= 2) return RES_NONE;
+
+    switch (source[0]) {
+        case 'A':
+            return parser_check_keyword(parser, source + 1, "ny", 2, type_kind,
+                                        TYPE_ANY);
+        case 'B': {
+            switch (source[1]) {
+                case 'o':
+                    return parser_check_keyword(parser, source + 2, "ol", 2,
+                                                type_kind, TYPE_BOOL);
+                case 'y':
+                    return parser_check_keyword(parser, source + 2, "te", 2,
+                                                type_kind, TYPE_BYTE);
+                default:
+                    return false;
+            }
+        }
+        case 'C':
+            return parser_check_keyword(parser, source + 1, "ar", 2, type_kind,
+                                        TYPE_CHAR);
+        case 'I':
+            return parser_check_keyword(parser, source + 1, "nt", 2, type_kind,
+                                        TYPE_INT);
+        case 'L':
+            return parser_check_keyword(parser, source + 1, "ong", 3, type_kind,
+                                        TYPE_LONG);
+        case 'S': {
+            switch (source[1]) {
+                case 'h':
+                    return parser_check_keyword(parser, source + 2, "ort", 3,
+                                                type_kind, TYPE_SHORT);
+                case 't':
+                    return parser_check_keyword(parser, source + 2, "tring", 5,
+                                                type_kind, TYPE_STRING);
+                default:
+                    return false;
+            }
+        }
+        default:
+            return false;
+    }
+}
 
 static parser_t parser_init(const char* file_name0, const char* source,
                             int source_len) {
