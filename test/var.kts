@@ -30,3 +30,7 @@ if (true)
     println(a+b+c+d)
   }
 }
+
+// Initialize a variable with another variable
+val x : Long = 2 * a
+println(x)

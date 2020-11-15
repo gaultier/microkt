@@ -3,3 +3,6 @@ microktc_debug
 *.dSYM
 test/*
 !test/*.kts
+META-INF
+**/.class
+**/.jar
