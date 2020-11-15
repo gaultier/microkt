@@ -40,6 +40,43 @@ static ast_node_t* parser_current_block(parser_t* parser) {
     return &parser->par_nodes[parser->par_current_scope_i];
 }
 
+// TODO: optimize, currently it is O(n*m) where n= # of stmt and m = # of var
+// def per scope
+static res_t parser_resolve_var(const parser_t* parser, int tok_i,
+                                int* var_def_i) {
+    const char* var_source = NULL;
+    int var_source_len = 0;
+    parser_tok_source(parser, tok_i, &var_source, &var_source_len);
+
+    int current_scope_i = parser->par_current_scope_i;
+    while (current_scope_i >= 0) {
+        const ast_node_t* block = &parser->par_nodes[current_scope_i];
+        const block_t b = block->node_n.node_block;
+
+        for (int i = 0; i < (int)buf_size(b.bl_nodes_i); i++) {
+            const int stmt_i = b.bl_nodes_i[i];
+            const ast_node_t* const stmt = &parser->par_nodes[stmt_i];
+            if (stmt->node_kind != NODE_VAR_DEF) continue;
+
+            const char* var_def_source = NULL;
+            int var_def_source_len = 0;
+            parser_tok_source(parser, tok_i, &var_def_source,
+                              &var_def_source_len);
+
+            if (var_def_source_len == var_source_len &&
+                memcmp(var_def_source, var_source, var_source_len)) {
+                *var_def_i = stmt_i;
+                return RES_OK;
+            }
+        }
+
+        current_scope_i = b.bl_parent_scope_i;
+    }
+
+    log_debug("var `%.*s` could not be resolved", var_source_len, var_source);
+    return RES_NONE;
+}
+
 static int parser_make_type(parser_t* parser,
                             type_kind_t type_kind) {  // Returns type_i
                                                       // TODO: deduplicate?
