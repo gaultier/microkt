@@ -62,8 +62,9 @@ typedef enum {
     NODE_NEQ,
     NODE_NOT,
     NODE_IF,
+    NODE_BLOCK,
     NODE_VAR_DEF,
-    NODE_BLOCK,  // block
+    NODE_VAR,
 } ast_node_kind_t;
 
 const char node_kind_to_str[][30] = {
@@ -85,6 +86,7 @@ const char node_kind_to_str[][30] = {
     [NODE_IF] = "If",
     [NODE_BLOCK] = "Block",
     [NODE_VAR_DEF] = "VarDef",
+    [NODE_VAR] = "Var",
 };
 
 typedef struct {
@@ -106,6 +108,10 @@ typedef struct {
         vd_stack_offset;
 } var_def_t;
 
+typedef struct {
+    int va_tok_i, va_var_node_i;  // Node the variable refers to
+} var_t;
+
 struct ast_node_t {
     ast_node_kind_t node_kind;
     int node_type_i;
@@ -119,6 +125,7 @@ struct ast_node_t {
         if_t node_if;            // NODE_IF
         block_t node_block;      // NODE_BLOCK
         var_def_t node_var_def;  // NODE_VAR_DEF
+        var_t node_var;          // NODE_VAR
     } node_n;
 };
 

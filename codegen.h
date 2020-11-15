@@ -365,6 +365,18 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
 
             return;
         }
+        case NODE_VAR: {
+            const var_t var = expr->node_n.node_var;
+            const ast_node_t* const node_var_def =
+                &parser->par_nodes[var.va_var_node_i];
+            const var_def_t var_def = node_var_def->node_n.node_var_def;
+            const int offset = var_def.vd_stack_offset;
+
+            println("movq -%d(rbp), %%rax", offset);
+
+            return;
+        }
+            // Forbidden by the grammer
         case NODE_VAR_DEF:
             UNREACHABLE();
     }
@@ -399,7 +411,6 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
             return;
         }
         case NODE_VAR_DEF: {
-            // FIXME
             const var_def_t var_def = stmt->node_n.node_var_def;
             if (var_def.vd_init_node_i >= 0) {
                 const ast_node_t* const init_node =
@@ -410,6 +421,10 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
                 println("movq %%rax, -%d(%%rbp)",
                         stmt->node_n.node_var_def.vd_stack_offset);
             }
+            return;
+        }
+        case NODE_VAR: {
+            emit_expr(parser, stmt);
             return;
         }
     }
