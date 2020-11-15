@@ -60,12 +60,15 @@ static res_t parser_resolve_var(const parser_t* parser, int tok_i,
 
             const char* var_def_source = NULL;
             int var_def_source_len = 0;
-            parser_tok_source(parser, tok_i, &var_def_source,
-                              &var_def_source_len);
+            parser_tok_source(parser, stmt->node_n.node_var_def.vd_name_tok_i,
+                              &var_def_source, &var_def_source_len);
 
             if (var_def_source_len == var_source_len &&
                 memcmp(var_def_source, var_source, var_source_len) == 0) {
                 *var_def_i = stmt_i;
+
+                log_debug("resolved `%.*s` to var def %d", var_source_len,
+                          var_source, stmt_i);
                 return RES_OK;
             }
         }
@@ -368,10 +371,10 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
             const char* const name = &parser->par_source[pos_range.pr_start];
             const int name_len = pos_range.pr_end - pos_range.pr_start;
             log_debug_with_indent(
-                indent, "ast_node #%d %s type %s `%.*s`", node_i,
+                indent, "ast_node #%d %s type %s `%.*s` offset=%d", node_i,
                 node_kind_to_str[node->node_kind],
                 type_to_str[parser->par_types[node->node_type_i].ty_kind],
-                name_len, name);
+                name_len, name, var_def.vd_stack_offset);
 
             if (var_def.vd_init_node_i >= 0)
                 ast_node_dump(nodes, parser, var_def.vd_init_node_i,
@@ -394,10 +397,10 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
 #endif
 
             log_debug_with_indent(
-                indent, "ast_node #%d %s type %s `%.*s`", node_i,
+                indent, "ast_node #%d %s type %s `%.*s` offset=%d", node_i,
                 node_kind_to_str[node->node_kind],
                 type_to_str[parser->par_types[node->node_type_i].ty_kind],
-                name_len, name);
+                name_len, name, var_def.vd_stack_offset);
 
             break;
         }
@@ -1341,7 +1344,7 @@ static res_t parser_parse_property_declaration(parser_t* parser,
     if (parser_expect_token(parser, &name_tok_i, TOK_ID_IDENTIFIER) != RES_OK)
         return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
 
-    if (parser_expect_token(parser, &name_tok_i, TOK_ID_COLON) != RES_OK)
+    if (parser_expect_token(parser, &dummy, TOK_ID_COLON) != RES_OK)
         return parser_err_unexpected_token(parser, TOK_ID_COLON);
 
     if (parser_expect_token(parser, &type_tok_i, TOK_ID_IDENTIFIER) != RES_OK)
@@ -1364,11 +1367,12 @@ static res_t parser_parse_property_declaration(parser_t* parser,
         log_debug("user types not yet supported: type_tok_i=%d", type_tok_i);
         UNIMPLEMENTED();
     }
-    log_debug("parsed type %s", type_to_str[type_kind]);
-
     const int type_i = parser_make_type(parser, type_kind);
+    const int type_size = parser->par_types[type_i].ty_size;
+    log_debug("parsed type %s size=%d offset=%d", type_to_str[type_kind],
+              type_size, parser->par_offset);
 
-    parser->par_offset += parser->par_types[type_i].ty_size;
+    parser->par_offset += type_size;
 
     const ast_node_t new_node =
         NODE_VAR_DEF(type_i, first_tok_i, name_tok_i, last_tok_i, init_node_i,
