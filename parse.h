@@ -24,6 +24,7 @@ typedef struct {
     bool par_is_tty;
     obj_t* par_objects;
     type_t* par_types;
+    int par_offset;  // Local variable stack offset inside the current function
 } parser_t;
 
 static res_t parser_parse_expr(parser_t* parser, int* new_node_i);
@@ -1248,12 +1249,12 @@ static res_t parser_parse_property_declaration(parser_t* parser,
     const int type_i = buf_size(parser->par_types) - 1;
 
     const ast_node_t new_node =
-        NODE_VAR_DEF(type_i, first_tok_i, name_tok_i, last_tok_i, init_node_i);
+        NODE_VAR_DEF(type_i, first_tok_i, name_tok_i, last_tok_i, init_node_i,
+                     parser->par_offset);
     buf_push(parser->par_nodes, new_node);
     *new_node_i = buf_size(parser->par_nodes) - 1;
 
-    // TODO: add obj
-    // TODO: add asm offset
+    parser->par_offset += type.ty_size;
 
     return RES_OK;
 }

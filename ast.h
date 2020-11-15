@@ -102,7 +102,8 @@ typedef struct {
 } block_t;
 
 typedef struct {
-    int vd_first_tok_i, vd_last_tok_i, vd_name_tok_i, vd_init_node_i;
+    int vd_first_tok_i, vd_last_tok_i, vd_name_tok_i, vd_init_node_i,
+        vd_stack_offset;
 } var_def_t;
 
 struct ast_node_t {
@@ -180,14 +181,15 @@ struct ast_node_t {
                                             .bl_last_tok_i = last_tok_i,   \
                                             .bl_nodes_i = nodes_i}}})
 
-#define NODE_VAR_DEF(type_i, first_tok_i, name_tok_i, last_tok_i, init_node_i) \
-    ((ast_node_t){                                                             \
-        .node_kind = NODE_VAR_DEF,                                             \
-        .node_type_i = type_i,                                                 \
-        .node_n = {.node_var_def = {.vd_first_tok_i = first_tok_i,             \
-                                    .vd_last_tok_i = last_tok_i,               \
-                                    .vd_name_tok_i = name_tok_i,               \
-                                    .vd_init_node_i = init_node_i}}})
+#define NODE_VAR_DEF(type_i, first_tok_i, name_tok_i, last_tok_i, init_node_i, \
+                     offset)                                                   \
+    ((ast_node_t){.node_kind = NODE_VAR_DEF,                                   \
+                  .node_type_i = type_i,                                       \
+                  .node_n = {.node_var_def = {.vd_first_tok_i = first_tok_i,   \
+                                              .vd_last_tok_i = last_tok_i,     \
+                                              .vd_name_tok_i = name_tok_i,     \
+                                              .vd_init_node_i = init_node_i,   \
+                                              .vd_stack_offset = offset}}})
 
 #define AS_BINARY(node) ((node).node_n.node_binary)
 
