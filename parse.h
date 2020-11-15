@@ -557,13 +557,11 @@ static token_id_t parser_peek(parser_t* parser) {
     PG_ASSERT_COND((int)buf_size(parser->par_token_ids), >, parser->par_tok_i,
                    "%d");
 
-    int i = parser->par_tok_i;
-
-    while (i < (int)buf_size(parser->par_token_ids)) {
-        const token_id_t id = parser->par_token_ids[i];
+    while (parser->par_tok_i < (int)buf_size(parser->par_token_ids)) {
+        const token_id_t id = parser->par_token_ids[parser->par_tok_i];
         if (id == TOK_ID_COMMENT) {
-            log_debug("Skipping over comment at pos=%d", i);
-            parser->par_tok_i = i++;
+            log_debug("Skipping over comment at pos=%d", parser->par_tok_i);
+            parser->par_tok_i += 1;
             continue;
         }
 
