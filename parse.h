@@ -563,7 +563,7 @@ static token_id_t parser_peek(parser_t* parser) {
         const token_id_t id = parser->par_token_ids[i];
         if (id == TOK_ID_COMMENT) {
             log_debug("Skipping over comment at pos=%d", i);
-            i += 1;
+            parser->par_tok_i = i++;
             continue;
         }
 
