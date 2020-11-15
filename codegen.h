@@ -368,7 +368,7 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
         case NODE_VAR_DEF:
             UNREACHABLE();
     }
-    log_debug("node_kind=%s", ast_node_kind_t_to_str[expr->node_kind]);
+    log_debug("node_kind=%s", node_kind_to_str[expr->node_kind]);
     UNREACHABLE();
 }
 
@@ -413,7 +413,7 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
             return;
         }
     }
-    log_debug("node_kind=%s", ast_node_kind_t_to_str[stmt->node_kind]);
+    log_debug("node_kind=%s", node_kind_to_str[stmt->node_kind]);
     UNREACHABLE();
 }
 

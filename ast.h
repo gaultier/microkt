@@ -66,7 +66,7 @@ typedef enum {
     NODE_BLOCK,  // block
 } ast_node_kind_t;
 
-const char ast_node_kind_t_to_str[][30] = {
+const char node_kind_to_str[][30] = {
     [NODE_BUILTIN_PRINTLN] = "Print",
     [NODE_KEYWORD_BOOL] = "Bool",
     [NODE_STRING] = "String",
