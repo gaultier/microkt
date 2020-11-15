@@ -792,6 +792,9 @@ static res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
     buf_push(parser->par_nodes, new_node);
     *new_node_i = (int)buf_size(parser->par_nodes) - 1;
 
+    // Reset current scope
+    parser->par_current_scope_i = current_scope_i;
+
     return RES_OK;
 }
 
