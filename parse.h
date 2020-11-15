@@ -36,6 +36,48 @@ static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i);
 static void parser_tok_source(const parser_t* parser, int tok_i,
                               const char** source, int* source_len);
 
+static int parser_make_type(parser_t* parser,
+                            type_kind_t type_kind) {  // Returns type_i
+                                                      // TODO: deduplicate?
+
+    type_t type = {.ty_kind = type_kind, .ty_size = 0};
+
+    switch (type_kind) {
+        case TYPE_LONG:
+        case TYPE_STRING:
+        case TYPE_ANY: {
+            type.ty_size = 8;
+            break;
+        }
+        case TYPE_INT: {
+            type.ty_size = 4;
+            break;
+        }
+        case TYPE_SHORT: {
+            type.ty_size = 2;
+            break;
+        }
+        case TYPE_BOOL:
+        case TYPE_BYTE:
+        case TYPE_CHAR: {
+            type.ty_size = 1;
+            break;
+        }
+        case TYPE_BUILTIN_PRINTLN:
+        case TYPE_UNIT: {
+            type.ty_size = 0;
+            break;
+        }
+            // User defined type
+        default:
+            UNIMPLEMENTED();
+    }
+
+    buf_push(parser->par_types, type);
+
+    return buf_size(parser->par_types) - 1;
+}
+
 static bool parser_check_keyword(const parser_t* parser,
                                  const char* source_start, const char suffix[],
                                  int suffix_len, type_kind_t* type_kind,
@@ -136,21 +178,21 @@ static parser_t parser_init(const char* file_name0, const char* source,
 
     type_t* types = NULL;
     buf_grow(types, 100);
-    buf_push(types,
-             ((type_t){.ty_kind = TYPE_UNIT,  // Hence TYPE_UNIT_I = 0
-                       .ty_size = 0}));
 
-    return (parser_t){.par_file_name0 = file_name0,
-                      .par_source = source,
-                      .par_source_len = source_len,
-                      .par_token_ids = token_ids,
-                      .par_nodes = NULL,
-                      .par_stmt_nodes = NULL,
-                      .par_tok_pos_ranges = tok_pos_s,
-                      .par_tok_i = 0,
-                      .par_lexer = lexer,
-                      .par_is_tty = isatty(2),
-                      .par_types = types};
+    parser_t parser = {.par_file_name0 = file_name0,
+                       .par_source = source,
+                       .par_source_len = source_len,
+                       .par_token_ids = token_ids,
+                       .par_nodes = NULL,
+                       .par_stmt_nodes = NULL,
+                       .par_tok_pos_ranges = tok_pos_s,
+                       .par_tok_i = 0,
+                       .par_lexer = lexer,
+                       .par_is_tty = isatty(2),
+                       .par_types = types};
+    parser_make_type(&parser, TYPE_UNIT);  // Hence TYPE_UNIT_I = 0
+
+    return parser;
 }
 
 static long long int parse_tok_to_long(const parser_t* parser, int tok_i) {
@@ -731,9 +773,7 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         return parser_parse_builtin_println(parser, new_node_i);
 
     if (parser_match(parser, &tok_i, 2, TOK_ID_TRUE, TOK_ID_FALSE)) {
-        buf_push(parser->par_types,
-                 ((type_t){.ty_size = 1, .ty_kind = TYPE_BOOL}));
-        const int type_i = buf_size(parser->par_types) - 1;
+        const int type_i = parser_make_type(parser, TYPE_BOOL);
 
         const pos_range_t pos_range = parser->par_tok_pos_ranges[tok_i];
         const char* const source = &parser->par_source[pos_range.pr_start];
@@ -747,9 +787,7 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         return RES_OK;
     }
     if (parser_match(parser, &tok_i, 1, TOK_ID_STRING)) {
-        buf_push(parser->par_types,
-                 ((type_t){.ty_size = 8, .ty_kind = TYPE_STRING}));
-        const int type_i = buf_size(parser->par_types) - 1;
+        const int type_i = parser_make_type(parser, TYPE_STRING);
 
         const obj_t obj = OBJ_GLOBAL_VAR(type_i, tok_i);
         buf_push(parser->par_objects, obj);
@@ -764,9 +802,7 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         return RES_OK;
     }
     if (parser_match(parser, &tok_i, 1, TOK_ID_LONG)) {
-        buf_push(parser->par_types,
-                 ((type_t){.ty_size = 8, .ty_kind = TYPE_LONG}));
-        const int type_i = buf_size(parser->par_types) - 1;
+        const int type_i = parser_make_type(parser, TYPE_LONG);
 
         const long long int val = parse_tok_to_long(parser, tok_i);
         const ast_node_t new_node = NODE_LONG(tok_i, type_i, val);
@@ -776,9 +812,7 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         return RES_OK;
     }
     if (parser_match(parser, &tok_i, 1, TOK_ID_CHAR)) {
-        buf_push(parser->par_types,
-                 ((type_t){.ty_size = 1, .ty_kind = TYPE_CHAR}));
-        const int type_i = buf_size(parser->par_types) - 1;
+        const int type_i = parser_make_type(parser, TYPE_CHAR);
 
         const long long int val = parse_tok_to_char(parser, tok_i);
         const ast_node_t new_node = NODE_CHAR(tok_i, type_i, val);
@@ -1014,9 +1048,7 @@ static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
         if (lhs_type_kind != rhs_type_kind)
             return parser_err_non_matching_types(parser, lhs_i, rhs_i);
 
-        buf_push(parser->par_types,
-                 ((type_t){.ty_size = 1, .ty_kind = TYPE_BOOL}));
-        const int type_i = buf_size(parser->par_types) - 1;
+        const int type_i = parser_make_type(parser, TYPE_BOOL);
 
         ast_node_t new_node;
 
@@ -1065,9 +1097,7 @@ static res_t parser_parse_equality(parser_t* parser, int* new_node_i) {
         if (lhs_type_kind != rhs_type_kind)
             return parser_err_non_matching_types(parser, lhs_i, rhs_i);
 
-        buf_push(parser->par_types,
-                 ((type_t){.ty_size = 1, .ty_kind = TYPE_BOOL}));
-        const int type_i = buf_size(parser->par_types) - 1;
+        const int type_i = parser_make_type(parser, TYPE_BOOL);
 
         ast_node_t new_node;
 
@@ -1191,9 +1221,7 @@ static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i) {
             RES_OK)
             return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
 
-        buf_push(parser->par_types,
-                 ((type_t){.ty_size = 8, .ty_kind = TYPE_BUILTIN_PRINTLN}));
-        const int type_i = buf_size(parser->par_types) - 1;
+        const int type_i = parser_make_type(parser, TYPE_BUILTIN_PRINTLN);
         const ast_node_t new_node =
             NODE_PRINTLN(arg_i, keyword_print_i, rparen, type_i);
         buf_push(parser->par_nodes, new_node);
@@ -1244,9 +1272,7 @@ static res_t parser_parse_property_declaration(parser_t* parser,
     }
     log_debug("parsed type %s", type_to_str[type_kind]);
 
-    const type_t type = {.ty_kind = type_kind, .ty_size = 0};  // FIXME
-    buf_push(parser->par_types, type);
-    const int type_i = buf_size(parser->par_types) - 1;
+    const int type_i = parser_make_type(parser, type_kind);
 
     const ast_node_t new_node =
         NODE_VAR_DEF(type_i, first_tok_i, name_tok_i, last_tok_i, init_node_i,
@@ -1254,7 +1280,8 @@ static res_t parser_parse_property_declaration(parser_t* parser,
     buf_push(parser->par_nodes, new_node);
     *new_node_i = buf_size(parser->par_nodes) - 1;
 
-    parser->par_offset += type.ty_size;
+    parser->par_offset +=
+        parser->par_types[type_i].ty_size;  // TODO: alignment?
 
     return RES_OK;
 }
