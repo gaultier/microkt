@@ -8,6 +8,7 @@
 #include "lex.h"
 
 static const int TYPE_UNIT_I = 0;  // see parser_init
+static const int TYPE_ANY_I = 1;   // see parser_init
 
 typedef struct {
     token_id_t* par_token_ids;
@@ -52,6 +53,9 @@ static res_t parser_resolve_var(const parser_t* parser, int tok_i,
     while (current_scope_i >= 0) {
         const ast_node_t* block = &parser->par_nodes[current_scope_i];
         const block_t b = block->node_n.node_block;
+
+        log_debug("resolving var %.*s in scope %d", var_source_len, var_source,
+                  current_scope_i);
 
         for (int i = 0; i < (int)buf_size(b.bl_nodes_i); i++) {
             const int stmt_i = b.bl_nodes_i[i];
@@ -241,6 +245,7 @@ static parser_t parser_init(const char* file_name0, const char* source,
                        .par_types = types,
                        .par_current_scope_i = 0};
     parser_make_type(&parser, TYPE_UNIT);  // Hence TYPE_UNIT_I = 0
+    parser_make_type(&parser, TYPE_ANY);   // Hence TYPE_ANY_I = 1
 
     return parser;
 }
@@ -287,7 +292,7 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
     switch (node->node_kind) {
         case NODE_BUILTIN_PRINTLN: {
             log_debug_with_indent(
-                indent, "ast_node #%d %s type %s", node_i,
+                indent, "ast_node #%d %s type=%s", node_i,
                 node_kind_to_str[node->node_kind],
                 type_to_str[parser->par_types[node->node_type_i].ty_kind]);
             ast_node_dump(nodes, parser,
@@ -305,7 +310,7 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
         case NODE_SUBTRACT:
         case NODE_ADD: {
             log_debug_with_indent(
-                indent, "ast_node #%d %s type %s", node_i,
+                indent, "ast_node #%d %s type=%s", node_i,
                 node_kind_to_str[node->node_kind],
                 type_to_str[parser->par_types[node->node_type_i].ty_kind]);
             ast_node_dump(nodes, parser, node->node_n.node_binary.bi_lhs_i,
@@ -317,7 +322,7 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
         }
         case NODE_IF: {
             log_debug_with_indent(
-                indent, "ast_node #%d %s type %s", node_i,
+                indent, "ast_node #%d %s type=%s", node_i,
                 node_kind_to_str[node->node_kind],
                 type_to_str[parser->par_types[node->node_type_i].ty_kind]);
             ast_node_dump(nodes, parser, node->node_n.node_if.if_node_cond_i,
@@ -333,7 +338,7 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
         }
         case NODE_NOT: {
             log_debug_with_indent(
-                indent, "ast_node #%d %s type %s", node_i,
+                indent, "ast_node #%d %s type=%s", node_i,
                 node_kind_to_str[node->node_kind],
                 type_to_str[parser->par_types[node->node_type_i].ty_kind]);
             ast_node_dump(nodes, parser, node->node_n.node_unary, indent + 2);
@@ -345,18 +350,19 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
         case NODE_CHAR:
         case NODE_STRING: {
             log_debug_with_indent(
-                indent, "ast_node #%d %s type %s", node_i,
+                indent, "ast_node #%d %s type=%s", node_i,
                 node_kind_to_str[node->node_kind],
                 type_to_str[parser->par_types[node->node_type_i].ty_kind]);
             break;
         }
         case NODE_BLOCK: {
-            log_debug_with_indent(
-                indent, "ast_node #%d %s type %s", node_i,
-                node_kind_to_str[node->node_kind],
-                type_to_str[parser->par_types[node->node_type_i].ty_kind]);
-
             const block_t block = node->node_n.node_block;
+            log_debug_with_indent(
+                indent, "ast_node #%d %s type=%s parent_scope=%d", node_i,
+                node_kind_to_str[node->node_kind],
+                type_to_str[parser->par_types[node->node_type_i].ty_kind],
+                block.bl_parent_scope_i);
+
             for (int i = 0; i < (int)buf_size(block.bl_nodes_i); i++)
                 ast_node_dump(nodes, parser, block.bl_nodes_i[i], indent + 2);
 
@@ -371,7 +377,7 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
             const char* const name = &parser->par_source[pos_range.pr_start];
             const int name_len = pos_range.pr_end - pos_range.pr_start;
             log_debug_with_indent(
-                indent, "ast_node #%d %s type %s `%.*s` offset=%d", node_i,
+                indent, "ast_node #%d %s type=%s name=%.*s offset=%d", node_i,
                 node_kind_to_str[node->node_kind],
                 type_to_str[parser->par_types[node->node_type_i].ty_kind],
                 name_len, name, var_def.vd_stack_offset);
@@ -397,7 +403,7 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
 #endif
 
             log_debug_with_indent(
-                indent, "ast_node #%d %s type %s `%.*s` offset=%d", node_i,
+                indent, "ast_node #%d %s type=%s name=%.*s offset=%d", node_i,
                 node_kind_to_str[node->node_kind],
                 type_to_str[parser->par_types[node->node_type_i].ty_kind],
                 name_len, name, var_def.vd_stack_offset);
@@ -1263,6 +1269,14 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
 
     res_t res = RES_NONE;
     int* nodes_i = NULL;
+    const ast_node_t block = NODE_BLOCK(TYPE_ANY_I, first_tok_i, last_tok_i,
+                                        nodes_i, parser->par_current_scope_i);
+    buf_push(parser->par_nodes, block);
+    const int current_scope_i = parser->par_current_scope_i;
+    parser->par_current_scope_i = *new_node_i = buf_size(parser->par_nodes) - 1;
+
+    log_debug("new block=%d parent=%d", *new_node_i,
+              block.node_n.node_block.bl_parent_scope_i);
     if ((res = parser_parse_stmts(parser, &nodes_i)) != RES_OK) {
         log_debug("failed to parse expr in optional curlies %d", res);
         return res;
@@ -1276,14 +1290,9 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
                            ? parser->par_nodes[last_node_i].node_type_i
                            : TYPE_UNIT_I;
 
-    const ast_node_t block = NODE_BLOCK(type_i, first_tok_i, last_tok_i,
-                                        nodes_i, parser->par_current_scope_i);
-    buf_push(parser->par_nodes, block);
-    parser->par_current_scope_i = *new_node_i = buf_size(parser->par_nodes) - 1;
+    parser->par_nodes[*new_node_i].node_type_i = type_i;
 
-    log_debug("new block %d parent=%d", *new_node_i,
-              block.node_n.node_block.bl_parent_scope_i);
-
+    parser->par_current_scope_i = current_scope_i;
     return res;
 }
 

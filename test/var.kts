@@ -18,3 +18,15 @@ if (true)
 {
   println(a+1)
 }
+
+// Sub scope referring to a var in the parent scope and its current variables
+if (true)
+{
+  val c: Long = 999
+  if (false) {
+    val d: Long = 2
+  } else {
+    val d: Long = 99
+    println(a+b+c+d)
+  }
+}
