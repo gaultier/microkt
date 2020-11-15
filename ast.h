@@ -198,6 +198,12 @@ struct ast_node_t {
                                               .vd_init_node_i = init_node_i,   \
                                               .vd_stack_offset = offset}}})
 
+#define NODE_VAR(type_i, tok_i, var_node_i)                  \
+    ((ast_node_t){.node_kind = NODE_VAR,                     \
+                  .node_type_i = type_i,                     \
+                  .node_n = {.node_var = {.va_tok_i = tok_i, \
+                                          .va_var_node_i = var_node_i}}})
+
 #define AS_BINARY(node) ((node).node_n.node_binary)
 
 #define AS_PRINTLN(node) ((node).node_n.node_builtin_println)

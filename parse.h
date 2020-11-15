@@ -843,6 +843,18 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
 
         return RES_OK;
     }
+    if (parser_match(parser, &tok_i, 1, TOK_ID_IDENTIFIER)) {
+        int var_node_i = 0;  // FIXME
+
+        const ast_node_t* const node_var_def = &parser->par_nodes[var_node_i];
+        const int type_i = node_var_def->node_type_i;
+
+        const ast_node_t new_node = NODE_VAR(type_i, tok_i, var_node_i);
+        buf_push(parser->par_nodes, new_node);
+        *new_node_i = (int)buf_size(parser->par_nodes) - 1;
+
+        return RES_OK;
+    }
     if (parser_peek(parser) == TOK_ID_IF)
         return parser_parse_if_expr(parser, new_node_i);
 
