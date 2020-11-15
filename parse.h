@@ -25,6 +25,7 @@ typedef struct {
     obj_t* par_objects;
     type_t* par_types;
     int par_offset;  // Local variable stack offset inside the current function
+    int par_current_scope_i;
 } parser_t;
 
 static res_t parser_parse_expr(parser_t* parser, int* new_node_i);
@@ -189,7 +190,8 @@ static parser_t parser_init(const char* file_name0, const char* source,
                        .par_tok_i = 0,
                        .par_lexer = lexer,
                        .par_is_tty = isatty(2),
-                       .par_types = types};
+                       .par_types = types,
+                       .par_current_scope_i = -1};
     parser_make_type(&parser, TYPE_UNIT);  // Hence TYPE_UNIT_I = 0
 
     return parser;
@@ -1214,10 +1216,10 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
                            ? parser->par_nodes[last_node_i].node_type_i
                            : TYPE_UNIT_I;
 
-    const ast_node_t block =
-        NODE_BLOCK(type_i, first_tok_i, last_tok_i, nodes_i);
+    const ast_node_t block = NODE_BLOCK(type_i, first_tok_i, last_tok_i,
+                                        nodes_i, parser->par_current_scope_i);
     buf_push(parser->par_nodes, block);
-    *new_node_i = buf_size(parser->par_nodes) - 1;
+    parser->par_current_scope_i = *new_node_i = buf_size(parser->par_nodes) - 1;
 
     log_debug("new block %d", *new_node_i);
 

@@ -100,7 +100,7 @@ typedef struct {
 } if_t;
 
 typedef struct {
-    int bl_first_tok_i, bl_last_tok_i, *bl_nodes_i;
+    int bl_first_tok_i, bl_last_tok_i, *bl_nodes_i, bl_parent_scope_i;
 } block_t;
 
 typedef struct {
@@ -181,12 +181,14 @@ struct ast_node_t {
                                       .if_node_then_i = node_then_i,       \
                                       .if_node_else_i = node_else_i})}})
 
-#define NODE_BLOCK(type_i, first_tok_i, last_tok_i, nodes_i)               \
-    ((ast_node_t){.node_kind = NODE_BLOCK,                                 \
-                  .node_type_i = type_i,                                   \
-                  .node_n = {.node_block = {.bl_first_tok_i = first_tok_i, \
-                                            .bl_last_tok_i = last_tok_i,   \
-                                            .bl_nodes_i = nodes_i}}})
+#define NODE_BLOCK(type_i, first_tok_i, last_tok_i, nodes_i, parent_scope_i) \
+    ((ast_node_t){                                                           \
+        .node_kind = NODE_BLOCK,                                             \
+        .node_type_i = type_i,                                               \
+        .node_n = {.node_block = {.bl_first_tok_i = first_tok_i,             \
+                                  .bl_last_tok_i = last_tok_i,               \
+                                  .bl_nodes_i = nodes_i,                     \
+                                  .bl_parent_scope_i = parent_scope_i}}})
 
 #define NODE_VAR_DEF(type_i, first_tok_i, name_tok_i, last_tok_i, init_node_i, \
                      offset)                                                   \
