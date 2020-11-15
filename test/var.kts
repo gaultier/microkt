@@ -34,3 +34,7 @@ if (true)
 // Initialize a variable with another variable
 val x : Long = 2 * a
 println(x)
+
+// Conditionally initialize
+val p: Long = if(x==20) a - 5 else b
+println(p)
