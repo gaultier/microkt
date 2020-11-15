@@ -435,7 +435,6 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
 static void emit(const parser_t* parser, FILE* asm_file) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_nodes, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)parser->par_stmt_nodes, !=, NULL, "%p");
 
     output_file = asm_file;
     println(".data");
@@ -462,10 +461,9 @@ static void emit(const parser_t* parser, FILE* asm_file) {
     const int aligned_stack_size = emit_align_to_16(parser->par_offset);
     fn_prolog(aligned_stack_size);
 
-    for (int i = 0; i < (int)buf_size(parser->par_stmt_nodes); i++) {
-        const int stmt_i = parser->par_stmt_nodes[i];
-        const ast_node_t* stmt = &parser->par_nodes[stmt_i];
-        emit_stmt(parser, stmt);
-    }
+    // Initial scope is at index=0
+    const ast_node_t* const stmt = &parser->par_nodes[0];
+    emit_stmt(parser, stmt);
+
     emit_program_epilog();
 }

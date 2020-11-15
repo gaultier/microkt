@@ -16,9 +16,6 @@ typedef struct {
     const char* par_file_name0;
     int par_tok_i;
     ast_node_t* par_nodes;  // Arena of all nodes
-    int* par_stmt_nodes;    // Array of statements. Each statement is
-                            // stored as the node index which is the
-                            // root of the statement in the ast
     pos_range_t* par_tok_pos_ranges;
     lexer_t par_lexer;
     bool par_is_tty;
@@ -37,9 +34,16 @@ static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i);
 static void parser_tok_source(const parser_t* parser, int tok_i,
                               const char** source, int* source_len);
 
+static ast_node_t* parser_current_block(parser_t* parser) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+
+    return &parser->par_nodes[parser->par_current_scope_i];
+}
+
 static int parser_make_type(parser_t* parser,
                             type_kind_t type_kind) {  // Returns type_i
                                                       // TODO: deduplicate?
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
 
     type_t type = {.ty_kind = type_kind, .ty_size = 0};
 
@@ -180,18 +184,22 @@ static parser_t parser_init(const char* file_name0, const char* source,
     type_t* types = NULL;
     buf_grow(types, 100);
 
+    ast_node_t* nodes = NULL;
+
+    // Add initial scope
+    buf_push(nodes, NODE_BLOCK(TYPE_UNIT_I, -1, -1, NULL, -1));
+
     parser_t parser = {.par_file_name0 = file_name0,
                        .par_source = source,
                        .par_source_len = source_len,
                        .par_token_ids = token_ids,
-                       .par_nodes = NULL,
-                       .par_stmt_nodes = NULL,
+                       .par_nodes = nodes,
                        .par_tok_pos_ranges = tok_pos_s,
                        .par_tok_i = 0,
                        .par_lexer = lexer,
                        .par_is_tty = isatty(2),
                        .par_types = types,
-                       .par_current_scope_i = -1};
+                       .par_current_scope_i = 0};
     parser_make_type(&parser, TYPE_UNIT);  // Hence TYPE_UNIT_I = 0
 
     return parser;
@@ -742,6 +750,7 @@ static res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
     if ((res = parser_expect_token(parser, &dummy, TOK_ID_RPAREN)) != RES_OK)
         return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
 
+    const int current_scope_i = parser->par_current_scope_i;
     if ((res = parser_parse_control_structure_body(parser, &node_then_i)) !=
         RES_OK) {
         log_debug("failed to parse if-branch %d", res);
@@ -1221,7 +1230,8 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
     buf_push(parser->par_nodes, block);
     parser->par_current_scope_i = *new_node_i = buf_size(parser->par_nodes) - 1;
 
-    log_debug("new block %d", *new_node_i);
+    log_debug("new block %d parent=%d", *new_node_i,
+              block.node_n.node_block.bl_parent_scope_i);
 
     return res;
 }
@@ -1354,7 +1364,8 @@ static res_t parser_parse(parser_t* parser) {
 
     if ((res = parser_parse_stmt(parser, &new_node_i)) == RES_OK) {
         ast_node_dump(parser->par_nodes, parser, new_node_i, 0);
-        buf_push(parser->par_stmt_nodes, new_node_i);
+        buf_push(parser_current_block(parser)->node_n.node_block.bl_nodes_i,
+                 new_node_i);
 
     } else
         return res;
@@ -1362,8 +1373,8 @@ static res_t parser_parse(parser_t* parser) {
     while (!parser_is_at_end(parser)) {
         if ((res = parser_parse_stmt(parser, &new_node_i)) == RES_OK) {
             ast_node_dump(parser->par_nodes, parser, new_node_i, 0);
-            buf_push(parser->par_stmt_nodes, new_node_i);
-
+            buf_push(parser_current_block(parser)->node_n.node_block.bl_nodes_i,
+                     new_node_i);
             continue;
         } else if (res == RES_NONE)
             return RES_OK;
