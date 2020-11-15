@@ -28,6 +28,9 @@ BEGIN {
     tests[8] = "test/if"
     expected_outputs[8] = "42\n99\nfalse\ntrue\nA\nB\nhello\nworld\n2\n2\n2\n999\nhi\nhello there\nI have the high ground\nmay the force be with you\nI hate sand\n"
 
+    tests[9] = "test/var"
+    expected_outputs[9] = "20\n"
+
     is_tty = system("test -t 1") == 0
 
     if (is_tty) {
