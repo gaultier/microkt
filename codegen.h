@@ -14,7 +14,6 @@ static const long long int syscall_exit = 60;
 #endif
 
 static FILE* output_file = NULL;
-static int stack_depth = 0;  // FIXME
 
 static void emit_stmt(const parser_t* parser, const ast_node_t* stmt);
 
@@ -30,20 +29,22 @@ println(char* fmt, ...) {
     fprintf(output_file, "\n");
 }
 
-static void fn_prolog() {
+// The System V ABI requires a 16-bit aligned stack
+static int emit_align_to_16(int stack_size) {
+    return (stack_size + 16 - 1) / 16 * 16;
+}
+
+static void fn_prolog(int aligned_stack_size) {
     println("pushq %%rbp");
     println("movq %%rsp, %%rbp");
 
-    // Hardcoded stack size
-    stack_depth = 16;
-    println("subq $%d, %%rsp\n", stack_depth);
+    println("subq $%d, %%rsp\n", aligned_stack_size);
 }
 
-// static void fn_epilog() {
-//    println("addq $%d, %%rsp", stack_depth);  // Hardcoded stack size
+// static void fn_epilog(int aligned_stack_size) {
+//    println("addq $%d, %%rsp", aligned_stack_size);
 //    println("popq %%rbp");
 //    println("ret\n");
-//    stack_depth = 0;
 //}
 
 static void emit_program_epilog() {
@@ -54,7 +55,7 @@ static void emit_program_epilog() {
 
 static void emit_push() { println("push %%rax"); }
 
-static void emit_print_long() {
+static void emit_stdlib() {
     println(
         "__println_bool:\n"
         "    test %%rdi, %%rdi\n"
@@ -436,10 +437,14 @@ static void emit(const parser_t* parser, FILE* asm_file) {
     }
 
     println("\n.text");
-    emit_print_long();
+    emit_stdlib();
     println(".global _main");
     println("_main:");
-    fn_prolog();
+
+    log_debug("offset=%d", parser->par_offset);
+
+    const int aligned_stack_size = emit_align_to_16(parser->par_offset);
+    fn_prolog(aligned_stack_size);
 
     for (int i = 0; i < (int)buf_size(parser->par_stmt_nodes); i++) {
         const int stmt_i = parser->par_stmt_nodes[i];
