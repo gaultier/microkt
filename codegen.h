@@ -186,8 +186,10 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             const obj_t obj = parser->par_objects[obj_i];
             PG_ASSERT_COND(obj.obj_kind, ==, OBJ_GLOBAL_VAR, "%d");
 
-            const global_var_t var = obj.obj.obj_global_var;
-            println("movq $%d, %%r8", var.gl_source_len);
+            const char* source = NULL;
+            int source_len = 0;
+            parser_tok_source(parser, obj.obj_tok_i, &source, &source_len);
+            println("movq $%d, %%r8", source_len);
             return;
         }
         case NODE_CHAR: {
@@ -427,8 +429,10 @@ static void emit(const parser_t* parser, FILE* asm_file) {
         const obj_t obj = parser->par_objects[i];
         if (obj.obj_kind != OBJ_GLOBAL_VAR) UNIMPLEMENTED();
 
-        const global_var_t var = obj.obj.obj_global_var;
-        println(".L%d: .asciz \"%.*s\"", i, var.gl_source_len, var.gl_source);
+        const char* source = NULL;
+        int source_len = 0;
+        parser_tok_source(parser, obj.obj_tok_i, &source, &source_len);
+        println(".L%d: .asciz \"%.*s\"", i, source_len, source);
     }
 
     println("\n.text");

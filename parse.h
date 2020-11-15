@@ -750,10 +750,7 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
                  ((type_t){.ty_size = 8, .ty_kind = TYPE_STRING}));
         const int type_i = buf_size(parser->par_types) - 1;
 
-        const char* source = NULL;
-        int source_len = 0;
-        parser_tok_source(parser, tok_i, &source, &source_len);
-        const obj_t obj = OBJ_GLOBAL_VAR(type_i, tok_i, source, source_len);
+        const obj_t obj = OBJ_GLOBAL_VAR(type_i, tok_i);
         buf_push(parser->par_objects, obj);
         const int obj_i = buf_size(parser->par_objects) - 1;
 
@@ -761,8 +758,7 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         buf_push(parser->par_nodes, new_node);
         *new_node_i = (int)buf_size(parser->par_nodes) - 1;
 
-        log_debug("new object: type=TYPE_STRING tok_i=%d source_len=%d",
-                  obj.obj_tok_i, source_len);
+        log_debug("new object: type=TYPE_STRING tok_i=%d", obj.obj_tok_i);
 
         return RES_OK;
     }

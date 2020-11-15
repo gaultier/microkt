@@ -26,19 +26,11 @@ typedef struct {
     type_kind_t ty_kind;
 } type_t;
 
-typedef struct {
-    const char* gl_source;
-    int gl_source_len;
-} global_var_t;
-
 typedef enum { OBJ_GLOBAL_VAR } obj_kind_t;
 
 typedef struct {
     int obj_type_i, obj_tok_i;
     obj_kind_t obj_kind;
-    union {
-        global_var_t obj_global_var;  // OBJ_GLOBAL_VAR
-    } obj;
 } obj_t;
 
 struct ast_node_t;
@@ -201,10 +193,7 @@ struct ast_node_t {
 
 #define AS_PRINTLN(node) ((node).node_n.node_builtin_println)
 
-#define OBJ_GLOBAL_VAR(type_i, tok_i, source, source_len) \
-    ((obj_t){.obj_kind = OBJ_GLOBAL_VAR,                  \
-             .obj_type_i = type_i,                        \
-             .obj_tok_i = tok_i,                          \
-             .obj = {.obj_global_var = (global_var_t){    \
-                         .gl_source = source, .gl_source_len = source_len}}})
+#define OBJ_GLOBAL_VAR(type_i, tok_i) \
+    ((obj_t){                         \
+        .obj_kind = OBJ_GLOBAL_VAR, .obj_type_i = type_i, .obj_tok_i = tok_i})
 
