@@ -1291,6 +1291,7 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
                            : TYPE_UNIT_I;
 
     parser->par_nodes[*new_node_i].node_type_i = type_i;
+    parser->par_nodes[*new_node_i].node_n.node_block.bl_nodes_i = nodes_i;
 
     parser->par_current_scope_i = current_scope_i;
     return res;
