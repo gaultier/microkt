@@ -407,7 +407,8 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
 
                 emit_expr(parser, init_node);
 
-                println("push %%rax");
+                println("movq %%rax, -%d(%%rbp)",
+                        stmt->node_n.node_var_def.vd_stack_offset);
             }
             return;
         }
