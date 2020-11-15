@@ -372,7 +372,7 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             const var_def_t var_def = node_var_def->node_n.node_var_def;
             const int offset = var_def.vd_stack_offset;
 
-            println("movq -%d(rbp), %%rax", offset);
+            println("movq -%d(%%rbp), %%rax", offset);
 
             return;
         }

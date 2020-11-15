@@ -64,7 +64,7 @@ static res_t parser_resolve_var(const parser_t* parser, int tok_i,
                               &var_def_source_len);
 
             if (var_def_source_len == var_source_len &&
-                memcmp(var_def_source, var_source, var_source_len)) {
+                memcmp(var_def_source, var_source, var_source_len) == 0) {
                 *var_def_i = stmt_i;
                 return RES_OK;
             }
