@@ -18,6 +18,7 @@ typedef enum {
     RES_FAILED_LD,
     RES_NON_MATCHING_TYPES,
     RES_EXPECTED_PRIMARY,
+    RES_UNKNOWN_VAR,
 } res_t;
 
 static const char res_to_str[][100] = {
@@ -33,6 +34,7 @@ static const char res_to_str[][100] = {
     [RES_NON_MATCHING_TYPES] =
         "%s%s:%d:%d:%sTypes do not match. Expected %s, got %s\n",
     [RES_EXPECTED_PRIMARY] = "%s%s:%d:%d:%sExpected primary, got %s\n",
+    [RES_UNKNOWN_VAR] = "%s%s:%d:%d:%sUnknown variable %s\n",
 };
 
 #define STR(s) #s
