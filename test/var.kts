@@ -14,6 +14,7 @@ println(b+a)
 
 
 // Sub scope referring to a var in the parent scope
+if (true)
 {
   println(a+1)
 }
