@@ -11,3 +11,9 @@ val b: Long = 500
 
 println(b)
 println(b+a)
+
+
+// Sub scope referring to a var in the parent scope
+{
+  println(a+1)
+}
