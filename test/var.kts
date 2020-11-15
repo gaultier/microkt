@@ -24,7 +24,7 @@ if (true)
 {
   val c: Long = 999
   if (false) {
-    val d: Long = 2
+    val d: Long = 2 // This variable should not interfere
   } else {
     val d: Long = 99
     println(a+b+c+d)
