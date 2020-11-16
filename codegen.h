@@ -385,8 +385,16 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
                 &parser->par_nodes[var.va_var_node_i];
             const var_def_t var_def = node_var_def->node_n.node_var_def;
             const int offset = var_def.vd_stack_offset;
+            const int type_size = parser->par_types[expr->node_type_i].ty_size;
 
-            println("movq -%d(%%rbp), %%rax", offset);
+            if (type_size == 1)
+                println("movsbl -%d(%%rbp), %%eax", offset);
+            else if (type_size == 2)
+                println("movswl -%d(%%rbp), %%eax", offset);
+            else if (type_size == 4) {
+                println("mov -%d(%%rbp), %%rax", offset);
+            } else
+                println("mov -%d(%%rbp), %%rax", offset);
 
             return;
         }
