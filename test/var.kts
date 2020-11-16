@@ -60,3 +60,7 @@ println(s)
 
 val bool : Boolean = true
 println(bool)
+
+
+var myFirstVar: Long = 123
+println(myFirstVar)

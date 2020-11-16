@@ -1353,9 +1353,11 @@ static res_t parser_parse_property_declaration(parser_t* parser,
     int first_tok_i = -1, name_tok_i = -1, type_tok_i = -1, dummy = -1,
         last_tok_i = -1, init_node_i = -1;
 
-    if (parser_match(parser, &first_tok_i, 1, TOK_ID_VAR)) UNIMPLEMENTED();
-
-    if (!parser_match(parser, &first_tok_i, 1, TOK_ID_VAL)) return RES_NONE;
+    unsigned short flags = VAR_FLAGS_VAL;
+    if (parser_match(parser, &first_tok_i, 1, TOK_ID_VAR))
+        flags = VAR_FLAGS_VAR;
+    else if (!parser_match(parser, &first_tok_i, 1, TOK_ID_VAL))
+        return RES_NONE;
 
     if (parser_expect_token(parser, &name_tok_i, TOK_ID_IDENTIFIER) != RES_OK)
         return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
