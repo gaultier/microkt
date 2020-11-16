@@ -178,7 +178,7 @@ static bool parser_parse_identifier_to_type_kind(const parser_t* parser,
             }
         }
         case 'C':
-            return parser_check_keyword(parser, source + 1, "ar", 2, type_kind,
+            return parser_check_keyword(parser, source + 1, "har", 3, type_kind,
                                         TYPE_CHAR);
         case 'I':
             return parser_check_keyword(parser, source + 1, "nt", 2, type_kind,
@@ -192,7 +192,7 @@ static bool parser_parse_identifier_to_type_kind(const parser_t* parser,
                     return parser_check_keyword(parser, source + 2, "ort", 3,
                                                 type_kind, TYPE_SHORT);
                 case 't':
-                    return parser_check_keyword(parser, source + 2, "tring", 5,
+                    return parser_check_keyword(parser, source + 2, "ring", 4,
                                                 type_kind, TYPE_STRING);
                 default:
                     return false;
@@ -216,14 +216,16 @@ static parser_t parser_init(const char* file_name0, const char* source,
     pos_range_t* tok_pos_s = NULL;
     buf_grow(tok_pos_s, source_len / 8);
 
+    int i = 0;
     while (true) {
         const token_t token = lex_next(&lexer);
 
         buf_push(token_ids, token.tok_id);
         buf_push(tok_pos_s, token.tok_pos_range);
-        token_dump(&token, &lexer);
+        token_dump(&token, i, &lexer);
 
         if (token.tok_id == TOK_ID_EOF) break;
+        i++;
     }
     PG_ASSERT_COND((int)buf_size(token_ids), ==, (int)buf_size(tok_pos_s),
                    "%d");

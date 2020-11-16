@@ -14,7 +14,7 @@ typedef enum {
 } type_kind_t;
 
 static const char type_to_str[][20] = {
-    [TYPE_ANY] = "Any",       [TYPE_UNIT] = "Unknown",
+    [TYPE_ANY] = "Any",       [TYPE_UNIT] = "Unit",
     [TYPE_BOOL] = "Bool",     [TYPE_CHAR] = "Char",
     [TYPE_BYTE] = "Byte",     [TYPE_INT] = "Int",
     [TYPE_SHORT] = "Short",   [TYPE_LONG] = "Long",

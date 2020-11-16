@@ -38,3 +38,22 @@ println(x)
 // Conditionally initialize
 val p: Long = if(x==20) a - 5 else b
 println(p)
+
+
+// Other types
+
+val s: Short = 65000
+println(s)
+
+val i : Int = 4000000000
+println(i)
+
+val b: Byte = 8
+println(b)
+
+val ch :Char = '%'
+println(ch)
+
+
+val s : String = "hello"
+println(s)
