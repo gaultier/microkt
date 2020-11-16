@@ -106,7 +106,11 @@ typedef struct {
 typedef struct {
     int vd_first_tok_i, vd_last_tok_i, vd_name_tok_i, vd_init_node_i,
         vd_stack_offset;
+    unsigned short vd_flags;
 } var_def_t;
+
+static const unsigned short VAR_FLAGS_VAL = 0x01;
+static const unsigned short VAR_FLAGS_VAR = 0x02;
 
 typedef struct {
     int va_tok_i, va_var_node_i;  // Node the variable refers to
@@ -191,14 +195,15 @@ struct ast_node_t {
                                   .bl_parent_scope_i = parent_scope_i}}})
 
 #define NODE_VAR_DEF(type_i, first_tok_i, name_tok_i, last_tok_i, init_node_i, \
-                     offset)                                                   \
+                     offset, flags)                                            \
     ((ast_node_t){.node_kind = NODE_VAR_DEF,                                   \
                   .node_type_i = type_i,                                       \
                   .node_n = {.node_var_def = {.vd_first_tok_i = first_tok_i,   \
                                               .vd_last_tok_i = last_tok_i,     \
                                               .vd_name_tok_i = name_tok_i,     \
                                               .vd_init_node_i = init_node_i,   \
-                                              .vd_stack_offset = offset}}})
+                                              .vd_stack_offset = offset,       \
+                                              .vd_flags = flags}}})
 
 #define NODE_VAR(type_i, tok_i, var_node_i)                  \
     ((ast_node_t){.node_kind = NODE_VAR,                     \

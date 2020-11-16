@@ -1392,7 +1392,7 @@ static res_t parser_parse_property_declaration(parser_t* parser,
 
     const ast_node_t new_node =
         NODE_VAR_DEF(type_i, first_tok_i, name_tok_i, last_tok_i, init_node_i,
-                     parser->par_offset);
+                     parser->par_offset, VAR_FLAGS_VAL);
     buf_push(parser->par_nodes, new_node);
     *new_node_i = buf_size(parser->par_nodes) - 1;
 
