@@ -178,7 +178,7 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
     const type_t* const type = &parser->par_types[expr->node_type_i];
 
     const char *ax, *di, *dx;
-    if (type->ty_kind == TYPE_LONG) {
+    if (type->ty_size == 8) {
         ax = "%rax";
         di = "%rdi";
         dx = "%rdx";
