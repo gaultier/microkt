@@ -346,10 +346,18 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
                 &parser->par_nodes[builtin_println.bp_arg_i];
             emit_expr(parser, arg);
 
-            println("movq %%rax, %%rdi");
-
             const type_kind_t type =
                 parser->par_types[arg->node_type_i].ty_kind;
+            const int type_size = parser->par_types[arg->node_type_i].ty_size;
+
+            if (type_size == 1) {
+            }
+            /* println("movsbl -%d(%%rbp), %%eax", offset); */
+            else if (type_size == 2) {
+                println("mov %%ax, %%dx");
+            } else
+                println("movq %%rax, %%rdi");
+
             if (type == TYPE_LONG || type == TYPE_INT || type == TYPE_SHORT ||
                 type == TYPE_BYTE)
                 println("call __println_int");
@@ -389,9 +397,10 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
 
             if (type_size == 1)
                 println("movsbl -%d(%%rbp), %%eax", offset);
-            else if (type_size == 2)
-                println("movswl -%d(%%rbp), %%eax", offset);
-            else if (type_size == 4) {
+            else if (type_size == 2) {
+                println("mov -%d(%%rbp), %%rax", offset);
+                println("movswl %%ax, %%eax");
+            } else if (type_size == 4) {
                 println("mov -%d(%%rbp), %%rax", offset);
             } else
                 println("mov -%d(%%rbp), %%rax", offset);
