@@ -42,10 +42,10 @@ println(p)
 
 // Other types
 
-val s: Short = 65000
+val s: Short = 12345
 println(s)
 
-val i : Int = 4000000000
+val i : Int = 2000000000
 println(i)
 
 val b: Byte = 8

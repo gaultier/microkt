@@ -190,7 +190,7 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
 
     switch (expr->node_kind) {
         case NODE_KEYWORD_BOOL: {
-            println("movb $%d, %%ah", (int8_t)expr->node_n.node_num.nu_val);
+            println("mov $%d, %s", (int8_t)expr->node_n.node_num.nu_val, ax);
             return;
         }
         case NODE_STRING: {
@@ -207,11 +207,11 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             return;
         }
         case NODE_CHAR: {
-            println("movb $%d, %%al", (char)expr->node_n.node_num.nu_val);
+            println("mov $%d, %s", (char)expr->node_n.node_num.nu_val, ax);
             return;
         }
         case NODE_LONG: {
-            println("movq $%lld, %%rax", expr->node_n.node_num.nu_val);
+            println("mov $%lld, %s", expr->node_n.node_num.nu_val, ax);
             return;
         }
         case NODE_MODULO: {
@@ -348,15 +348,8 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
 
             const type_kind_t type =
                 parser->par_types[arg->node_type_i].ty_kind;
-            const int type_size = parser->par_types[arg->node_type_i].ty_size;
 
-            if (type_size == 1) {
-            }
-            /* println("movsbl -%d(%%rbp), %%eax", offset); */
-            else if (type_size == 2) {
-                println("mov %%ax, %%dx");
-            } else
-                println("movq %%rax, %%rdi");
+            println("movq %%rax, %%rdi");
 
             if (type == TYPE_LONG || type == TYPE_INT || type == TYPE_SHORT ||
                 type == TYPE_BYTE)
@@ -393,17 +386,8 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
                 &parser->par_nodes[var.va_var_node_i];
             const var_def_t var_def = node_var_def->node_n.node_var_def;
             const int offset = var_def.vd_stack_offset;
-            const int type_size = parser->par_types[expr->node_type_i].ty_size;
 
-            if (type_size == 1)
-                println("movsbl -%d(%%rbp), %%eax", offset);
-            else if (type_size == 2) {
-                println("mov -%d(%%rbp), %%rax", offset);
-                println("movswl %%ax, %%eax");
-            } else if (type_size == 4) {
-                println("mov -%d(%%rbp), %%rax", offset);
-            } else
-                println("mov -%d(%%rbp), %%rax", offset);
+            println("mov -%d(%%rbp), %s", offset, ax);
 
             return;
         }
