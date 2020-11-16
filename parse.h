@@ -74,8 +74,9 @@ static res_t parser_resolve_var(const parser_t* parser, int tok_i,
                 memcmp(var_def_source, var_source, var_source_len) == 0) {
                 *var_def_i = stmt_i;
 
-                log_debug("resolved `%.*s` to var def %d", var_source_len,
-                          var_source, stmt_i);
+                log_debug("resolved `%.*s` to var_def=%d at offset=%d",
+                          var_source_len, var_source, stmt_i,
+                          stmt->node_n.node_var_def.vd_stack_offset);
                 return RES_OK;
             }
         }

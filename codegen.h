@@ -175,6 +175,19 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)expr, !=, NULL, "%p");
 
+    const type_t* const type = &parser->par_types[expr->node_type_i];
+
+    const char *ax, *di, *dx;
+    if (type->ty_kind == TYPE_LONG) {
+        ax = "%rax";
+        di = "%rdi";
+        dx = "%rdx";
+    } else {
+        ax = "%eax";
+        di = "%edi";
+        dx = "%edx";
+    }
+
     switch (expr->node_kind) {
         case NODE_KEYWORD_BOOL: {
             println("movb $%d, %%ah", (int8_t)expr->node_n.node_num.nu_val);
@@ -265,8 +278,8 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             emit_expr(parser, rhs);
             emit_push();
             emit_expr(parser, lhs);
-            println("popq %%rdi");
-            println("addq %%rdi, %%rax");
+            println("pop %%rdi");
+            println("add %s, %s", di, ax);
 
             return;
         }
@@ -337,7 +350,8 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
 
             const type_kind_t type =
                 parser->par_types[arg->node_type_i].ty_kind;
-            if (type == TYPE_LONG)
+            if (type == TYPE_LONG || type == TYPE_INT || type == TYPE_SHORT ||
+                type == TYPE_BYTE)
                 println("call __println_int");
             else if (type == TYPE_CHAR)
                 println("call __println_char");
