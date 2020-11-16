@@ -57,3 +57,6 @@ println(ch)
 
 val s : String = "hello"
 println(s)
+
+val bool : Boolean = true
+println(bool)
