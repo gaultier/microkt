@@ -1492,8 +1492,8 @@ static res_t parser_parse_stmt(parser_t* parser, int* new_node_i) {
     if ((res = parser_parse_declaration(parser, new_node_i)) != RES_NONE)
         return res;
 
-    if ((res = parser_parse_assignment(parser, new_node_i)) != RES_NONE)
-        return res;
+    // if ((res = parser_parse_assignment(parser, new_node_i)) != RES_NONE)
+    //    return res;
 
     // TODO
 
