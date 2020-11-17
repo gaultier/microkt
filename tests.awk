@@ -31,6 +31,9 @@ BEGIN {
     tests[9] = "test/var"
     expected_outputs[9] = "10\n100\n500\n510\n11\n1608\n20\n5\n12345\n2000000000\n8\n%\nhello\ntrue\n123\n"
 
+    tests[10] = "test/assign"
+    expected_outputs[10] = "6\n"
+
     is_tty = system("test -t 1") == 0
 
     if (is_tty) {
