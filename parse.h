@@ -577,6 +577,27 @@ static token_id_t parser_peek(parser_t* parser) {
     UNREACHABLE();
 }
 
+static token_id_t parser_peek_next(parser_t* parser) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)parser->par_token_ids, !=, NULL, "%p");
+    PG_ASSERT_COND((int)buf_size(parser->par_token_ids), >, (int)0, "%d");
+    PG_ASSERT_COND((int)buf_size(parser->par_token_ids), >, parser->par_tok_i,
+                   "%d");
+
+    int i = parser->par_tok_i;
+    while (i < (int)buf_size(parser->par_token_ids) - 1) {
+        const token_id_t id = parser->par_token_ids[i + 1];
+        if (id == TOK_ID_COMMENT) {
+            log_debug("Skipping over comment at pos=%d", i + 1);
+            i++;
+            continue;
+        }
+
+        return id;
+    }
+    return TOK_ID_EOF;
+}
+
 static void parser_print_source_on_error(const parser_t* parser,
                                          int first_tok_i, int last_tok_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
@@ -1348,60 +1369,49 @@ static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i) {
     return RES_NONE;
 }
 
-static res_t parser_parse_directly_assignable_expr(parser_t* parser,
-                                                   int* new_node_i) {
+static res_t parser_parse_assignment(parser_t* parser, int* new_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
-    int tok_i = -1;
-    if (parser_match(parser, &tok_i, 1, TOK_ID_IDENTIFIER)) {
+    res_t res = RES_NONE;
+    int dummy = -1, expr_node_i = -1, lhs_tok_i = -1;
+    if (parser_peek(parser) == TOK_ID_IDENTIFIER &&
+        parser_peek_next(parser) == TOK_ID_EQ) {
+        parser_expect_token(parser, &lhs_tok_i, TOK_ID_IDENTIFIER);
+
         int var_def_i = -1;
-        if (parser_resolve_var(parser, tok_i, &var_def_i) != RES_OK) {
+        if (parser_resolve_var(parser, lhs_tok_i, &var_def_i) != RES_OK) {
             return RES_UNKNOWN_VAR;
         }
 
         const ast_node_t* const node_var_def = &parser->par_nodes[var_def_i];
         const int type_i = node_var_def->node_type_i;
 
-        const ast_node_t new_node = NODE_VAR(type_i, tok_i, var_def_i);
-        buf_push(parser->par_nodes, new_node);
-        *new_node_i = (int)buf_size(parser->par_nodes) - 1;
-        return RES_OK;
-    }
+        const ast_node_t var_node = NODE_VAR(type_i, lhs_tok_i, var_def_i);
+        buf_push(parser->par_nodes, var_node);
+        int lhs_node_i = (int)buf_size(parser->par_nodes) - 1;
 
-    return RES_NONE;
-}
-
-static res_t parser_parse_assignment(parser_t* parser, int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
-
-    res_t res = RES_NONE;
-    int target_node_i = -1, dummy = -1, expr_node_i = -1;
-    if (parser_parse_directly_assignable_expr(parser, &target_node_i) ==
-            RES_OK &&
-        parser_peek(parser) == TOK_ID_EQ) {
         parser_expect_token(parser, &dummy, TOK_ID_EQ);
 
         res = parser_parse_expr(parser, &expr_node_i);
         if (res == RES_NONE) {
-            log_debug("Missing assignment rhs %d", target_node_i);
+            log_debug("Missing assignment rhs %d", lhs_node_i);
             return RES_EXPECTED_PRIMARY;
         } else if (res != RES_OK)
             return res;
 
-        const int lhs_type_i = parser->par_nodes[target_node_i].node_type_i;
+        const int lhs_type_i = parser->par_nodes[lhs_node_i].node_type_i;
         const int rhs_type_i = parser->par_nodes[expr_node_i].node_type_i;
         const type_kind_t lhs_type_kind = parser->par_types[lhs_type_i].ty_kind;
         const type_kind_t rhs_type_kind = parser->par_types[rhs_type_i].ty_kind;
 
         if (lhs_type_kind != rhs_type_kind) {
-            return parser_err_non_matching_types(parser, target_node_i,
+            return parser_err_non_matching_types(parser, lhs_node_i,
                                                  expr_node_i);
         }
 
         const ast_node_t new_node =
-            NODE_BINARY(NODE_ASSIGN, target_node_i, expr_node_i, lhs_type_i);
+            NODE_BINARY(NODE_ASSIGN, lhs_node_i, expr_node_i, lhs_type_i);
         buf_push(parser->par_nodes, new_node);
         *new_node_i = buf_size(parser->par_nodes) - 1;
 
@@ -1492,8 +1502,8 @@ static res_t parser_parse_stmt(parser_t* parser, int* new_node_i) {
     if ((res = parser_parse_declaration(parser, new_node_i)) != RES_NONE)
         return res;
 
-    // if ((res = parser_parse_assignment(parser, new_node_i)) != RES_NONE)
-    //    return res;
+    if ((res = parser_parse_assignment(parser, new_node_i)) != RES_NONE)
+        return res;
 
     // TODO
 
