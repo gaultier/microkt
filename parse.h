@@ -1380,7 +1380,9 @@ static res_t parser_parse_assignment(parser_t* parser, int* new_node_i) {
     int target_node_i = -1, dummy = -1, expr_node_i = -1;
     if (parser_parse_directly_assignable_expr(parser, &target_node_i) ==
             RES_OK &&
-        parser_expect_token(parser, &dummy, TOK_ID_EQ) == RES_OK) {
+        parser_peek(parser) == TOK_ID_EQ) {
+        parser_expect_token(parser, &dummy, TOK_ID_EQ);
+
         res = parser_parse_expr(parser, &expr_node_i);
         if (res == RES_NONE) {
             log_debug("Missing assignment rhs %d", target_node_i);
@@ -1414,10 +1416,15 @@ static res_t parser_parse_property_declaration(parser_t* parser,
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
+    if (!(parser_peek(parser) == TOK_ID_VAL ||
+          parser_peek(parser) == TOK_ID_VAR))
+        return RES_NONE;
+
     int first_tok_i = -1, name_tok_i = -1, type_tok_i = -1, dummy = -1,
         last_tok_i = -1, init_node_i = -1;
 
     unsigned short flags = VAR_FLAGS_VAL;
+
     if (parser_match(parser, &first_tok_i, 1, TOK_ID_VAR))
         flags = VAR_FLAGS_VAR;
     else if (!parser_match(parser, &first_tok_i, 1, TOK_ID_VAL))
