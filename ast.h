@@ -65,6 +65,7 @@ typedef enum {
     NODE_BLOCK,
     NODE_VAR_DEF,
     NODE_VAR,
+    NODE_ASSIGN,
 } ast_node_kind_t;
 
 const char node_kind_to_str[][30] = {
@@ -87,6 +88,7 @@ const char node_kind_to_str[][30] = {
     [NODE_BLOCK] = "Block",
     [NODE_VAR_DEF] = "VarDef",
     [NODE_VAR] = "Var",
+    [NODE_ASSIGN] = "Assign",
 };
 
 typedef struct {

@@ -283,6 +283,8 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
 
             return;
         }
+        case NODE_ASSIGN:
+            UNIMPLEMENTED();
         case NODE_LT:
         case NODE_EQ:
         case NODE_NEQ:
@@ -425,6 +427,8 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
             println("\n");
             return;
         }
+        case NODE_ASSIGN:
+            UNIMPLEMENTED();
         case NODE_VAR_DEF: {
             const var_def_t var_def = stmt->node_n.node_var_def;
             if (var_def.vd_init_node_i >= 0) {

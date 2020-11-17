@@ -315,6 +315,7 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
         case NODE_DIVIDE:
         case NODE_MODULO:
         case NODE_SUBTRACT:
+        case NODE_ASSIGN:
         case NODE_ADD: {
             log_debug_with_indent(
                 indent, "ast_node #%d %s type=%s", node_i,
@@ -442,6 +443,7 @@ static int ast_node_first_token(const parser_t* parser,
         case NODE_DIVIDE:
         case NODE_MODULO:
         case NODE_SUBTRACT:
+        case NODE_ASSIGN:
         case NODE_ADD:
             return node->node_n.node_binary.bi_lhs_i;
         case NODE_NOT:
@@ -480,6 +482,7 @@ static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
         case NODE_DIVIDE:
         case NODE_MODULO:
         case NODE_SUBTRACT:
+        case NODE_ASSIGN:
         case NODE_ADD:
             return node->node_n.node_binary.bi_rhs_i;
         case NODE_NOT:
@@ -1345,6 +1348,68 @@ static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i) {
     return RES_NONE;
 }
 
+static res_t parser_parse_directly_assignable_expr(parser_t* parser,
+                                                   int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
+    int tok_i = -1;
+    if (parser_match(parser, &tok_i, 1, TOK_ID_IDENTIFIER)) {
+        int var_def_i = -1;
+        if (parser_resolve_var(parser, tok_i, &var_def_i) != RES_OK) {
+            return RES_UNKNOWN_VAR;
+        }
+
+        const ast_node_t* const node_var_def = &parser->par_nodes[var_def_i];
+        const int type_i = node_var_def->node_type_i;
+
+        const ast_node_t new_node = NODE_VAR(type_i, tok_i, var_def_i);
+        buf_push(parser->par_nodes, new_node);
+        *new_node_i = (int)buf_size(parser->par_nodes) - 1;
+        return RES_OK;
+    }
+
+    return RES_NONE;
+}
+
+static res_t parser_parse_assignment(parser_t* parser, int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
+    res_t res = RES_NONE;
+    int target_node_i = -1, dummy = -1, expr_node_i = -1;
+    if (parser_parse_directly_assignable_expr(parser, &target_node_i)) {
+        if (!parser_expect_token(parser, &dummy, TOK_ID_EQ))
+            return parser_err_unexpected_token(parser, TOK_ID_EQ);
+
+        res = parser_parse_expr(parser, &expr_node_i);
+        if (res == RES_NONE) {
+            log_debug("Missing assignment rhs %d", target_node_i);
+            return RES_EXPECTED_PRIMARY;
+        } else if (res != RES_OK)
+            return res;
+
+        const int lhs_type_i = parser->par_nodes[target_node_i].node_type_i;
+        const int rhs_type_i = parser->par_nodes[expr_node_i].node_type_i;
+        const type_kind_t lhs_type_kind = parser->par_types[lhs_type_i].ty_kind;
+        const type_kind_t rhs_type_kind = parser->par_types[rhs_type_i].ty_kind;
+
+        if (lhs_type_kind != rhs_type_kind) {
+            return parser_err_non_matching_types(parser, target_node_i,
+                                                 expr_node_i);
+        }
+
+        const ast_node_t new_node =
+            NODE_BINARY(NODE_ASSIGN, target_node_i, expr_node_i, lhs_type_i);
+        buf_push(parser->par_nodes, new_node);
+        *new_node_i = buf_size(parser->par_nodes) - 1;
+
+        return RES_OK;
+    }
+
+    return RES_NONE;
+}
+
 static res_t parser_parse_property_declaration(parser_t* parser,
                                                int* new_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
@@ -1410,6 +1475,7 @@ static res_t parser_parse_declaration(parser_t* parser, int* new_node_i) {
 
     return parser_parse_property_declaration(parser, new_node_i);
 }
+
 static res_t parser_parse_stmt(parser_t* parser, int* new_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
@@ -1418,6 +1484,9 @@ static res_t parser_parse_stmt(parser_t* parser, int* new_node_i) {
 
     res_t res = RES_NONE;
     if ((res = parser_parse_declaration(parser, new_node_i)) != RES_NONE)
+        return res;
+
+    if ((res = parser_parse_assignment(parser, new_node_i)) != RES_NONE)
         return res;
 
     // TODO
