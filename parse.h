@@ -1378,10 +1378,9 @@ static res_t parser_parse_assignment(parser_t* parser, int* new_node_i) {
 
     res_t res = RES_NONE;
     int target_node_i = -1, dummy = -1, expr_node_i = -1;
-    if (parser_parse_directly_assignable_expr(parser, &target_node_i)) {
-        if (!parser_expect_token(parser, &dummy, TOK_ID_EQ))
-            return parser_err_unexpected_token(parser, TOK_ID_EQ);
-
+    if (parser_parse_directly_assignable_expr(parser, &target_node_i) ==
+            RES_OK &&
+        parser_expect_token(parser, &dummy, TOK_ID_EQ) == RES_OK) {
         res = parser_parse_expr(parser, &expr_node_i);
         if (res == RES_NONE) {
             log_debug("Missing assignment rhs %d", target_node_i);
