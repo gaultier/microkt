@@ -320,7 +320,6 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             emit_expr(parser, lhs);
             println("cmp $0, %%rax");
             println("sete %%al");
-            println("movzx %%al, %%rax");
             return;
         }
         case NODE_IF: {
@@ -351,7 +350,7 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             const type_kind_t type =
                 parser->par_types[arg->node_type_i].ty_kind;
 
-            println("movq %%rax, %%rdi");
+            println("mov %%rax, %%rdi");
 
             if (type == TYPE_LONG || type == TYPE_INT || type == TYPE_SHORT ||
                 type == TYPE_BYTE)
@@ -361,8 +360,8 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             else if (type == TYPE_BOOL)
                 println("call __println_bool");
             else if (type == TYPE_STRING) {
-                println("movq %%r8, %%rsi");
-                println("movq %%rax, %%rdi");
+                println("mov %%r8, %%rsi");
+                println("mov %%rax, %%rdi");
                 println("call __println_string");
             } else {
                 log_debug("Type %s unimplemented", type_to_str[type]);
