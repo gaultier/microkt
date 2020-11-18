@@ -111,7 +111,7 @@ typedef struct {
         *lex_line_no /* line number for each token */;
     token_t* lex_tokens;
     token_id_t* lex_tok_ids;
-    pos_range_t* lex_tok_pos_s;
+    pos_range_t* lex_tok_pos_ranges;
 } lexer_t;
 
 // TODO: trie?
@@ -553,7 +553,7 @@ static lexer_t lex_init(const char* source, const int source_len) {
 
     lexer_t lexer = {.lex_source = source, .lex_source_len = source_len};
     buf_grow(lexer.lex_tokens, source_len / 8);
-    buf_grow(lexer.lex_tok_pos_s, source_len / 8);
+    buf_grow(lexer.lex_tok_pos_ranges, source_len / 8);
     buf_grow(lexer.lex_tok_ids, source_len / 8);
 
     int i = 0;
@@ -561,7 +561,7 @@ static lexer_t lex_init(const char* source, const int source_len) {
         const token_t token = lex_next(&lexer);
 
         buf_push(lexer.lex_tokens, token);
-        buf_push(lexer.lex_tok_pos_s, token.tok_pos_range);
+        buf_push(lexer.lex_tok_pos_ranges, token.tok_pos_range);
         buf_push(lexer.lex_tok_ids, token.tok_id);
         token_dump(&token, i, &lexer);
 
@@ -569,7 +569,7 @@ static lexer_t lex_init(const char* source, const int source_len) {
         i++;
     }
     PG_ASSERT_COND((int)buf_size(lexer.lex_tok_ids), ==,
-                   (int)buf_size(lexer.lex_tok_pos_s), "%d");
+                   (int)buf_size(lexer.lex_tok_pos_ranges), "%d");
 
     return lexer;
 }
