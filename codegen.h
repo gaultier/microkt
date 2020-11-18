@@ -195,7 +195,7 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
         }
         case NODE_STRING: {
             const int obj_i = expr->node_n.node_string;
-            println("leaq .L%d(%%rip), %%rax", obj_i);
+            println("lea .L%d(%%rip), %%rax", obj_i);
 
             const obj_t obj = parser->par_objects[obj_i];
             PG_ASSERT_COND(obj.obj_kind, ==, OBJ_GLOBAL_VAR, "%d");
@@ -203,7 +203,7 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             const char* source = NULL;
             int source_len = 0;
             parser_tok_source(parser, obj.obj_tok_i, &source, &source_len);
-            println("movq $%d, %%r8", source_len);
+            println("mov $%d, %%r8", source_len);
             return;
         }
         case NODE_CHAR: {
@@ -222,11 +222,11 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             emit_expr(parser, rhs);
             emit_push();
             emit_expr(parser, lhs);
-            println("popq %%rdi");
+            println("pop %%rdi");
             println("cqo");  // ?
-            println("xorq %%rdx, %%rdx");
-            println("idivq %%rdi");
-            println("movq %%rdx, %%rax");
+            println("xor %%rdx, %%rdx");
+            println("idiv %%rdi");
+            println("mov %%rdx, %%rax");
 
             return;
         }
@@ -238,9 +238,9 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             emit_expr(parser, rhs);
             emit_push();
             emit_expr(parser, lhs);
-            println("popq %%rdi");
+            println("pop %%rdi");
             println("cqo");  // ?
-            println("idivq %%rdi");
+            println("idiv %%rdi");
 
             return;
         }
@@ -252,7 +252,7 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             emit_expr(parser, rhs);
             emit_push();
             emit_expr(parser, lhs);
-            println("popq %%rdi");
+            println("pop %%rdi");
             println("imul %%rdi, %%rax");
 
             return;
@@ -265,8 +265,8 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             emit_expr(parser, rhs);
             emit_push();
             emit_expr(parser, lhs);
-            println("popq %%rdi");
-            println("subq %%rdi, %%rax");
+            println("pop %%rdi");
+            println("sub %%rdi, %%rax");
 
             return;
         }
@@ -296,7 +296,7 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             emit_expr(parser, rhs);
             emit_push();
             emit_expr(parser, lhs);
-            println("popq %%rdi");
+            println("pop %%rdi");
             println("cmp %%rdi, %%rax");
 
             if (expr->node_kind == NODE_LT)
