@@ -8,3 +8,4 @@ META-INF
 **/.jar
 test/*.actual
 test/*.expected
+test/*.diff

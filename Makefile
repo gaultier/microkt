@@ -19,24 +19,27 @@ TESTS_ASM := $(TESTS_SRC:.kts=.asm)
 TESTS_EXE := $(TESTS_SRC:.kts=.exe)
 TESTS_ACTUAL := $(TESTS_SRC:.kts=.actual)
 TESTS_EXPECTED := $(TESTS_SRC:.kts=.expected)
+TESTS_DIFF := $(TESTS_SRC:.kts=.diff)
 
 $(BIN): $(SRC) $(HEADERS)
 	$(CC) $(CFLAGS) $(SRC) -o $@
 
 clean:
-	rm -f $(BIN) $(TESTS_EXE) $(TESTS_ASM) $(TESTS_O) $(TESTS_ACTUAL)
+	rm -f $(BIN) $(TESTS_EXE) $(TESTS_ASM) $(TESTS_O) $(TESTS_ACTUAL) $(TESTS_EXPECTED) $(TESTS_DIFF)
 	rm -rf ./*.dSYM
 
-.SUFFIXES: .kts .exe .actual .expected
+.SUFFIXES: .kts .exe .actual .expected .diff
 
-.kts.exe: $(BIN) $(TESTS_SRC)
+.kts.exe: $(BIN)
 	./$(BIN) $<
 
-.exe.actual: $(BIN) $(TESTS_EXE)
+.exe.actual: $(BIN)
 	./$< > $@
 
-.kts.expected: $(TESTS_SRC)
+.kts.expected:
 	awk -F '// expect: ' '/expect: / {print $2} ' $< > $@
 
-test: tests.awk $(TESTS_ACTUAL) $(TESTS_EXPECTED) $(BIN) $(TESTS_SRC)
-	./$< $(TESTS_ACTUAL)
+.actual.diff:
+	TEST="$<" diff $${TEST/actual/expected} $< > $${TEST/actual/diff}
+
+test: $(TESTS_DIFF)
