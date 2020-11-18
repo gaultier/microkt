@@ -6,6 +6,9 @@ CFLAGS+=-Wall -Wextra -pedantic -g -std=c99 -march=native
 
 BIN_TEST:=./microktc_debug
 
+TESTS_SRC = $(wildcard test/*.kts)
+TESTS_EXE = $(TESTS_SRC:.kts=.exe)
+
 microktc: $(SRC) $(HEADERS)
 	$(CC) $(CFLAGS) -O2 $(SRC) -o $@
 
@@ -18,40 +21,12 @@ clean:
 	rm -rf microktc microktc_debug ./*.dSYM
 	find ./test/ -not -name '*.kts' -delete
 
-test/bool: test/bool.kts $(BIN_TEST)
+.SUFFIXES: .kts .exe
+
+.kts.exe: $(BIN_TEST)
 	$(BIN_TEST) $<
 
-test/string: test/string.kts $(BIN_TEST)
-	$(BIN_TEST) $<
-
-test/integers: test/integers.kts $(BIN_TEST)
-	$(BIN_TEST) $<
-
-test/char: test/char.kts $(BIN_TEST)
-	$(BIN_TEST) $<
-
-test/hello_world: test/hello_world.kts $(BIN_TEST)
-	$(BIN_TEST) $<
-
-test/math_integers: test/math_integers.kts $(BIN_TEST)
-	$(BIN_TEST) $<
-
-test/comparison: test/comparison.kts $(BIN_TEST)
-	$(BIN_TEST) $<
-
-test/negation: test/negation.kts $(BIN_TEST)
-	$(BIN_TEST) $<
-
-test/if: test/if.kts $(BIN_TEST)
-	$(BIN_TEST) $<
-
-test/var: test/var.kts $(BIN_TEST)
-	$(BIN_TEST) $<
-
-test/assign: test/assign.kts $(BIN_TEST)
-	$(BIN_TEST) $<
-
-tests: test/integers test/math_integers test/char test/hello_world test/string test/bool test/comparison test/negation test/if test/var test/assign
+tests: $(TESTS_EXE)
 
 test: tests tests.awk
 	@./tests.awk
