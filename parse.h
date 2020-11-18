@@ -12,14 +12,13 @@ static const int TYPE_ANY_I = 1;   // see parser_init
 
 typedef struct {
     const char* par_file_name0;
-    int par_tok_i;
+    int par_tok_i, par_scope_i;
     ast_node_t* par_nodes;  // Arena of all nodes
     lexer_t par_lexer;
     bool par_is_tty;
     obj_t* par_objects;
     type_t* par_types;
     int par_offset;  // Local variable stack offset inside the current function
-    int par_current_scope_i;
 } parser_t;
 
 static res_t parser_parse_expr(parser_t* parser, int* new_node_i);
@@ -34,7 +33,7 @@ static void parser_tok_source(const parser_t* parser, int tok_i,
 static ast_node_t* parser_current_block(parser_t* parser) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
 
-    return &parser->par_nodes[parser->par_current_scope_i];
+    return &parser->par_nodes[parser->par_scope_i];
 }
 
 // TODO: optimize, currently it is O(n*m) where n= # of stmt and m = # of var
@@ -45,7 +44,7 @@ static res_t parser_resolve_var(const parser_t* parser, int tok_i,
     int var_source_len = 0;
     parser_tok_source(parser, tok_i, &var_source, &var_source_len);
 
-    int current_scope_i = parser->par_current_scope_i;
+    int current_scope_i = parser->par_scope_i;
     while (current_scope_i >= 0) {
         const ast_node_t* block = &parser->par_nodes[current_scope_i];
         const block_t b = block->node_n.node_block;
@@ -817,7 +816,7 @@ static res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
     if ((res = parser_expect_token(parser, &dummy, TOK_ID_RPAREN)) != RES_OK)
         return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
 
-    const int current_scope_i = parser->par_current_scope_i;
+    const int current_scope_i = parser->par_scope_i;
     if ((res = parser_parse_control_structure_body(parser, &node_then_i)) !=
         RES_OK) {
         log_debug("failed to parse if-branch %d", res);
@@ -860,7 +859,7 @@ static res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
     *new_node_i = (int)buf_size(parser->par_nodes) - 1;
 
     // Reset current scope
-    parser->par_current_scope_i = current_scope_i;
+    parser->par_scope_i = current_scope_i;
 
     return RES_OK;
 }
@@ -1267,7 +1266,7 @@ static res_t parser_parse_stmts(parser_t* parser) {
         int new_node_i = -1;
         res = parser_parse_stmt(parser, &new_node_i);
         if (res == RES_OK) {
-            buf_push(parser->par_nodes[parser->par_current_scope_i]
+            buf_push(parser->par_nodes[parser->par_scope_i]
                          .node_n.node_block.bl_nodes_i,
                      new_node_i);
             continue;
@@ -1290,10 +1289,10 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
 
     res_t res = RES_NONE;
     ast_node_t block = NODE_BLOCK(TYPE_ANY_I, first_tok_i, last_tok_i, NULL,
-                                  parser->par_current_scope_i);
+                                  parser->par_scope_i);
     buf_push(parser->par_nodes, block);
-    const int current_scope_i = parser->par_current_scope_i;
-    parser->par_current_scope_i = *new_node_i = buf_size(parser->par_nodes) - 1;
+    const int current_scope_i = parser->par_scope_i;
+    parser->par_scope_i = *new_node_i = buf_size(parser->par_nodes) - 1;
 
     log_debug("new block=%d parent=%d", *new_node_i,
               block.node_n.node_block.bl_parent_scope_i);
@@ -1305,8 +1304,8 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
     if (!parser_match(parser, &last_tok_i, 1, TOK_ID_RCURLY))
         return parser_err_unexpected_token(parser, TOK_ID_RCURLY);
 
-    const int* const nodes_i = parser->par_nodes[parser->par_current_scope_i]
-                                   .node_n.node_block.bl_nodes_i;
+    const int* const nodes_i =
+        parser->par_nodes[parser->par_scope_i].node_n.node_block.bl_nodes_i;
     const int last_node_i = buf_size(nodes_i) > 0 ? nodes_i[0] : -1;
     const int type_i = last_node_i >= 0
                            ? parser->par_nodes[last_node_i].node_type_i
@@ -1314,7 +1313,7 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
 
     parser->par_nodes[*new_node_i].node_type_i = type_i;
 
-    parser->par_current_scope_i = current_scope_i;
+    parser->par_scope_i = current_scope_i;
     return res;
 }
 
@@ -1471,7 +1470,7 @@ static res_t parser_parse_property_declaration(parser_t* parser,
     *new_node_i = buf_size(parser->par_nodes) - 1;
 
     log_debug("new var def=%d current_scope_i=%d", *new_node_i,
-              parser->par_current_scope_i);
+              parser->par_scope_i);
 
     return RES_OK;
 }
