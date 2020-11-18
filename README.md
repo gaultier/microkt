@@ -59,6 +59,12 @@ Hello, world!
 ```
 
 
+## Develop
+
+```
+make DEBUG=1
+```
+
 ## License
 
 BSD-3
