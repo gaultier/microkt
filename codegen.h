@@ -310,6 +310,7 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             else
                 UNREACHABLE();
 
+            // Required to be able to do later `push %rax
             println("movzb %%al, %%rax");
 
             return;
