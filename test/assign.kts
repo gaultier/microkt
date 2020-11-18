@@ -20,3 +20,8 @@ var char : Char = 'B'
 char = 'C'
 println(char)
 
+
+var string : String= "hello"
+string = "world"
+println(string)
+
