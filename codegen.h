@@ -35,10 +35,10 @@ static int emit_align_to_16(int stack_size) {
 }
 
 static void fn_prolog(int aligned_stack_size) {
-    println("pushq %%rbp");
-    println("movq %%rsp, %%rbp");
+    println("push %%rbp");
+    println("mov %%rsp, %%rbp");
 
-    println("subq $%d, %%rsp\n", aligned_stack_size);
+    println("sub $%d, %%rsp\n", aligned_stack_size);
 }
 
 // static void fn_epilog(int aligned_stack_size) {
@@ -48,8 +48,8 @@ static void fn_prolog(int aligned_stack_size) {
 //}
 
 static void emit_program_epilog() {
-    println("movq $%lld, %%rax", syscall_exit);
-    println("movq $0, %%rdi");
+    println("mov $%lld, %%rax", syscall_exit);
+    println("mov $0, %%rdi");
     println("syscall");
 }
 
