@@ -40,6 +40,6 @@ clean:
 	awk -F '// expect: ' '/expect: / {print $2} ' $< > $@
 
 .actual.diff:
-	TEST="$<" diff $${TEST/actual/expected} $< > $${TEST/actual/diff}
+	TEST="$<" diff $${TEST/actual/expected} $< > $@ || exit 0
 
 test: $(TESTS_DIFF)
