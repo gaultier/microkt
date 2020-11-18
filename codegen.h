@@ -427,8 +427,32 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
             println("\n");
             return;
         }
-        case NODE_ASSIGN:
-            UNIMPLEMENTED();
+        case NODE_ASSIGN: {
+            const binary_t binary = stmt->node_n.node_binary;
+            const ast_node_t* const lhs = &parser->par_nodes[binary.bi_lhs_i];
+            const ast_node_t* const rhs = &parser->par_nodes[binary.bi_rhs_i];
+
+            emit_expr(parser, rhs);
+
+            const var_t var = lhs->node_n.node_var;
+            const ast_node_t* const node_var_def =
+                &parser->par_nodes[var.va_var_node_i];
+            const var_def_t var_def = node_var_def->node_n.node_var_def;
+            const int offset = var_def.vd_stack_offset;
+
+            const int type_size = parser->par_types[stmt->node_type_i].ty_size;
+
+            if (type_size == 1)
+                println("mov %%al, -%d(%%rbp)", offset);
+            else if (type_size == 2)
+                println("mov %%ax, -%d(%%rbp)", offset);
+            else if (type_size == 4)
+                println("mov %%eax, -%d(%%rbp)", offset);
+            else
+                println("mov %%rax, -%d(%%rbp)", offset);
+
+            return;
+        }
         case NODE_VAR_DEF: {
             const var_def_t var_def = stmt->node_n.node_var_def;
             if (var_def.vd_init_node_i >= 0) {
