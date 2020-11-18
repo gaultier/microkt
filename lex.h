@@ -107,7 +107,11 @@ static const keyword_t keywords[] = {
 
 typedef struct {
     const char* lex_source;
-    int lex_source_len, lex_index, *lex_lines;
+    int lex_source_len, lex_index, *lex_lines /* file offset of line # */,
+        *lex_line_no /* line number for each token */;
+    token_t* lex_tokens;
+    token_id_t* lex_tok_ids;
+    pos_range_t* lex_tok_pos_s;
 } lexer_t;
 
 // TODO: trie?
@@ -151,13 +155,6 @@ static bool lex_is_digit(char c) { return ('0' <= c && c <= '9'); }
 static bool lex_is_identifier_char(char c) {
     return lex_is_digit(c) || ('a' <= c && c <= 'z') ||
            ('A' <= c && c <= 'Z') || c == '_';
-}
-
-static lexer_t lex_init(const char* source, const int source_len) {
-    return (lexer_t){.lex_source = source,
-                     .lex_source_len = source_len,
-                     .lex_index = 0,
-                     .lex_lines = NULL};
 }
 
 static char lex_advance(lexer_t* lexer) {
@@ -550,3 +547,30 @@ static void token_dump(const token_t* t, int i, const lexer_t* lexer) {
               t->tok_pos_range.pr_end - t->tok_pos_range.pr_start,
               &lexer->lex_source[t->tok_pos_range.pr_start]);
 }
+
+static lexer_t lex_init(const char* source, const int source_len) {
+    PG_ASSERT_COND((void*)source, !=, NULL, "%p");
+
+    lexer_t lexer = {.lex_source = source, .lex_source_len = source_len};
+    buf_grow(lexer.lex_tokens, source_len / 8);
+    buf_grow(lexer.lex_tok_pos_s, source_len / 8);
+    buf_grow(lexer.lex_tok_ids, source_len / 8);
+
+    int i = 0;
+    while (true) {
+        const token_t token = lex_next(&lexer);
+
+        buf_push(lexer.lex_tokens, token);
+        buf_push(lexer.lex_tok_pos_s, token.tok_pos_range);
+        buf_push(lexer.lex_tok_ids, token.tok_id);
+        token_dump(&token, i, &lexer);
+
+        if (token.tok_id == TOK_ID_EOF) break;
+        i++;
+    }
+    PG_ASSERT_COND((int)buf_size(lexer.lex_tok_ids), ==,
+                   (int)buf_size(lexer.lex_tok_pos_s), "%d");
+
+    return lexer;
+}
+

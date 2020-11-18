@@ -212,26 +212,6 @@ static parser_t parser_init(const char* file_name0, const char* source,
 
     lexer_t lexer = lex_init(source, source_len);
 
-    token_id_t* token_ids = NULL;
-    buf_grow(token_ids, source_len / 8);
-
-    pos_range_t* tok_pos_s = NULL;
-    buf_grow(tok_pos_s, source_len / 8);
-
-    int i = 0;
-    while (true) {
-        const token_t token = lex_next(&lexer);
-
-        buf_push(token_ids, token.tok_id);
-        buf_push(tok_pos_s, token.tok_pos_range);
-        token_dump(&token, i, &lexer);
-
-        if (token.tok_id == TOK_ID_EOF) break;
-        i++;
-    }
-    PG_ASSERT_COND((int)buf_size(token_ids), ==, (int)buf_size(tok_pos_s),
-                   "%d");
-
     type_t* types = NULL;
     buf_grow(types, 100);
 
@@ -243,9 +223,7 @@ static parser_t parser_init(const char* file_name0, const char* source,
     parser_t parser = {.par_file_name0 = file_name0,
                        .par_source = source,
                        .par_source_len = source_len,
-                       .par_token_ids = token_ids,
                        .par_nodes = nodes,
-                       .par_tok_pos_ranges = tok_pos_s,
                        .par_tok_i = 0,
                        .par_lexer = lexer,
                        .par_is_tty = isatty(2),
