@@ -21,6 +21,10 @@ TESTS_ACTUAL := $(TESTS_SRC:.kts=.actual)
 TESTS_EXPECTED := $(TESTS_SRC:.kts=.expected)
 TESTS_DIFF := $(TESTS_SRC:.kts=.diff)
 
+RED = "\x1b[31m"
+GREEN = "\x1b[32m"
+RESET = "\x1b[0m"
+
 $(BIN): $(SRC) $(HEADERS)
 	$(CC) $(CFLAGS) $(SRC) -o $@
 
@@ -31,15 +35,15 @@ clean:
 .SUFFIXES: .kts .exe .actual .expected .diff
 
 .kts.exe: $(BIN)
-	./$(BIN) $<
+	@./$(BIN) $<
 
 .exe.actual: $(BIN)
-	./$< > $@
+	@./$< > $@
 
 .kts.expected:
 	@awk -F '// expect: ' '/expect: / {print $$2} ' $< > $@
 
 .actual.diff:
-	@TEST="$<" diff $${TEST/actual/expected} $< > $@ && echo OK $@ || echo NOT OK $@ ; exit 0
+	@TEST="$<" diff $${TEST/actual/expected} $< > $@ && echo $(GREEN) "✔ " $@ $(RESET) || echo $(RED) "✘ " $@ $(RESET); exit 0
 
 test: $(TESTS_DIFF) $(TESTS_EXPECTED)
