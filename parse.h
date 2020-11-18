@@ -11,8 +11,6 @@ static const int TYPE_UNIT_I = 0;  // see parser_init
 static const int TYPE_ANY_I = 1;   // see parser_init
 
 typedef struct {
-    const char* par_source;
-    const int par_source_len;
     const char* par_file_name0;
     int par_tok_i;
     ast_node_t* par_nodes;  // Arena of all nodes
@@ -137,10 +135,13 @@ static bool parser_check_keyword(const parser_t* parser,
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)type_kind, !=, NULL, "%p");
     PG_ASSERT_COND((void*)(source_start + suffix_len), <,
-                   (void*)(parser->par_source + parser->par_source_len), "%p");
+                   (void*)(parser->par_lexer.lex_source +
+                           parser->par_lexer.lex_source_len),
+                   "%p");
 
     const int remaining_len =
-        (parser->par_source + parser->par_source_len) - (source_start);
+        (parser->par_lexer.lex_source + parser->par_lexer.lex_source_len) -
+        (source_start);
 
     if (remaining_len >= suffix_len &&
         memcmp(source_start, suffix, suffix_len) == 0) {
@@ -219,8 +220,6 @@ static parser_t parser_init(const char* file_name0, const char* source,
     buf_push(nodes, NODE_BLOCK(TYPE_UNIT_I, -1, -1, NULL, -1));
 
     parser_t parser = {.par_file_name0 = file_name0,
-                       .par_source = source,
-                       .par_source_len = source_len,
                        .par_nodes = nodes,
                        .par_tok_i = 0,
                        .par_lexer = lexer,
@@ -236,12 +235,13 @@ static parser_t parser_init(const char* file_name0, const char* source,
 static long long int parse_tok_to_long(const parser_t* parser, int tok_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)parser->par_lexer.lex_tok_pos_ranges, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)parser->par_source, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)parser->par_lexer.lex_source, !=, NULL, "%p");
 
     static char string0[25];
 
     const pos_range_t pos_range = parser->par_lexer.lex_tok_pos_ranges[tok_i];
-    const char* const string = &parser->par_source[pos_range.pr_start];
+    const char* const string =
+        &parser->par_lexer.lex_source[pos_range.pr_start];
     const int string_len = pos_range.pr_end - pos_range.pr_start;
 
     PG_ASSERT_COND(string_len, >, (int)0, "%d");
@@ -258,7 +258,8 @@ static long long int parse_tok_to_char(const parser_t* parser, int tok_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
 
     const pos_range_t pos_range = parser->par_lexer.lex_tok_pos_ranges[tok_i];
-    const char* const string = &parser->par_source[pos_range.pr_start + 1];
+    const char* const string =
+        &parser->par_lexer.lex_source[pos_range.pr_start + 1];
     int string_len = pos_range.pr_end - pos_range.pr_start - 2;
 
     PG_ASSERT_COND(string_len, >, (int)0, "%d");
@@ -358,7 +359,8 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
             const pos_range_t pos_range =
                 parser->par_lexer.lex_tok_pos_ranges[var_def.vd_name_tok_i];
 
-            const char* const name = &parser->par_source[pos_range.pr_start];
+            const char* const name =
+                &parser->par_lexer.lex_source[pos_range.pr_start];
             const int name_len = pos_range.pr_end - pos_range.pr_start;
             log_debug_with_indent(
                 indent, "ast_node #%d %s type=%s name=%.*s offset=%d", node_i,
@@ -382,7 +384,8 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
             const pos_range_t pos_range =
                 parser->par_lexer.lex_tok_pos_ranges[var_def.vd_name_tok_i];
 
-            const char* const name = &parser->par_source[pos_range.pr_start];
+            const char* const name =
+                &parser->par_lexer.lex_source[pos_range.pr_start];
             const int name_len = pos_range.pr_end - pos_range.pr_start;
 #endif
 
@@ -486,9 +489,10 @@ static void parser_tok_source(const parser_t* parser, int tok_i,
     const pos_range_t pos_range = parser->par_lexer.lex_tok_pos_ranges[tok_i];
 
     // Without quotes for char/string
-    *source = &parser->par_source[(tok == TOK_ID_STRING || tok == TOK_ID_CHAR)
-                                      ? pos_range.pr_start + 1
-                                      : pos_range.pr_start];
+    *source = &parser->par_lexer
+                   .lex_source[(tok == TOK_ID_STRING || tok == TOK_ID_CHAR)
+                                   ? pos_range.pr_start + 1
+                                   : pos_range.pr_start];
     *source_len = (tok == TOK_ID_STRING || tok == TOK_ID_CHAR)
                       ? (pos_range.pr_end - pos_range.pr_start - 2)
                       : (pos_range.pr_end - pos_range.pr_start);
@@ -608,12 +612,13 @@ static void parser_print_source_on_error(const parser_t* parser,
         parser->par_lexer.lex_lines[first_line - 1] +
         ((first_line == 0) ? 0 : 1);
     const int last_line_source_pos =
-        last_line == last_line_in_file ? parser->par_source_len - 1
+        last_line == last_line_in_file ? parser->par_lexer.lex_source_len - 1
                                        : parser->par_lexer.lex_lines[last_line];
     PG_ASSERT_COND(first_line_source_pos, <, last_line_source_pos, "%d");
-    PG_ASSERT_COND(last_line_source_pos, <, parser->par_source_len, "%d");
+    PG_ASSERT_COND(last_line_source_pos, <, parser->par_lexer.lex_source_len,
+                   "%d");
 
-    const char* source = &parser->par_source[first_line_source_pos];
+    const char* source = &parser->par_lexer.lex_source[first_line_source_pos];
     int source_len = last_line_source_pos - first_line_source_pos;
     trim_end(&source, &source_len);
 
@@ -875,7 +880,8 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
 
         const pos_range_t pos_range =
             parser->par_lexer.lex_tok_pos_ranges[tok_i];
-        const char* const source = &parser->par_source[pos_range.pr_start];
+        const char* const source =
+            &parser->par_lexer.lex_source[pos_range.pr_start];
         // The source is either `true` or `false` hence the len is either 4
         // or 5
         const int8_t val = (memcmp("true", source, 4) == 0);
