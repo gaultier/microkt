@@ -16,3 +16,7 @@ val byte_mult: Byte = 2
 byte = byte + byte - byte_mult * byte + byte + byte
 println(byte)
 
+var char : Char = 'B'
+char = 'C'
+println(char)
+
