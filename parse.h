@@ -219,13 +219,13 @@ static parser_t parser_init(const char* file_name0, const char* source,
     // Add initial scope
     buf_push(nodes, NODE_BLOCK(TYPE_UNIT_I, -1, -1, NULL, -1));
 
-    parser_t parser = {.par_file_name0 = file_name0,
-                       .par_nodes = nodes,
-                       .par_tok_i = 0,
-                       .par_lexer = lexer,
-                       .par_is_tty = isatty(2),
-                       .par_types = types,
-                       .par_current_scope_i = 0};
+    parser_t parser = {
+        .par_file_name0 = file_name0,
+        .par_nodes = nodes,
+        .par_lexer = lexer,
+        .par_is_tty = isatty(2),
+        .par_types = types,
+    };
     parser_make_type(&parser, TYPE_UNIT);  // Hence TYPE_UNIT_I = 0
     parser_make_type(&parser, TYPE_ANY);   // Hence TYPE_ANY_I = 1
 
