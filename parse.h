@@ -1408,8 +1408,8 @@ static res_t parser_parse_assignment(parser_t* parser, int* new_node_i) {
         const type_kind_t rhs_type_kind = parser->par_types[rhs_type_i].ty_kind;
 
         if (lhs_type_kind != rhs_type_kind) {
-            return parser_err_non_matching_types(parser, lhs_node_i,
-                                                 expr_node_i);
+            return parser_err_non_matching_types(parser, expr_node_i,
+                                                 lhs_node_i);
         }
 
         const ast_node_t new_node =
