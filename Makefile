@@ -37,9 +37,9 @@ clean:
 	./$< > $@
 
 .kts.expected:
-	awk -F '// expect: ' '/expect: / {print $2} ' $< > $@
+	@awk -F '// expect: ' '/expect: / {print $$2} ' $< > $@
 
 .actual.diff:
-	TEST="$<" diff $${TEST/actual/expected} $< > $@ || exit 0
+	@TEST="$<" diff $${TEST/actual/expected} $< > $@ && echo OK $@ || echo NOT OK $@ ; exit 0
 
-test: $(TESTS_DIFF)
+test: $(TESTS_DIFF) $(TESTS_EXPECTED)

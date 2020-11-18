@@ -38,7 +38,7 @@ println(x) // expect: 20
 
 // Conditionally initialize
 val p: Long = if(x==20) a - 5 else b
-println(p) // expect 5
+println(p) // expect: 5
 
 // Other types
 val s: Short = 12345
