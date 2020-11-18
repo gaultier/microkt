@@ -20,14 +20,13 @@ microktc_debug: $(SRC) $(HEADERS)
 	$(CC) $(CFLAGS) -O0 -fsanitize=address -DWITH_LOGS $(SRC) -o $@
 
 clean:
-	rm -rf microktc microktc_debug ./*.dSYM $(TESTS_EXE) $(TESTS_ASM) $(TESTS_O)
+	rm -f microktc microktc_debug $(TESTS_EXE) $(TESTS_ASM) $(TESTS_O)
+	rm -rf ./*.dSYM
 
 .SUFFIXES: .kts .exe
 
-.kts.exe: $(BIN_TEST)
-	$(BIN_TEST) $<
+.kts.exe: microktc_debug
+	./microktc_debug $<
 
-tests: $(TESTS_EXE)
-
-test: tests tests.awk
+test: $(TESTS_EXE) tests.awk microktc_debug
 	@./tests.awk

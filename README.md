@@ -47,13 +47,13 @@ make test
 ./microktc test/hello_world.kts
 
 # And then run the executable
-./test/hello_world
+./test/hello_world.exe
 Hello, world!
 
 # Also works in Docker
 docker build -t microkt .
 docker run -it microkt sh -c 'microktc /usr/local/share/microktc/hello_world.kts \
-    && /usr/local/share/microktc/hello_world'
+    && /usr/local/share/microktc/hello_world.exe'
 
 Hello, world!
 ```
