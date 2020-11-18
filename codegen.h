@@ -388,8 +388,17 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
                 &parser->par_nodes[var.va_var_node_i];
             const var_def_t var_def = node_var_def->node_n.node_var_def;
             const int offset = var_def.vd_stack_offset;
+            const int type_size =
+                parser->par_types[node_var_def->node_type_i].ty_size;
 
-            println("mov -%d(%%rbp), %s", offset, ax);
+            if (type_size == 1)
+                println("mov -%d(%%rbp), %%al", offset);
+            else if (type_size == 2)
+                println("mov -%d(%%rbp), %%ax", offset);
+            else if (type_size == 4)
+                println("mov -%d(%%rbp), %%eax", offset);
+            else
+                println("mov -%d(%%rbp), %%rax", offset);
 
             return;
         }
@@ -455,15 +464,25 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
         }
         case NODE_VAR_DEF: {
             const var_def_t var_def = stmt->node_n.node_var_def;
-            if (var_def.vd_init_node_i >= 0) {
-                const ast_node_t* const init_node =
-                    &parser->par_nodes[var_def.vd_init_node_i];
+            if (var_def.vd_init_node_i < 0) UNIMPLEMENTED();
 
-                emit_expr(parser, init_node);
+            const ast_node_t* const init_node =
+                &parser->par_nodes[var_def.vd_init_node_i];
 
-                println("movq %%rax, -%d(%%rbp)",
-                        stmt->node_n.node_var_def.vd_stack_offset);
-            }
+            emit_expr(parser, init_node);
+
+            const int type_size = parser->par_types[stmt->node_type_i].ty_size;
+            const int offset = var_def.vd_stack_offset;
+
+            if (type_size == 1)
+                println("mov %%al, -%d(%%rbp)", offset);
+            else if (type_size == 2)
+                println("mov %%ax, -%d(%%rbp)", offset);
+            else if (type_size == 4)
+                println("mov %%eax, -%d(%%rbp)", offset);
+            else
+                println("mov %%rax, -%d(%%rbp)", offset);
+
             return;
         }
         case NODE_VAR: {
