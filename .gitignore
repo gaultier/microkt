@@ -6,4 +6,5 @@ test/*
 META-INF
 **/.class
 **/.jar
-test/*.txt
+test/*.actual
+test/*.expected

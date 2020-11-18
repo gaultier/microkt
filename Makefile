@@ -17,22 +17,26 @@ TESTS_SRC := $(wildcard test/*.kts)
 TESTS_O := $(TESTS_SRC:.kts=.o)
 TESTS_ASM := $(TESTS_SRC:.kts=.asm)
 TESTS_EXE := $(TESTS_SRC:.kts=.exe)
-TESTS_OUTPUT := $(TESTS_SRC:.kts=.txt)
+TESTS_ACTUAL := $(TESTS_SRC:.kts=.actual)
+TESTS_EXPECTED := $(TESTS_SRC:.kts=.expected)
 
 $(BIN): $(SRC) $(HEADERS)
 	$(CC) $(CFLAGS) $(SRC) -o $@
 
 clean:
-	rm -f $(BIN) $(TESTS_EXE) $(TESTS_ASM) $(TESTS_O) $(TESTS_OUTPUT)
+	rm -f $(BIN) $(TESTS_EXE) $(TESTS_ASM) $(TESTS_O) $(TESTS_ACTUAL)
 	rm -rf ./*.dSYM
 
-.SUFFIXES: .kts .exe .txt
+.SUFFIXES: .kts .exe .actual .expected
 
 .kts.exe: $(BIN) $(TESTS_SRC)
 	./$(BIN) $<
 
-.exe.txt: $(BIN) $(TESTS_EXE)
+.exe.actual: $(BIN) $(TESTS_EXE)
 	./$< > $@
 
-test: tests.awk $(TESTS_OUTPUT) $(BIN) $(TESTS_SRC)
-	./$< $(TESTS_OUTPUT)
+.kts.expected: $(TESTS_SRC)
+	awk -F '// expect: ' '/expect: / {print $2} ' $< > $@
+
+test: tests.awk $(TESTS_ACTUAL) $(TESTS_EXPECTED) $(BIN) $(TESTS_SRC)
+	./$< $(TESTS_ACTUAL)
