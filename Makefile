@@ -14,21 +14,25 @@ CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_$(DEBUG))
 BIN = microktc
 
 TESTS_SRC := $(wildcard test/*.kts)
-TESTS_O = $(TESTS_SRC:.kts=.o)
-TESTS_ASM = $(TESTS_SRC:.kts=.asm)
-TESTS_EXE = $(TESTS_SRC:.kts=.exe)
+TESTS_O := $(TESTS_SRC:.kts=.o)
+TESTS_ASM := $(TESTS_SRC:.kts=.asm)
+TESTS_EXE := $(TESTS_SRC:.kts=.exe)
+TESTS_OUTPUT := $(TESTS_SRC:.kts=.txt)
 
 $(BIN): $(SRC) $(HEADERS)
 	$(CC) $(CFLAGS) $(SRC) -o $@
 
 clean:
-	rm -f $(BIN) $(TESTS_EXE) $(TESTS_ASM) $(TESTS_O)
+	rm -f $(BIN) $(TESTS_EXE) $(TESTS_ASM) $(TESTS_O) $(TESTS_OUTPUT)
 	rm -rf ./*.dSYM
 
-.SUFFIXES: .kts .exe
+.SUFFIXES: .kts .exe .txt
 
-.kts.exe: $(BIN)
+.kts.exe: $(BIN) $(TESTS_SRC)
 	./$(BIN) $<
 
-test: $(TESTS_EXE) tests.awk $(BIN)
-	@./tests.awk
+.exe.txt: $(BIN) $(TESTS_EXE)
+	./$< > $@
+
+test: tests.awk $(TESTS_OUTPUT) $(BIN) $(TESTS_SRC)
+	./$< $(TESTS_OUTPUT)

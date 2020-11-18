@@ -135,7 +135,7 @@ static res_t run(const char* file_name0) {
         fflush(stdout);
         fflush(stderr);
     }
-    log_debug("created executable `%s`", base_file_name0);
+    log_debug("created executable `%s.exe`", base_file_name0);
 
     return RES_OK;
 }
