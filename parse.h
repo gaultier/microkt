@@ -15,10 +15,10 @@ typedef struct {
     int par_tok_i, par_scope_i;
     ast_node_t* par_nodes;  // Arena of all nodes
     lexer_t par_lexer;
-    bool par_is_tty;
     obj_t* par_objects;
     type_t* par_types;
     int par_offset;  // Local variable stack offset inside the current function
+    bool par_is_tty;
 } parser_t;
 
 static res_t parser_parse_expr(parser_t* parser, int* new_node_i);
