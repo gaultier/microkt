@@ -73,6 +73,12 @@ BEGIN {
             print WHITE "Actual output below:\n" RESET GREY actual_output RESET
             print WHITE "Expected output below:\n" RESET GREY expected_output RESET
 
+            if (substr(actual_output, length(actual_output), 1) != "\n") {
+                print RED "Missing ending newline in actual output!\n" RESET
+            }
+            if (substr(expected_output, length(expected_output), 1) != "\n") {
+                print RED "Missing ending newline in expected output!\n" RESET
+            }
             ret = 1
         } else {
             print GREEN "✔ " test RESET
