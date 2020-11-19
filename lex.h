@@ -320,10 +320,11 @@ static void lex_char(lexer_t* lexer, token_t* result, int* col) {
     }
 }
 
-static token_t lex_next(lexer_t* lexer, int* line, int* col) {
+static token_t lex_next(lexer_t* lexer, int* line, int* start_col, int* col) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
     PG_ASSERT_COND((void*)line, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)start_col, !=, NULL, "%p");
     PG_ASSERT_COND((void*)col, !=, NULL, "%p");
 
     token_t result = {.tok_id = TOK_ID_EOF,
@@ -337,12 +338,13 @@ static token_t lex_next(lexer_t* lexer, int* line, int* col) {
             case '\r':
             case '\t': {
                 result.tok_pos_range.pr_start = lexer->lex_index + 1;
+                *start_col += 1;
                 break;
             }
             case '\n': {
                 result.tok_pos_range.pr_start = lexer->lex_index + 1;
                 lexer->lex_index += 1;
-                *col = 0;
+                *col = *start_col = 1;
                 *line += 1;
                 continue;
             }
@@ -549,15 +551,16 @@ static lexer_t lex_init(const char* source, const int source_len) {
     buf_grow(lexer.lex_tok_pos_ranges, source_len / 8);
     buf_grow(lexer.lex_tok_ids, source_len / 8);
 
-    int i = 0, col = 0, line = 1;
+    int i = 0, col = 1, line = 1;
     while (true) {
-        const token_t token = lex_next(&lexer, &line, &col);
+        int start_col = col;
+        const token_t token = lex_next(&lexer, &line, &start_col, &col);
 
         buf_push(lexer.lex_tokens, token);
         buf_push(lexer.lex_tok_pos_ranges, token.tok_pos_range);
         buf_push(lexer.lex_tok_ids, token.tok_id);
         buf_push(lexer.lex_locs,
-                 ((loc_t){.loc_line = line, .loc_column = col}));
+                 ((loc_t){.loc_line = line, .loc_column = start_col}));
 
         token_dump(&token, i, &lexer);
 
