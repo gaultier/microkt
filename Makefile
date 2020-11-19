@@ -19,6 +19,7 @@ TESTS_ASM := $(TESTS_SRC:.kts=.asm)
 TESTS_EXE := $(TESTS_SRC:.kts=.exe)
 TESTS_ACTUAL := $(TESTS_SRC:.kts=.actual)
 TESTS_EXPECTED := $(TESTS_SRC:.kts=.expected)
+TESTS_DIFF := $(TESTS_SRC:.kts=.diff)
 
 .DEFAULT:
 $(BIN): $(SRC) $(HEADERS)
@@ -39,5 +40,5 @@ test: $(BIN) $(TESTS_SRC) $(TESTS_ACTUAL) $(TESTS_EXPECTED)
 	@sh test.sh
 
 clean:
-	rm -f $(BIN) $(TESTS_EXE) $(TESTS_ASM) $(TESTS_O) $(TESTS_ACTUAL) $(TESTS_EXPECTED)
+	rm -f $(BIN) $(TESTS_EXE) $(TESTS_ASM) $(TESTS_O) $(TESTS_ACTUAL) $(TESTS_EXPECTED) $(TESTS_DIFF)
 	rm -rf ./*.dSYM
