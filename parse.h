@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include "ast.h"
+#include "common.h"
 #include "lex.h"
 
 static const int TYPE_UNIT_I = 0;  // see parser_init
@@ -1380,11 +1381,14 @@ static res_t parser_parse_assignment(parser_t* parser, int* new_node_i) {
                 parser->par_lexer.lex_tok_pos_ranges[var_def.vd_first_tok_i];
             const loc_t loc_start =
                 lex_pos_to_loc(&parser->par_lexer, pos_range.pr_start);
-            return fprintf(stderr, res_to_str[RES_ASSIGNING_VAL],
-                           (parser->par_is_tty ? color_grey : ""),
-                           parser->par_file_name0, loc_start.loc_line,
-                           loc_start.loc_column,
-                           (parser->par_is_tty ? color_reset : ""));
+            fprintf(stderr, res_to_str[RES_ASSIGNING_VAL],
+                    (parser->par_is_tty ? color_grey : ""),
+                    parser->par_file_name0, loc_start.loc_line,
+                    loc_start.loc_column,
+                    (parser->par_is_tty ? color_reset : ""));
+            parser_print_source_on_error(parser, var_def.vd_first_tok_i,
+                                         var_def.vd_first_tok_i);
+            return RES_ASSIGNING_VAL;
         }
 
         const int type_i = node_var_def->node_type_i;
