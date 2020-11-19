@@ -36,8 +36,8 @@ $(BIN): $(SRC) $(HEADERS)
 .kts.expected: $(TESTS_SRC) $(TESTS_EXPECTED)
 	@awk -F '// expect: ' '/expect: / {print $$2} ' $< > $@
 
-test: $(BIN) $(TESTS_SRC) $(TESTS_ACTUAL) $(TESTS_EXPECTED)
-	@sh test.sh
+test: $(BIN) $(TESTS_SRC) $(TESTS_ACTUAL) $(TESTS_EXPECTED) test.sh
+	@./test.sh
 
 clean:
 	rm -f $(BIN) $(TESTS_EXE) $(TESTS_ASM) $(TESTS_O) $(TESTS_ACTUAL) $(TESTS_EXPECTED) $(TESTS_DIFF)

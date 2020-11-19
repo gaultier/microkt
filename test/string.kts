@@ -1,3 +1,3 @@
-println("hello!")
-println("world")
+println("hello!") // expect: hello!
+println("world") // expect: world
 

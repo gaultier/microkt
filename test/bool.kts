@@ -1,9 +1,10 @@
 
 // A comment
-println(true)
+println(true) // expect: true
 
+ // expect: false
   println(false) // And another
 
-    println(false)        
+    println(false)         // expect: false
 
     // A final comment

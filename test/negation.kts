@@ -1,2 +1,2 @@
-println(!true)
-println(!false)
+println(!true) // expect: false
+println(!false) // expect: true

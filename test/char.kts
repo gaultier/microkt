@@ -1,3 +1,3 @@
-println('A')
+println('A') // expect: A
 
-println('$')
+println('$') // expect: $
