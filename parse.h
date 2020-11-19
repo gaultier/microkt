@@ -29,6 +29,8 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i);
 static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i);
 static void parser_tok_source(const parser_t* parser, int tok_i,
                               const char** source, int* source_len);
+static void parser_print_source_on_error(const parser_t* parser,
+                                         int first_tok_i, int last_tok_i);
 
 static ast_node_t* parser_current_block(parser_t* parser) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
@@ -82,6 +84,29 @@ static res_t parser_resolve_var(const parser_t* parser, int tok_i,
 
     log_debug("var `%.*s` could not be resolved", var_source_len, var_source);
     return RES_NONE;
+}
+
+static res_t parser_err_assigning_val(const parser_t* parser, int assign_tok_i,
+                                      const var_def_t* var_def) {
+    const pos_range_t pos_range =
+        parser->par_lexer.lex_tok_pos_ranges[var_def->vd_first_tok_i];
+    const loc_t loc_start =
+        lex_pos_to_loc(&parser->par_lexer, pos_range.pr_start);
+
+    fprintf(stderr,
+            "%s%s:%d:%d:%sTrying to assign a variable declared with `val`\n",
+            (parser->par_is_tty ? color_grey : ""), parser->par_file_name0,
+            loc_start.loc_line, loc_start.loc_column,
+            (parser->par_is_tty ? color_reset : ""));
+
+    parser_print_source_on_error(parser, assign_tok_i, assign_tok_i);
+    fprintf(stderr, "%s%s:%d:%d:%sDeclared here:\n",
+            (parser->par_is_tty ? color_grey : ""), parser->par_file_name0,
+            loc_start.loc_line, loc_start.loc_column,
+            (parser->par_is_tty ? color_reset : ""));
+    parser_print_source_on_error(parser, var_def->vd_first_tok_i,
+                                 var_def->vd_first_tok_i);
+    return RES_ASSIGNING_VAL;
 }
 
 static int parser_make_type(parser_t* parser,
@@ -1376,20 +1401,8 @@ static res_t parser_parse_assignment(parser_t* parser, int* new_node_i) {
 
         const ast_node_t* const node_var_def = &parser->par_nodes[var_def_i];
         const var_def_t var_def = node_var_def->node_n.node_var_def;
-        if (var_def.vd_flags & VAR_FLAGS_VAL) {
-            const pos_range_t pos_range =
-                parser->par_lexer.lex_tok_pos_ranges[var_def.vd_first_tok_i];
-            const loc_t loc_start =
-                lex_pos_to_loc(&parser->par_lexer, pos_range.pr_start);
-            fprintf(stderr, res_to_str[RES_ASSIGNING_VAL],
-                    (parser->par_is_tty ? color_grey : ""),
-                    parser->par_file_name0, loc_start.loc_line,
-                    loc_start.loc_column,
-                    (parser->par_is_tty ? color_reset : ""));
-            parser_print_source_on_error(parser, var_def.vd_first_tok_i,
-                                         var_def.vd_first_tok_i);
-            return RES_ASSIGNING_VAL;
-        }
+        if (var_def.vd_flags & VAR_FLAGS_VAL)
+            return parser_err_assigning_val(parser, lhs_tok_i, &var_def);
 
         const int type_i = node_var_def->node_type_i;
 
