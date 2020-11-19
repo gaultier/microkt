@@ -1438,7 +1438,7 @@ static res_t parser_parse_property_declaration(parser_t* parser,
     unsigned short flags = 0;
     if (parser_match(parser, &first_tok_i, 1, TOK_ID_VAR))
         flags = VAR_FLAGS_VAR;
-    else if (!parser_match(parser, &first_tok_i, 1, TOK_ID_VAL))
+    else if (parser_match(parser, &first_tok_i, 1, TOK_ID_VAL))
         flags = VAR_FLAGS_VAL;
     else
         return RES_NONE;
@@ -1482,8 +1482,8 @@ static res_t parser_parse_property_declaration(parser_t* parser,
     buf_push(parser->par_nodes, new_node);
     *new_node_i = buf_size(parser->par_nodes) - 1;
 
-    log_debug("new var def=%d current_scope_i=%d", *new_node_i,
-              parser->par_scope_i);
+    log_debug("new var def=%d current_scope_i=%d flags=%d offset=%d",
+              *new_node_i, parser->par_scope_i, flags, parser->par_offset);
 
     return RES_OK;
 }
