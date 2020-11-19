@@ -1374,6 +1374,19 @@ static res_t parser_parse_assignment(parser_t* parser, int* new_node_i) {
         }
 
         const ast_node_t* const node_var_def = &parser->par_nodes[var_def_i];
+        const var_def_t var_def = node_var_def->node_n.node_var_def;
+        if (var_def.vd_flags & VAR_FLAGS_VAL) {
+            const pos_range_t pos_range =
+                parser->par_lexer.lex_tok_pos_ranges[var_def.vd_first_tok_i];
+            const loc_t loc_start =
+                lex_pos_to_loc(&parser->par_lexer, pos_range.pr_start);
+            return fprintf(stderr, res_to_str[RES_ASSIGNING_VAL],
+                           (parser->par_is_tty ? color_grey : ""),
+                           parser->par_file_name0, loc_start.loc_line,
+                           loc_start.loc_column,
+                           (parser->par_is_tty ? color_reset : ""));
+        }
+
         const int type_i = node_var_def->node_type_i;
 
         const ast_node_t var_node = NODE_VAR(type_i, lhs_tok_i, var_def_i);
@@ -1422,11 +1435,12 @@ static res_t parser_parse_property_declaration(parser_t* parser,
     int first_tok_i = -1, name_tok_i = -1, type_tok_i = -1, dummy = -1,
         last_tok_i = -1, init_node_i = -1;
 
-    unsigned short flags = VAR_FLAGS_VAL;
-
+    unsigned short flags = 0;
     if (parser_match(parser, &first_tok_i, 1, TOK_ID_VAR))
         flags = VAR_FLAGS_VAR;
     else if (!parser_match(parser, &first_tok_i, 1, TOK_ID_VAL))
+        flags = VAR_FLAGS_VAL;
+    else
         return RES_NONE;
 
     if (parser_expect_token(parser, &name_tok_i, TOK_ID_IDENTIFIER) != RES_OK)
