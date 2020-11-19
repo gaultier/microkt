@@ -157,11 +157,13 @@ static bool lex_is_identifier_char(char c) {
            ('A' <= c && c <= 'Z') || c == '_';
 }
 
-static char lex_advance(lexer_t* lexer) {
+static char lex_advance(lexer_t* lexer, int* col) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)col, !=, NULL, "%p");
 
     lexer->lex_index += 1;
+    *col += 1;
 
     return lexer->lex_source[lexer->lex_index - 1];
 }
@@ -189,15 +191,16 @@ static char lex_peek_next(const lexer_t* lexer) {
                                 : lexer->lex_source[lexer->lex_index + 1];
 }
 
-static bool lex_match(lexer_t* lexer, char c) {
+static bool lex_match(lexer_t* lexer, char c, int* col) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)col, !=, NULL, "%p");
 
     if (lex_is_at_end(lexer)) return false;
 
     if (lex_peek(lexer) != c) return false;
 
-    lex_advance(lexer);
+    lex_advance(lexer, col);
     return true;
 }
 
@@ -211,32 +214,36 @@ static void lex_newline(lexer_t* lexer) {
     lexer->lex_index += 1;
 }
 
-static void lex_advance_until_newline_or_eof(lexer_t* lexer) {
+static void lex_advance_until_newline_or_eof(lexer_t* lexer, int* col) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
     PG_ASSERT_COND(lexer->lex_index, <, lexer->lex_source_len - 1, "%d");
+    PG_ASSERT_COND((void*)col, !=, NULL, "%p");
 
     while (true) {
         const char c = lex_peek(lexer);
-        if (c == '\n' || c == '\0') break;
+        if (c == '\n' || c == '\0') {
+            break;
+        }
 
-        lex_advance(lexer);
+        lex_advance(lexer, col);
     }
 }
 
-static void lex_identifier(lexer_t* lexer, token_t* result) {
+static void lex_identifier(lexer_t* lexer, token_t* result, int* col) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
     PG_ASSERT_COND((void*)result, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)col, !=, NULL, "%p");
 
-    char c = lex_advance(lexer);
+    char c = lex_advance(lexer, col);
     PG_ASSERT_COND(lex_is_identifier_char(c), ==, true, "%d");
 
     while (lexer->lex_index < lexer->lex_source_len) {
         c = lex_peek(lexer);
         if (!lex_is_identifier_char(c)) break;
 
-        lex_advance(lexer);
+        lex_advance(lexer, col);
     }
 
     PG_ASSERT_COND(lexer->lex_index, <, lexer->lex_source_len, "%d");
@@ -253,19 +260,20 @@ static void lex_identifier(lexer_t* lexer, token_t* result) {
     }
 }
 
-static res_t lex_number(lexer_t* lexer, token_t* result) {
+static res_t lex_number(lexer_t* lexer, token_t* result, int* col) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
     PG_ASSERT_COND((void*)result, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)col, !=, NULL, "%p");
 
-    char c = lex_advance(lexer);
+    char c = lex_advance(lexer, col);
     PG_ASSERT_COND(lex_is_digit(c), ==, true, "%d");
 
     while (lexer->lex_index < lexer->lex_source_len) {
         c = lex_peek(lexer);
         if (!lex_is_digit(c)) break;
 
-        lex_advance(lexer);
+        lex_advance(lexer, col);
     }
 
     result->tok_id = TOK_ID_LONG;
@@ -274,20 +282,21 @@ static res_t lex_number(lexer_t* lexer, token_t* result) {
 
 // TODO: escape sequences
 // TODO: multiline
-static void lex_string(lexer_t* lexer, token_t* result) {
+static void lex_string(lexer_t* lexer, token_t* result, int* col) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
     PG_ASSERT_COND((void*)result, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)col, !=, NULL, "%p");
 
     char c = lex_peek(lexer);
     PG_ASSERT_COND(c, ==, '"', "%c");
-    lex_advance(lexer);
+    lex_advance(lexer, col);
 
     while (lexer->lex_index < lexer->lex_source_len) {
         c = lex_peek(lexer);
         if (c == '"') break;
 
-        lex_advance(lexer);
+        lex_advance(lexer, col);
     }
 
     if (c != '"') {
@@ -299,27 +308,28 @@ static void lex_string(lexer_t* lexer, token_t* result) {
     } else {
         PG_ASSERT_COND(c, ==, '"', "%c");
         result->tok_id = TOK_ID_STRING;
-        lex_advance(lexer);
+        lex_advance(lexer, col);
     }
 }
 
 // TODO: escape sequences
 // TODO: unicode literals
-static void lex_char(lexer_t* lexer, token_t* result) {
+static void lex_char(lexer_t* lexer, token_t* result, int* col) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
     PG_ASSERT_COND((void*)result, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)col, !=, NULL, "%p");
 
     char c = lex_peek(lexer);
     PG_ASSERT_COND(c, ==, '\'', "%c");
-    lex_advance(lexer);
+    lex_advance(lexer, col);
 
     int len = 0;
     while (lexer->lex_index < lexer->lex_source_len) {
         c = lex_peek(lexer);
         if (c == '\'') break;
 
-        lex_advance(lexer);
+        lex_advance(lexer, col);
         len++;
     }
 
@@ -332,7 +342,7 @@ static void lex_char(lexer_t* lexer, token_t* result) {
     } else {
         PG_ASSERT_COND(c, ==, '\'', "%c");
         result->tok_id = TOK_ID_CHAR;
-        lex_advance(lexer);
+        lex_advance(lexer, col);
     }
 
     if (len != 1) {
@@ -351,7 +361,6 @@ static token_t lex_next(lexer_t* lexer, int* line, int* col) {
 
     while (lexer->lex_index < lexer->lex_source_len) {
         const char c = lexer->lex_source[lexer->lex_index];
-        *col += 1;
 
         switch (c) {
             case ' ':
@@ -369,94 +378,97 @@ static token_t lex_next(lexer_t* lexer, int* line, int* col) {
             }
             case '/': {
                 if (lex_peek_next(lexer) == '/') {
-                    lex_advance_until_newline_or_eof(lexer);
+                    lex_advance_until_newline_or_eof(lexer, col);
                     result.tok_id = TOK_ID_COMMENT;
                     goto outer;
                 } else {
-                    lex_match(lexer, '/');
+                    lex_match(lexer, '/', col);
                     result.tok_id = TOK_ID_SLASH;
                     goto outer;
                 }
             }
             case '=': {
-                lex_match(lexer, '=');
+                lex_match(lexer, '=', col);
                 result.tok_id =
-                    lex_match(lexer, '=') ? TOK_ID_EQ_EQ : TOK_ID_EQ;
+                    lex_match(lexer, '=', col) ? TOK_ID_EQ_EQ : TOK_ID_EQ;
                 goto outer;
             }
             case '!': {
-                lex_match(lexer, '!');
-                result.tok_id = lex_match(lexer, '=') ? TOK_ID_NEQ : TOK_ID_NOT;
+                lex_match(lexer, '!', col);
+                result.tok_id =
+                    lex_match(lexer, '=', col) ? TOK_ID_NEQ : TOK_ID_NOT;
                 goto outer;
             }
             case '<': {
-                lex_match(lexer, '<');
-                result.tok_id = lex_match(lexer, '=') ? TOK_ID_LE : TOK_ID_LT;
+                lex_match(lexer, '<', col);
+                result.tok_id =
+                    lex_match(lexer, '=', col) ? TOK_ID_LE : TOK_ID_LT;
                 goto outer;
             }
             case '>': {
-                lex_match(lexer, '>');
-                result.tok_id = lex_match(lexer, '=') ? TOK_ID_GE : TOK_ID_GT;
+                lex_match(lexer, '>', col);
+                result.tok_id =
+                    lex_match(lexer, '=', col) ? TOK_ID_GE : TOK_ID_GT;
                 goto outer;
             }
             case ':': {
-                lex_match(lexer, ':');
+                lex_match(lexer, ':', col);
                 result.tok_id = TOK_ID_COLON;
 
                 goto outer;
             }
             case '{': {
-                lex_match(lexer, '{');
+                lex_match(lexer, '{', col);
                 result.tok_id = TOK_ID_LCURLY;
 
                 goto outer;
             }
             case '}': {
-                lex_match(lexer, '}');
+                lex_match(lexer, '}', col);
                 result.tok_id = TOK_ID_RCURLY;
 
                 goto outer;
             }
             case '+': {
-                lex_match(lexer, '+');
+                lex_match(lexer, '+', col);
                 result.tok_id = TOK_ID_PLUS;
 
                 goto outer;
             }
             case '*': {
-                lex_match(lexer, '*');
+                lex_match(lexer, '*', col);
                 result.tok_id = TOK_ID_STAR;
 
                 goto outer;
             }
             case '-': {
-                lex_match(lexer, '-');
+                lex_match(lexer, '-', col);
                 result.tok_id = TOK_ID_MINUS;
 
                 goto outer;
             }
             case '%': {
-                lex_match(lexer, '%');
+                lex_match(lexer, '%', col);
                 result.tok_id = TOK_ID_PERCENT;
 
                 goto outer;
             }
             case '(': {
                 result.tok_id = TOK_ID_LPAREN;
-                lex_advance(lexer);
+                lex_advance(lexer, col);
                 goto outer;
             }
             case ')': {
                 result.tok_id = TOK_ID_RPAREN;
-                lex_advance(lexer);
+                lex_advance(lexer, col);
                 goto outer;
             }
             case '"': {
-                lex_string(lexer, &result);
+                lex_string(lexer, &result, col);
                 goto outer;
             }
             case '\'': {
-                lex_char(lexer, &result);
+                lex_char(lexer, &result, col);
                 goto outer;
             }
             case '_':
@@ -512,7 +524,7 @@ static token_t lex_next(lexer_t* lexer, int* line, int* col) {
             case 'X':
             case 'Y':
             case 'Z': {
-                lex_identifier(lexer, &result);
+                lex_identifier(lexer, &result, col);
                 goto outer;
             }
             case '0':
@@ -525,17 +537,17 @@ static token_t lex_next(lexer_t* lexer, int* line, int* col) {
             case '7':
             case '8':
             case '9': {
-                const res_t res = lex_number(lexer, &result);
+                const res_t res = lex_number(lexer, &result, col);
                 IGNORE(res);  // TODO: correct?
                 goto outer;
             }
             default: {
                 result.tok_id = TOK_ID_INVALID;
-                lex_advance(lexer);
+                lex_advance(lexer, col);
                 goto outer;
             }
         }
-        lex_advance(lexer);
+        lex_advance(lexer, col);
     }
 outer:
     result.tok_pos_range.pr_end = lexer->lex_index;
