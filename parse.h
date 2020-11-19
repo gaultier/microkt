@@ -361,10 +361,10 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
                 &parser->par_lexer.lex_source[pos_range.pr_start];
             const int name_len = pos_range.pr_end - pos_range.pr_start;
             log_debug_with_indent(
-                indent, "ast_node #%d %s type=%s name=%.*s offset=%d", node_i,
-                node_kind_to_str[node->node_kind],
+                indent, "ast_node #%d %s type=%s name=%.*s offset=%d flags=%d",
+                node_i, node_kind_to_str[node->node_kind],
                 type_to_str[parser->par_types[node->node_type_i].ty_kind],
-                name_len, name, var_def.vd_stack_offset);
+                name_len, name, var_def.vd_stack_offset, var_def.vd_flags);
 
             if (var_def.vd_init_node_i >= 0)
                 ast_node_dump(nodes, parser, var_def.vd_init_node_i,
@@ -1478,7 +1478,7 @@ static res_t parser_parse_property_declaration(parser_t* parser,
 
     const ast_node_t new_node =
         NODE_VAR_DEF(type_i, first_tok_i, name_tok_i, last_tok_i, init_node_i,
-                     parser->par_offset, VAR_FLAGS_VAL);
+                     parser->par_offset, flags);
     buf_push(parser->par_nodes, new_node);
     *new_node_i = buf_size(parser->par_nodes) - 1;
 
