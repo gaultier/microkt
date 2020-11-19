@@ -617,9 +617,29 @@ static void parser_print_source_on_error(const parser_t* parser,
     const int last_line = last_tok_loc.loc_line;
     PG_ASSERT_COND(first_line, <=, last_line, "%d");
 
+    int first_line_start_tok_i = first_tok_i;
+    for (; first_line_start_tok_i >= 0; first_line_start_tok_i--) {
+        if (parser->par_lexer.lex_locs[first_line_start_tok_i].loc_line <
+            first_line)
+            break;
+    }
+    pos_range_t first_line_start_tok_pos =
+        parser->par_lexer.lex_tok_pos_ranges[first_line_start_tok_i];
+
+    int last_line_start_tok_i = last_tok_i;
+    for (; last_line_start_tok_i < (int)buf_size(parser->par_lexer.lex_locs);
+         last_line_start_tok_i++) {
+        if (last_line <
+            parser->par_lexer.lex_locs[last_line_start_tok_i].loc_line)
+            break;
+    }
+    pos_range_t last_line_start_tok_pos =
+        parser->par_lexer.lex_tok_pos_ranges[last_line_start_tok_i];
+
     const char* source =
-        &parser->par_lexer.lex_source[first_tok_pos_range.pr_start];
-    int source_len = last_tok_pos_range.pr_end - first_tok_pos_range.pr_start;
+        &parser->par_lexer.lex_source[first_line_start_tok_pos.pr_start];
+    int source_len =
+        last_line_start_tok_pos.pr_end - first_line_start_tok_pos.pr_start;
     trim_end(&source, &source_len);
 
     static char prefix[MAXPATHLEN + 50] = "\0";
@@ -630,15 +650,6 @@ static void parser_print_source_on_error(const parser_t* parser,
     fprintf(stderr, "%s%s%s%.*s\n", parser->par_is_tty ? color_grey : "",
             prefix, parser->par_is_tty ? color_reset : "", (int)source_len,
             source);
-
-    int first_line_start_tok_i = first_tok_i;
-    for (; first_line_start_tok_i >= 0; first_line_start_tok_i--) {
-        if (parser->par_lexer.lex_locs[first_line_start_tok_i].loc_line <
-            first_line)
-            break;
-    }
-    pos_range_t first_line_start_tok_pos =
-        parser->par_lexer.lex_tok_pos_ranges[first_line_start_tok_i];
 
     const int source_before_without_squiggly_len =
         first_tok_pos_range.pr_start - first_line_start_tok_pos.pr_start;
