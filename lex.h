@@ -107,7 +107,7 @@ static const keyword_t keywords[] = {
 
 typedef struct {
     const char* lex_source;
-    int lex_source_len, lex_index, *lex_lines /* file offset of line # */;
+    int lex_source_len, lex_index;
     loc_t* lex_locs;
     token_t* lex_tokens;
     token_id_t* lex_tok_ids;
@@ -126,26 +126,6 @@ static const token_id_t* token_get_keyword(const char* source_start, int len) {
     }
 
     return NULL;
-}
-
-static loc_t lex_pos_to_loc(const lexer_t* lexer, int position) {
-    PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
-    PG_ASSERT_COND((int)buf_size(lexer->lex_lines), >, 0, "%d");
-
-    loc_t loc = {.loc_line = 1};
-
-    int i = 0;
-    const int last_line = lexer->lex_lines[buf_size(lexer->lex_lines) - 1];
-    for (i = 0; i < (int)buf_size(lexer->lex_lines); i++) {
-        const int line_pos = lexer->lex_lines[i];
-        if (position < line_pos) break;
-
-        loc.loc_line += 1;
-    }
-
-    loc.loc_column = position - (i > 0 ? lexer->lex_lines[i - 1] : 0);
-    if (loc.loc_line > last_line) loc.loc_line = last_line;
-    return loc;
 }
 
 // TODO: expand
@@ -202,16 +182,6 @@ static bool lex_match(lexer_t* lexer, char c, int* col) {
 
     lex_advance(lexer, col);
     return true;
-}
-
-static void lex_newline(lexer_t* lexer) {
-    PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
-    PG_ASSERT_COND(lex_peek(lexer), ==, '\n', "%c");
-
-    buf_push(lexer->lex_lines, lexer->lex_index);
-    log_debug("newline at position %d", lexer->lex_index);
-
-    lexer->lex_index += 1;
 }
 
 static void lex_advance_until_newline_or_eof(lexer_t* lexer, int* col) {
@@ -371,7 +341,7 @@ static token_t lex_next(lexer_t* lexer, int* line, int* col) {
             }
             case '\n': {
                 result.tok_pos_range.pr_start = lexer->lex_index + 1;
-                lex_newline(lexer);
+                lexer->lex_index += 1;
                 *col = 0;
                 *line += 1;
                 continue;

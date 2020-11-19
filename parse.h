@@ -88,10 +88,7 @@ static res_t parser_resolve_var(const parser_t* parser, int tok_i,
 
 static res_t parser_err_assigning_val(const parser_t* parser, int assign_tok_i,
                                       const var_def_t* var_def) {
-    const pos_range_t pos_range =
-        parser->par_lexer.lex_tok_pos_ranges[var_def->vd_first_tok_i];
-    const loc_t loc_start =
-        lex_pos_to_loc(&parser->par_lexer, pos_range.pr_start);
+    const loc_t loc_start = parser->par_lexer.lex_locs[var_def->vd_first_tok_i];
 
     fprintf(stderr,
             "%s%s:%d:%d:%sTrying to assign a variable declared with `val`\n",
@@ -611,39 +608,18 @@ static void parser_print_source_on_error(const parser_t* parser,
 
     const pos_range_t first_tok_pos_range =
         parser->par_lexer.lex_tok_pos_ranges[first_tok_i];
-    const loc_t first_tok_loc =
-        lex_pos_to_loc(&parser->par_lexer, first_tok_pos_range.pr_start);
+    const loc_t first_tok_loc = parser->par_lexer.lex_locs[first_tok_i];
     const pos_range_t last_tok_pos_range =
         parser->par_lexer.lex_tok_pos_ranges[last_tok_i];
-    const loc_t last_tok_loc =
-        lex_pos_to_loc(&parser->par_lexer, last_tok_pos_range.pr_start);
+    const loc_t last_tok_loc = parser->par_lexer.lex_locs[last_tok_i];
 
-    // lex_pos_to_loc returns a human readable line number starting at 1 so
-    // we subtract 1 to start at 0
-    const int first_line = first_tok_loc.loc_line - 1;
-    const int last_line = last_tok_loc.loc_line - 1;
+    const int first_line = first_tok_loc.loc_line;
+    const int last_line = last_tok_loc.loc_line;
     PG_ASSERT_COND(first_line, <=, last_line, "%d");
 
-    const int last_line_in_file = buf_size(parser->par_lexer.lex_lines) - 1;
-    PG_ASSERT_COND(first_line, <=, last_line_in_file, "%d");
-    PG_ASSERT_COND(last_line, <=, last_line_in_file, "%d");
-
-    // The position at index 0 is actually on the second line so we subtract
-    // 1 to the index We then add one to position to 'trim' the heading
-    // newline from the source, if we are not on the first line (where there
-    // is no heading newline)
-    const int first_line_source_pos =
-        parser->par_lexer.lex_lines[first_line - 1] +
-        ((first_line == 0) ? 0 : 1);
-    const int last_line_source_pos =
-        last_line == last_line_in_file ? parser->par_lexer.lex_source_len - 1
-                                       : parser->par_lexer.lex_lines[last_line];
-    PG_ASSERT_COND(first_line_source_pos, <, last_line_source_pos, "%d");
-    PG_ASSERT_COND(last_line_source_pos, <, parser->par_lexer.lex_source_len,
-                   "%d");
-
-    const char* source = &parser->par_lexer.lex_source[first_line_source_pos];
-    int source_len = last_line_source_pos - first_line_source_pos;
+    const char* source =
+        &parser->par_lexer.lex_source[first_tok_pos_range.pr_start];
+    int source_len = last_tok_pos_range.pr_end - first_tok_pos_range.pr_start;
     trim_end(&source, &source_len);
 
     static char prefix[MAXPATHLEN + 50] = "\0";
@@ -655,8 +631,17 @@ static void parser_print_source_on_error(const parser_t* parser,
             prefix, parser->par_is_tty ? color_reset : "", (int)source_len,
             source);
 
+    int first_line_start_tok_i = first_tok_i;
+    for (; first_line_start_tok_i >= 0; first_line_start_tok_i--) {
+        if (parser->par_lexer.lex_locs[first_line_start_tok_i].loc_line <
+            first_line)
+            break;
+    }
+    pos_range_t first_line_start_tok_pos =
+        parser->par_lexer.lex_tok_pos_ranges[first_line_start_tok_i];
+
     const int source_before_without_squiggly_len =
-        first_tok_pos_range.pr_start - first_line_source_pos;
+        first_tok_pos_range.pr_start - first_line_start_tok_pos.pr_start;
 
     for (int i = 0; i < prefix_len + source_before_without_squiggly_len; i++)
         fprintf(stderr, " ");
@@ -677,10 +662,7 @@ static res_t parser_err_unexpected_token(const parser_t* parser,
 
     const res_t res = RES_UNEXPECTED_TOKEN;
 
-    const pos_range_t pos_range =
-        parser->par_lexer.lex_tok_pos_ranges[parser->par_tok_i];
-    const loc_t loc_start =
-        lex_pos_to_loc(&parser->par_lexer, pos_range.pr_start);
+    const loc_t loc_start = parser->par_lexer.lex_locs[parser->par_tok_i];
 
     fprintf(stderr, res_to_str[res], (parser->par_is_tty ? color_grey : ""),
             parser->par_file_name0, loc_start.loc_line, loc_start.loc_column,
@@ -760,11 +742,7 @@ static res_t parser_err_non_matching_types(const parser_t* parser,
     const int lhs_first_tok_i = ast_node_first_token(parser, lhs);
     const int rhs_last_tok_i = ast_node_last_token(parser, rhs);
 
-    const pos_range_t lhs_first_tok_pos_range =
-        parser->par_lexer.lex_tok_pos_ranges[lhs_first_tok_i];
-
-    const loc_t lhs_first_tok_loc =
-        lex_pos_to_loc(&parser->par_lexer, lhs_first_tok_pos_range.pr_start);
+    const loc_t lhs_first_tok_loc = parser->par_lexer.lex_locs[lhs_first_tok_i];
 
     const res_t res = RES_NON_MATCHING_TYPES;
     fprintf(stderr, res_to_str[res], (parser->par_is_tty ? color_grey : ""),
@@ -790,11 +768,7 @@ static res_t parser_err_unexpected_type(const parser_t* parser, int lhs_node_i,
     const int lhs_first_tok_i = ast_node_first_token(parser, lhs);
     const int lhs_last_tok_i = ast_node_last_token(parser, lhs);
 
-    const pos_range_t lhs_first_tok_pos_range =
-        parser->par_lexer.lex_tok_pos_ranges[lhs_first_tok_i];
-
-    const loc_t lhs_first_tok_loc =
-        lex_pos_to_loc(&parser->par_lexer, lhs_first_tok_pos_range.pr_start);
+    const loc_t lhs_first_tok_loc = parser->par_lexer.lex_locs[lhs_first_tok_i];
 
     const res_t res = RES_NON_MATCHING_TYPES;
     fprintf(stderr, res_to_str[res], (parser->par_is_tty ? color_grey : ""),
