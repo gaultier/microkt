@@ -107,8 +107,8 @@ static const keyword_t keywords[] = {
 
 typedef struct {
     const char* lex_source;
-    int lex_source_len, lex_index, *lex_lines /* file offset of line # */,
-        *lex_line_no /* line number for each token */;
+    int lex_source_len, lex_index, *lex_lines /* file offset of line # */;
+    loc_t* lex_locs;
     token_t* lex_tokens;
     token_id_t* lex_tok_ids;
     pos_range_t* lex_tok_pos_ranges;
@@ -340,15 +340,18 @@ static void lex_char(lexer_t* lexer, token_t* result) {
     }
 }
 
-static token_t lex_next(lexer_t* lexer) {
+static token_t lex_next(lexer_t* lexer, int* line, int* col) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)line, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)col, !=, NULL, "%p");
 
     token_t result = {.tok_id = TOK_ID_EOF,
                       .tok_pos_range = {.pr_start = lexer->lex_index}};
 
     while (lexer->lex_index < lexer->lex_source_len) {
         const char c = lexer->lex_source[lexer->lex_index];
+        *col += 1;
 
         switch (c) {
             case ' ':
@@ -360,6 +363,8 @@ static token_t lex_next(lexer_t* lexer) {
             case '\n': {
                 result.tok_pos_range.pr_start = lexer->lex_index + 1;
                 lex_newline(lexer);
+                *col = 0;
+                *line += 1;
                 continue;
             }
             case '/': {
@@ -542,12 +547,14 @@ static void token_dump(const token_t* t, int i, const lexer_t* lexer) {
     PG_ASSERT_COND((void*)t, !=, NULL, "%p");
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
 
+    loc_t loc = lexer->lex_locs[i];
 #ifndef WITH_LOGS
     IGNORE(i);
+    IGNORE(loc);
 #endif
-
-    log_debug("id=%s #%d %d..%d `%.*s`", token_id_to_str[t->tok_id], i,
-              t->tok_pos_range.pr_start, t->tok_pos_range.pr_end,
+    log_debug("%d:%d:id=%s #%d %d..%d `%.*s`", loc.loc_line, loc.loc_column,
+              token_id_to_str[t->tok_id], i, t->tok_pos_range.pr_start,
+              t->tok_pos_range.pr_end,
               t->tok_pos_range.pr_end - t->tok_pos_range.pr_start,
               &lexer->lex_source[t->tok_pos_range.pr_start]);
 }
@@ -560,13 +567,16 @@ static lexer_t lex_init(const char* source, const int source_len) {
     buf_grow(lexer.lex_tok_pos_ranges, source_len / 8);
     buf_grow(lexer.lex_tok_ids, source_len / 8);
 
-    int i = 0;
+    int i = 0, col = 0, line = 1;
     while (true) {
-        const token_t token = lex_next(&lexer);
+        const token_t token = lex_next(&lexer, &line, &col);
 
         buf_push(lexer.lex_tokens, token);
         buf_push(lexer.lex_tok_pos_ranges, token.tok_pos_range);
         buf_push(lexer.lex_tok_ids, token.tok_id);
+        buf_push(lexer.lex_locs,
+                 ((loc_t){.loc_line = line, .loc_column = col}));
+
         token_dump(&token, i, &lexer);
 
         if (token.tok_id == TOK_ID_EOF) break;
