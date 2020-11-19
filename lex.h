@@ -542,6 +542,10 @@ static void token_dump(const token_t* t, int i, const lexer_t* lexer) {
     PG_ASSERT_COND((void*)t, !=, NULL, "%p");
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
 
+#ifndef WITH_LOGS
+    IGNORE(i);
+#endif
+
     log_debug("id=%s #%d %d..%d `%.*s`", token_id_to_str[t->tok_id], i,
               t->tok_pos_range.pr_start, t->tok_pos_range.pr_end,
               t->tok_pos_range.pr_end - t->tok_pos_range.pr_start,

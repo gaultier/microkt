@@ -14,6 +14,6 @@ COPY --from=builder /microktc /usr/local/bin/
 RUN mkdir -p  /usr/local/share/microktc/ && echo 'println("Hello, world!")' > /usr/local/share/microktc/hello_world.kts
 
 # Sanity check
-RUN microktc /usr/local/share/microktc/hello_world.kts && /usr/local/share/microktc/hello_world > /dev/null
+RUN microktc /usr/local/share/microktc/hello_world.kts && /usr/local/share/microktc/hello_world.exe > /dev/null
 
 CMD ["microktc"]
