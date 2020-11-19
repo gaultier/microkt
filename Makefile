@@ -19,32 +19,25 @@ TESTS_ASM := $(TESTS_SRC:.kts=.asm)
 TESTS_EXE := $(TESTS_SRC:.kts=.exe)
 TESTS_ACTUAL := $(TESTS_SRC:.kts=.actual)
 TESTS_EXPECTED := $(TESTS_SRC:.kts=.expected)
-TESTS_DIFF := $(TESTS_SRC:.kts=.diff)
-
-RED = "\x1b[31m"
-GREEN = "\x1b[32m"
-RESET = "\x1b[0m"
 
 .DEFAULT:
 $(BIN): $(SRC) $(HEADERS)
 	$(CC) $(CFLAGS) $(SRC) -o $@
 
-.SUFFIXES: .kts .exe .actual .expected .diff
+.SUFFIXES: .kts .exe .actual .expected
 
 .kts.exe: $(BIN) $(TESTS_SRC)
-	@./$(BIN) $<
+	./$(BIN) $<
 
 .exe.actual: $(TESTS_EXE) $(TESTS_ACTUAL)
-	@./$< > $@
+	./$< > $@
 
 .kts.expected: $(TESTS_SRC) $(TESTS_EXPECTED)
 	@awk -F '// expect: ' '/expect: / {print $$2} ' $< > $@
 
-.actual.diff: $(TESTS_ACTUAL) $(TESTS_EXPECTED)
-	@TEST="$<" diff $${TEST/actual/expected} $< > $@ && echo $(GREEN) "✔ " $@ $(RESET) || echo $(RED) "✘ " $@ $(RESET); exit 0
-
-test: $(BIN) $(TESTS_SRC) $(TESTS_ACTUAL) $(TESTS_EXPECTED) $(TESTS_DIFF)
+test: $(BIN) $(TESTS_SRC) $(TESTS_ACTUAL) $(TESTS_EXPECTED)
+	@sh test.sh
 
 clean:
-	rm -f $(BIN) $(TESTS_EXE) $(TESTS_ASM) $(TESTS_O) $(TESTS_ACTUAL) $(TESTS_EXPECTED) $(TESTS_DIFF)
+	rm -f $(BIN) $(TESTS_EXE) $(TESTS_ASM) $(TESTS_O) $(TESTS_ACTUAL) $(TESTS_EXPECTED)
 	rm -rf ./*.dSYM
