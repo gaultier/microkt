@@ -1070,10 +1070,16 @@ static res_t parser_parse_multiplicative_expr(parser_t* parser,
             return parser_err_unexpected_type(parser, lhs_i, TYPE_LONG);
         }
 
+        const int tok_i = parser->par_tok_i - 1;
         const int tok_id = parser_previous(parser);
 
         int rhs_i = -1;
-        if ((res = parser_parse_as_expr(parser, &rhs_i)) != RES_OK) return res;
+        res = parser_parse_as_expr(parser, &rhs_i);
+        if (res == RES_NONE) {
+            return parser_err_missing_rhs(parser, tok_i, parser->par_tok_i);
+        } else if (res != RES_OK) {
+            return res;
+        }
         PG_ASSERT_COND(rhs_i, >=, 0, "%d");
 
         const int rhs_type_i = parser->par_nodes[rhs_i].node_type_i;
