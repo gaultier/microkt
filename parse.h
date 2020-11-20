@@ -88,18 +88,20 @@ static res_t parser_resolve_var(const parser_t* parser, int tok_i,
 
 static res_t parser_err_assigning_val(const parser_t* parser, int assign_tok_i,
                                       const var_def_t* var_def) {
-    const loc_t loc_start = parser->par_lexer.lex_locs[var_def->vd_first_tok_i];
+    const loc_t vd_loc_start =
+        parser->par_lexer.lex_locs[var_def->vd_first_tok_i];
+    const loc_t assign_loc_start = parser->par_lexer.lex_locs[assign_tok_i];
 
     fprintf(stderr,
             "%s%s:%d:%d:%sTrying to assign a variable declared with `val`\n",
             (parser->par_is_tty ? color_grey : ""), parser->par_file_name0,
-            loc_start.loc_line, loc_start.loc_column,
+            assign_loc_start.loc_line, assign_loc_start.loc_column,
             (parser->par_is_tty ? color_reset : ""));
 
     parser_print_source_on_error(parser, assign_tok_i, assign_tok_i);
     fprintf(stderr, "%s%s:%d:%d:%sDeclared here:\n",
             (parser->par_is_tty ? color_grey : ""), parser->par_file_name0,
-            loc_start.loc_line, loc_start.loc_column,
+            vd_loc_start.loc_line, vd_loc_start.loc_column,
             (parser->par_is_tty ? color_reset : ""));
     parser_print_source_on_error(parser, var_def->vd_first_tok_i,
                                  var_def->vd_first_tok_i);
