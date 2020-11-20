@@ -22,23 +22,23 @@ TESTS_EXPECTED := $(TESTS_SRC:.kts=.expected)
 TESTS_DIFF := $(TESTS_SRC:.kts=.diff)
 
 .DEFAULT:
-$(BIN): $(SRC) $(HEADERS)
+microktc: $(SRC) $(HEADERS)
 	$(CC) $(CFLAGS) $(SRC) -o $@
 
 .SUFFIXES: .kts .exe .actual .expected
 
-.kts.exe: $(BIN) $(TESTS_SRC)
-	./$(BIN) $<
+.kts.exe: microktc $(TESTS_SRC)
+	./microktc $<
 
-.exe.actual: $(BIN) $(TESTS_EXE) $(TESTS_ACTUAL)
+.exe.actual: microktc $(TESTS_SRC) $(TESTS_EXE) $(TESTS_ACTUAL)
 	./$< > $@
 
-.kts.expected: $(BIN) $(TESTS_SRC) $(TESTS_EXPECTED)
+.kts.expected: microktc $(TESTS_SRC) $(TESTS_EXPECTED)
 	@awk -F '// expect: ' '/expect: / {print $$2} ' $< > $@
 
-test: $(BIN) $(TESTS_SRC) $(TESTS_ACTUAL) $(TESTS_EXPECTED) test.sh
+test: microktc $(TESTS_SRC) $(TESTS_ACTUAL) $(TESTS_EXPECTED) test.sh
 	@./test.sh
 
 clean:
-	rm -f $(BIN) $(TESTS_EXE) $(TESTS_ASM) $(TESTS_O) $(TESTS_ACTUAL) $(TESTS_EXPECTED) $(TESTS_DIFF)
+	rm -f microktc $(TESTS_EXE) $(TESTS_ASM) $(TESTS_O) $(TESTS_ACTUAL) $(TESTS_EXPECTED) $(TESTS_DIFF)
 	rm -rf ./*.dSYM
