@@ -15,7 +15,7 @@ static const long long int syscall_exit = 60;
 
 static FILE* output_file = NULL;
 
-static void emit_stmt(const parser_t* parser, const ast_node_t* stmt);
+static void emit_stmt(const parser_t* parser, int stmt_i);
 
 #if defined(__clang__) || defined(__GNUC__) || defined(__GNUG__)
 __attribute__((format(printf, 1, 2)))
@@ -171,10 +171,10 @@ static void emit_stdlib() {
         syscall_write, syscall_write, syscall_write, syscall_write);
 }
 
-static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
+static void emit_expr(const parser_t* parser, const int expr_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)expr, !=, NULL, "%p");
 
+    const ast_node_t* const expr = &parser->par_nodes[expr_i];
     const type_t* const type = &parser->par_types[expr->node_type_i];
 
     const char *ax, *di, *dx;
@@ -216,12 +216,10 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
         }
         case NODE_MODULO: {
             const binary_t bin = expr->node_n.node_binary;
-            const ast_node_t* const lhs = &parser->par_nodes[bin.bi_lhs_i];
-            const ast_node_t* const rhs = &parser->par_nodes[bin.bi_rhs_i];
 
-            emit_expr(parser, rhs);
+            emit_expr(parser, bin.bi_rhs_i);
             emit_push();
-            emit_expr(parser, lhs);
+            emit_expr(parser, bin.bi_lhs_i);
             println("pop %%rdi");
             println("cqo");  // ?
             println("xor %%rdx, %%rdx");
@@ -232,12 +230,10 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
         }
         case NODE_DIVIDE: {
             const binary_t bin = expr->node_n.node_binary;
-            const ast_node_t* const lhs = &parser->par_nodes[bin.bi_lhs_i];
-            const ast_node_t* const rhs = &parser->par_nodes[bin.bi_rhs_i];
 
-            emit_expr(parser, rhs);
+            emit_expr(parser, bin.bi_rhs_i);
             emit_push();
-            emit_expr(parser, lhs);
+            emit_expr(parser, bin.bi_lhs_i);
             println("pop %%rdi");
             println("cqo");  // ?
             println("idiv %%rdi");
@@ -246,12 +242,10 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
         }
         case NODE_MULTIPLY: {
             const binary_t bin = expr->node_n.node_binary;
-            const ast_node_t* const lhs = &parser->par_nodes[bin.bi_lhs_i];
-            const ast_node_t* const rhs = &parser->par_nodes[bin.bi_rhs_i];
 
-            emit_expr(parser, rhs);
+            emit_expr(parser, bin.bi_rhs_i);
             emit_push();
-            emit_expr(parser, lhs);
+            emit_expr(parser, bin.bi_lhs_i);
             println("pop %%rdi");
             println("imul %%rdi, %%rax");
 
@@ -259,12 +253,10 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
         }
         case NODE_SUBTRACT: {
             const binary_t bin = expr->node_n.node_binary;
-            const ast_node_t* const lhs = &parser->par_nodes[bin.bi_lhs_i];
-            const ast_node_t* const rhs = &parser->par_nodes[bin.bi_rhs_i];
 
-            emit_expr(parser, rhs);
+            emit_expr(parser, bin.bi_rhs_i);
             emit_push();
-            emit_expr(parser, lhs);
+            emit_expr(parser, bin.bi_lhs_i);
             println("pop %%rdi");
             println("sub %%rdi, %%rax");
 
@@ -272,12 +264,10 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
         }
         case NODE_ADD: {
             const binary_t bin = expr->node_n.node_binary;
-            const ast_node_t* const lhs = &parser->par_nodes[bin.bi_lhs_i];
-            const ast_node_t* const rhs = &parser->par_nodes[bin.bi_rhs_i];
 
-            emit_expr(parser, rhs);
+            emit_expr(parser, bin.bi_rhs_i);
             emit_push();
-            emit_expr(parser, lhs);
+            emit_expr(parser, bin.bi_lhs_i);
             println("pop %%rdi");
             println("add %s, %s", di, ax);
 
@@ -290,12 +280,10 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
         case NODE_NEQ:
         case NODE_LE: {
             const binary_t bin = expr->node_n.node_binary;
-            const ast_node_t* const lhs = &parser->par_nodes[bin.bi_lhs_i];
-            const ast_node_t* const rhs = &parser->par_nodes[bin.bi_rhs_i];
 
-            emit_expr(parser, rhs);
+            emit_expr(parser, bin.bi_rhs_i);
             emit_push();
-            emit_expr(parser, lhs);
+            emit_expr(parser, bin.bi_lhs_i);
             println("pop %%rdi");
             println("cmp %%rdi, %%rax");
 
@@ -316,9 +304,7 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
             return;
         }
         case NODE_NOT: {
-            const ast_node_t* const lhs =
-                &parser->par_nodes[expr->node_n.node_unary];
-            emit_expr(parser, lhs);
+            emit_expr(parser, expr->node_n.node_unary);
             println("cmp $0, %%rax");
             println("sete %%al");
             return;
@@ -326,17 +312,17 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
         case NODE_IF: {
             const if_t node = expr->node_n.node_if;
 
-            emit_expr(parser, &parser->par_nodes[node.if_node_cond_i]);
+            emit_expr(parser, node.if_node_cond_i);
             println("cmp $0, %%rax");
             println("je .L.else.%d", node.if_node_cond_i);
 
-            emit_expr(parser, &parser->par_nodes[node.if_node_then_i]);
+            emit_expr(parser, node.if_node_then_i);
 
             println("jmp .L.end.%d\n", node.if_node_cond_i);
 
             println(".L.else.%d:", node.if_node_cond_i);
             if (node.if_node_else_i >= 0)
-                emit_expr(parser, &parser->par_nodes[node.if_node_else_i]);
+                emit_expr(parser, node.if_node_else_i);
 
             println(".L.end.%d:", node.if_node_cond_i);
 
@@ -344,10 +330,10 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
         }
         case NODE_BUILTIN_PRINTLN: {
             const ast_builtin_println_t builtin_println = AS_PRINTLN(*expr);
+            emit_expr(parser, builtin_println.bp_arg_i);
+
             const ast_node_t* arg =
                 &parser->par_nodes[builtin_println.bp_arg_i];
-            emit_expr(parser, arg);
-
             const type_kind_t type =
                 parser->par_types[arg->node_type_i].ty_kind;
 
@@ -376,8 +362,7 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
 
             for (int i = 0; i < (int)buf_size(block.bl_nodes_i); i++) {
                 const int stmt_node_i = block.bl_nodes_i[i];
-                const ast_node_t* const stmt = &parser->par_nodes[stmt_node_i];
-                emit_stmt(parser, stmt);
+                emit_stmt(parser, stmt_node_i);
             }
 
             return;
@@ -411,9 +396,10 @@ static void emit_expr(const parser_t* parser, const ast_node_t* expr) {
     UNREACHABLE();
 }
 
-static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
+static void emit_stmt(const parser_t* parser, int stmt_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)stmt, !=, NULL, "%p");
+
+    const ast_node_t* const stmt = &parser->par_nodes[stmt_i];
 
     switch (stmt->node_kind) {
         case NODE_BUILTIN_PRINTLN:
@@ -433,16 +419,15 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
         case NODE_ADD:
         case NODE_NOT:
         case NODE_IF: {
-            emit_expr(parser, stmt);
+            emit_expr(parser, stmt_i);
             println("\n");
             return;
         }
         case NODE_ASSIGN: {
             const binary_t binary = stmt->node_n.node_binary;
             const ast_node_t* const lhs = &parser->par_nodes[binary.bi_lhs_i];
-            const ast_node_t* const rhs = &parser->par_nodes[binary.bi_rhs_i];
 
-            emit_expr(parser, rhs);
+            emit_expr(parser, binary.bi_rhs_i);
 
             const var_t var = lhs->node_n.node_var;
             const ast_node_t* const node_var_def =
@@ -467,10 +452,7 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
             const var_def_t var_def = stmt->node_n.node_var_def;
             if (var_def.vd_init_node_i < 0) UNIMPLEMENTED();
 
-            const ast_node_t* const init_node =
-                &parser->par_nodes[var_def.vd_init_node_i];
-
-            emit_expr(parser, init_node);
+            emit_expr(parser, var_def.vd_init_node_i);
 
             const int type_size = parser->par_types[stmt->node_type_i].ty_size;
             const int offset = var_def.vd_stack_offset;
@@ -487,20 +469,18 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
             return;
         }
         case NODE_VAR: {
-            emit_expr(parser, stmt);
+            emit_expr(parser, stmt_i);
             return;
         }
         case NODE_WHILE: {
             const while_t w = stmt->node_n.node_while;
-            const ast_node_t* const cond = &parser->par_nodes[w.wh_cond_i];
             println(".Lwhile_loop_start%d:", w.wh_cond_i);
-            emit_expr(parser, cond);
+            emit_expr(parser, w.wh_cond_i);
 
             println("cmp $0, %%rax");
             println("je .Lwhile_loop_end%d", w.wh_cond_i);
 
-            const ast_node_t* const body = &parser->par_nodes[w.wh_body_i];
-            emit_stmt(parser, body);
+            emit_stmt(parser, w.wh_body_i);
             println("jmp .Lwhile_loop_start%d", w.wh_cond_i);
 
             println(".Lwhile_loop_end%d:", w.wh_cond_i);
@@ -542,8 +522,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
     fn_prolog(aligned_stack_size);
 
     // Initial scope is at index=0
-    const ast_node_t* const stmt = &parser->par_nodes[0];
-    emit_stmt(parser, stmt);
+    emit_stmt(parser, 0);
 
     emit_program_epilog();
 }
