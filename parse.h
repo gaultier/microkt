@@ -797,15 +797,17 @@ static res_t parser_err_non_matching_types(const parser_t* parser,
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
 
     const ast_node_t* const lhs = &parser->par_nodes[lhs_node_i];
-    const ast_node_t* const rhs = &parser->par_nodes[rhs_node_i];
-
     const type_kind_t lhs_type_kind =
         parser->par_types[lhs->node_type_i].ty_kind;
-    const type_kind_t rhs_type_kind =
-        parser->par_types[rhs->node_type_i].ty_kind;
-
     const int lhs_first_tok_i = ast_node_first_token(parser, lhs);
-    const int rhs_last_tok_i = ast_node_last_token(parser, rhs);
+
+    int rhs_type_kind = TYPE_BOOL;
+    int rhs_last_tok_i = lhs_first_tok_i;
+    if (rhs_node_i >= 0) {
+        const ast_node_t* const rhs = &parser->par_nodes[rhs_node_i];
+        rhs_type_kind = parser->par_types[rhs->node_type_i].ty_kind;
+        rhs_last_tok_i = ast_node_last_token(parser, rhs);
+    }
 
     const loc_t lhs_first_tok_loc = parser->par_lexer.lex_locs[lhs_first_tok_i];
 
@@ -1574,13 +1576,39 @@ static res_t parser_parse_while_stmt(parser_t* parser, int* new_node_i) {
     int dummy = -1, first_tok_i = -1, last_tok_i = -1, cond_i = -1, body_i = -1;
 
     if (parser_expect_token(parser, &first_tok_i, TOK_ID_WHILE) != RES_OK)
-        return parser_err_unexpected_token(parser, TOK_ID_WHILE);
+        return RES_NONE;
 
     if (parser_expect_token(parser, &dummy, TOK_ID_LPAREN) != RES_OK)
         return parser_err_unexpected_token(parser, TOK_ID_LPAREN);
 
+    res_t res = parser_parse_expr(parser, &cond_i);
+    if (res == RES_NONE) {
+        log_debug("Missing while condition%s", "\n");
+        return RES_ERR;
+    } else if (res != RES_OK)
+        return res;
+
+    const int cond_type_i = parser->par_nodes[cond_i].node_type_i;
+    const type_kind_t cond_type_kind = parser->par_types[cond_type_i].ty_kind;
+    if (cond_type_kind != TYPE_BOOL) {
+        return parser_err_non_matching_types(parser, cond_type_i, -1);
+    }
+
     if (parser_expect_token(parser, &dummy, TOK_ID_RPAREN) != RES_OK)
         return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
+
+    res = parser_parse_control_structure_body(parser, &body_i);
+    if (res == RES_NONE) {
+        log_debug("Missing while body%s", "\n");
+        return RES_ERR;
+    } else if (res != RES_OK)
+        return res;
+
+    const ast_node_t while_node =
+        NODE_WHILE(TYPE_ANY_I, first_tok_i, last_tok_i, cond_i, body_i);
+    buf_push(parser->par_nodes, while_node);
+    *new_node_i = buf_size(parser->par_nodes) - 1;
+
     return RES_NONE;
 }
 
