@@ -490,8 +490,22 @@ static void emit_stmt(const parser_t* parser, const ast_node_t* stmt) {
             emit_expr(parser, stmt);
             return;
         }
-        case NODE_WHILE:
-            UNIMPLEMENTED();
+        case NODE_WHILE: {
+            const while_t w = stmt->node_n.node_while;
+            const ast_node_t* const cond = &parser->par_nodes[w.wh_cond_i];
+            println(".Lwhile_loop_start%d:", w.wh_cond_i);
+            emit_expr(parser, cond);
+
+            println("cmp $0, %%rax");
+            println("je .Lwhile_loop_end%d", w.wh_cond_i);
+
+            const ast_node_t* const body = &parser->par_nodes[w.wh_body_i];
+            emit_stmt(parser, body);
+            println("jmp .Lwhile_loop_start%d", w.wh_cond_i);
+
+            println(".Lwhile_loop_end%d:", w.wh_cond_i);
+            return;
+        }
     }
     log_debug("node_kind=%s", node_kind_to_str[stmt->node_kind]);
     UNREACHABLE();

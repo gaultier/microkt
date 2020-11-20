@@ -10,4 +10,4 @@ println(2*a)
 // expect: 2
 // expect: 3
 // expect: 4
-// expect: 8
+// expect: 10
