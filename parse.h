@@ -618,13 +618,16 @@ static void parser_print_source_on_error(const parser_t* parser,
     PG_ASSERT_COND(first_line, <=, last_line, "%d");
 
     int first_line_start_tok_i = first_tok_i;
+    pos_range_t first_line_start_tok_pos =
+        parser->par_lexer.lex_tok_pos_ranges[first_line_start_tok_i];
     for (; first_line_start_tok_i >= 0; first_line_start_tok_i--) {
         if (parser->par_lexer.lex_locs[first_line_start_tok_i].loc_line <
             first_line)
             break;
+
+        first_line_start_tok_pos =
+            parser->par_lexer.lex_tok_pos_ranges[first_line_start_tok_i];
     }
-    pos_range_t first_line_start_tok_pos =
-        parser->par_lexer.lex_tok_pos_ranges[first_line_start_tok_i];
 
     int last_line_start_tok_i = last_tok_i;
     for (; last_line_start_tok_i < (int)buf_size(parser->par_lexer.lex_locs);
