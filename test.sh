@@ -7,9 +7,9 @@ RESET="\x1b[0m"
 ret=0
 
 for f in test/*.actual; do
-    EXPECTED=$(echo "$f" | sed 's/actual/expected/g')
-    DIFF=$(echo "$f" | sed 's/actual/diff/g')
-    KTS=$(echo "$f" | sed 's/actual/kts/g')
+    EXPECTED=$(echo "$f" | sed 's/actual$/expected/')
+    DIFF=$(echo "$f" | sed 's/actual$/diff/')
+    KTS=$(echo "$f" | sed 's/actual$/kts/')
 
     diff "$EXPECTED" "$f" > "$DIFF"
     exit_code=$?
