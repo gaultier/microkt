@@ -733,7 +733,7 @@ static res_t parser_expect_token(parser_t* parser, int* token,
 
     if (!parser_match(parser, token, 1, expected)) {
         log_debug("expected token not found: %s", token_id_to_str[expected]);
-        return parser_err_unexpected_token(parser, expected);
+        return RES_UNEXPECTED_TOKEN;
     }
     return RES_OK;
 }
