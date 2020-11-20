@@ -21,6 +21,8 @@ typedef enum {
     RES_UNKNOWN_VAR,
     RES_ASSIGNING_VAL,
     RES_NEED_AT_LEAST_ONE_STMT,
+    RES_MISSING_PARAM,
+    RES_ERR,
 } res_t;
 
 static const char res_to_str[][100] = {

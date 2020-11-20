@@ -108,6 +108,19 @@ static res_t parser_err_assigning_val(const parser_t* parser, int assign_tok_i,
     return RES_ASSIGNING_VAL;
 }
 
+static res_t parser_err_missing_rhs(const parser_t* parser, int first_tok_i,
+                                    int last_tok_i) {
+    const loc_t first_tok_loc = parser->par_lexer.lex_locs[first_tok_i];
+
+    fprintf(stderr, "%s%s:%d:%d:%sMissing right hand-side operand\n",
+            (parser->par_is_tty ? color_grey : ""), parser->par_file_name0,
+            first_tok_loc.loc_line, first_tok_loc.loc_column,
+            (parser->par_is_tty ? color_reset : ""));
+
+    parser_print_source_on_error(parser, first_tok_i, last_tok_i);
+    return RES_ERR;  // FIXME?
+}
+
 static int parser_make_type(parser_t* parser,
                             type_kind_t type_kind) {  // Returns type_i
                                                       // TODO: deduplicate?
@@ -1105,11 +1118,16 @@ static res_t parser_parse_additive_expr(parser_t* parser, int* new_node_i) {
     log_debug("new_node_i=%d", *new_node_i);
 
     while (parser_match(parser, new_node_i, 2, TOK_ID_PLUS, TOK_ID_MINUS)) {
+        const int tok_i = parser->par_tok_i - 1;
         const int tok_id = parser_previous(parser);
 
         int rhs_i = -1;
-        if ((res = parser_parse_multiplicative_expr(parser, &rhs_i)) != RES_OK)
+        res = parser_parse_multiplicative_expr(parser, &rhs_i);
+        if (res == RES_NONE) {
+            return parser_err_missing_rhs(parser, tok_i, parser->par_tok_i);
+        } else if (res != RES_OK) {
             return res;
+        }
 
         const int rhs_type_i = parser->par_nodes[rhs_i].node_type_i;
         const type_kind_t rhs_type_kind = parser->par_types[rhs_type_i].ty_kind;
@@ -1377,7 +1395,12 @@ static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i) {
             return parser_err_unexpected_token(parser, TOK_ID_LPAREN);
 
         int arg_i = 0;
-        if ((res = parser_parse_expr(parser, &arg_i)) != RES_OK) return res;
+        res = parser_parse_expr(parser, &arg_i);
+        if (res == RES_NONE) {
+            fprintf(stderr, "Missing println parameter\n");
+            return RES_MISSING_PARAM;
+        } else if (res != RES_OK)
+            return res;
 
         int rparen = 0;
         if ((res = parser_expect_token(parser, &rparen, TOK_ID_RPAREN)) !=
