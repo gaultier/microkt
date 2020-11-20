@@ -30,10 +30,10 @@ $(BIN): $(SRC) $(HEADERS)
 .kts.exe: $(BIN) $(TESTS_SRC)
 	./$(BIN) $<
 
-.exe.actual: $(TESTS_EXE) $(TESTS_ACTUAL)
+.exe.actual: $(BIN) $(TESTS_EXE) $(TESTS_ACTUAL)
 	./$< > $@
 
-.kts.expected: $(TESTS_SRC) $(TESTS_EXPECTED)
+.kts.expected: $(BIN) $(TESTS_SRC) $(TESTS_EXPECTED)
 	@awk -F '// expect: ' '/expect: / {print $$2} ' $< > $@
 
 test: $(BIN) $(TESTS_SRC) $(TESTS_ACTUAL) $(TESTS_EXPECTED) test.sh
