@@ -534,6 +534,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
     emit_stdlib();
     println(".global _main");
     println("_main:");
+    println(".file 1 \"%s\"", parser->par_file_name0);
 
     log_debug("offset=%d", parser->par_offset);
 
