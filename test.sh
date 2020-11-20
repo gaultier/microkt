@@ -28,7 +28,7 @@ for f in err/*.kts; do
     exit_code=$?
     if [ $exit_code != 0 ]; then
         echo "$GREEN" "✔ " "$f" "$RESET"
-    else 
+    else
         echo "$RED" "✘ " "$f" "$RESET"
         ret=1
     fi
