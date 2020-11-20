@@ -1604,9 +1604,9 @@ static res_t parser_parse_while_stmt(parser_t* parser, int* new_node_i) {
     } else if (res != RES_OK)
         return res;
 
-    const ast_node_t while_node =
+    const ast_node_t new_node =
         NODE_WHILE(TYPE_ANY_I, first_tok_i, last_tok_i, cond_i, body_i);
-    buf_push(parser->par_nodes, while_node);
+    buf_push(parser->par_nodes, new_node);
     *new_node_i = buf_size(parser->par_nodes) - 1;
 
     log_debug("new while=%d current_scope_i=%d cond=%d body=%d", *new_node_i,
