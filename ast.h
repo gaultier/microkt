@@ -66,6 +66,7 @@ typedef enum {
     NODE_VAR_DEF,
     NODE_VAR,
     NODE_ASSIGN,
+    NODE_WHILE,
 } ast_node_kind_t;
 
 const char node_kind_to_str[][30] = {
@@ -89,6 +90,7 @@ const char node_kind_to_str[][30] = {
     [NODE_VAR_DEF] = "VarDef",
     [NODE_VAR] = "Var",
     [NODE_ASSIGN] = "Assign",
+    [NODE_WHILE] = "While",
 };
 
 typedef struct {
@@ -118,6 +120,10 @@ typedef struct {
     int va_tok_i, va_var_node_i;  // Node the variable refers to
 } var_t;
 
+typedef struct {
+    int wh_first_tok_i, wh_last_tok_i, wh_cond_i, wh_body_i;
+} while_t;
+
 struct ast_node_t {
     ast_node_kind_t node_kind;
     int node_type_i;
@@ -132,6 +138,7 @@ struct ast_node_t {
         block_t node_block;      // NODE_BLOCK
         var_def_t node_var_def;  // NODE_VAR_DEF
         var_t node_var;          // NODE_VAR
+        while_t node_while;      // NODE_WHILE
     } node_n;
 };
 
@@ -212,6 +219,14 @@ struct ast_node_t {
                   .node_type_i = type_i,                     \
                   .node_n = {.node_var = {.va_tok_i = tok_i, \
                                           .va_var_node_i = var_node_i}}})
+
+#define NODE_WHILE(type_i, first_tok_i, last_tok_i, cond_i, body_i)        \
+    ((ast_node_t){.node_kind = NODE_WHILE,                                 \
+                  .node_type_i = type_i,                                   \
+                  .node_n = {.node_while = {.wh_first_tok_i = first_tok_i, \
+                                            .wh_last_tok_i = last_tok_i,   \
+                                            .wh_cond_i = cond_i,           \
+                                            .wh_body_i = body_i}}})
 
 #define AS_BINARY(node) ((node).node_n.node_binary)
 

@@ -433,6 +433,18 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
 
             break;
         }
+        case NODE_WHILE: {
+            log_debug_with_indent(
+                indent, "ast_node #%d %s type=%s", node_i,
+                node_kind_to_str[node->node_kind],
+                type_to_str[parser->par_types[node->node_type_i].ty_kind],
+                name_len, name, var_def.vd_stack_offset);
+
+            ast_node_dump(nodes, parser, node->node_n.node_while.wh_cond_i,
+                          indent + 2);
+            ast_node_dump(nodes, parser, node->node_n.node_while.wh_body_i,
+                          indent + 2);
+        }
     }
 }
 
@@ -477,6 +489,8 @@ static int ast_node_first_token(const parser_t* parser,
             return node->node_n.node_var_def.vd_first_tok_i;
         case NODE_VAR:
             return node->node_n.node_var.va_tok_i;
+        case NODE_WHILE:
+            return node->node_n.node_while.wh_first_tok_i;
     }
     log_debug("node kind=%d", node->node_kind);
     UNREACHABLE();
@@ -522,6 +536,8 @@ static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
             return node->node_n.node_var_def.vd_first_tok_i;
         case NODE_VAR:
             return node->node_n.node_var.va_tok_i;
+        case NODE_WHILE:
+            return node->node_n.node_while.wh_last_tok_i;
     }
     log_debug("node kind=%d", node->node_kind);
     UNREACHABLE();
