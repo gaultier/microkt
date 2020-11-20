@@ -2,6 +2,7 @@
 
 #include "ast.h"
 #include "common.h"
+#include "lex.h"
 #include "parse.h"
 
 // TODO: use platform headers for that?
@@ -176,6 +177,8 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 
     const ast_node_t* const expr = &parser->par_nodes[expr_i];
     const type_t* const type = &parser->par_types[expr->node_type_i];
+    const loc_t loc = parser->par_lexer.lex_locs[expr_i];
+    println(".loc 1 %d %d", loc.loc_line, loc.loc_column);
 
     const char *ax, *di, *dx;
     if (type->ty_size == 8) {
@@ -400,6 +403,8 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
 
     const ast_node_t* const stmt = &parser->par_nodes[stmt_i];
+    const loc_t loc = parser->par_lexer.lex_locs[stmt_i];  // FIXME
+    println(".loc 1 %d %d", loc.loc_line, loc.loc_column);
 
     switch (stmt->node_kind) {
         case NODE_BUILTIN_PRINTLN:
