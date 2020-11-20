@@ -1557,6 +1557,9 @@ static res_t parser_parse(parser_t* parser) {
         buf_push(parser_current_block(parser)->node_n.node_block.bl_nodes_i,
                  new_node_i);
 
+    } else if (res == RES_NONE) {
+        fprintf(stderr, "At least one statement is required\n");
+        return RES_NEED_AT_LEAST_ONE_STMT;
     } else
         return res;
 

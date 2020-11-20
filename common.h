@@ -20,6 +20,7 @@ typedef enum {
     RES_EXPECTED_PRIMARY,
     RES_UNKNOWN_VAR,
     RES_ASSIGNING_VAL,
+    RES_NEED_AT_LEAST_ONE_STMT,
 } res_t;
 
 static const char res_to_str[][100] = {
@@ -36,8 +37,6 @@ static const char res_to_str[][100] = {
         "%s%s:%d:%d:%sTypes do not match. Expected %s, got %s\n",
     [RES_EXPECTED_PRIMARY] = "%s%s:%d:%d:%sExpected primary, got %s\n",
     [RES_UNKNOWN_VAR] = "%s%s:%d:%d:%sUnknown variable %s\n",
-    [RES_ASSIGNING_VAL] =
-        "%s%s:%d:%d:%sTrying to assign a variable declared with `val`\n",
 };
 
 #define STR(s) #s
