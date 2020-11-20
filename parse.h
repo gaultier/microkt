@@ -437,8 +437,7 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
             log_debug_with_indent(
                 indent, "ast_node #%d %s type=%s", node_i,
                 node_kind_to_str[node->node_kind],
-                type_to_str[parser->par_types[node->node_type_i].ty_kind],
-                name_len, name, var_def.vd_stack_offset);
+                type_to_str[parser->par_types[node->node_type_i].ty_kind]);
 
             ast_node_dump(nodes, parser, node->node_n.node_while.wh_cond_i,
                           indent + 2);
