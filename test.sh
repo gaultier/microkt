@@ -7,13 +7,23 @@ RESET="\x1b[0m"
 ret=0
 
 for f in test/*.actual; do
-    TEST="$f" 
-    diff "${TEST/actual/expected}" "$f" > "${TEST/actual/diff}"
+    EXPECTED=$(echo "$f" | sed 's/actual/expected/g')
+    DIFF=$(echo "$f" | sed 's/actual/diff/g')
+    KTS=$(echo "$f" | sed 's/actual/kts/g')
+
+    diff "$EXPECTED" "$f" > "$DIFF"
     exit_code=$?
     if [ $exit_code = 0 ]; then
-        echo $GREEN "✔ " "${TEST/actual/kts}" $RESET
+        echo "$GREEN" "✔ " "$KTS" "$RESET"
     else 
-        echo $RED "✘ " "${TEST/actual/kts}" $RESET
+        echo "$RED" "✘ " "$KTS" "$RESET"
+        ret=1
+    fi
+done
+
+# Files with errors
+for f in err/*.kts; do
+    if ./microktc "$f"; then # Should return non zero
         ret=1
     fi
 done
