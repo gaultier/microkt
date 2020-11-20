@@ -23,7 +23,13 @@ done
 
 # Files with errors
 for f in err/*.kts; do
-    if ./microktc "$f"; then # Should return non zero
+    ./microktc "$f"
+
+    exit_code=$?
+    if [ $exit_code != 0 ]; then
+        echo "$GREEN" "✔ " "$f" "$RESET"
+    else 
+        echo "$RED" "✘ " "$f" "$RESET"
         ret=1
     fi
 done
