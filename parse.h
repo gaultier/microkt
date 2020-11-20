@@ -444,10 +444,16 @@ static int ast_node_first_token(const parser_t* parser,
         case NODE_MODULO:
         case NODE_SUBTRACT:
         case NODE_ASSIGN:
-        case NODE_ADD:
-            return node->node_n.node_binary.bi_lhs_i;
-        case NODE_NOT:
-            return node->node_n.node_unary;
+        case NODE_ADD: {
+            const ast_node_t* const lhs =
+                &parser->par_nodes[node->node_n.node_binary.bi_lhs_i];
+            return ast_node_first_token(parser, lhs);
+        }
+        case NODE_NOT: {
+            const ast_node_t* const lhs =
+                &parser->par_nodes[node->node_n.node_unary];
+            return ast_node_first_token(parser, lhs);
+        }
         case NODE_IF:
             return node->node_n.node_if.if_first_tok_i;
         case NODE_BLOCK:
@@ -483,10 +489,16 @@ static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
         case NODE_MODULO:
         case NODE_SUBTRACT:
         case NODE_ASSIGN:
-        case NODE_ADD:
-            return node->node_n.node_binary.bi_rhs_i;
-        case NODE_NOT:
-            return node->node_n.node_unary;
+        case NODE_ADD: {
+            const ast_node_t* const rhs =
+                &parser->par_nodes[node->node_n.node_binary.bi_rhs_i];
+            return ast_node_first_token(parser, rhs);
+        }
+        case NODE_NOT: {
+            const ast_node_t* const rhs =
+                &parser->par_nodes[node->node_n.node_unary];
+            return ast_node_first_token(parser, rhs);
+        }
         case NODE_IF:
             return node->node_n.node_if.if_last_tok_i;
         case NODE_BLOCK:
@@ -618,26 +630,35 @@ static void parser_print_source_on_error(const parser_t* parser,
     PG_ASSERT_COND(first_line, <=, last_line, "%d");
 
     int first_line_start_tok_i = first_tok_i;
+    while (first_line_start_tok_i > 0) {
+        if (parser->par_lexer.lex_locs[first_line_start_tok_i].loc_line <
+            first_line) {
+            break;
+        }
+
+        first_line_start_tok_i--;
+    }
+    first_line_start_tok_i++;
+
     pos_range_t first_line_start_tok_pos =
         parser->par_lexer.lex_tok_pos_ranges[first_line_start_tok_i];
-    for (; first_line_start_tok_i >= 0; first_line_start_tok_i--) {
-        if (parser->par_lexer.lex_locs[first_line_start_tok_i].loc_line <
-            first_line)
-            break;
-
-        first_line_start_tok_pos =
-            parser->par_lexer.lex_tok_pos_ranges[first_line_start_tok_i];
-    }
 
     int last_line_start_tok_i = last_tok_i;
-    for (; last_line_start_tok_i < (int)buf_size(parser->par_lexer.lex_locs);
-         last_line_start_tok_i++) {
+    while (last_line_start_tok_i <
+           (int)buf_size(parser->par_lexer.lex_locs) - 1) {
         if (last_line <
-            parser->par_lexer.lex_locs[last_line_start_tok_i].loc_line)
+            parser->par_lexer.lex_locs[last_line_start_tok_i].loc_line) {
             break;
+        }
+
+        last_line_start_tok_i++;
     }
+    last_line_start_tok_i--;
+
     pos_range_t last_line_start_tok_pos =
         parser->par_lexer.lex_tok_pos_ranges[last_line_start_tok_i];
+    log_debug("first_line_start_tok_i=%d last_line_start_tok_i=%d",
+              first_line_start_tok_i, last_line_start_tok_i);
 
     const char* source =
         &parser->par_lexer.lex_source[first_line_start_tok_pos.pr_start];
