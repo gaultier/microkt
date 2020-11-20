@@ -36,6 +36,7 @@ static int emit_align_to_16(int stack_size) {
 }
 
 static void fn_prolog(int aligned_stack_size) {
+    println("# prolog");
     println("push %%rbp");
     println("mov %%rsp, %%rbp");
 
@@ -49,6 +50,7 @@ static void fn_prolog(int aligned_stack_size) {
 //}
 
 static void emit_program_epilog() {
+    println("\n# exit");
     println("mov $%lld, %%rax", syscall_exit);
     println("mov $0, %%rdi");
     println("syscall");
@@ -323,7 +325,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 
             emit_expr(parser, node.if_node_then_i);
 
-            println("jmp .L.end.%d\n", node.if_node_cond_i);
+            println("jmp .L.end.%d", node.if_node_cond_i);
 
             println(".L.else.%d:", node.if_node_cond_i);
             if (node.if_node_else_i >= 0)
@@ -429,7 +431,6 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
         case NODE_NOT:
         case NODE_IF: {
             emit_expr(parser, stmt_i);
-            println("\n");
             return;
         }
         case NODE_ASSIGN: {
