@@ -1609,7 +1609,10 @@ static res_t parser_parse_while_stmt(parser_t* parser, int* new_node_i) {
     buf_push(parser->par_nodes, while_node);
     *new_node_i = buf_size(parser->par_nodes) - 1;
 
-    return RES_NONE;
+    log_debug("new while=%d current_scope_i=%d cond=%d body=%d", *new_node_i,
+              parser->par_scope_i, cond_i, body_i);
+
+    return RES_OK;
 }
 
 static res_t parser_parse_loop(parser_t* parser, int* new_node_i) {
