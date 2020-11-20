@@ -1567,6 +1567,32 @@ static res_t parser_parse_declaration(parser_t* parser, int* new_node_i) {
     return parser_parse_property_declaration(parser, new_node_i);
 }
 
+static res_t parser_parse_while_stmt(parser_t* parser, int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
+    int dummy = -1, first_tok_i = -1, last_tok_i = -1, cond_i = -1, body_i = -1;
+
+    if (parser_expect_token(parser, &first_tok_i, TOK_ID_WHILE) != RES_OK)
+        return parser_err_unexpected_token(parser, TOK_ID_WHILE);
+
+    if (parser_expect_token(parser, &dummy, TOK_ID_LPAREN) != RES_OK)
+        return parser_err_unexpected_token(parser, TOK_ID_LPAREN);
+
+    if (parser_expect_token(parser, &dummy, TOK_ID_RPAREN) != RES_OK)
+        return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
+    return RES_NONE;
+}
+
+static res_t parser_parse_loop(parser_t* parser, int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
+    // TODO
+
+    return parser_parse_while_stmt(parser, new_node_i);
+}
+
 static res_t parser_parse_stmt(parser_t* parser, int* new_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
@@ -1580,7 +1606,7 @@ static res_t parser_parse_stmt(parser_t* parser, int* new_node_i) {
     if ((res = parser_parse_assignment(parser, new_node_i)) != RES_NONE)
         return res;
 
-    // TODO
+    if ((res = parser_parse_loop(parser, new_node_i)) != RES_NONE) return res;
 
     return parser_parse_expr(parser, new_node_i);
 }
