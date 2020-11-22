@@ -1605,7 +1605,7 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
         return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
 
     int body_node_i = -1;
-    res_t res = parser_parse_control_structure_body(parser, &body_node_i);
+    res_t res = parser_parse_block(parser, &body_node_i);
     if (res == RES_NONE) {
         UNIMPLEMENTED();
     } else if (res != RES_OK)
