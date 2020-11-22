@@ -14,7 +14,8 @@ typedef struct {
     int par_tok_i, par_scope_i, par_fn_i;  // Current token/scope/function
     ast_node_t* par_nodes;                 // Arena of all nodes
     lexer_t par_lexer;
-    obj_t* par_objects;
+    int* par_node_decls;  // Declarations that need to be generated first e.g.
+                          // functions
     type_t* par_types;
     int par_offset;  // Local variable stack offset inside the current function
     bool par_is_tty;
@@ -30,11 +31,6 @@ static void parser_tok_source(const parser_t* parser, int tok_i,
                               const char** source, int* source_len);
 static void parser_print_source_on_error(const parser_t* parser,
                                          int first_tok_i, int last_tok_i);
-
-static obj_t* parser_current_fn(const parser_t* parser) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    return &parser->par_objects[parser->par_fn_i];
-}
 
 static ast_node_t* parser_current_block(parser_t* parser) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
@@ -259,8 +255,8 @@ static parser_t parser_init(const char* file_name0, const char* source,
     // Add initial scope
     buf_push(nodes, NODE_BLOCK(TYPE_UNIT_I, -1, -1, NULL, -1));
 
-    obj_t* objects = NULL;
-    buf_grow(objects, 10);
+    int* node_decls = NULL;
+    buf_grow(node_decls, 10);
     buf_push(lexer.lex_tokens,
              ((token_t){.tok_id = TOK_ID_IDENTIFIER,
                         .tok_pos_range = {.pr_start = 0, .pr_end = 0}}));
@@ -269,20 +265,21 @@ static parser_t parser_init(const char* file_name0, const char* source,
     buf_push(lexer.lex_locs, ((loc_t){.loc_line = 1, .loc_column = 1}));
     const int fn_main_name_tok_i = buf_size(lexer.lex_tokens) - 1;
     // Add root main function
-    buf_push(
-        objects,
-        ((obj_t){.obj_type_i = TYPE_UNIT_I,
-                 .obj_tok_i = fn_main_name_tok_i,
-                 .obj_kind = OBJ_FN_DECL,
-                 .obj_o = {.o_fn_decl = {.fd_first_tok_i = fn_main_name_tok_i,
-                                         .fd_name_tok_i = fn_main_name_tok_i,
-                                         .fd_last_tok_i = fn_main_name_tok_i,
-                                         .fd_body_node_i = 0,
-                                         .fd_flags = FN_FLAG_SYNTHETIC |
-                                                     FN_FLAG_PUBLIC}}}));
+    buf_push(nodes,
+             ((ast_node_t){.node_type_i = TYPE_UNIT_I,
+                           .node_kind = NODE_FN_DECL,
+                           .node_n = {.node_fn_decl = {
+                                          .fd_first_tok_i = fn_main_name_tok_i,
+                                          .fd_name_tok_i = fn_main_name_tok_i,
+                                          .fd_last_tok_i = fn_main_name_tok_i,
+                                          .fd_body_node_i = 0,
+                                          .fd_flags = FN_FLAG_SYNTHETIC |
+                                                      FN_FLAG_PUBLIC}}}));
+    buf_push(node_decls, 0);
+
     parser_t parser = {
         .par_file_name0 = file_name0,
-        .par_objects = objects,
+        .par_node_decls = node_decls,
         .par_nodes = nodes,
         .par_lexer = lexer,
         .par_is_tty = isatty(2),
@@ -472,6 +469,24 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
             ast_node_dump(nodes, parser, node->node_n.node_while.wh_body_i,
                           indent + 2);
         }
+        case NODE_FN_DECL: {
+#ifdef WITH_LOGS
+            const fn_decl_t fn_decl = node->node_n.node_fn_decl;
+            const loc_t loc = parser->par_lexer.lex_locs[fn_decl.fd_name_tok_i];
+            println(".loc 1 %d %d\t## %s:%d:%d", loc.loc_line, loc.loc_column,
+                    parser->par_file_name0, loc.loc_line, loc.loc_column);
+
+            const pos_range_t pos_range =
+                parser->par_lexer.lex_tok_pos_ranges[fn_decl.fd_name_tok_i];
+            const char* const name =
+                &parser->par_lexer.lex_source[pos_range.pr_start];
+            const int name_len = pos_range.pr_end - pos_range.pr_start;
+#endif
+            log_debug_with_indent(
+                indent, "ast_node #%d `%.*s` %s type=%s", node_i, name_len,
+                name, node_kind_to_str[node->node_kind],
+                type_to_str[parser->par_types[node->node_type_i].ty_kind]);
+        }
     }
 }
 
@@ -484,7 +499,7 @@ static int ast_node_first_token(const parser_t* parser,
         case NODE_BUILTIN_PRINTLN:
             return node->node_n.node_builtin_println.bp_keyword_print_i;
         case NODE_STRING:
-            return parser->par_objects[node->node_n.node_string].obj_tok_i;
+            return node->node_n.node_string;
         case NODE_KEYWORD_BOOL:
         case NODE_CHAR:
         case NODE_LONG:
@@ -531,7 +546,7 @@ static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
         case NODE_BUILTIN_PRINTLN:
             return node->node_n.node_builtin_println.bp_rparen_i;
         case NODE_STRING:
-            return parser->par_objects[node->node_n.node_string].obj_tok_i;
+            return node->node_n.node_string;
         case NODE_KEYWORD_BOOL:
         case NODE_LONG:
         case NODE_CHAR:
@@ -986,15 +1001,15 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
     if (parser_match(parser, &tok_i, 1, TOK_ID_STRING)) {
         const int type_i = parser_make_type(parser, TYPE_STRING);
 
-        const obj_t obj = OBJ_GLOBAL_VAR(type_i, tok_i);
-        buf_push(parser->par_objects, obj);
-        const int obj_i = buf_size(parser->par_objects) - 1;
+        const ast_node_t node = {.node_kind = NODE_STRING,
+                                 .node_type_i = type_i,
+                                 .node_n = {.node_string = tok_i}};
+        buf_push(parser->par_nodes, node);
+        *new_node_i = buf_size(parser->par_nodes) - 1;
 
-        const ast_node_t new_node = NODE_STRING(obj_i, type_i);
-        buf_push(parser->par_nodes, new_node);
-        *new_node_i = (int)buf_size(parser->par_nodes) - 1;
+        buf_push(parser->par_node_decls, *new_node_i);
 
-        log_debug("new object: type=TYPE_STRING tok_i=%d", obj.obj_tok_i);
+        log_debug("new string literal: type=TYPE_STRING tok_i=%d", tok_i);
 
         return RES_OK;
     }
@@ -1614,16 +1629,18 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     } else if (res != RES_OK)
         return res;
 
-    buf_push(parser->par_objects,
-             ((obj_t){.obj_type_i = TYPE_UNIT_I,
-                      .obj_tok_i = name_tok_i,
-                      .obj_kind = OBJ_FN_DECL,
-                      .obj_o = {.o_fn_decl = {.fd_first_tok_i = first_tok_i,
-                                              .fd_name_tok_i = name_tok_i,
-                                              .fd_last_tok_i = last_tok_i,
-                                              .fd_body_node_i = body_node_i,
-                                              .fd_flags = flags}}}));
+    buf_push(
+        parser->par_nodes,
+        ((ast_node_t){.node_type_i = TYPE_UNIT_I,
+                      .node_kind = NODE_FN_DECL,
+                      .node_n = {.node_fn_decl = {.fd_first_tok_i = first_tok_i,
+                                                  .fd_name_tok_i = name_tok_i,
+                                                  .fd_last_tok_i = last_tok_i,
+                                                  .fd_body_node_i = body_node_i,
+                                                  .fd_flags = flags}}}));
     *new_node_i = body_node_i;
+    buf_push(parser->par_node_decls, *new_node_i);
+
     log_debug("new fn decl=%d flags=%d body_node_i=%d", *new_node_i, flags,
               body_node_i);
 

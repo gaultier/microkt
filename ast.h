@@ -35,16 +35,6 @@ typedef struct {
     unsigned short fd_flags;
 } fn_decl_t;
 
-typedef enum { OBJ_GLOBAL_VAR, OBJ_FN_DECL } obj_kind_t;
-
-typedef struct {
-    int obj_type_i, obj_tok_i;
-    obj_kind_t obj_kind;
-    union {
-        fn_decl_t o_fn_decl;  // OBJ_FN_DECL
-    } obj_o;
-} obj_t;
-
 struct ast_node_t;
 
 typedef struct ast_node_t ast_node_t;
@@ -79,29 +69,33 @@ typedef enum {
     NODE_VAR,
     NODE_ASSIGN,
     NODE_WHILE,
+    NODE_FN_DECL,
 } ast_node_kind_t;
 
-const char node_kind_to_str[][30] = {[NODE_BUILTIN_PRINTLN] = "Print",
-                                     [NODE_KEYWORD_BOOL] = "Bool",
-                                     [NODE_STRING] = "String",
-                                     [NODE_LONG] = "LONG",
-                                     [NODE_CHAR] = "Char",
-                                     [NODE_ADD] = "Plus",
-                                     [NODE_SUBTRACT] = "Subtract",
-                                     [NODE_MULTIPLY] = "Multiply",
-                                     [NODE_MODULO] = "Modulo",
-                                     [NODE_DIVIDE] = "Divide",
-                                     [NODE_LT] = "Lt",
-                                     [NODE_LE] = "Le",
-                                     [NODE_EQ] = "Eq",
-                                     [NODE_NEQ] = "Neq",
-                                     [NODE_NOT] = "Not",
-                                     [NODE_IF] = "If",
-                                     [NODE_BLOCK] = "Block",
-                                     [NODE_VAR_DEF] = "VarDef",
-                                     [NODE_VAR] = "Var",
-                                     [NODE_ASSIGN] = "Assign",
-                                     [NODE_WHILE] = "While"};
+const char node_kind_to_str[][30] = {
+    [NODE_BUILTIN_PRINTLN] = "Print",
+    [NODE_KEYWORD_BOOL] = "Bool",
+    [NODE_STRING] = "String",
+    [NODE_LONG] = "LONG",
+    [NODE_CHAR] = "Char",
+    [NODE_ADD] = "Plus",
+    [NODE_SUBTRACT] = "Subtract",
+    [NODE_MULTIPLY] = "Multiply",
+    [NODE_MODULO] = "Modulo",
+    [NODE_DIVIDE] = "Divide",
+    [NODE_LT] = "Lt",
+    [NODE_LE] = "Le",
+    [NODE_EQ] = "Eq",
+    [NODE_NEQ] = "Neq",
+    [NODE_NOT] = "Not",
+    [NODE_IF] = "If",
+    [NODE_BLOCK] = "Block",
+    [NODE_VAR_DEF] = "VarDef",
+    [NODE_VAR] = "Var",
+    [NODE_ASSIGN] = "Assign",
+    [NODE_WHILE] = "While",
+    [NODE_FN_DECL] = "FnDecl",
+};
 
 typedef struct {
     long long int nu_val;
@@ -139,7 +133,7 @@ struct ast_node_t {
     int node_type_i;
     union {
         ast_builtin_println_t node_builtin_println;  // NODE_BUILTIN_PRINTLN
-        int node_string;                             // NODE_STRING, int = obj_i
+        int node_string;                             // NODE_STRING, int = tok_i
         node_number_t node_num;  // NODE_LONG, NODE_CHAR, NODE_BOOL
         binary_t node_binary;    // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
         // NODE_DIVIDE, NODE_MODULO
@@ -149,6 +143,7 @@ struct ast_node_t {
         var_def_t node_var_def;  // NODE_VAR_DEF
         var_t node_var;          // NODE_VAR
         while_t node_while;      // NODE_WHILE
+        fn_decl_t node_fn_decl;  // NODE_FN_DECL
     } node_n;
 };
 
@@ -241,8 +236,3 @@ struct ast_node_t {
 #define AS_BINARY(node) ((node).node_n.node_binary)
 
 #define AS_PRINTLN(node) ((node).node_n.node_builtin_println)
-
-#define OBJ_GLOBAL_VAR(type_i, tok_i) \
-    ((obj_t){                         \
-        .obj_kind = OBJ_GLOBAL_VAR, .obj_type_i = type_i, .obj_tok_i = tok_i})
-
