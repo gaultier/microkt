@@ -250,15 +250,7 @@ static parser_t parser_init(const char* file_name0, const char* source,
     type_t* types = NULL;
     buf_grow(types, 100);
 
-    ast_node_t* nodes = NULL;
-    buf_grow(nodes, 100);
-    // Add initial scope
-    buf_push(nodes, NODE_BLOCK(TYPE_UNIT_I, -1, -1, NULL, -1));
-
-    int* node_decls = NULL;
-    buf_grow(node_decls, 10);
-    buf_push(node_decls, 0);  // See below: first node is main
-
+    // Add root main function
     buf_push(lexer.lex_tokens,
              ((token_t){.tok_id = TOK_ID_IDENTIFIER,
                         .tok_pos_range = {.pr_start = 0, .pr_end = 0}}));
@@ -266,7 +258,8 @@ static parser_t parser_init(const char* file_name0, const char* source,
              ((pos_range_t){.pr_start = 0, .pr_end = 0}));
     buf_push(lexer.lex_locs, ((loc_t){.loc_line = 1, .loc_column = 1}));
     const int fn_main_name_tok_i = buf_size(lexer.lex_tokens) - 1;
-    // Add root main function
+    ast_node_t* nodes = NULL;
+    buf_grow(nodes, 100);
     buf_push(nodes,
              ((ast_node_t){.node_type_i = TYPE_UNIT_I,
                            .node_kind = NODE_FN_DECL,
@@ -277,6 +270,9 @@ static parser_t parser_init(const char* file_name0, const char* source,
                                           .fd_body_node_i = 0,
                                           .fd_flags = FN_FLAG_SYNTHETIC |
                                                       FN_FLAG_PUBLIC}}}));
+    int* node_decls = NULL;
+    buf_grow(node_decls, 10);
+    buf_push(node_decls, 0);  // First node is main
 
     parser_t parser = {
         .par_file_name0 = file_name0,
@@ -1639,7 +1635,7 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
                                                   .fd_last_tok_i = last_tok_i,
                                                   .fd_body_node_i = body_node_i,
                                                   .fd_flags = flags}}}));
-    *new_node_i = body_node_i;
+    *new_node_i = buf_size(parser->par_nodes) - 1;
     buf_push(parser->par_node_decls, *new_node_i);
 
     log_debug("new fn decl=%d flags=%d body_node_i=%d", *new_node_i, flags,

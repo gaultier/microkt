@@ -509,8 +509,8 @@ static void emit(const parser_t* parser, FILE* asm_file) {
     println(".Lfalse: .ascii \"false\\n\"");
 
     for (int i = 0; i < (int)buf_size(parser->par_node_decls); i++) {
-        const ast_node_t* const node =
-            &parser->par_nodes[parser->par_node_decls[i]];
+        const int node_i = parser->par_node_decls[i];
+        const ast_node_t* const node = &parser->par_nodes[node_i];
         if (node->node_kind != NODE_STRING) continue;
 
         const char* source = NULL;
@@ -526,8 +526,8 @@ static void emit(const parser_t* parser, FILE* asm_file) {
     println(".file 1 \"%s\"", parser->par_file_name0);
     // Reverse traversal to end up with main at the end
     for (int i = (int)buf_size(parser->par_node_decls) - 1; i >= 0; i--) {
-        const ast_node_t* const node =
-            &parser->par_nodes[parser->par_node_decls[i]];
+        const int node_i = parser->par_node_decls[i];
+        const ast_node_t* const node = &parser->par_nodes[node_i];
         if (node->node_kind != NODE_FN_DECL) continue;
 
         const fn_decl_t fn_decl = node->node_n.node_fn_decl;
