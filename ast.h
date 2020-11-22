@@ -67,31 +67,31 @@ typedef enum {
     NODE_VAR,
     NODE_ASSIGN,
     NODE_WHILE,
+    NODE_FN_DECL,
 } ast_node_kind_t;
 
-const char node_kind_to_str[][30] = {
-    [NODE_BUILTIN_PRINTLN] = "Print",
-    [NODE_KEYWORD_BOOL] = "Bool",
-    [NODE_STRING] = "String",
-    [NODE_LONG] = "LONG",
-    [NODE_CHAR] = "Char",
-    [NODE_ADD] = "Plus",
-    [NODE_SUBTRACT] = "Subtract",
-    [NODE_MULTIPLY] = "Multiply",
-    [NODE_MODULO] = "Modulo",
-    [NODE_DIVIDE] = "Divide",
-    [NODE_LT] = "Lt",
-    [NODE_LE] = "Le",
-    [NODE_EQ] = "Eq",
-    [NODE_NEQ] = "Neq",
-    [NODE_NOT] = "Not",
-    [NODE_IF] = "If",
-    [NODE_BLOCK] = "Block",
-    [NODE_VAR_DEF] = "VarDef",
-    [NODE_VAR] = "Var",
-    [NODE_ASSIGN] = "Assign",
-    [NODE_WHILE] = "While",
-};
+const char node_kind_to_str[][30] = {[NODE_BUILTIN_PRINTLN] = "Print",
+                                     [NODE_KEYWORD_BOOL] = "Bool",
+                                     [NODE_STRING] = "String",
+                                     [NODE_LONG] = "LONG",
+                                     [NODE_CHAR] = "Char",
+                                     [NODE_ADD] = "Plus",
+                                     [NODE_SUBTRACT] = "Subtract",
+                                     [NODE_MULTIPLY] = "Multiply",
+                                     [NODE_MODULO] = "Modulo",
+                                     [NODE_DIVIDE] = "Divide",
+                                     [NODE_LT] = "Lt",
+                                     [NODE_LE] = "Le",
+                                     [NODE_EQ] = "Eq",
+                                     [NODE_NEQ] = "Neq",
+                                     [NODE_NOT] = "Not",
+                                     [NODE_IF] = "If",
+                                     [NODE_BLOCK] = "Block",
+                                     [NODE_VAR_DEF] = "VarDef",
+                                     [NODE_VAR] = "Var",
+                                     [NODE_ASSIGN] = "Assign",
+                                     [NODE_WHILE] = "While",
+                                     [NODE_FN_DECL] = "FnDecl"};
 
 typedef struct {
     long long int nu_val;
@@ -124,6 +124,10 @@ typedef struct {
     int wh_first_tok_i, wh_last_tok_i, wh_cond_i, wh_body_i;
 } while_t;
 
+typedef struct {
+    int fd_first_tok_i, fd_last_tok_i, fd_name_tok_i;
+} fn_decl_t;
+
 struct ast_node_t {
     ast_node_kind_t node_kind;
     int node_type_i;
@@ -139,6 +143,7 @@ struct ast_node_t {
         var_def_t node_var_def;  // NODE_VAR_DEF
         var_t node_var;          // NODE_VAR
         while_t node_while;      // NODE_WHILE
+        fn_decl_t node_fn_decl;  // NODE_FN_DECL
     } node_n;
 };
 

@@ -444,6 +444,27 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
             ast_node_dump(nodes, parser, node->node_n.node_while.wh_body_i,
                           indent + 2);
         }
+        case NODE_FN_DECL: {
+#ifdef WITH_LOGS
+            const fn_decl_t fn_decl = node->node_n.node_fn_decl;
+            const pos_range_t pos_range =
+                parser->par_lexer.lex_tok_pos_ranges[fn_decl.fd_name_tok_i];
+
+            const char* const name =
+                &parser->par_lexer.lex_source[pos_range.pr_start];
+            const int name_len = pos_range.pr_end - pos_range.pr_start;
+#endif
+
+            log_debug_with_indent(
+                indent, "ast_node #%d %s `%.*s` type=%s", node_i,
+                node_kind_to_str[node->node_kind], name_len, name,
+                type_to_str[parser->par_types[node->node_type_i].ty_kind]);
+
+            ast_node_dump(nodes, parser, node->node_n.node_while.wh_cond_i,
+                          indent + 2);
+            ast_node_dump(nodes, parser, node->node_n.node_while.wh_body_i,
+                          indent + 2);
+        }
     }
 }
 
@@ -490,6 +511,8 @@ static int ast_node_first_token(const parser_t* parser,
             return node->node_n.node_var.va_tok_i;
         case NODE_WHILE:
             return node->node_n.node_while.wh_first_tok_i;
+        case NODE_FN_DECL:
+            return node->node_n.node_fn_decl.fd_first_tok_i;
     }
     log_debug("node kind=%d", node->node_kind);
     UNREACHABLE();
@@ -537,6 +560,8 @@ static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
             return node->node_n.node_var.va_tok_i;
         case NODE_WHILE:
             return node->node_n.node_while.wh_last_tok_i;
+        case NODE_FN_DECL:
+            return node->node_n.node_fn_decl.fd_last_tok_i;
     }
     log_debug("node kind=%d", node->node_kind);
     UNREACHABLE();
@@ -1564,6 +1589,20 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
     if (parser_peek(parser) != TOK_ID_FUN) return RES_NONE;
+
+    int dummy = -1, first_tok_i = -1, fn_name_tok_i = -1, last_tok_i = -1;
+    parser_match(parser, &first_tok_i, 1, TOK_ID_FUN);
+
+    if (!parser_match(parser, &fn_name_tok_i, 1, TOK_ID_IDENTIFIER))
+        return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
+    if (!parser_match(parser, &dummy, 1, TOK_ID_LPAREN))
+        return parser_err_unexpected_token(parser, TOK_ID_LPAREN);
+    if (!parser_match(parser, &dummy, 1, TOK_ID_RPAREN))
+        return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
+    if (!parser_match(parser, &dummy, 1, TOK_ID_LCURLY))
+        return parser_err_unexpected_token(parser, TOK_ID_LCURLY);
+    if (!parser_match(parser, &last_tok_i, 1, TOK_ID_RCURLY))
+        return parser_err_unexpected_token(parser, TOK_ID_RCURLY);
 
     return RES_OK;
 }
