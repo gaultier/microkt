@@ -460,10 +460,7 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
                 node_kind_to_str[node->node_kind], name_len, name,
                 type_to_str[parser->par_types[node->node_type_i].ty_kind]);
 
-            ast_node_dump(nodes, parser, node->node_n.node_while.wh_cond_i,
-                          indent + 2);
-            ast_node_dump(nodes, parser, node->node_n.node_while.wh_body_i,
-                          indent + 2);
+            // TODO: body
         }
     }
 }
@@ -1590,10 +1587,12 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
 
     if (parser_peek(parser) != TOK_ID_FUN) return RES_NONE;
 
-    int dummy = -1, first_tok_i = -1, fn_name_tok_i = -1, last_tok_i = -1;
+    int dummy = -1, first_tok_i = -1, name_tok_i = -1, last_tok_i = -1;
+    const unsigned short flags = 0;
+
     parser_match(parser, &first_tok_i, 1, TOK_ID_FUN);
 
-    if (!parser_match(parser, &fn_name_tok_i, 1, TOK_ID_IDENTIFIER))
+    if (!parser_match(parser, &name_tok_i, 1, TOK_ID_IDENTIFIER))
         return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
     if (!parser_match(parser, &dummy, 1, TOK_ID_LPAREN))
         return parser_err_unexpected_token(parser, TOK_ID_LPAREN);
@@ -1604,6 +1603,18 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     if (!parser_match(parser, &last_tok_i, 1, TOK_ID_RCURLY))
         return parser_err_unexpected_token(parser, TOK_ID_RCURLY);
 
+    buf_push(parser->par_nodes,
+             ((ast_node_t){
+                 .node_kind = NODE_FN_DECL,
+                 .node_type_i = TYPE_UNIT_I,
+                 .node_n = {.node_fn_decl = {.fd_first_tok_i = first_tok_i,
+                                             .fd_name_tok_i = name_tok_i,
+                                             .fd_last_tok_i = last_tok_i}}}));
+    *new_node_i = buf_size(parser->par_nodes) - 1;
+
+    log_debug("new fn decl=%d current_scope_i=%d flags=%d", *new_node_i,
+              parser->par_scope_i, flags);
+
     return RES_OK;
 }
 
@@ -1613,7 +1624,7 @@ static res_t parser_parse_declaration(parser_t* parser, int* new_node_i) {
 
     res_t res = RES_NONE;
 
-    if ((res = parser_parse_fn_declaration(parser, new_node_i) != RES_NONE))
+    if ((res = parser_parse_fn_declaration(parser, new_node_i)) != RES_NONE)
         return res;
 
     return parser_parse_property_declaration(parser, new_node_i);
