@@ -131,7 +131,7 @@ typedef struct {
 } fn_decl_t;
 
 typedef struct {
-    int ca_first_tok_i, ca_last_tok_i, ca_arity, ca_fn_name_tok_i;
+    int ca_first_tok_i, ca_last_tok_i, ca_arity, ca_fn_name_node_i;
 } call_t;
 
 struct ast_node_t {

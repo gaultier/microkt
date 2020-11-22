@@ -487,17 +487,15 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
         case NODE_CALL: {
 #ifdef WITH_LOGS
             const call_t call = node->node_n.node_call;
-            const pos_range_t pos_range =
-                parser->par_lexer.lex_tok_pos_ranges[call.ca_fn_name_tok_i];
-            const char* const name =
-                &parser->par_lexer.lex_source[pos_range.pr_start];
-            const int name_len = pos_range.pr_end - pos_range.pr_start;
-#endif
             log_debug_with_indent(
-                indent, "ast_node #%d `%.*s` %s type=%s arity=%d", node_i,
-                name_len, name, node_kind_to_str[node->node_kind],
+                indent, "ast_node #%d %s type=%s arity=%d", node_i,
+                node_kind_to_str[node->node_kind],
                 type_to_str[parser->par_types[node->node_type_i].ty_kind],
                 call.ca_arity);
+
+            ast_node_dump(parser->par_nodes, parser, call.ca_fn_name_node_i,
+                          indent + 2);
+#endif
         }
     }
 }
@@ -1304,7 +1302,13 @@ static res_t parser_parse_generical_call_like_comparison(parser_t* parser,
     if (res == RES_NONE) return RES_OK;  // Optional
     if (res != RES_OK) return res;
 
-    UNIMPLEMENTED();  // NODE_CALL
+    buf_push(parser->par_nodes,
+             ((ast_node_t){
+                 .node_type_i = TYPE_UNIT_I,
+                 .node_kind = NODE_CALL,
+                 .node_n = {.node_call = {.ca_arity = 0 /* FIXME */,
+                                          .ca_fn_name_node_i = *new_node_i}}}));
+    *new_node_i = buf_size(parser->par_nodes) - 1;
 
     return res;
 }
