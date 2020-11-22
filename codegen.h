@@ -43,11 +43,11 @@ static void fn_prolog(int aligned_stack_size) {
     println("sub $%d, %%rsp\n", aligned_stack_size);
 }
 
-// static void fn_epilog(int aligned_stack_size) {
-//    println("addq $%d, %%rsp", aligned_stack_size);
-//    println("popq %%rbp");
-//    println("ret\n");
-//}
+static void fn_epilog(int aligned_stack_size) {
+    println("addq $%d, %%rsp", aligned_stack_size);
+    println("popq %%rbp");
+    println("ret\n");
+}
 
 static void emit_program_epilog() {
     println("\n# exit");
@@ -497,8 +497,20 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
             println(".Lwhile_loop_end%d:", w.wh_cond_i);
             return;
         }
-        case NODE_FN_DECL:
-            UNIMPLEMENTED();
+        case NODE_FN_DECL: {
+            const fn_decl_t fn_decl = stmt->node_n.node_fn_decl;
+            const pos_range_t pos_range =
+                parser->par_lexer.lex_tok_pos_ranges[fn_decl.fd_name_tok_i];
+
+            const char* const name =
+                &parser->par_lexer.lex_source[pos_range.pr_start];
+            const int name_len = pos_range.pr_end - pos_range.pr_start;
+            println("%.*s:", name_len, name);
+            fn_prolog(0);  // FIXME
+            fn_epilog(0);  // FIXME;
+
+            return;
+        }
     }
     log_debug("node_kind=%s", node_kind_to_str[stmt->node_kind]);
     UNREACHABLE();
