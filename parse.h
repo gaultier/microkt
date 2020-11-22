@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include "ast.h"
+#include "common.h"
 #include "lex.h"
 
 static const int TYPE_UNIT_I = 0;  // see parser_init
@@ -1248,14 +1249,45 @@ static res_t parser_parse_infix_op(parser_t* parser, int* new_node_i) {
     return parser_parse_elvis_expr(parser, new_node_i);
 }
 
+static res_t parser_parse_value_args(parser_t* parser, int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
+    if (parser_peek(parser) != TOK_ID_LPAREN) return RES_NONE;
+
+    int dummy = -1;
+    parser_match(parser, &dummy, 1, TOK_ID_LPAREN);
+
+    if (!parser_match(parser, &dummy, 1, TOK_ID_RPAREN))
+        return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
+
+    return RES_OK;
+}
+
+static res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
+    return parser_parse_value_args(parser, new_node_i);
+}
+
 static res_t parser_parse_generical_call_like_comparison(parser_t* parser,
                                                          int* new_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
-    // TODO
+    res_t res = parser_parse_infix_op(parser, new_node_i);
+    if (res != RES_OK) return res;
 
-    return parser_parse_infix_op(parser, new_node_i);
+    // TODO: loop + expand
+    int node_i = -1;
+    res = parser_parse_call_suffix(parser, &node_i);
+    if (res == RES_NONE) return RES_OK;  // Optional
+    if (res != RES_OK) return res;
+
+    UNIMPLEMENTED();  // NODE_CALL
+
+    return res;
 }
 
 static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
