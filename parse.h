@@ -777,21 +777,6 @@ static bool parser_match(parser_t* parser, int* return_token_index,
     return false;
 }
 
-static res_t parser_expect_token(parser_t* parser, int* token,
-                                 token_id_t expected) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)parser->par_lexer.lex_tok_ids, !=, NULL, "%p");
-    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tok_ids), >, (int)0,
-                   "%d");
-    PG_ASSERT_COND((void*)token, !=, NULL, "%p");
-
-    if (!parser_match(parser, token, 1, expected)) {
-        log_debug("expected token not found: %s", token_id_to_str[expected]);
-        return RES_UNEXPECTED_TOKEN;
-    }
-    return RES_OK;
-}
-
 static res_t parser_err_non_matching_types(const parser_t* parser,
                                            int lhs_node_i, int rhs_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
@@ -859,8 +844,7 @@ static res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
 
     res_t res = RES_NONE;
 
-    if ((res = parser_expect_token(parser, &first_tok_i, TOK_ID_LPAREN)) !=
-        RES_OK)
+    if (!parser_match(parser, &first_tok_i, 1, TOK_ID_LPAREN))
         return parser_err_unexpected_token(parser, TOK_ID_LPAREN);
 
     int node_cond_i = -1, node_then_i = -1, node_else_i = -1;
@@ -879,7 +863,7 @@ static res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
         return parser_err_unexpected_type(parser, node_cond_i, TYPE_BOOL);
     }
 
-    if ((res = parser_expect_token(parser, &dummy, TOK_ID_RPAREN)) != RES_OK)
+    if (!parser_match(parser, &dummy, 1, TOK_ID_RPAREN))
         return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
 
     const int current_scope_i = parser->par_scope_i;
@@ -1413,8 +1397,7 @@ static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i) {
     res_t res = RES_NONE;
     if (parser_match(parser, &keyword_print_i, 1, TOK_ID_BUILTIN_PRINTLN)) {
         int lparen = 0;
-        if ((res = parser_expect_token(parser, &lparen, TOK_ID_LPAREN)) !=
-            RES_OK)
+        if (!parser_match(parser, &lparen, 1, TOK_ID_LPAREN))
             return parser_err_unexpected_token(parser, TOK_ID_LPAREN);
 
         int arg_i = 0;
@@ -1424,10 +1407,8 @@ static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i) {
             return RES_MISSING_PARAM;
         } else if (res != RES_OK)
             return res;
-
         int rparen = 0;
-        if ((res = parser_expect_token(parser, &rparen, TOK_ID_RPAREN)) !=
-            RES_OK)
+        if (!parser_match(parser, &rparen, 1, TOK_ID_RPAREN))
             return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
 
         const int type_i = parser_make_type(parser, TYPE_BUILTIN_PRINTLN);
@@ -1449,7 +1430,7 @@ static res_t parser_parse_assignment(parser_t* parser, int* new_node_i) {
     int dummy = -1, expr_node_i = -1, lhs_tok_i = -1;
     if (parser_peek(parser) == TOK_ID_IDENTIFIER &&
         parser_peek_next(parser) == TOK_ID_EQ) {
-        parser_expect_token(parser, &lhs_tok_i, TOK_ID_IDENTIFIER);
+        parser_match(parser, &lhs_tok_i, 1, TOK_ID_IDENTIFIER);
 
         int var_def_i = -1;
         if (parser_resolve_var(parser, lhs_tok_i, &var_def_i) != RES_OK) {
@@ -1467,7 +1448,7 @@ static res_t parser_parse_assignment(parser_t* parser, int* new_node_i) {
         buf_push(parser->par_nodes, var_node);
         int lhs_node_i = (int)buf_size(parser->par_nodes) - 1;
 
-        parser_expect_token(parser, &dummy, TOK_ID_EQ);
+        parser_match(parser, &dummy, 1, TOK_ID_EQ);
 
         res = parser_parse_expr(parser, &expr_node_i);
         if (res == RES_NONE) {
@@ -1517,17 +1498,17 @@ static res_t parser_parse_property_declaration(parser_t* parser,
     else
         return RES_NONE;
 
-    if (parser_expect_token(parser, &name_tok_i, TOK_ID_IDENTIFIER) != RES_OK)
+    if (!parser_match(parser, &name_tok_i, 1, TOK_ID_IDENTIFIER))
         return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
 
-    if (parser_expect_token(parser, &dummy, TOK_ID_COLON) != RES_OK)
+    if (!parser_match(parser, &dummy, 1, TOK_ID_COLON))
         return parser_err_unexpected_token(parser, TOK_ID_COLON);
 
-    if (parser_expect_token(parser, &type_tok_i, TOK_ID_IDENTIFIER) != RES_OK)
+    if (!parser_match(parser, &type_tok_i, 1, TOK_ID_IDENTIFIER))
         return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
     PG_ASSERT_COND(type_tok_i, >=, 0, "%d");
 
-    if (parser_expect_token(parser, &dummy, TOK_ID_EQ) != RES_OK)
+    if (!parser_match(parser, &dummy, 1, TOK_ID_EQ))
         return parser_err_unexpected_token(parser, TOK_ID_EQ);
 
     res_t res = RES_NONE;
@@ -1575,10 +1556,9 @@ static res_t parser_parse_while_stmt(parser_t* parser, int* new_node_i) {
 
     int dummy = -1, first_tok_i = -1, last_tok_i = -1, cond_i = -1, body_i = -1;
 
-    if (parser_expect_token(parser, &first_tok_i, TOK_ID_WHILE) != RES_OK)
-        return RES_NONE;
+    if (!parser_match(parser, &first_tok_i, 1, TOK_ID_WHILE)) return RES_NONE;
 
-    if (parser_expect_token(parser, &dummy, TOK_ID_LPAREN) != RES_OK)
+    if (!parser_match(parser, &dummy, 1, TOK_ID_LPAREN))
         return parser_err_unexpected_token(parser, TOK_ID_LPAREN);
 
     res_t res = parser_parse_expr(parser, &cond_i);
@@ -1594,7 +1574,7 @@ static res_t parser_parse_while_stmt(parser_t* parser, int* new_node_i) {
         return parser_err_non_matching_types(parser, cond_type_i, -1);
     }
 
-    if (parser_expect_token(parser, &dummy, TOK_ID_RPAREN) != RES_OK)
+    if (!parser_match(parser, &dummy, 1, TOK_ID_RPAREN))
         return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
 
     res = parser_parse_control_structure_body(parser, &body_i);

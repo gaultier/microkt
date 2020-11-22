@@ -26,7 +26,7 @@ for f in err/*.kts; do
     ./microktc "$f"
 
     exit_code=$?
-    if [ $exit_code != 0 ]; then
+    if [ $exit_code = 1 ]; then
         echo "$GREEN" "✔ " "$f" "$RESET"
     else
         echo "$RED" "✘ " "$f" "$RESET"
