@@ -28,17 +28,11 @@ typedef enum {
 static const char res_to_str[][100] = {
     [RES_OK] = "ok\n",
     [RES_NONE] = "none\n",
-    [RES_UNEXPECTED_TOKEN] =
-        "%s%s:%d:%d:%sUnexpected token. Expected `%s`, got `%s`\n",
     [RES_INVALID_SOURCE_FILE_NAME] = "Invalid source file name %s\n",
     [RES_SOURCE_FILE_READ_FAILED] = "Failed to read source file %s: %s\n",
     [RES_ASM_FILE_READ_FAILED] = "Failed to read asm file %s: %s\n",
     [RES_FAILED_AS] = "Failed to run `%s`: %s\n",
     [RES_FAILED_LD] = "Failed to run `%s`: %s\n",
-    [RES_NON_MATCHING_TYPES] =
-        "%s%s:%d:%d:%sTypes do not match. Expected %s, got %s\n",
-    [RES_EXPECTED_PRIMARY] = "%s%s:%d:%d:%sExpected primary, got %s\n",
-    [RES_UNKNOWN_VAR] = "%s%s:%d:%d:%sUnknown variable %s\n",
 };
 
 #define STR(s) #s

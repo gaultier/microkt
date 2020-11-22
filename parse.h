@@ -729,8 +729,9 @@ static res_t parser_err_unexpected_token(const parser_t* parser,
 
     const loc_t loc_start = parser->par_lexer.lex_locs[parser->par_tok_i];
 
-    fprintf(stderr, res_to_str[res], (parser->par_is_tty ? color_grey : ""),
-            parser->par_file_name0, loc_start.loc_line, loc_start.loc_column,
+    fprintf(stderr, "%s%s:%d:%d:%sUnexpected token. Expected `%s`, got `%s`\n",
+            (parser->par_is_tty ? color_grey : ""), parser->par_file_name0,
+            loc_start.loc_line, loc_start.loc_column,
             (parser->par_is_tty ? color_reset : ""), token_id_to_str[expected],
             token_id_to_str[parser_current(parser)]);
 
@@ -797,9 +798,9 @@ static res_t parser_err_non_matching_types(const parser_t* parser,
     const loc_t lhs_first_tok_loc = parser->par_lexer.lex_locs[lhs_first_tok_i];
 
     const res_t res = RES_NON_MATCHING_TYPES;
-    fprintf(stderr, res_to_str[res], (parser->par_is_tty ? color_grey : ""),
-            parser->par_file_name0, lhs_first_tok_loc.loc_line,
-            lhs_first_tok_loc.loc_column,
+    fprintf(stderr, "%s%s:%d:%d:%sTypes do not match. Expected %s, got %s\n",
+            (parser->par_is_tty ? color_grey : ""), parser->par_file_name0,
+            lhs_first_tok_loc.loc_line, lhs_first_tok_loc.loc_column,
             (parser->par_is_tty ? color_reset : ""), type_to_str[rhs_type_kind],
             type_to_str[lhs_type_kind]);
 
@@ -823,9 +824,9 @@ static res_t parser_err_unexpected_type(const parser_t* parser, int lhs_node_i,
     const loc_t lhs_first_tok_loc = parser->par_lexer.lex_locs[lhs_first_tok_i];
 
     const res_t res = RES_NON_MATCHING_TYPES;
-    fprintf(stderr, res_to_str[res], (parser->par_is_tty ? color_grey : ""),
-            parser->par_file_name0, lhs_first_tok_loc.loc_line,
-            lhs_first_tok_loc.loc_column,
+    fprintf(stderr, "%s%s:%d:%d:%sTypes do not match. Expected %s, got %s\n",
+            (parser->par_is_tty ? color_grey : ""), parser->par_file_name0,
+            lhs_first_tok_loc.loc_line, lhs_first_tok_loc.loc_column,
             (parser->par_is_tty ? color_reset : ""),
             type_to_str[expected_type_kind], type_to_str[lhs_type_kind]);
 
@@ -993,7 +994,7 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
     if (parser_peek(parser) == TOK_ID_IF)
         return parser_parse_if_expr(parser, new_node_i);
 
-    return RES_NONE;
+    return RES_NONE;  // TODO
 }
 
 static res_t parser_parse_postfix_unary_expr(parser_t* parser,
