@@ -251,12 +251,29 @@ static parser_t parser_init(const char* file_name0, const char* source,
     buf_grow(types, 100);
 
     ast_node_t* nodes = NULL;
-
+    buf_grow(nodes, 100);
     // Add initial scope
     buf_push(nodes, NODE_BLOCK(TYPE_UNIT_I, -1, -1, NULL, -1));
 
+    obj_t* objects = NULL;
+    buf_grow(objects, 10);
+    buf_push(lexer.lex_tokens,
+             ((token_t){.tok_id = TOK_ID_IDENTIFIER,
+                        .tok_pos_range = {.pr_start = 0, .pr_end = 0}}));
+    const int fn_main_name_tok_i = buf_size(lexer.lex_tokens) - 1;
+    // Add root main function
+    buf_push(
+        objects,
+        ((obj_t){.obj_type_i = TYPE_UNIT_I,
+                 .obj_tok_i = fn_main_name_tok_i,
+                 .obj_kind = OBJ_FN_DECL,
+                 .obj_o = {.o_fn_decl = {.fd_first_tok_i = fn_main_name_tok_i,
+                                         .fd_name_tok_i = fn_main_name_tok_i,
+                                         .fd_last_tok_i = fn_main_name_tok_i,
+                                         .fn_body_node_i = 0}}}));
     parser_t parser = {
         .par_file_name0 = file_name0,
+        .par_objects = objects,
         .par_nodes = nodes,
         .par_lexer = lexer,
         .par_is_tty = isatty(2),

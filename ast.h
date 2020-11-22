@@ -27,7 +27,7 @@ typedef struct {
 } type_t;
 
 typedef struct {
-    int fd_first_tok_i, fd_last_tok_i, fd_name_tok_i;
+    int fd_first_tok_i, fd_last_tok_i, fd_name_tok_i, fn_body_node_i;
 } fn_decl_t;
 
 typedef enum { OBJ_GLOBAL_VAR, OBJ_FN_DECL } obj_kind_t;
