@@ -1559,9 +1559,23 @@ static res_t parser_parse_property_declaration(parser_t* parser,
     return RES_OK;
 }
 
+static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
+    if (parser_peek(parser) != TOK_ID_FUN) return RES_NONE;
+
+    return RES_OK;
+}
+
 static res_t parser_parse_declaration(parser_t* parser, int* new_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
+    res_t res = RES_NONE;
+
+    if ((res = parser_parse_fn_declaration(parser, new_node_i) != RES_NONE))
+        return res;
 
     return parser_parse_property_declaration(parser, new_node_i);
 }
