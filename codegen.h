@@ -27,7 +27,8 @@ println(char* fmt, ...) {
     fprintf(output_file, "\n");
 }
 
-// The System V ABI requires a 16-bit aligned stack
+// The System V ABI requires a 16-bit aligned stack.
+// Round up to a multiple of 16
 static int emit_align_to_16(int stack_size) {
     return (stack_size + 16 - 1) / 16 * 16;
 }
