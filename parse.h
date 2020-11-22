@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include "ast.h"
+#include "common.h"
 #include "lex.h"
 
 static const int TYPE_UNIT_I = 0;  // see parser_init
@@ -919,11 +920,26 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
     int tok_i = -1;
+    res_t res = RES_NONE;
 
     // FIXME: hack
     if (parser_peek(parser) == TOK_ID_BUILTIN_PRINTLN)
         return parser_parse_builtin_println(parser, new_node_i);
 
+    int lparen_tok_i = -1, rparen_tok_i = -1;
+    if (parser_match(parser, &lparen_tok_i, 1, TOK_ID_LPAREN)) {
+        res = parser_parse_expr(parser, new_node_i);
+        if (res == RES_NONE)
+            return parser_err_missing_rhs(parser, lparen_tok_i,
+                                          parser->par_tok_i);
+        else if (res != RES_OK)
+            return res;
+
+        if (!parser_match(parser, &rparen_tok_i, 1, TOK_ID_RPAREN))
+            return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
+
+        return RES_OK;
+    }
     if (parser_match(parser, &tok_i, 2, TOK_ID_TRUE, TOK_ID_FALSE)) {
         const int type_i = parser_make_type(parser, TYPE_BOOL);
 
