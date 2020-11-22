@@ -523,6 +523,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
     println("\n.text");
     emit_stdlib();
 
+    println(".file 1 \"%s\"", parser->par_file_name0);
     for (int i = 0; i < (int)buf_size(parser->par_objects); i++) {
         const obj_t* const obj = &parser->par_objects[i];
         if (obj->obj_kind != OBJ_FN_DECL) continue;
@@ -537,22 +538,21 @@ static void emit(const parser_t* parser, FILE* asm_file) {
         const char* const name =
             &parser->par_lexer.lex_source[pos_range.pr_start];
         const int name_len = pos_range.pr_end - pos_range.pr_start;
-        println("%.*s:", name_len, name);
-        fn_prolog(0);  // FIXME
-        fn_epilog(0);  // FIXME
+        println(".global %.*s", name_len == 0 ? (int)sizeof("_main") : name_len,
+                name_len == 0 ? "_main" : name);
+        println("%.*s:", name_len == 0 ? (int)sizeof("_main") : name_len,
+                name_len == 0 ? "_main" : name);
+
+        log_debug("offset=%d", parser->par_offset);
+
+        const int aligned_stack_size =
+            emit_align_to_16(parser->par_offset);  // FIXME
+        fn_prolog(aligned_stack_size);
+        // Initial scope is at index=0
+        emit_stmt(parser, 0);
+        if (i > 0)
+            fn_epilog(aligned_stack_size);
+        else
+            emit_program_epilog();
     }
-
-    println(".global _main");
-    println("_main:");
-    println(".file 1 \"%s\"", parser->par_file_name0);
-
-    log_debug("offset=%d", parser->par_offset);
-
-    const int aligned_stack_size = emit_align_to_16(parser->par_offset);
-    fn_prolog(aligned_stack_size);
-
-    // Initial scope is at index=0
-    emit_stmt(parser, 0);
-
-    emit_program_epilog();
 }

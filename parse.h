@@ -32,6 +32,11 @@ static void parser_tok_source(const parser_t* parser, int tok_i,
 static void parser_print_source_on_error(const parser_t* parser,
                                          int first_tok_i, int last_tok_i);
 
+static obj_t* parser_current_fn(const parser_t* parser) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    return &parser->par_objects[parser->par_fn_i];
+}
+
 static ast_node_t* parser_current_block(parser_t* parser) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
 
@@ -260,6 +265,9 @@ static parser_t parser_init(const char* file_name0, const char* source,
     buf_push(lexer.lex_tokens,
              ((token_t){.tok_id = TOK_ID_IDENTIFIER,
                         .tok_pos_range = {.pr_start = 0, .pr_end = 0}}));
+    buf_push(lexer.lex_tok_pos_ranges,
+             ((pos_range_t){.pr_start = 0, .pr_end = 0}));
+    buf_push(lexer.lex_locs, ((loc_t){.loc_line = 1, .loc_column = 1}));
     const int fn_main_name_tok_i = buf_size(lexer.lex_tokens) - 1;
     // Add root main function
     buf_push(
@@ -279,16 +287,12 @@ static parser_t parser_init(const char* file_name0, const char* source,
         .par_is_tty = isatty(2),
         .par_types = types,
         .par_fn_i = 0,
+        .par_scope_i = 0,
     };
     parser_make_type(&parser, TYPE_UNIT);  // Hence TYPE_UNIT_I = 0
     parser_make_type(&parser, TYPE_ANY);   // Hence TYPE_ANY_I = 1
 
     return parser;
-}
-
-static ast_node_t* parser_current_fn(parser_t* parser) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    return &parser->par_nodes[parser->par_fn_i];
 }
 
 static long long int parse_tok_to_long(const parser_t* parser, int tok_i) {
@@ -1600,20 +1604,27 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
         return parser_err_unexpected_token(parser, TOK_ID_LPAREN);
     if (!parser_match(parser, &dummy, 1, TOK_ID_RPAREN))
         return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
-    if (!parser_match(parser, &dummy, 1, TOK_ID_LCURLY))
-        return parser_err_unexpected_token(parser, TOK_ID_LCURLY);
-    if (!parser_match(parser, &last_tok_i, 1, TOK_ID_RCURLY))
-        return parser_err_unexpected_token(parser, TOK_ID_RCURLY);
 
-    buf_push(parser->par_objects,
-             ((obj_t){.obj_type_i = TYPE_UNIT_I,
-                      .obj_tok_i = name_tok_i,
-                      .obj_kind = OBJ_FN_DECL,
-                      .obj_o = {.o_fn_decl = {.fd_first_tok_i = first_tok_i,
-                                              .fd_name_tok_i = name_tok_i,
-                                              .fd_last_tok_i = last_tok_i}}}));
+    int body_node_i = -1;
+    res_t res = parser_parse_control_structure_body(parser, &body_node_i);
+    if (res == RES_NONE) {
+        UNIMPLEMENTED();
+    } else if (res != RES_OK)
+        return res;
+
+    buf_push(
+        parser->par_objects,
+        ((obj_t){.obj_type_i = TYPE_UNIT_I,
+                 .obj_tok_i = name_tok_i,
+                 .obj_kind = OBJ_FN_DECL,
+                 .obj_o = {.o_fn_decl = {.fd_first_tok_i = first_tok_i,
+                                         .fd_name_tok_i = name_tok_i,
+                                         .fd_last_tok_i = last_tok_i,
+                                         .fn_body_node_i = body_node_i}}}));
     log_debug("new fn decl=%d current_scope_i=%d flags=%d", *new_node_i,
               parser->par_scope_i, flags);
+
+    *new_node_i = body_node_i;
 
     return RES_OK;
 }
