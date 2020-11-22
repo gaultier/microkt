@@ -260,6 +260,8 @@ static parser_t parser_init(const char* file_name0, const char* source,
     const int fn_main_name_tok_i = buf_size(lexer.lex_tokens) - 1;
     ast_node_t* nodes = NULL;
     buf_grow(nodes, 100);
+    // Add initial scope
+    buf_push(nodes, NODE_BLOCK(TYPE_UNIT_I, -1, -1, NULL, -1));
     buf_push(nodes,
              ((ast_node_t){.node_type_i = TYPE_UNIT_I,
                            .node_kind = NODE_FN_DECL,
@@ -272,7 +274,8 @@ static parser_t parser_init(const char* file_name0, const char* source,
                                                       FN_FLAG_PUBLIC}}}));
     int* node_decls = NULL;
     buf_grow(node_decls, 10);
-    buf_push(node_decls, 0);  // First node is main
+    buf_push(node_decls,
+             buf_size(nodes) - 1);  // Last node is the main function
 
     parser_t parser = {
         .par_file_name0 = file_name0,
@@ -281,7 +284,7 @@ static parser_t parser_init(const char* file_name0, const char* source,
         .par_lexer = lexer,
         .par_is_tty = isatty(2),
         .par_types = types,
-        .par_fn_i = 0,
+        .par_fn_i = node_decls[0],
         .par_scope_i = 0,
     };
     parser_make_type(&parser, TYPE_UNIT);  // Hence TYPE_UNIT_I = 0

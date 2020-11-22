@@ -200,7 +200,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
         }
         case NODE_STRING: {
             const int tok_i = expr->node_n.node_string;
-            println("lea .L%d(%%rip), %%rax", tok_i);
+            println("lea .L%d(%%rip), %%rax", expr_i);
 
             const char* source = NULL;
             int source_len = 0;
@@ -316,17 +316,17 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 
             emit_expr(parser, node.if_node_cond_i);
             println("cmp $0, %%rax");
-            println("je .L.else.%d", node.if_node_cond_i);
+            println("je .L.else.%d", expr_i);
 
             emit_expr(parser, node.if_node_then_i);
 
-            println("jmp .L.end.%d", node.if_node_cond_i);
+            println("jmp .L.end.%d", expr_i);
 
-            println(".L.else.%d:", node.if_node_cond_i);
+            println(".L.else.%d:", expr_i);
             if (node.if_node_else_i >= 0)
                 emit_expr(parser, node.if_node_else_i);
 
-            println(".L.end.%d:", node.if_node_cond_i);
+            println(".L.end.%d:", expr_i);
 
             return;
         }
@@ -480,20 +480,20 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
         }
         case NODE_WHILE: {
             const while_t w = stmt->node_n.node_while;
-            println(".Lwhile_loop_start%d:", w.wh_cond_i);
+            println(".Lwhile_loop_start%d:", stmt_i);
             emit_expr(parser, w.wh_cond_i);
 
             println("cmp $0, %%rax");
-            println("je .Lwhile_loop_end%d", w.wh_cond_i);
+            println("je .Lwhile_loop_end%d", stmt_i);
 
             emit_stmt(parser, w.wh_body_i);
-            println("jmp .Lwhile_loop_start%d", w.wh_cond_i);
+            println("jmp .Lwhile_loop_start%d", stmt_i);
 
-            println(".Lwhile_loop_end%d:", w.wh_cond_i);
+            println(".Lwhile_loop_end%d:", stmt_i);
             return;
         }
         case NODE_FN_DECL:
-            UNREACHABLE();
+            return;
     }
     log_debug("node_kind=%s", node_kind_to_str[stmt->node_kind]);
     UNREACHABLE();
@@ -517,7 +517,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
         int source_len = 0;
         parser_tok_source(parser, node->node_n.node_string, &source,
                           &source_len);
-        println(".L%d: .asciz \"%.*s\"", i, source_len, source);
+        println(".L%d: .asciz \"%.*s\"", node_i, source_len, source);
     }
 
     println("\n.text");
