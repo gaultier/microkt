@@ -278,7 +278,9 @@ static parser_t parser_init(const char* file_name0, const char* source,
                  .obj_o = {.o_fn_decl = {.fd_first_tok_i = fn_main_name_tok_i,
                                          .fd_name_tok_i = fn_main_name_tok_i,
                                          .fd_last_tok_i = fn_main_name_tok_i,
-                                         .fn_body_node_i = 0}}}));
+                                         .fd_body_node_i = 0,
+                                         .fd_flags = FN_FLAG_SYNTHETIC |
+                                                     FN_FLAG_PUBLIC}}}));
     parser_t parser = {
         .par_file_name0 = file_name0,
         .par_objects = objects,
@@ -1593,7 +1595,7 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     if (parser_peek(parser) != TOK_ID_FUN) return RES_NONE;
 
     int dummy = -1, first_tok_i = -1, name_tok_i = -1, last_tok_i = -1;
-    const unsigned short flags = 0;
+    const unsigned short flags = FN_FLAG_PRIVATE;
 
     parser_match(parser, &first_tok_i, 1, TOK_ID_FUN);
 
@@ -1611,15 +1613,15 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     } else if (res != RES_OK)
         return res;
 
-    buf_push(
-        parser->par_objects,
-        ((obj_t){.obj_type_i = TYPE_UNIT_I,
-                 .obj_tok_i = name_tok_i,
-                 .obj_kind = OBJ_FN_DECL,
-                 .obj_o = {.o_fn_decl = {.fd_first_tok_i = first_tok_i,
-                                         .fd_name_tok_i = name_tok_i,
-                                         .fd_last_tok_i = last_tok_i,
-                                         .fn_body_node_i = body_node_i}}}));
+    buf_push(parser->par_objects,
+             ((obj_t){.obj_type_i = TYPE_UNIT_I,
+                      .obj_tok_i = name_tok_i,
+                      .obj_kind = OBJ_FN_DECL,
+                      .obj_o = {.o_fn_decl = {.fd_first_tok_i = first_tok_i,
+                                              .fd_name_tok_i = name_tok_i,
+                                              .fd_last_tok_i = last_tok_i,
+                                              .fd_body_node_i = body_node_i,
+                                              .fd_flags = flags}}}));
     log_debug("new fn decl=%d current_scope_i=%d flags=%d", *new_node_i,
               parser->par_scope_i, flags);
 

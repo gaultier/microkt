@@ -26,8 +26,13 @@ typedef struct {
     type_kind_t ty_kind;
 } type_t;
 
+const unsigned short FN_FLAG_SYNTHETIC = 0x1;
+const unsigned short FN_FLAG_PUBLIC = 0x2;
+const unsigned short FN_FLAG_PRIVATE = 0x4;
+
 typedef struct {
-    int fd_first_tok_i, fd_last_tok_i, fd_name_tok_i, fn_body_node_i;
+    int fd_first_tok_i, fd_last_tok_i, fd_name_tok_i, fd_body_node_i;
+    unsigned short fd_flags;
 } fn_decl_t;
 
 typedef enum { OBJ_GLOBAL_VAR, OBJ_FN_DECL } obj_kind_t;
