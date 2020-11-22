@@ -522,7 +522,8 @@ static void emit(const parser_t* parser, FILE* asm_file) {
     emit_stdlib();
 
     println(".file 1 \"%s\"", parser->par_file_name0);
-    for (int i = 0; i < (int)buf_size(parser->par_objects); i++) {
+    // Reverse traversal to end up with main at the end
+    for (int i = (int)buf_size(parser->par_objects) - 1; i >= 0; i--) {
         const obj_t* const obj = &parser->par_objects[i];
         if (obj->obj_kind != OBJ_FN_DECL) continue;
 
@@ -550,8 +551,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
         const int aligned_stack_size =
             emit_align_to_16(parser->par_offset);  // FIXME
         fn_prolog(aligned_stack_size);
-        // Initial scope is at index=0
-        emit_stmt(parser, 0);
+        emit_stmt(parser, fn_decl.fd_body_node_i);
         if (i > 0)
             fn_epilog(aligned_stack_size);
         else

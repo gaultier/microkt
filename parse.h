@@ -1605,7 +1605,10 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
         return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
 
     int body_node_i = -1;
+    const int current_scope_i = parser->par_scope_i;
     res_t res = parser_parse_block(parser, &body_node_i);
+    parser->par_scope_i = current_scope_i;
+
     if (res == RES_NONE) {
         UNIMPLEMENTED();
     } else if (res != RES_OK)
@@ -1620,10 +1623,9 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
                                               .fd_last_tok_i = last_tok_i,
                                               .fd_body_node_i = body_node_i,
                                               .fd_flags = flags}}}));
-    log_debug("new fn decl=%d current_scope_i=%d flags=%d", *new_node_i,
-              parser->par_scope_i, flags);
-
     *new_node_i = body_node_i;
+    log_debug("new fn decl=%d flags=%d body_node_i=%d", *new_node_i, flags,
+              body_node_i);
 
     return RES_OK;
 }
