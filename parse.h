@@ -484,6 +484,21 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
                 name, node_kind_to_str[node->node_kind],
                 type_to_str[parser->par_types[node->node_type_i].ty_kind]);
         }
+        case NODE_CALL: {
+#ifdef WITH_LOGS
+            const call_t call = node->node_n.node_call;
+            const pos_range_t pos_range =
+                parser->par_lexer.lex_tok_pos_ranges[call.ca_fn_name_tok_i];
+            const char* const name =
+                &parser->par_lexer.lex_source[pos_range.pr_start];
+            const int name_len = pos_range.pr_end - pos_range.pr_start;
+#endif
+            log_debug_with_indent(
+                indent, "ast_node #%d `%.*s` %s type=%s arity=%d", node_i,
+                name_len, name, node_kind_to_str[node->node_kind],
+                type_to_str[parser->par_types[node->node_type_i].ty_kind],
+                call.ca_arity);
+        }
     }
 }
 
@@ -532,6 +547,8 @@ static int ast_node_first_token(const parser_t* parser,
             return node->node_n.node_while.wh_first_tok_i;
         case NODE_FN_DECL:
             return node->node_n.node_fn_decl.fd_first_tok_i;
+        case NODE_CALL:
+            return node->node_n.node_call.ca_first_tok_i;
     }
     log_debug("node kind=%d", node->node_kind);
     UNREACHABLE();
@@ -581,6 +598,8 @@ static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
             return node->node_n.node_while.wh_last_tok_i;
         case NODE_FN_DECL:
             return node->node_n.node_fn_decl.fd_first_tok_i;
+        case NODE_CALL:
+            return node->node_n.node_call.ca_last_tok_i;
     }
     log_debug("node kind=%d", node->node_kind);
     UNREACHABLE();

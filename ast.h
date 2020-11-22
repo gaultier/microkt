@@ -30,11 +30,6 @@ const unsigned short FN_FLAG_SYNTHETIC = 0x1;
 const unsigned short FN_FLAG_PUBLIC = 0x2;
 const unsigned short FN_FLAG_PRIVATE = 0x4;
 
-typedef struct {
-    int fd_first_tok_i, fd_last_tok_i, fd_name_tok_i, fd_body_node_i;
-    unsigned short fd_flags;
-} fn_decl_t;
-
 struct ast_node_t;
 
 typedef struct ast_node_t ast_node_t;
@@ -70,6 +65,7 @@ typedef enum {
     NODE_ASSIGN,
     NODE_WHILE,
     NODE_FN_DECL,
+    NODE_CALL,
 } ast_node_kind_t;
 
 const char node_kind_to_str[][30] = {
@@ -95,6 +91,7 @@ const char node_kind_to_str[][30] = {
     [NODE_ASSIGN] = "Assign",
     [NODE_WHILE] = "While",
     [NODE_FN_DECL] = "FnDecl",
+    [NODE_CALL] = "Call",
 };
 
 typedef struct {
@@ -128,6 +125,15 @@ typedef struct {
     int wh_first_tok_i, wh_last_tok_i, wh_cond_i, wh_body_i;
 } while_t;
 
+typedef struct {
+    int fd_first_tok_i, fd_last_tok_i, fd_name_tok_i, fd_body_node_i;
+    unsigned short fd_flags;
+} fn_decl_t;
+
+typedef struct {
+    int ca_first_tok_i, ca_last_tok_i, ca_arity, ca_fn_name_tok_i;
+} call_t;
+
 struct ast_node_t {
     ast_node_kind_t node_kind;
     int node_type_i;
@@ -144,6 +150,7 @@ struct ast_node_t {
         var_t node_var;          // NODE_VAR
         while_t node_while;      // NODE_WHILE
         fn_decl_t node_fn_decl;  // NODE_FN_DECL
+        call_t node_call;        // NODE_CALL
     } node_n;
 };
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ast.h"
+#include "common.h"
 #include "parse.h"
 
 // TODO: use platform headers for that?
@@ -389,6 +391,9 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 
             return;
         }
+        case NODE_CALL:
+            UNIMPLEMENTED();
+
             // Forbidden by the grammer
         case NODE_WHILE:
         case NODE_VAR_DEF:
@@ -494,6 +499,8 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
         }
         case NODE_FN_DECL:
             return;
+        case NODE_CALL:
+            UNREACHABLE();
     }
     log_debug("node_kind=%s", node_kind_to_str[stmt->node_kind]);
     UNREACHABLE();
