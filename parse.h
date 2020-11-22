@@ -4,7 +4,6 @@
 #include <unistd.h>
 
 #include "ast.h"
-#include "common.h"
 #include "lex.h"
 
 static const int TYPE_UNIT_I = 0;  // see parser_init
@@ -577,7 +576,7 @@ static void parser_tok_source(const parser_t* parser, int tok_i,
     PG_ASSERT_COND((void*)source, !=, NULL, "%p");
     PG_ASSERT_COND((void*)source_len, !=, NULL, "%p");
 
-    const token_id_t tok = parser->par_lexer.lex_tok_ids[tok_i];
+    const token_id_t tok = parser->par_lexer.lex_tokens[tok_i].tok_id;
     const pos_range_t pos_range = parser->par_lexer.lex_tok_pos_ranges[tok_i];
 
     // Without quotes for char/string
@@ -593,38 +592,36 @@ static void parser_tok_source(const parser_t* parser, int tok_i,
 static bool parser_is_at_end(const parser_t* parser) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
 
-    return parser->par_tok_i >= (int)buf_size(parser->par_lexer.lex_tok_ids);
+    return parser->par_tok_i >= (int)buf_size(parser->par_lexer.lex_tokens);
 }
 
 static token_id_t parser_current(const parser_t* parser) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-
-    return parser->par_lexer.lex_tok_ids[parser->par_tok_i];
+    return parser->par_lexer.lex_tokens[parser->par_tok_i].tok_id;
 }
 
 static token_id_t parser_previous(const parser_t* parser) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND(parser->par_tok_i, >, 1, "%d");
     PG_ASSERT_COND(parser->par_tok_i, <,
-                   (int)buf_size(parser->par_lexer.lex_tok_ids), "%d");
+                   (int)buf_size(parser->par_lexer.lex_tokens), "%d");
 
-    return parser->par_lexer.lex_tok_ids[parser->par_tok_i - 1];
+    return parser->par_lexer.lex_tokens[parser->par_tok_i - 1].tok_id;
 }
-
 static void parser_advance_until_after(parser_t* parser, token_id_t id) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)parser->par_lexer.lex_tok_ids, !=, NULL, "%p");
-    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tok_ids), >, (int)0,
+    PG_ASSERT_COND((void*)parser->par_lexer.lex_tokens, !=, NULL, "%p");
+    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tokens), >, (int)0,
                    "%d");
-    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tok_ids), >,
+    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tokens), >,
                    parser->par_tok_i, "%d");
 
     while (!parser_is_at_end(parser) && parser_current(parser) != id) {
         PG_ASSERT_COND(parser->par_tok_i, <,
-                       (int)buf_size(parser->par_lexer.lex_tok_ids), "%d");
+                       (int)buf_size(parser->par_lexer.lex_tokens), "%d");
         parser->par_tok_i += 1;
         PG_ASSERT_COND(parser->par_tok_i, <,
-                       (int)buf_size(parser->par_lexer.lex_tok_ids), "%d");
+                       (int)buf_size(parser->par_lexer.lex_tokens), "%d");
     }
 
     parser->par_tok_i += 1;
@@ -632,14 +629,15 @@ static void parser_advance_until_after(parser_t* parser, token_id_t id) {
 
 static token_id_t parser_peek(parser_t* parser) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)parser->par_lexer.lex_tok_ids, !=, NULL, "%p");
-    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tok_ids), >, (int)0,
+    PG_ASSERT_COND((void*)parser->par_lexer.lex_tokens, !=, NULL, "%p");
+    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tokens), >, (int)0,
                    "%d");
-    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tok_ids), >,
+    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tokens), >,
                    parser->par_tok_i, "%d");
 
-    while (parser->par_tok_i < (int)buf_size(parser->par_lexer.lex_tok_ids)) {
-        const token_id_t id = parser->par_lexer.lex_tok_ids[parser->par_tok_i];
+    while (parser->par_tok_i < (int)buf_size(parser->par_lexer.lex_tokens)) {
+        const token_id_t id =
+            parser->par_lexer.lex_tokens[parser->par_tok_i].tok_id;
         if (id == TOK_ID_COMMENT) {
             log_debug("Skipping over comment at pos=%d", parser->par_tok_i);
             parser->par_tok_i += 1;
@@ -653,15 +651,15 @@ static token_id_t parser_peek(parser_t* parser) {
 
 static token_id_t parser_peek_next(parser_t* parser) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)parser->par_lexer.lex_tok_ids, !=, NULL, "%p");
-    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tok_ids), >, (int)0,
+    PG_ASSERT_COND((void*)parser->par_lexer.lex_tokens, !=, NULL, "%p");
+    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tokens), >, (int)0,
                    "%d");
-    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tok_ids), >,
+    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tokens), >,
                    parser->par_tok_i, "%d");
 
     int i = parser->par_tok_i;
-    while (i < (int)buf_size(parser->par_lexer.lex_tok_ids) - 1) {
-        const token_id_t id = parser->par_lexer.lex_tok_ids[i + 1];
+    while (i < (int)buf_size(parser->par_lexer.lex_tokens) - 1) {
+        const token_id_t id = parser->par_lexer.lex_tokens[i + 1].tok_id;
         if (id == TOK_ID_COMMENT) {
             log_debug("Skipping over comment at pos=%d", i + 1);
             i++;
@@ -772,10 +770,10 @@ static res_t parser_err_unexpected_token(const parser_t* parser,
 static bool parser_match(parser_t* parser, int* return_token_index,
                          int id_count, ...) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)parser->par_lexer.lex_tok_ids, !=, NULL, "%p");
-    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tok_ids), >, (int)0,
+    PG_ASSERT_COND((void*)parser->par_lexer.lex_tokens, !=, NULL, "%p");
+    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tokens), >, (int)0,
                    "%d");
-    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tok_ids), >,
+    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tokens), >,
                    parser->par_tok_i, "%d");
 
     const token_id_t current_id = parser_peek(parser);
@@ -792,7 +790,7 @@ static bool parser_match(parser_t* parser, int* return_token_index,
 
         parser_advance_until_after(parser, id);
         PG_ASSERT_COND(parser->par_tok_i, <,
-                       (int)buf_size(parser->par_lexer.lex_tok_ids), "%d");
+                       (int)buf_size(parser->par_lexer.lex_tokens), "%d");
 
         *return_token_index = parser->par_tok_i - 1;
 
@@ -1716,10 +1714,10 @@ static res_t parser_parse_stmt(parser_t* parser, int* new_node_i) {
 
 static res_t parser_parse(parser_t* parser) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)parser->par_lexer.lex_tok_ids, !=, NULL, "%p");
-    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tok_ids), >, (int)0,
+    PG_ASSERT_COND((void*)parser->par_lexer.lex_tokens, !=, NULL, "%p");
+    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tokens), >, (int)0,
                    "%d");
-    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tok_ids), >,
+    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tokens), >,
                    parser->par_tok_i, "%d");
 
     int new_node_i = -1;

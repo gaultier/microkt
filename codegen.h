@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ast.h"
-#include "common.h"
 #include "parse.h"
 
 // TODO: use platform headers for that?
@@ -538,9 +536,12 @@ static void emit(const parser_t* parser, FILE* asm_file) {
         const char* const name =
             &parser->par_lexer.lex_source[pos_range.pr_start];
         const int name_len = pos_range.pr_end - pos_range.pr_start;
-        println(".%s %.*s", (fn_decl.fd_flags & FN_FLAG_PUBLIC) ? "global" : "",
-                name_len == 0 ? (int)sizeof("_main") : name_len,
-                name_len == 0 ? "_main" : name);
+
+        if (fn_decl.fd_flags & FN_FLAG_PUBLIC)
+            println(".global %.*s",
+                    name_len == 0 ? (int)sizeof("_main") : name_len,
+                    name_len == 0 ? "_main" : name);
+
         println("%.*s:", name_len == 0 ? (int)sizeof("_main") : name_len,
                 name_len == 0 ? "_main" : name);
 

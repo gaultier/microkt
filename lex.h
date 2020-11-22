@@ -116,7 +116,6 @@ typedef struct {
     int lex_source_len, lex_index;
     loc_t* lex_locs;
     token_t* lex_tokens;
-    token_id_t* lex_tok_ids;
     pos_range_t* lex_tok_pos_ranges;
 } lexer_t;
 
@@ -555,7 +554,6 @@ static lexer_t lex_init(const char* source, const int source_len) {
     lexer_t lexer = {.lex_source = source, .lex_source_len = source_len};
     buf_grow(lexer.lex_tokens, source_len / 8);
     buf_grow(lexer.lex_tok_pos_ranges, source_len / 8);
-    buf_grow(lexer.lex_tok_ids, source_len / 8);
 
     int i = 0, col = 1, line = 1;
     while (true) {
@@ -564,7 +562,6 @@ static lexer_t lex_init(const char* source, const int source_len) {
 
         buf_push(lexer.lex_tokens, token);
         buf_push(lexer.lex_tok_pos_ranges, token.tok_pos_range);
-        buf_push(lexer.lex_tok_ids, token.tok_id);
         buf_push(lexer.lex_locs,
                  ((loc_t){.loc_line = line, .loc_column = start_col}));
 
@@ -573,8 +570,10 @@ static lexer_t lex_init(const char* source, const int source_len) {
         if (token.tok_id == TOK_ID_EOF) break;
         i++;
     }
-    PG_ASSERT_COND((int)buf_size(lexer.lex_tok_ids), ==,
+    PG_ASSERT_COND((int)buf_size(lexer.lex_tokens), ==,
                    (int)buf_size(lexer.lex_tok_pos_ranges), "%d");
+    PG_ASSERT_COND((int)buf_size(lexer.lex_tokens), ==,
+                   (int)buf_size(lexer.lex_locs), "%d");
 
     return lexer;
 }
