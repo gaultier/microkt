@@ -26,11 +26,18 @@ typedef struct {
     type_kind_t ty_kind;
 } type_t;
 
-typedef enum { OBJ_GLOBAL_VAR } obj_kind_t;
+typedef struct {
+    int fd_first_tok_i, fd_last_tok_i, fd_name_tok_i;
+} fn_decl_t;
+
+typedef enum { OBJ_GLOBAL_VAR, OBJ_FN_DECL } obj_kind_t;
 
 typedef struct {
     int obj_type_i, obj_tok_i;
     obj_kind_t obj_kind;
+    union {
+        fn_decl_t o_fn_decl;  // OBJ_FN_DECL
+    } obj_o;
 } obj_t;
 
 struct ast_node_t;
@@ -124,10 +131,6 @@ typedef struct {
     int wh_first_tok_i, wh_last_tok_i, wh_cond_i, wh_body_i;
 } while_t;
 
-typedef struct {
-    int fd_first_tok_i, fd_last_tok_i, fd_name_tok_i;
-} fn_decl_t;
-
 struct ast_node_t {
     ast_node_kind_t node_kind;
     int node_type_i;
@@ -143,7 +146,7 @@ struct ast_node_t {
         var_def_t node_var_def;  // NODE_VAR_DEF
         var_t node_var;          // NODE_VAR
         while_t node_while;      // NODE_WHILE
-        fn_decl_t node_fn_decl;  // NODE_FN_DECL
+        int node_fn_decl;        // NODE_FN_DECL, int = obj_i
     } node_n;
 };
 
