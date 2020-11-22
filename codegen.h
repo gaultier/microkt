@@ -397,7 +397,6 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             // Forbidden by the grammer
         case NODE_WHILE:
         case NODE_VAR_DEF:
-        case NODE_FN_DECL:
             UNREACHABLE();
     }
     log_debug("node_kind=%s", node_kind_to_str[expr->node_kind]);
@@ -497,20 +496,6 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
             println(".Lwhile_loop_end%d:", w.wh_cond_i);
             return;
         }
-        case NODE_FN_DECL: {
-            const fn_decl_t fn_decl = stmt->node_n.node_fn_decl;
-            const pos_range_t pos_range =
-                parser->par_lexer.lex_tok_pos_ranges[fn_decl.fd_name_tok_i];
-
-            const char* const name =
-                &parser->par_lexer.lex_source[pos_range.pr_start];
-            const int name_len = pos_range.pr_end - pos_range.pr_start;
-            println("%.*s:", name_len, name);
-            fn_prolog(0);  // FIXME
-            fn_epilog(0);  // FIXME;
-
-            return;
-        }
     }
     log_debug("node_kind=%s", node_kind_to_str[stmt->node_kind]);
     UNREACHABLE();
@@ -527,7 +512,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
 
     for (int i = 0; i < (int)buf_size(parser->par_objects); i++) {
         const obj_t obj = parser->par_objects[i];
-        if (obj.obj_kind != OBJ_GLOBAL_VAR) UNIMPLEMENTED();
+        if (obj.obj_kind != OBJ_GLOBAL_VAR) continue;
 
         const char* source = NULL;
         int source_len = 0;
@@ -537,6 +522,26 @@ static void emit(const parser_t* parser, FILE* asm_file) {
 
     println("\n.text");
     emit_stdlib();
+
+    for (int i = 0; i < (int)buf_size(parser->par_objects); i++) {
+        const obj_t* const obj = &parser->par_objects[i];
+        if (obj->obj_kind != OBJ_FN_DECL) continue;
+
+        const fn_decl_t fn_decl = obj->obj_o.o_fn_decl;
+        const loc_t loc = parser->par_lexer.lex_locs[fn_decl.fd_name_tok_i];
+        println(".loc 1 %d %d\t## %s:%d:%d", loc.loc_line, loc.loc_column,
+                parser->par_file_name0, loc.loc_line, loc.loc_column);
+
+        const pos_range_t pos_range =
+            parser->par_lexer.lex_tok_pos_ranges[fn_decl.fd_name_tok_i];
+        const char* const name =
+            &parser->par_lexer.lex_source[pos_range.pr_start];
+        const int name_len = pos_range.pr_end - pos_range.pr_start;
+        println("%.*s:", name_len, name);
+        fn_prolog(0);  // FIXME
+        fn_epilog(0);  // FIXME
+    }
+
     println(".global _main");
     println("_main:");
     println(".file 1 \"%s\"", parser->par_file_name0);

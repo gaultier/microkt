@@ -74,7 +74,6 @@ typedef enum {
     NODE_VAR,
     NODE_ASSIGN,
     NODE_WHILE,
-    NODE_FN_DECL,
 } ast_node_kind_t;
 
 const char node_kind_to_str[][30] = {[NODE_BUILTIN_PRINTLN] = "Print",
@@ -97,8 +96,7 @@ const char node_kind_to_str[][30] = {[NODE_BUILTIN_PRINTLN] = "Print",
                                      [NODE_VAR_DEF] = "VarDef",
                                      [NODE_VAR] = "Var",
                                      [NODE_ASSIGN] = "Assign",
-                                     [NODE_WHILE] = "While",
-                                     [NODE_FN_DECL] = "FnDecl"};
+                                     [NODE_WHILE] = "While"};
 
 typedef struct {
     long long int nu_val;
@@ -146,7 +144,6 @@ struct ast_node_t {
         var_def_t node_var_def;  // NODE_VAR_DEF
         var_t node_var;          // NODE_VAR
         while_t node_while;      // NODE_WHILE
-        int node_fn_decl;        // NODE_FN_DECL, int = obj_i
     } node_n;
 };
 

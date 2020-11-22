@@ -307,6 +307,7 @@ static long long int parse_tok_to_char(const parser_t* parser, int tok_i) {
 static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
                           int node_i, int indent) {
     PG_ASSERT_COND((void*)nodes, !=, NULL, "%p");
+    if (node_i == -1) return;  // FIXME
 
     const ast_node_t* node = &nodes[node_i];
     switch (node->node_kind) {
@@ -444,24 +445,6 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
             ast_node_dump(nodes, parser, node->node_n.node_while.wh_body_i,
                           indent + 2);
         }
-        case NODE_FN_DECL: {
-#ifdef WITH_LOGS
-            const fn_decl_t fn_decl = node->node_n.node_fn_decl;
-            const pos_range_t pos_range =
-                parser->par_lexer.lex_tok_pos_ranges[fn_decl.fd_name_tok_i];
-
-            const char* const name =
-                &parser->par_lexer.lex_source[pos_range.pr_start];
-            const int name_len = pos_range.pr_end - pos_range.pr_start;
-#endif
-
-            log_debug_with_indent(
-                indent, "ast_node #%d %s `%.*s` type=%s", node_i,
-                node_kind_to_str[node->node_kind], name_len, name,
-                type_to_str[parser->par_types[node->node_type_i].ty_kind]);
-
-            // TODO: body
-        }
     }
 }
 
@@ -508,8 +491,6 @@ static int ast_node_first_token(const parser_t* parser,
             return node->node_n.node_var.va_tok_i;
         case NODE_WHILE:
             return node->node_n.node_while.wh_first_tok_i;
-        case NODE_FN_DECL:
-            return node->node_n.node_fn_decl.fd_first_tok_i;
     }
     log_debug("node kind=%d", node->node_kind);
     UNREACHABLE();
@@ -557,8 +538,6 @@ static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
             return node->node_n.node_var.va_tok_i;
         case NODE_WHILE:
             return node->node_n.node_while.wh_last_tok_i;
-        case NODE_FN_DECL:
-            return node->node_n.node_fn_decl.fd_last_tok_i;
     }
     log_debug("node kind=%d", node->node_kind);
     UNREACHABLE();
@@ -1603,15 +1582,13 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     if (!parser_match(parser, &last_tok_i, 1, TOK_ID_RCURLY))
         return parser_err_unexpected_token(parser, TOK_ID_RCURLY);
 
-    buf_push(parser->par_nodes,
-             ((ast_node_t){
-                 .node_kind = NODE_FN_DECL,
-                 .node_type_i = TYPE_UNIT_I,
-                 .node_n = {.node_fn_decl = {.fd_first_tok_i = first_tok_i,
-                                             .fd_name_tok_i = name_tok_i,
-                                             .fd_last_tok_i = last_tok_i}}}));
-    *new_node_i = buf_size(parser->par_nodes) - 1;
-
+    buf_push(parser->par_objects,
+             ((obj_t){.obj_type_i = TYPE_UNIT_I,
+                      .obj_tok_i = name_tok_i,
+                      .obj_kind = OBJ_FN_DECL,
+                      .obj_o = {.o_fn_decl = {.fd_first_tok_i = first_tok_i,
+                                              .fd_name_tok_i = name_tok_i,
+                                              .fd_last_tok_i = last_tok_i}}}));
     log_debug("new fn decl=%d current_scope_i=%d flags=%d", *new_node_i,
               parser->par_scope_i, flags);
 
