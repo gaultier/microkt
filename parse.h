@@ -334,7 +334,6 @@ static long long int parse_tok_to_char(const parser_t* parser, int tok_i) {
 static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
                           int node_i, int indent) {
     PG_ASSERT_COND((void*)nodes, !=, NULL, "%p");
-    if (node_i == -1) return;  // FIXME
 
     const ast_node_t* node = &nodes[node_i];
     switch (node->node_kind) {
