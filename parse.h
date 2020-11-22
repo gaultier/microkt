@@ -12,8 +12,8 @@ static const int TYPE_ANY_I = 1;   // see parser_init
 
 typedef struct {
     const char* par_file_name0;
-    int par_tok_i, par_scope_i;
-    ast_node_t* par_nodes;  // Arena of all nodes
+    int par_tok_i, par_scope_i, par_fn_i;  // Current token/scope/function
+    ast_node_t* par_nodes;                 // Arena of all nodes
     lexer_t par_lexer;
     obj_t* par_objects;
     type_t* par_types;
@@ -278,11 +278,17 @@ static parser_t parser_init(const char* file_name0, const char* source,
         .par_lexer = lexer,
         .par_is_tty = isatty(2),
         .par_types = types,
+        .par_fn_i = 0,
     };
     parser_make_type(&parser, TYPE_UNIT);  // Hence TYPE_UNIT_I = 0
     parser_make_type(&parser, TYPE_ANY);   // Hence TYPE_ANY_I = 1
 
     return parser;
+}
+
+static ast_node_t* parser_current_fn(parser_t* parser) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    return &parser->par_nodes[parser->par_fn_i];
 }
 
 static long long int parse_tok_to_long(const parser_t* parser, int tok_i) {
