@@ -257,6 +257,8 @@ static parser_t parser_init(const char* file_name0, const char* source,
 
     int* node_decls = NULL;
     buf_grow(node_decls, 10);
+    buf_push(node_decls, 0);  // See below: first node is main
+
     buf_push(lexer.lex_tokens,
              ((token_t){.tok_id = TOK_ID_IDENTIFIER,
                         .tok_pos_range = {.pr_start = 0, .pr_end = 0}}));
@@ -275,7 +277,6 @@ static parser_t parser_init(const char* file_name0, const char* source,
                                           .fd_body_node_i = 0,
                                           .fd_flags = FN_FLAG_SYNTHETIC |
                                                       FN_FLAG_PUBLIC}}}));
-    buf_push(node_decls, 0);
 
     parser_t parser = {
         .par_file_name0 = file_name0,
@@ -472,10 +473,6 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
         case NODE_FN_DECL: {
 #ifdef WITH_LOGS
             const fn_decl_t fn_decl = node->node_n.node_fn_decl;
-            const loc_t loc = parser->par_lexer.lex_locs[fn_decl.fd_name_tok_i];
-            println(".loc 1 %d %d\t## %s:%d:%d", loc.loc_line, loc.loc_column,
-                    parser->par_file_name0, loc.loc_line, loc.loc_column);
-
             const pos_range_t pos_range =
                 parser->par_lexer.lex_tok_pos_ranges[fn_decl.fd_name_tok_i];
             const char* const name =
@@ -533,6 +530,8 @@ static int ast_node_first_token(const parser_t* parser,
             return node->node_n.node_var.va_tok_i;
         case NODE_WHILE:
             return node->node_n.node_while.wh_first_tok_i;
+        case NODE_FN_DECL:
+            return node->node_n.node_fn_decl.fd_first_tok_i;
     }
     log_debug("node kind=%d", node->node_kind);
     UNREACHABLE();
@@ -580,6 +579,8 @@ static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
             return node->node_n.node_var.va_tok_i;
         case NODE_WHILE:
             return node->node_n.node_while.wh_last_tok_i;
+        case NODE_FN_DECL:
+            return node->node_n.node_fn_decl.fd_first_tok_i;
     }
     log_debug("node kind=%d", node->node_kind);
     UNREACHABLE();

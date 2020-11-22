@@ -199,15 +199,12 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             return;
         }
         case NODE_STRING: {
-            const int obj_i = expr->node_n.node_string;
-            println("lea .L%d(%%rip), %%rax", obj_i);
-
-            const obj_t obj = parser->par_objects[obj_i];
-            PG_ASSERT_COND(obj.obj_kind, ==, OBJ_GLOBAL_VAR, "%d");
+            const int tok_i = expr->node_n.node_string;
+            println("lea .L%d(%%rip), %%rax", tok_i);
 
             const char* source = NULL;
             int source_len = 0;
-            parser_tok_source(parser, obj.obj_tok_i, &source, &source_len);
+            parser_tok_source(parser, tok_i, &source, &source_len);
             println("mov $%d, %%r8", source_len);
             return;
         }
@@ -395,6 +392,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             // Forbidden by the grammer
         case NODE_WHILE:
         case NODE_VAR_DEF:
+        case NODE_FN_DECL:
             UNREACHABLE();
     }
     log_debug("node_kind=%s", node_kind_to_str[expr->node_kind]);
@@ -494,6 +492,8 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
             println(".Lwhile_loop_end%d:", w.wh_cond_i);
             return;
         }
+        case NODE_FN_DECL:
+            UNREACHABLE();
     }
     log_debug("node_kind=%s", node_kind_to_str[stmt->node_kind]);
     UNREACHABLE();
@@ -508,13 +508,15 @@ static void emit(const parser_t* parser, FILE* asm_file) {
     println(".Ltrue: .ascii \"true\\n\"");
     println(".Lfalse: .ascii \"false\\n\"");
 
-    for (int i = 0; i < (int)buf_size(parser->par_objects); i++) {
-        const obj_t obj = parser->par_objects[i];
-        if (obj.obj_kind != OBJ_GLOBAL_VAR) continue;
+    for (int i = 0; i < (int)buf_size(parser->par_node_decls); i++) {
+        const ast_node_t* const node =
+            &parser->par_nodes[parser->par_node_decls[i]];
+        if (node->node_kind != NODE_STRING) continue;
 
         const char* source = NULL;
         int source_len = 0;
-        parser_tok_source(parser, obj.obj_tok_i, &source, &source_len);
+        parser_tok_source(parser, node->node_n.node_string, &source,
+                          &source_len);
         println(".L%d: .asciz \"%.*s\"", i, source_len, source);
     }
 
@@ -523,11 +525,12 @@ static void emit(const parser_t* parser, FILE* asm_file) {
 
     println(".file 1 \"%s\"", parser->par_file_name0);
     // Reverse traversal to end up with main at the end
-    for (int i = (int)buf_size(parser->par_objects) - 1; i >= 0; i--) {
-        const obj_t* const obj = &parser->par_objects[i];
-        if (obj->obj_kind != OBJ_FN_DECL) continue;
+    for (int i = (int)buf_size(parser->par_node_decls) - 1; i >= 0; i--) {
+        const ast_node_t* const node =
+            &parser->par_nodes[parser->par_node_decls[i]];
+        if (node->node_kind != NODE_FN_DECL) continue;
 
-        const fn_decl_t fn_decl = obj->obj_o.o_fn_decl;
+        const fn_decl_t fn_decl = node->node_n.node_fn_decl;
         const loc_t loc = parser->par_lexer.lex_locs[fn_decl.fd_name_tok_i];
         println(".loc 1 %d %d\t## %s:%d:%d", loc.loc_line, loc.loc_column,
                 parser->par_file_name0, loc.loc_line, loc.loc_column);
