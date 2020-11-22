@@ -1248,7 +1248,7 @@ static res_t parser_parse_infix_op(parser_t* parser, int* new_node_i) {
     return parser_parse_elvis_expr(parser, new_node_i);
 }
 
-static res_t parser_parse_generical_call_like_comparsion(parser_t* parser,
+static res_t parser_parse_generical_call_like_comparison(parser_t* parser,
                                                          int* new_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
@@ -1265,7 +1265,7 @@ static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
     res_t res = RES_NONE;
 
     int lhs_i = -1;
-    if ((res = parser_parse_generical_call_like_comparsion(parser, &lhs_i)) !=
+    if ((res = parser_parse_generical_call_like_comparison(parser, &lhs_i)) !=
         RES_OK)
         return res;
     const int lhs_type_i = parser->par_nodes[lhs_i].node_type_i;
@@ -1278,7 +1278,7 @@ static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
         const int tok_id = parser_previous(parser);
 
         int rhs_i = -1;
-        if ((res = parser_parse_generical_call_like_comparsion(
+        if ((res = parser_parse_generical_call_like_comparison(
                  parser, &rhs_i)) != RES_OK)
             return res;
 
