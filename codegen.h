@@ -201,13 +201,8 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             return;
         }
         case NODE_STRING: {
-            const int tok_i = expr->node_n.node_string;
             println("lea .L%d(%%rip), %%rax", expr_i);
 
-            const char* source = NULL;
-            int source_len = 0;
-            parser_tok_source(parser, tok_i, &source, &source_len);
-            println("mov $%d, %%r8", source_len);
             return;
         }
         case NODE_CHAR: {
@@ -351,7 +346,8 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             else if (type == TYPE_BOOL)
                 println("call __println_bool");
             else if (type == TYPE_STRING) {
-                println("mov %%r8, %%rsi");
+                println("movsbl (%%rax), %%esi");
+                println("add $4, %%rax");
                 println("mov %%rax, %%rdi");
                 println("call __println_string");
             } else {
@@ -545,7 +541,10 @@ static void emit(const parser_t* parser, FILE* asm_file) {
         int source_len = 0;
         parser_tok_source(parser, node->node_n.node_string, &source,
                           &source_len);
-        println(".L%d: .asciz \"%.*s\"", node_i, source_len, source);
+        println(".L%d: .asciz \"\\%03o\\%03o\\%03o\\%03o%.*s\"", node_i,
+                (char)(source_len >> 0), (char)(source_len >> 8),
+                (char)(source_len >> 16), (char)(source_len >> 24), source_len,
+                source);
     }
 
     println("\n.text");
