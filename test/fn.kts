@@ -31,12 +31,12 @@ func_with_var() // expect: 5
 
 var outer_var: Boolean = false
 
-fun print_outer_inner(){
+fun print_outer_inner_bool(){
   var inner_var: Boolean = true
   println(inner_var) 
   println(outer_var) 
 }
 
-print_outer_inner()
+print_outer_inner_bool()
 // expect: true
 // expect: false
