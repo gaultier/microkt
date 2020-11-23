@@ -75,7 +75,7 @@ static res_t parser_resolve_var(const parser_t* parser, int tok_i,
 
             log_debug("considering var def: name=`%.*s` kind=%s scope=%d",
                       def_source_len, def_source,
-                      token_id_to_str[stmt->node_kind], current_scope_i);
+                      node_kind_to_str[stmt->node_kind], current_scope_i);
 
             if (def_source_len == var_source_len &&
                 memcmp(def_source, var_source, var_source_len) == 0) {
@@ -83,7 +83,7 @@ static res_t parser_resolve_var(const parser_t* parser, int tok_i,
 
                 log_debug("resolved var: name=`%.*s` kind=%s scope=%d",
                           def_source_len, def_source,
-                          token_id_to_str[stmt->node_kind], current_scope_i);
+                          node_kind_to_str[stmt->node_kind], current_scope_i);
 
                 return RES_OK;
             }
