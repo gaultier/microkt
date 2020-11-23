@@ -20,3 +20,11 @@ call_other_func() // expect: call_other_func
 // expect: one_stmt_no_args
 
 
+fun func_with_var() {
+  var local: Long = 5
+  println(local)
+}
+
+println("C") // expect: C
+func_with_var() // expect: 5
+
