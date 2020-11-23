@@ -502,7 +502,7 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
                 type_to_str[parser->par_types[node->node_type_i].ty_kind],
                 call.ca_arity);
 
-            ast_node_dump(parser->par_nodes, parser, call.ca_fn_name_node_i,
+            ast_node_dump(parser->par_nodes, parser, call.ca_var_node_i,
                           indent + 2);
 #endif
         }
@@ -1316,7 +1316,7 @@ static res_t parser_parse_generical_call_like_comparison(parser_t* parser,
                  .node_type_i = TYPE_UNIT_I,
                  .node_kind = NODE_CALL,
                  .node_n = {.node_call = {.ca_arity = 0 /* FIXME */,
-                                          .ca_fn_name_node_i = *new_node_i}}}));
+                                          .ca_var_node_i = *new_node_i}}}));
     *new_node_i = buf_size(parser->par_nodes) - 1;
 
     return res;
