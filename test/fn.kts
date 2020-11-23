@@ -28,3 +28,15 @@ fun func_with_var() {
 println("C") // expect: C
 func_with_var() // expect: 5
 
+
+var outer_var: Boolean = false
+
+fun print_outer_inner(){
+  var inner_var: Boolean = true
+  println(inner_var) 
+  println(outer_var) 
+}
+
+print_outer_inner()
+// expect: true
+// expect: false
