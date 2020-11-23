@@ -59,23 +59,29 @@ static res_t parser_resolve_var(const parser_t* parser, int tok_i,
         for (int i = (int)buf_size(b.bl_nodes_i) - 1; i >= 0; i--) {
             const int stmt_i = b.bl_nodes_i[i];
             const ast_node_t* const stmt = &parser->par_nodes[stmt_i];
-            if (stmt->node_kind != NODE_VAR_DEF) continue;
+            if (!(stmt->node_kind == NODE_VAR_DEF ||
+                  stmt->node_kind == NODE_FN_DECL))
+                continue;
 
             const char* var_def_source = NULL;
             int var_def_source_len = 0;
             parser_tok_source(parser, stmt->node_n.node_var_def.vd_name_tok_i,
                               &var_def_source, &var_def_source_len);
 
-            log_debug("considering var def %.*s in scope %d",
-                      var_def_source_len, var_def_source, current_scope_i);
+            log_debug("considering var def: name=`%.*s` kind=%s scope=%d",
+                      var_def_source_len, var_def_source,
+                      token_id_to_str[stmt->node_kind], current_scope_i);
 
             if (var_def_source_len == var_source_len &&
                 memcmp(var_def_source, var_source, var_source_len) == 0) {
                 *var_def_i = stmt_i;
 
-                log_debug("resolved `%.*s` to var_def=%d at offset=%d",
-                          var_source_len, var_source, stmt_i,
-                          stmt->node_n.node_var_def.vd_stack_offset);
+                log_debug(
+                    "resolved var: name=`%.*s` kind=%s scope=%d offset=%d",
+                    var_def_source_len, var_def_source,
+                    token_id_to_str[stmt->node_kind], current_scope_i,
+                    stmt->node_n.node_var_def.vd_stack_offset);
+
                 return RES_OK;
             }
         }

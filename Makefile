@@ -11,8 +11,6 @@ CFLAGS_1 = -O0 -fsanitize=address -DWITH_LOGS
 CFLAGS_0 = -O2
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_$(DEBUG))
 
-BIN = microktc
-
 TESTS_SRC := $(wildcard test/*.kts)
 TESTS_O := $(TESTS_SRC:.kts=.o)
 TESTS_ASM := $(TESTS_SRC:.kts=.asm)
