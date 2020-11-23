@@ -1560,7 +1560,7 @@ static res_t parser_parse_assignment(parser_t* parser, int* new_node_i) {
         }
 
         const ast_node_t* const node_def = &parser->par_nodes[node_def_i];
-        if (node_def->node_kind != NODE_VAR) {
+        if (node_def->node_kind != NODE_VAR_DEF) {
             UNIMPLEMENTED();  // err
         }
 
