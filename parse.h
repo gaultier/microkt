@@ -42,7 +42,7 @@ static ast_node_t* parser_current_block(parser_t* parser) {
 // TODO: optimize, currently it is O(n*m) where n= # of stmt and m = # of var
 // def per scope
 static res_t parser_resolve_var(const parser_t* parser, int tok_i,
-                                int* var_def_i) {
+                                int* def_node_i) {
     const char* var_source = NULL;
     int var_source_len = 0;
     parser_tok_source(parser, tok_i, &var_source, &var_source_len);
@@ -79,13 +79,11 @@ static res_t parser_resolve_var(const parser_t* parser, int tok_i,
 
             if (def_source_len == var_source_len &&
                 memcmp(def_source, var_source, var_source_len) == 0) {
-                *var_def_i = stmt_i;
+                *def_node_i = stmt_i;
 
-                log_debug(
-                    "resolved var: name=`%.*s` kind=%s scope=%d offset=%d",
-                    var_def_source_len, var_def_source,
-                    token_id_to_str[stmt->node_kind], current_scope_i,
-                    stmt->node_n.node_var_def.vd_stack_offset);
+                log_debug("resolved var: name=`%.*s` kind=%s scope=%d",
+                          def_source_len, def_source,
+                          token_id_to_str[stmt->node_kind], current_scope_i);
 
                 return RES_OK;
             }
