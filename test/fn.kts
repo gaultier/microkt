@@ -29,14 +29,24 @@ println("C") // expect: C
 func_with_var() // expect: 5
 
 
-var outer_var: Boolean = false
+var outer_bool: Boolean = false
 
 fun print_outer_inner_bool(){
-  var inner_var: Boolean = true
-  println(inner_var) 
-  println(outer_var) 
+  var inner_bool: Boolean = true
+  println(inner_bool) 
+  println(outer_bool) 
 }
 
 print_outer_inner_bool()
 // expect: true
 // expect: false
+
+//var outer_long: Long = 123
+//
+//fun print_outer_inner_long(){
+//  var inner_long: Long = 456
+//  println(inner_long) 
+//  println(outer_long) 
+//}
+//
+//print_outer_inner_long()
