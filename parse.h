@@ -1061,15 +1061,15 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         return RES_OK;
     }
     if (parser_match(parser, &tok_i, 1, TOK_ID_IDENTIFIER)) {
-        int var_def_i = -1;
-        if (parser_resolve_var(parser, tok_i, &var_def_i) != RES_OK) {
+        int node_def_i = -1;
+        if (parser_resolve_var(parser, tok_i, &node_def_i) != RES_OK) {
             return RES_UNKNOWN_VAR;
         }
 
-        const ast_node_t* const node_var_def = &parser->par_nodes[var_def_i];
-        const int type_i = node_var_def->node_type_i;
+        const ast_node_t* const node_def = &parser->par_nodes[node_def_i];
+        const int type_i = node_def->node_type_i;
 
-        const ast_node_t new_node = NODE_VAR(type_i, tok_i, var_def_i);
+        const ast_node_t new_node = NODE_VAR(type_i, tok_i, node_def_i);
         buf_push(parser->par_nodes, new_node);
         *new_node_i = (int)buf_size(parser->par_nodes) - 1;
 
@@ -1554,19 +1554,23 @@ static res_t parser_parse_assignment(parser_t* parser, int* new_node_i) {
         parser_peek_next(parser) == TOK_ID_EQ) {
         parser_match(parser, &lhs_tok_i, 1, TOK_ID_IDENTIFIER);
 
-        int var_def_i = -1;
-        if (parser_resolve_var(parser, lhs_tok_i, &var_def_i) != RES_OK) {
+        int node_def_i = -1;
+        if (parser_resolve_var(parser, lhs_tok_i, &node_def_i) != RES_OK) {
             return RES_UNKNOWN_VAR;
         }
 
-        const ast_node_t* const node_var_def = &parser->par_nodes[var_def_i];
-        const var_def_t var_def = node_var_def->node_n.node_var_def;
+        const ast_node_t* const node_def = &parser->par_nodes[node_def_i];
+        if (node_def->node_kind != NODE_VAR) {
+            UNIMPLEMENTED();  // err
+        }
+
+        const var_def_t var_def = node_def->node_n.node_var_def;
         if (var_def.vd_flags & VAR_FLAGS_VAL)
             return parser_err_assigning_val(parser, lhs_tok_i, &var_def);
 
-        const int type_i = node_var_def->node_type_i;
+        const int type_i = node_def->node_type_i;
 
-        const ast_node_t var_node = NODE_VAR(type_i, lhs_tok_i, var_def_i);
+        const ast_node_t var_node = NODE_VAR(type_i, lhs_tok_i, node_def_i);
         buf_push(parser->par_nodes, var_node);
         int lhs_node_i = (int)buf_size(parser->par_nodes) - 1;
 

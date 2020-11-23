@@ -373,26 +373,45 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
         }
         case NODE_VAR: {
             const var_t var = expr->node_n.node_var;
-            const ast_node_t* const node_var_def =
+            const ast_node_t* const node_def =
                 &parser->par_nodes[var.va_var_node_i];
-            const var_def_t var_def = node_var_def->node_n.node_var_def;
-            const int offset = var_def.vd_stack_offset;
             const int type_size =
-                parser->par_types[node_var_def->node_type_i].ty_size;
+                parser->par_types[node_def->node_type_i].ty_size;
 
-            if (type_size == 1)
-                println("mov -%d(%%rbp), %%al", offset);
-            else if (type_size == 2)
-                println("mov -%d(%%rbp), %%ax", offset);
-            else if (type_size == 4)
-                println("mov -%d(%%rbp), %%eax", offset);
-            else
-                println("mov -%d(%%rbp), %%rax", offset);
+            if (node_def->node_kind == NODE_VAR_DEF) {
+                const var_def_t var_def = node_def->node_n.node_var_def;
+                const int offset = var_def.vd_stack_offset;
+
+                if (type_size == 1)
+                    println("mov -%d(%%rbp), %%al", offset);
+                else if (type_size == 2)
+                    println("mov -%d(%%rbp), %%ax", offset);
+                else if (type_size == 4)
+                    println("mov -%d(%%rbp), %%eax", offset);
+                else
+                    println("mov -%d(%%rbp), %%rax", offset);
+            } else if (node_def->node_kind == NODE_FN_DECL) {
+                const fn_decl_t fn_decl = node_def->node_n.node_fn_decl;
+                const char* name = NULL;
+                int name_len = 0;
+                parser_tok_source(parser, fn_decl.fd_name_tok_i, &name,
+                                  &name_len);
+
+                // TODO: args, etc
+
+                println("call %.*s", name_len, name);
+
+            } else
+                UNREACHABLE();
 
             return;
         }
-        case NODE_CALL:
-            UNIMPLEMENTED();
+        case NODE_CALL: {
+            const call_t call = expr->node_n.node_call;
+
+            emit_expr(parser, call.ca_fn_name_node_i);
+            return;
+        }
 
             // Forbidden by the grammer
         case NODE_WHILE:
@@ -441,9 +460,9 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
             emit_expr(parser, binary.bi_rhs_i);
 
             const var_t var = lhs->node_n.node_var;
-            const ast_node_t* const node_var_def =
+            const ast_node_t* const node_def =
                 &parser->par_nodes[var.va_var_node_i];
-            const var_def_t var_def = node_var_def->node_n.node_var_def;
+            const var_def_t var_def = node_def->node_n.node_var_def;
             const int offset = var_def.vd_stack_offset;
 
             const int type_size = parser->par_types[stmt->node_type_i].ty_size;
@@ -499,8 +518,10 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
         }
         case NODE_FN_DECL:
             return;
-        case NODE_CALL:
-            UNREACHABLE();
+        case NODE_CALL: {
+            emit_expr(parser, stmt_i);
+            return;
+        }
     }
     log_debug("node_kind=%s", node_kind_to_str[stmt->node_kind]);
     UNREACHABLE();
@@ -555,8 +576,6 @@ static void emit(const parser_t* parser, FILE* asm_file) {
 
         println("%.*s:", name_len == 0 ? (int)sizeof("_main") : name_len,
                 name_len == 0 ? "_main" : name);
-
-        log_debug("offset=%d", parser->par_offset);
 
         const int aligned_stack_size =
             emit_align_to_16(parser->par_offset);  // FIXME
