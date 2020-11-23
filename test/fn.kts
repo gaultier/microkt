@@ -11,11 +11,12 @@ one_stmt_no_args() // expect: one_stmt_no_args
 
 println("B") // expect: B
 
-fun one_stmt_no_args1() {
-  println("one_stmt_no_args1")
+fun call_other_func() {
+  println("call_other_func")
   one_stmt_no_args()
 }
 
-one_stmt_no_args1() // expect: one_stmt_no_args1
+call_other_func() // expect: call_other_func
 // expect: one_stmt_no_args
+
 
