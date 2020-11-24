@@ -245,4 +245,3 @@ struct node_t {
                                         .wh_cond_i = cond_i,           \
                                         .wh_body_i = body_i}}})
 
-#define AS_PRINTLN(node) ((node).node_n.node_builtin_println)
