@@ -177,10 +177,10 @@ static void emit_stdlib() {
 static void emit_expr(const parser_t* parser, const int expr_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
 
-    const ast_node_t* const expr = &parser->par_nodes[expr_i];
+    const node_t* const expr = &parser->par_nodes[expr_i];
     const type_t* const type = &parser->par_types[expr->node_type_i];
     const loc_t loc =
-        parser->par_lexer.lex_locs[ast_node_first_token(parser, expr)];
+        parser->par_lexer.lex_locs[node_first_token(parser, expr)];
     println(".loc 1 %d %d\t## %s:%d:%d", loc.loc_line, loc.loc_column,
             parser->par_file_name0, loc.loc_line, loc.loc_column);
 
@@ -330,11 +330,10 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             return;
         }
         case NODE_BUILTIN_PRINTLN: {
-            const ast_builtin_println_t builtin_println = AS_PRINTLN(*expr);
+            const builtin_println_t builtin_println = AS_PRINTLN(*expr);
             emit_expr(parser, builtin_println.bp_arg_i);
 
-            const ast_node_t* arg =
-                &parser->par_nodes[builtin_println.bp_arg_i];
+            const node_t* arg = &parser->par_nodes[builtin_println.bp_arg_i];
             const type_kind_t type =
                 parser->par_types[arg->node_type_i].ty_kind;
 
@@ -371,7 +370,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
         }
         case NODE_VAR: {
             const var_t var = expr->node_n.node_var;
-            const ast_node_t* const node_def =
+            const node_t* const node_def =
                 &parser->par_nodes[var.va_var_node_i];
             const int type_size =
                 parser->par_types[node_def->node_type_i].ty_size;
@@ -424,9 +423,9 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 static void emit_stmt(const parser_t* parser, int stmt_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
 
-    const ast_node_t* const stmt = &parser->par_nodes[stmt_i];
+    const node_t* const stmt = &parser->par_nodes[stmt_i];
     const loc_t loc =
-        parser->par_lexer.lex_locs[ast_node_first_token(parser, stmt)];
+        parser->par_lexer.lex_locs[node_first_token(parser, stmt)];
     println(".loc 1 %d %d\t## %s:%d:%d", loc.loc_line, loc.loc_column,
             parser->par_file_name0, loc.loc_line, loc.loc_column);
 
@@ -454,12 +453,12 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
         }
         case NODE_ASSIGN: {
             const binary_t binary = stmt->node_n.node_binary;
-            const ast_node_t* const lhs = &parser->par_nodes[binary.bi_lhs_i];
+            const node_t* const lhs = &parser->par_nodes[binary.bi_lhs_i];
 
             emit_expr(parser, binary.bi_rhs_i);
 
             const var_t var = lhs->node_n.node_var;
-            const ast_node_t* const node_def =
+            const node_t* const node_def =
                 &parser->par_nodes[var.va_var_node_i];
             const var_def_t var_def = node_def->node_n.node_var_def;
             const int offset = var_def.vd_stack_offset;
@@ -537,7 +536,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
 
     for (int i = 0; i < (int)buf_size(parser->par_node_decls); i++) {
         const int node_i = parser->par_node_decls[i];
-        const ast_node_t* const node = &parser->par_nodes[node_i];
+        const node_t* const node = &parser->par_nodes[node_i];
         if (node->node_kind != NODE_STRING) continue;
 
         const char* source = NULL;
@@ -557,7 +556,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
     // Reverse traversal to end up with main at the end
     for (int i = (int)buf_size(parser->par_node_decls) - 1; i >= 0; i--) {
         const int node_i = parser->par_node_decls[i];
-        const ast_node_t* const node = &parser->par_nodes[node_i];
+        const node_t* const node = &parser->par_nodes[node_i];
         if (node->node_kind != NODE_FN_DECL) continue;
 
         const fn_decl_t fn_decl = node->node_n.node_fn_decl;
