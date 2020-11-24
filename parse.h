@@ -392,12 +392,15 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
 
             break;
         }
+        case NODE_RETURN:
         case NODE_NOT: {
             log_debug_with_indent(
                 indent, "ast_node #%d %s type=%s", node_i,
                 node_kind_to_str[node->node_kind],
                 type_to_str[parser->par_types[node->node_type_i].ty_kind]);
-            ast_node_dump(nodes, parser, node->node_n.node_unary, indent + 2);
+            if (node->node_n.node_unary.un_node_i >= 0)
+                ast_node_dump(nodes, parser, node->node_n.node_unary.un_node_i,
+                              indent + 2);
 
             break;
         }
@@ -537,10 +540,9 @@ static int ast_node_first_token(const parser_t* parser,
                 &parser->par_nodes[node->node_n.node_binary.bi_lhs_i];
             return ast_node_first_token(parser, lhs);
         }
+        case NODE_RETURN:
         case NODE_NOT: {
-            const ast_node_t* const lhs =
-                &parser->par_nodes[node->node_n.node_unary];
-            return ast_node_first_token(parser, lhs);
+            return node->node_n.node_unary.un_first_tok_i;
         }
         case NODE_IF:
             return node->node_n.node_if.if_first_tok_i;
@@ -563,7 +565,7 @@ static int ast_node_first_token(const parser_t* parser,
 
 static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)node, !=, NULL, "%p");
+    if (node == NULL) return -1;
 
     switch (node->node_kind) {
         case NODE_BUILTIN_PRINTLN:
@@ -588,10 +590,9 @@ static int ast_node_last_token(const parser_t* parser, const ast_node_t* node) {
                 &parser->par_nodes[node->node_n.node_binary.bi_rhs_i];
             return ast_node_first_token(parser, rhs);
         }
+        case NODE_RETURN:
         case NODE_NOT: {
-            const ast_node_t* const rhs =
-                &parser->par_nodes[node->node_n.node_unary];
-            return ast_node_first_token(parser, rhs);
+            return node->node_n.node_unary.un_last_tok_i;
         }
         case NODE_IF:
             return node->node_n.node_if.if_last_tok_i;
@@ -984,6 +985,39 @@ static res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
     return RES_OK;
 }
 
+static res_t parser_parse_jump_expr(parser_t* parser, int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
+    int tok_i = -1;
+    res_t res = RES_NONE;
+    if (parser_match(parser, &tok_i, 1, TOK_ID_RETURN)) {
+        int expr_node_i = -1;
+        res = parser_parse_expr(parser, &expr_node_i);
+        if (res != RES_OK && res != RES_NONE) return res;
+
+        const int type_i = expr_node_i >= 0
+                               ? parser->par_nodes[expr_node_i].node_type_i
+                               : TYPE_UNIT_I;
+
+        const ast_node_t* const expr =
+            expr_node_i >= 0 ? &parser->par_nodes[expr_node_i] : NULL;
+        buf_push(
+            parser->par_nodes,
+            ((ast_node_t){
+                .node_type_i = type_i,
+                .node_kind = NODE_RETURN,
+                .node_n = {.node_unary = {.un_first_tok_i = tok_i,
+                                          .un_last_tok_i =
+                                              ast_node_last_token(parser, expr),
+                                          .un_node_i = expr_node_i}}}));
+        *new_node_i = buf_size(parser->par_nodes) - 1;
+        return RES_OK;
+    }
+
+    return RES_NONE;
+}
+
 static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
@@ -1077,6 +1111,8 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
     }
     if (parser_peek(parser) == TOK_ID_IF)
         return parser_parse_if_expr(parser, new_node_i);
+    if (parser_peek(parser) == TOK_ID_RETURN)
+        return parser_parse_jump_expr(parser, new_node_i);
 
     return RES_NONE;  // TODO
 }
@@ -1112,8 +1148,17 @@ static res_t parser_parse_prefix_unary_expr(parser_t* parser, int* new_node_i) {
             return parser_err_unexpected_type(parser, node_i, TYPE_BOOL);
         }
 
-        const ast_node_t new_node = NODE_UNARY(NODE_NOT, type_i, node_i);
-        buf_push(parser->par_nodes, new_node);
+        const ast_node_t* const node = &parser->par_nodes[node_i];
+
+        buf_push(
+            parser->par_nodes,
+            ((ast_node_t){
+                .node_type_i = type_i,
+                .node_kind = NODE_NOT,
+                .node_n = {.node_unary = {.un_first_tok_i = tok_i,
+                                          .un_last_tok_i =
+                                              ast_node_last_token(parser, node),
+                                          .un_node_i = node_i}}}));
         *new_node_i = node_i = (int)buf_size(parser->par_nodes) - 1;
         log_debug("new_node_i=%d", *new_node_i);
 

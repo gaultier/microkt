@@ -302,8 +302,10 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 
             return;
         }
+        case NODE_RETURN:
+            UNIMPLEMENTED();
         case NODE_NOT: {
-            emit_expr(parser, expr->node_n.node_unary);
+            emit_expr(parser, expr->node_n.node_unary.un_node_i);
             println("cmp $0, %%rax");
             println("sete %%al");
             return;
@@ -444,6 +446,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
         case NODE_DIVIDE:
         case NODE_SUBTRACT:
         case NODE_ADD:
+        case NODE_RETURN:
         case NODE_NOT:
         case NODE_IF: {
             emit_expr(parser, stmt_i);

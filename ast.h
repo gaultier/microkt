@@ -66,6 +66,7 @@ typedef enum {
     NODE_WHILE,
     NODE_FN_DECL,
     NODE_CALL,
+    NODE_RETURN,
 } ast_node_kind_t;
 
 const char node_kind_to_str[][30] = {
@@ -91,6 +92,7 @@ const char node_kind_to_str[][30] = {
     [NODE_ASSIGN] = "Assign",
     [NODE_WHILE] = "While",
     [NODE_FN_DECL] = "FnDecl",
+    [NODE_RETURN] = "Return",
     [NODE_CALL] = "Call",
 };
 
@@ -134,6 +136,10 @@ typedef struct {
     int ca_first_tok_i, ca_last_tok_i, ca_arity, ca_var_node_i;
 } call_t;
 
+typedef struct {
+    int un_first_tok_i, un_last_tok_i, un_node_i;
+} unary_t;
+
 struct ast_node_t {
     ast_node_kind_t node_kind;
     int node_type_i;
@@ -143,7 +149,7 @@ struct ast_node_t {
         node_number_t node_num;  // NODE_LONG, NODE_CHAR, NODE_BOOL
         binary_t node_binary;    // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
         // NODE_DIVIDE, NODE_MODULO
-        int node_unary;          // NODE_NOT, int = node_i
+        unary_t node_unary;      // NODE_NOT, NODE_RETURN
         if_t node_if;            // NODE_IF
         block_t node_block;      // NODE_BLOCK
         var_def_t node_var_def;  // NODE_VAR_DEF
