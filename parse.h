@@ -339,19 +339,17 @@ static long long int parse_tok_to_char(const parser_t* parser, int tok_i) {
     return string[0];
 }
 
-static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
-                          int node_i, int indent) {
-    PG_ASSERT_COND((void*)nodes, !=, NULL, "%p");
+static void ast_node_dump(const parser_t* parser, int node_i, int indent) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
 
-    const ast_node_t* node = &nodes[node_i];
+    const ast_node_t* node = &parser->par_nodes[node_i];
     switch (node->node_kind) {
         case NODE_BUILTIN_PRINTLN: {
             log_debug_with_indent(
                 indent, "ast_node #%d %s type=%s", node_i,
                 node_kind_to_str[node->node_kind],
                 type_to_str[parser->par_types[node->node_type_i].ty_kind]);
-            ast_node_dump(nodes, parser,
-                          node->node_n.node_builtin_println.bp_arg_i,
+            ast_node_dump(parser, node->node_n.node_builtin_println.bp_arg_i,
                           indent + 2);
             break;
         }
@@ -369,9 +367,9 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
                 indent, "ast_node #%d %s type=%s", node_i,
                 node_kind_to_str[node->node_kind],
                 type_to_str[parser->par_types[node->node_type_i].ty_kind]);
-            ast_node_dump(nodes, parser, node->node_n.node_binary.bi_lhs_i,
+            ast_node_dump(parser, node->node_n.node_binary.bi_lhs_i,
                           indent + 2);
-            ast_node_dump(nodes, parser, node->node_n.node_binary.bi_rhs_i,
+            ast_node_dump(parser, node->node_n.node_binary.bi_rhs_i,
                           indent + 2);
 
             break;
@@ -381,14 +379,14 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
                 indent, "ast_node #%d %s type=%s", node_i,
                 node_kind_to_str[node->node_kind],
                 type_to_str[parser->par_types[node->node_type_i].ty_kind]);
-            ast_node_dump(nodes, parser, node->node_n.node_if.if_node_cond_i,
+            ast_node_dump(parser, node->node_n.node_if.if_node_cond_i,
                           indent + 2);
-            ast_node_dump(nodes, parser, node->node_n.node_if.if_node_then_i,
+            ast_node_dump(parser, node->node_n.node_if.if_node_then_i,
                           indent + 2);
 
             if (node->node_n.node_if.if_node_else_i >= 0)
-                ast_node_dump(nodes, parser,
-                              node->node_n.node_if.if_node_else_i, indent + 2);
+                ast_node_dump(parser, node->node_n.node_if.if_node_else_i,
+                              indent + 2);
 
             break;
         }
@@ -399,7 +397,7 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
                 node_kind_to_str[node->node_kind],
                 type_to_str[parser->par_types[node->node_type_i].ty_kind]);
             if (node->node_n.node_unary.un_node_i >= 0)
-                ast_node_dump(nodes, parser, node->node_n.node_unary.un_node_i,
+                ast_node_dump(parser, node->node_n.node_unary.un_node_i,
                               indent + 2);
 
             break;
@@ -423,7 +421,7 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
                 block.bl_parent_scope_i);
 
             for (int i = 0; i < (int)buf_size(block.bl_nodes_i); i++)
-                ast_node_dump(nodes, parser, block.bl_nodes_i[i], indent + 2);
+                ast_node_dump(parser, block.bl_nodes_i[i], indent + 2);
 
             break;
         }
@@ -443,8 +441,7 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
                 name_len, name, var_def.vd_stack_offset, var_def.vd_flags);
 
             if (var_def.vd_init_node_i >= 0)
-                ast_node_dump(nodes, parser, var_def.vd_init_node_i,
-                              indent + 2);
+                ast_node_dump(parser, var_def.vd_init_node_i, indent + 2);
 
 #endif
             break;
@@ -477,9 +474,9 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
                 node_kind_to_str[node->node_kind],
                 type_to_str[parser->par_types[node->node_type_i].ty_kind]);
 
-            ast_node_dump(nodes, parser, node->node_n.node_while.wh_cond_i,
+            ast_node_dump(parser, node->node_n.node_while.wh_cond_i,
                           indent + 2);
-            ast_node_dump(nodes, parser, node->node_n.node_while.wh_body_i,
+            ast_node_dump(parser, node->node_n.node_while.wh_body_i,
                           indent + 2);
         }
         case NODE_FN_DECL: {
@@ -505,8 +502,7 @@ static void ast_node_dump(const ast_node_t* nodes, const parser_t* parser,
                 type_to_str[parser->par_types[node->node_type_i].ty_kind],
                 call.ca_arity);
 
-            ast_node_dump(parser->par_nodes, parser, call.ca_var_node_i,
-                          indent + 2);
+            ast_node_dump(parser, call.ca_var_node_i, indent + 2);
 #endif
         }
     }
@@ -1856,7 +1852,7 @@ static res_t parser_parse(parser_t* parser) {
     res_t res = RES_NONE;
 
     if ((res = parser_parse_stmt(parser, &new_node_i)) == RES_OK) {
-        ast_node_dump(parser->par_nodes, parser, new_node_i, 0);
+        ast_node_dump(parser, new_node_i, 0);
         buf_push(parser_current_block(parser)->node_n.node_block.bl_nodes_i,
                  new_node_i);
 
@@ -1868,7 +1864,7 @@ static res_t parser_parse(parser_t* parser) {
 
     while (!parser_is_at_end(parser)) {
         if ((res = parser_parse_stmt(parser, &new_node_i)) == RES_OK) {
-            ast_node_dump(parser->par_nodes, parser, new_node_i, 0);
+            ast_node_dump(parser, new_node_i, 0);
             buf_push(parser_current_block(parser)->node_n.node_block.bl_nodes_i,
                      new_node_i);
             continue;
