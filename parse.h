@@ -244,6 +244,15 @@ static bool parser_parse_identifier_to_type_kind(const parser_t* parser,
                     return false;
             }
         }
+        case 'U': {
+            switch (source[1]) {
+                case 'n':
+                    return parser_check_keyword(parser, source + 2, "it", 2,
+                                                type_kind, TYPE_UNIT);
+                default:
+                    return false;
+            }
+        }
         default:
             return false;
     }
