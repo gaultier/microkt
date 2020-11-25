@@ -300,8 +300,12 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 
             return;
         }
-        case NODE_RETURN:
-            UNIMPLEMENTED();
+        case NODE_RETURN: {
+            if (expr->node_n.node_unary.un_node_i >= 0)
+                emit_expr(parser, expr->node_n.node_unary.un_node_i);
+
+            return;
+        }
         case NODE_NOT: {
             emit_expr(parser, expr->node_n.node_unary.un_node_i);
             println("cmp $0, %%rax");

@@ -28,3 +28,9 @@ fun func_with_var() {
 println("C") // expect: C
 func_with_var() // expect: 5
 
+
+fun return_long() {
+  return 42
+}
+
+println(return_long()) // expect: 42

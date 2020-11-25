@@ -999,6 +999,7 @@ static res_t parser_parse_jump_expr(parser_t* parser, int* new_node_i) {
                                                    parser, expr),
                                                .un_node_i = expr_node_i}}}));
         *new_node_i = buf_size(parser->par_nodes) - 1;
+
         return RES_OK;
     }
 
@@ -1728,9 +1729,11 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     } else if (res != RES_OK)
         return res;
 
+    const int type_i = parser->par_nodes[body_node_i].node_type_i;
+    const type_kind_t type_kind = parser->par_types[type_i].ty_kind;
     buf_push(
         parser->par_nodes,
-        ((node_t){.node_type_i = TYPE_UNIT_I,
+        ((node_t){.node_type_i = type_i,
                   .node_kind = NODE_FN_DECL,
                   .node_n = {.node_fn_decl = {.fd_first_tok_i = first_tok_i,
                                               .fd_name_tok_i = name_tok_i,
@@ -1740,8 +1743,8 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     *new_node_i = buf_size(parser->par_nodes) - 1;
     buf_push(parser->par_node_decls, *new_node_i);
 
-    log_debug("new fn decl=%d flags=%d body_node_i=%d", *new_node_i, flags,
-              body_node_i);
+    log_debug("new fn decl=%d flags=%d body_node_i=%d type=%s", *new_node_i,
+              flags, body_node_i, type_to_str[type_kind]);
 
     return RES_OK;
 }
