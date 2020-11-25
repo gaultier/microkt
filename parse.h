@@ -1343,9 +1343,11 @@ static res_t parser_parse_generical_call_like_comparison(parser_t* parser,
     if (res == RES_NONE) return RES_OK;  // Optional
     if (res != RES_OK) return res;
 
+    const int type_i = parser->par_nodes[*new_node_i]
+                           .node_type_i;  // FIXME? `node_i` is unused
     buf_push(
         parser->par_nodes,
-        ((node_t){.node_type_i = TYPE_UNIT_I,
+        ((node_t){.node_type_i = type_i,
                   .node_kind = NODE_CALL,
                   .node_n = {.node_call = {.ca_arity = 0 /* FIXME */,
                                            .ca_var_node_i = *new_node_i}}}));
