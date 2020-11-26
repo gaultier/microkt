@@ -34,3 +34,13 @@ fun return_long() {
 }
 
 println(return_long()) // expect: 42
+
+fun return_true() {
+  return true
+}
+fun return_false() {
+  return false
+}
+
+println(return_false()) // expect: false
+println(return_true()) // expect: true
