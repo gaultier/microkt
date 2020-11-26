@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include "ast.h"
+#include "common.h"
 #include "lex.h"
 
 static const int TYPE_UNIT_I = 0;  // see parser_init
@@ -595,13 +596,13 @@ static int node_last_token(const parser_t* parser, const node_t* node) {
         case NODE_BLOCK:
             return node->node_n.node_block.bl_last_tok_i;
         case NODE_VAR_DEF:
-            return node->node_n.node_var_def.vd_first_tok_i;
+            return node->node_n.node_var_def.vd_last_tok_i;
         case NODE_VAR:
             return node->node_n.node_var.va_tok_i;
         case NODE_WHILE:
             return node->node_n.node_while.wh_last_tok_i;
         case NODE_FN_DECL:
-            return node->node_n.node_fn_decl.fd_first_tok_i;
+            return node->node_n.node_fn_decl.fd_last_tok_i;
         case NODE_CALL:
             return node->node_n.node_call.ca_last_tok_i;
     }
@@ -1490,7 +1491,7 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
-    int first_tok_i = -1, ;
+    int first_tok_i = -1;
     if (!parser_match(parser, &first_tok_i, 1, TOK_ID_LCURLY))
         return parser_err_unexpected_token(parser, TOK_ID_LCURLY);
 
@@ -1501,8 +1502,6 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
     const int current_scope_i = parser->par_scope_i;
     parser->par_scope_i = *new_node_i = buf_size(parser->par_nodes) - 1;
 
-    log_debug("new block=%d parent=%d", *new_node_i,
-              block.node_n.node_block.bl_parent_scope_i);
     if ((res = parser_parse_stmts(parser)) != RES_OK) {
         log_debug("failed to parse expr in optional curlies %d", res);
         return res;
@@ -1527,9 +1526,10 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
     parser->par_scope_i = current_scope_i;
 
     const type_kind_t type_kind = parser->par_types[type_i].ty_kind;
-    log_debug("block=%d parent=%d last_node_i=%d type=%s", *new_node_i,
-              block.node_n.node_block.bl_parent_scope_i, last_node_i,
-              type_to_str[type_kind]);
+    log_debug("block=%d parent=%d last_node_i=%d type=%s last_tok_i=%d",
+              *new_node_i, block.node_n.node_block.bl_parent_scope_i,
+              last_node_i, type_to_str[type_kind],
+              parser->par_nodes[*new_node_i].node_n.node_block.bl_last_tok_i);
 
     return res;
 }
@@ -1708,7 +1708,7 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
 
     if (parser_peek(parser) != TOK_ID_FUN) return RES_NONE;
 
-    int dummy = -1, first_tok_i = -1, name_tok_i = -1, last_tok_i = -1;
+    int dummy = -1, first_tok_i = -1, name_tok_i = -1;
     const unsigned short flags = FN_FLAG_PRIVATE;
 
     parser_match(parser, &first_tok_i, 1, TOK_ID_FUN);
@@ -1755,6 +1755,8 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     const type_kind_t declared_type =
         parser->par_types[declared_type_i].ty_kind;
 
+    const int last_tok_i =
+        parser->par_nodes[body_node_i].node_n.node_block.bl_last_tok_i;
     buf_push(
         parser->par_nodes,
         ((node_t){.node_type_i = declared_type_i,
@@ -1767,11 +1769,14 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     *new_node_i = buf_size(parser->par_nodes) - 1;
     buf_push(parser->par_node_decls, *new_node_i);
 
-    if (actual_type != declared_type)
-        return parser_err_non_matching_types(parser, body_node_i, *new_node_i);
+    log_debug("new fn decl=%d flags=%d body_node_i=%d type=%s last_tok_i=%d",
+              *new_node_i, flags, body_node_i, type_to_str[declared_type],
+              last_tok_i);
 
-    log_debug("new fn decl=%d flags=%d body_node_i=%d type=%s", *new_node_i,
-              flags, body_node_i, type_to_str[declared_type]);
+    if (actual_type != declared_type)
+        return parser_err_non_matching_types(
+            parser, body_node_i,
+            *new_node_i);  // TODO: implement custom error function
 
     return RES_OK;
 }
