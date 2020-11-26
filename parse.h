@@ -158,7 +158,6 @@ static int parser_make_type(parser_t* parser,
             type.ty_size = 1;
             break;
         }
-        case TYPE_BUILTIN_PRINTLN:
         case TYPE_UNIT: {
             type.ty_size = 0;
             break;
@@ -1556,9 +1555,8 @@ static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i) {
         if (!parser_match(parser, &rparen, 1, TOK_ID_RPAREN))
             return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
 
-        const int type_i = parser_make_type(parser, TYPE_BUILTIN_PRINTLN);
         const node_t new_node =
-            NODE_PRINTLN(arg_i, keyword_print_i, rparen, type_i);
+            NODE_PRINTLN(arg_i, keyword_print_i, rparen, TYPE_UNIT_I);
         buf_push(parser->par_nodes, new_node);
         *new_node_i = (int)buf_size(parser->par_nodes) - 1;
 
@@ -1710,23 +1708,25 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     if (!parser_match(parser, &dummy, 1, TOK_ID_RPAREN))
         return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
 
-    int explicit_type_tok_i = -1;
-    type_kind_t explicit_type_kind = -1;
+    int declared_type_tok_i = -1, declared_type_i = -1;
+    type_kind_t declared_type_kind = -1;
     if (parser_match(parser, &dummy, 1, TOK_ID_COLON)) {
-        if (!parser_match(parser, &explicit_type_tok_i, 1, TOK_ID_IDENTIFIER)) {
+        if (!parser_match(parser, &declared_type_tok_i, 1, TOK_ID_IDENTIFIER)) {
             return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
         }
-        if (!parser_parse_identifier_to_type_kind(parser, explicit_type_tok_i,
-                                                  &explicit_type_kind)) {
-            parser_print_source_on_error(parser, explicit_type_tok_i,
-                                         explicit_type_tok_i);
+        if (!parser_parse_identifier_to_type_kind(parser, declared_type_tok_i,
+                                                  &declared_type_kind)) {
+            parser_print_source_on_error(parser, declared_type_tok_i,
+                                         declared_type_tok_i);
             log_debug(
                 "Encountered user type in function signature, not yet "
                 "implemented:%s",
                 "");
             UNIMPLEMENTED();
         }
-    }
+        declared_type_i = parser_make_type(parser, declared_type_kind);
+    } else
+        declared_type_i = TYPE_UNIT_I;
 
     int body_node_i = -1;
     const int current_scope_i = parser->par_scope_i;
@@ -1738,11 +1738,16 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     } else if (res != RES_OK)
         return res;
 
-    const int type_i = parser->par_nodes[body_node_i].node_type_i;
-    const type_kind_t type_kind = parser->par_types[type_i].ty_kind;
+    const int actual_type_i = parser->par_nodes[body_node_i].node_type_i;
+    const type_kind_t actual_type = parser->par_types[actual_type_i].ty_kind;
+    const type_kind_t declared_type =
+        parser->par_types[declared_type_i].ty_kind;
+    if (actual_type != declared_type)
+        return parser_err_unexpected_type(parser, body_node_i, declared_type);
+
     buf_push(
         parser->par_nodes,
-        ((node_t){.node_type_i = type_i,
+        ((node_t){.node_type_i = declared_type_i,
                   .node_kind = NODE_FN_DECL,
                   .node_n = {.node_fn_decl = {.fd_first_tok_i = first_tok_i,
                                               .fd_name_tok_i = name_tok_i,
@@ -1753,7 +1758,7 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     buf_push(parser->par_node_decls, *new_node_i);
 
     log_debug("new fn decl=%d flags=%d body_node_i=%d type=%s", *new_node_i,
-              flags, body_node_i, type_to_str[type_kind]);
+              flags, body_node_i, type_to_str[declared_type]);
 
     return RES_OK;
 }
