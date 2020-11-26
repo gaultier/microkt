@@ -60,3 +60,4 @@ fun empty_return() {
 empty_return()
 
 
+fun declared_unit_and_last_stmt_is_expr(): Unit { 1 }

@@ -1795,8 +1795,8 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
               fn_decl->fd_flags, fn_decl->fd_body_node_i,
               type_to_str[declared_type]);
 
-    if (declared_type != TYPE_UNIT &&
-        ((fn_decl->fd_flags & FN_FLAGS_SEEN_RETURN) == 0)) {
+    const bool seen_return = fn_decl->fd_flags & FN_FLAGS_SEEN_RETURN;
+    if (declared_type != TYPE_UNIT && !seen_return) {
         const loc_t loc = parser->par_lexer.lex_locs[last_tok_i];
 
         fprintf(
@@ -1810,6 +1810,9 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
 
         return RES_ERR;
     }
+    if (declared_type == TYPE_UNIT && actual_type != TYPE_UNIT && !seen_return)
+        return RES_OK;
+
     if (actual_type != declared_type)
         return parser_err_non_matching_types(
             parser, body_node_i,
