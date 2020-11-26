@@ -848,7 +848,7 @@ static res_t parser_err_non_matching_types(const parser_t* parser,
     const int lhs_first_tok_i = node_first_token(parser, lhs);
 
     int rhs_type_kind = TYPE_BOOL;
-    int rhs_last_tok_i = lhs_first_tok_i;
+    int rhs_last_tok_i = node_last_token(parser, lhs);
     if (rhs_node_i >= 0) {
         const node_t* const rhs = &parser->par_nodes[rhs_node_i];
         rhs_type_kind = parser->par_types[rhs->node_type_i].ty_kind;
@@ -1490,12 +1490,12 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
-    int first_tok_i = -1, last_tok_i = -1;
+    int first_tok_i = -1, ;
     if (!parser_match(parser, &first_tok_i, 1, TOK_ID_LCURLY))
         return parser_err_unexpected_token(parser, TOK_ID_LCURLY);
 
     res_t res = RES_NONE;
-    node_t block = NODE_BLOCK(TYPE_ANY_I, first_tok_i, last_tok_i, NULL,
+    node_t block = NODE_BLOCK(TYPE_ANY_I, first_tok_i, first_tok_i, NULL,
                               parser->par_scope_i);
     buf_push(parser->par_nodes, block);
     const int current_scope_i = parser->par_scope_i;
@@ -1508,7 +1508,10 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
         return res;
     }
 
-    if (!parser_match(parser, &last_tok_i, 1, TOK_ID_RCURLY))
+    if (!parser_match(
+            parser,
+            &parser->par_nodes[*new_node_i].node_n.node_block.bl_last_tok_i, 1,
+            TOK_ID_RCURLY))
         return parser_err_unexpected_token(parser, TOK_ID_RCURLY);
 
     const int* const nodes_i =
@@ -1751,8 +1754,6 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     const type_kind_t actual_type = parser->par_types[actual_type_i].ty_kind;
     const type_kind_t declared_type =
         parser->par_types[declared_type_i].ty_kind;
-    if (actual_type != declared_type)
-        return parser_err_unexpected_type(parser, body_node_i, declared_type);
 
     buf_push(
         parser->par_nodes,
@@ -1765,6 +1766,9 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
                                               .fd_flags = flags}}}));
     *new_node_i = buf_size(parser->par_nodes) - 1;
     buf_push(parser->par_node_decls, *new_node_i);
+
+    if (actual_type != declared_type)
+        return parser_err_non_matching_types(parser, body_node_i, *new_node_i);
 
     log_debug("new fn decl=%d flags=%d body_node_i=%d type=%s", *new_node_i,
               flags, body_node_i, type_to_str[declared_type]);
