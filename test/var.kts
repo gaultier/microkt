@@ -7,11 +7,11 @@ println(a * a ) // expect: 100
 
 // 2 vars of the same type
 
-val b: Long = 500
+val long: Long = 500
 
-println(b) // expect: 500
+println(long) // expect: 500
 
-println(b+a) // expect: 510
+println(long+a) // expect: 510
 
 
 // Sub scope referring to a var in the parent scope
@@ -28,7 +28,7 @@ if (true)
     val d: Long = 2 // This variable should not interfere
   } else {
     val d: Long = 99 
-    println(a+b+c+d) // expect: 1608
+    println(a+long+c+d) // expect: 1608
   }
 }
 
@@ -37,24 +37,24 @@ val x : Long = 2 * a
 println(x) // expect: 20
 
 // Conditionally initialize
-val p: Long = if(x==20) a - 5 else b
+val p: Long = if(x==20) a - 5 else long
 println(p) // expect: 5
 
 // Other types
-val s: Short = 12345
-println(s) // expect: 12345
+val short: Short = 12345
+println(short) // expect: 12345
 
 val i : Int = 2000000000
 println(i) // expect: 2000000000
 
-val b: Byte = 8
-println(b) // expect: 8
+val byte: Byte = 8
+println(byte) // expect: 8
 
 val ch :Char = '%'
 println(ch) // expect: %
 
-val s : String = "hello"
-println(s) // expect: hello
+val string : String = "hello"
+println(string) // expect: hello
 
 val bool : Boolean = true
 println(bool) // expect: true
