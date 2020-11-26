@@ -103,8 +103,10 @@ typedef struct {
         if_node_else_i;
 } if_t;
 
+static const unsigned short BLOCK_FLAGS_SEEN_RETURN = 0x01;
 typedef struct {
     int bl_first_tok_i, bl_last_tok_i, *bl_nodes_i, bl_parent_scope_i;
+    unsigned short bl_flags;
 } block_t;
 
 typedef struct {
@@ -207,15 +209,6 @@ struct node_t {
                                             .if_node_cond_i = node_cond_i, \
                                             .if_node_then_i = node_then_i, \
                                             .if_node_else_i = node_else_i})}})
-
-#define NODE_BLOCK(type_i, first_tok_i, last_tok_i, nodes_i, parent_scope_i) \
-    ((node_t){                                                               \
-        .node_kind = NODE_BLOCK,                                             \
-        .node_type_i = type_i,                                               \
-        .node_n = {.node_block = {.bl_first_tok_i = first_tok_i,             \
-                                  .bl_last_tok_i = last_tok_i,               \
-                                  .bl_nodes_i = nodes_i,                     \
-                                  .bl_parent_scope_i = parent_scope_i}}})
 
 #define NODE_VAR_DEF(type_i, first_tok_i, name_tok_i, last_tok_i, init_node_i, \
                      offset, flags)                                            \

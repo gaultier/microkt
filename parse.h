@@ -279,7 +279,13 @@ static parser_t parser_init(const char* file_name0, const char* source,
     node_t* nodes = NULL;
     buf_grow(nodes, 100);
     // Add initial scope
-    buf_push(nodes, NODE_BLOCK(TYPE_UNIT_I, -1, -1, NULL, -1));
+    buf_push(nodes,
+             ((node_t){.node_kind = NODE_BLOCK,
+                       .node_type_i = TYPE_UNIT_I,
+                       .node_n = {.node_block = {.bl_first_tok_i = -1,
+                                                 .bl_last_tok_i = -1,
+                                                 .bl_nodes_i = NULL,
+                                                 .bl_parent_scope_i = -1}}}));
     buf_push(nodes,
              ((node_t){.node_type_i = TYPE_UNIT_I,
                        .node_kind = NODE_FN_DECL,
@@ -1496,8 +1502,13 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
         return parser_err_unexpected_token(parser, TOK_ID_LCURLY);
 
     res_t res = RES_NONE;
-    node_t block = NODE_BLOCK(TYPE_ANY_I, first_tok_i, first_tok_i, NULL,
-                              parser->par_scope_i);
+    node_t block = {
+        .node_kind = NODE_BLOCK,
+        .node_type_i = TYPE_ANY_I,
+        .node_n = {.node_block = {.bl_first_tok_i = first_tok_i,
+                                  .bl_last_tok_i = -1,
+                                  .bl_nodes_i = NULL,
+                                  .bl_parent_scope_i = parser->par_scope_i}}};
     buf_push(parser->par_nodes, block);
     const int current_scope_i = parser->par_scope_i;
     parser->par_scope_i = *new_node_i = buf_size(parser->par_nodes) - 1;
