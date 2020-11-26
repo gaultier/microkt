@@ -679,7 +679,6 @@ static token_id_t parser_peek(parser_t* parser) {
         const token_id_t id =
             parser->par_lexer.lex_tokens[parser->par_tok_i].tok_id;
         if (id == TOK_ID_COMMENT) {
-            log_debug("Skipping over comment at pos=%d", parser->par_tok_i);
             parser->par_tok_i += 1;
             continue;
         }
@@ -701,7 +700,6 @@ static token_id_t parser_peek_next(parser_t* parser) {
     while (i < (int)buf_size(parser->par_lexer.lex_tokens) - 1) {
         const token_id_t id = parser->par_lexer.lex_tokens[i + 1].tok_id;
         if (id == TOK_ID_COMMENT) {
-            log_debug("Skipping over comment at pos=%d", i + 1);
             i++;
             continue;
         }
@@ -834,10 +832,6 @@ static bool parser_match(parser_t* parser, int* return_token_index,
 
         *return_token_index = parser->par_tok_i - 1;
 
-        log_debug("matched %s, now current token: %s at tok_i=%d",
-                  token_id_to_str[id], token_id_to_str[parser_current(parser)],
-                  parser->par_tok_i);
-
         return true;
     }
     va_end(ap);
@@ -966,10 +960,7 @@ static res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
             return parser_err_non_matching_types(parser, node_then_i,
                                                  node_else_i);
         }
-    } else {
-        log_debug("optional else missing for if node_then_i=%d", node_then_i);
     }
-
     const node_t new_node = NODE_IF(then_type_i, first_tok_i, last_tok_i,
                                     node_cond_i, node_then_i, node_else_i);
 
@@ -1067,8 +1058,6 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
 
         buf_push(parser->par_node_decls, *new_node_i);
 
-        log_debug("new string literal: type=TYPE_STRING tok_i=%d", tok_i);
-
         return RES_OK;
     }
     if (parser_match(parser, &tok_i, 1, TOK_ID_LONG)) {
@@ -1156,7 +1145,6 @@ static res_t parser_parse_prefix_unary_expr(parser_t* parser, int* new_node_i) {
                                                    parser, node),
                                                .un_node_i = node_i}}}));
         *new_node_i = node_i = (int)buf_size(parser->par_nodes) - 1;
-        log_debug("new_node_i=%d", *new_node_i);
 
         return RES_OK;
     }
@@ -1186,7 +1174,6 @@ static res_t parser_parse_multiplicative_expr(parser_t* parser,
     const type_kind_t lhs_type_kind = parser->par_types[lhs_type_i].ty_kind;
 
     *new_node_i = lhs_i;
-    log_debug("new_node_i=%d", *new_node_i);
 
     while (parser_match(parser, new_node_i, 3, TOK_ID_STAR, TOK_ID_SLASH,
                         TOK_ID_PERCENT)) {
@@ -1233,7 +1220,6 @@ static res_t parser_parse_multiplicative_expr(parser_t* parser,
 
         buf_push(parser->par_nodes, new_node);
         *new_node_i = lhs_i = (int)buf_size(parser->par_nodes) - 1;
-        log_debug("new_node_i=%d", *new_node_i);
     }
 
     return res;
@@ -1248,7 +1234,6 @@ static res_t parser_parse_additive_expr(parser_t* parser, int* new_node_i) {
     const int lhs_type_i = parser->par_nodes[lhs_i].node_type_i;
     const type_kind_t lhs_type_kind = parser->par_types[lhs_type_i].ty_kind;
     *new_node_i = lhs_i;
-    log_debug("new_node_i=%d", *new_node_i);
 
     while (parser_match(parser, new_node_i, 2, TOK_ID_PLUS, TOK_ID_MINUS)) {
         const int tok_i = parser->par_tok_i - 1;
@@ -1274,7 +1259,6 @@ static res_t parser_parse_additive_expr(parser_t* parser, int* new_node_i) {
 
         buf_push(parser->par_nodes, new_node);
         *new_node_i = lhs_i = (int)buf_size(parser->par_nodes) - 1;
-        log_debug("new_node_i=%d", *new_node_i);
     }
 
     return res;
@@ -1378,7 +1362,6 @@ static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
     const int lhs_type_i = parser->par_nodes[lhs_i].node_type_i;
     const type_kind_t lhs_type_kind = parser->par_types[lhs_type_i].ty_kind;
     *new_node_i = lhs_i;
-    log_debug("new_node_i=%d", *new_node_i);
 
     while (parser_match(parser, new_node_i, 4, TOK_ID_LT, TOK_ID_LE, TOK_ID_GT,
                         TOK_ID_GE)) {
@@ -1412,7 +1395,6 @@ static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
 
         buf_push(parser->par_nodes, new_node);
         *new_node_i = lhs_i = (int)buf_size(parser->par_nodes) - 1;
-        log_debug("new_node_i=%d", *new_node_i);
     }
 
     return res;
@@ -1429,7 +1411,6 @@ static res_t parser_parse_equality(parser_t* parser, int* new_node_i) {
     const int lhs_type_i = parser->par_nodes[lhs_i].node_type_i;
     const type_kind_t lhs_type_kind = parser->par_types[lhs_type_i].ty_kind;
     *new_node_i = lhs_i;
-    log_debug("new_node_i=%d", *new_node_i);
 
     while (parser_match(parser, new_node_i, 2, TOK_ID_EQ_EQ, TOK_ID_NEQ)) {
         const int tok_id = parser_previous(parser);
@@ -1453,7 +1434,6 @@ static res_t parser_parse_equality(parser_t* parser, int* new_node_i) {
 
         buf_push(parser->par_nodes, new_node);
         *new_node_i = lhs_i = (int)buf_size(parser->par_nodes) - 1;
-        log_debug("new_node_i=%d", *new_node_i);
     }
 
     return res;
