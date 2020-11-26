@@ -1795,6 +1795,21 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
               fn_decl->fd_flags, fn_decl->fd_body_node_i,
               type_to_str[declared_type]);
 
+    if (declared_type != TYPE_UNIT &&
+        ((fn_decl->fd_flags & FN_FLAGS_SEEN_RETURN) == 0)) {
+        const loc_t loc = parser->par_lexer.lex_locs[last_tok_i];
+
+        fprintf(
+            stderr,
+            "%s%s:%d:%d:%sThe function has declared to "
+            "return %s but has no return%s\n",
+            parser->par_is_tty ? color_grey : "", parser->par_file_name0,
+            loc.loc_line, loc.loc_column, parser->par_is_tty ? color_reset : "",
+            type_to_str[declared_type], parser->par_is_tty ? color_reset : "");
+        parser_print_source_on_error(parser, last_tok_i, last_tok_i);
+
+        return RES_ERR;
+    }
     if (actual_type != declared_type)
         return parser_err_non_matching_types(
             parser, body_node_i,
