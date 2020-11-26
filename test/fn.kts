@@ -50,3 +50,11 @@ fun return_other_func(): Long {
 }
 
 println(return_other_func()) // expect: 42
+
+
+
+fun empty_return() {
+  1
+  return
+}
+empty_return()
