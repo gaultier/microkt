@@ -61,3 +61,10 @@ empty_return()
 
 
 fun declared_unit_and_last_stmt_is_expr(): Unit { 1 }
+
+fun return_string(): String {
+  var a : String =  "return_string"
+
+  return a
+}
+println(return_string()) // expect: return_string
