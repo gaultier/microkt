@@ -23,9 +23,10 @@ typedef struct {
     type_kind_t ty_kind;
 } type_t;
 
-const unsigned short FN_FLAG_SYNTHETIC = 0x1;
-const unsigned short FN_FLAG_PUBLIC = 0x2;
-const unsigned short FN_FLAG_PRIVATE = 0x4;
+static const unsigned short FN_FLAGS_SYNTHETIC = 0x1;
+static const unsigned short FN_FLAGS_PUBLIC = 0x2;
+static const unsigned short FN_FLAGS_PRIVATE = 0x4;
+static const unsigned short FN_FLAGS_SEEN_RETURN = 0x08;
 
 struct node_t;
 
@@ -124,7 +125,6 @@ typedef struct {
     int wh_first_tok_i, wh_last_tok_i, wh_cond_i, wh_body_i;
 } while_t;
 
-static const unsigned short FN_FLAGS_SEEN_RETURN = 0x01;
 typedef struct {
     int fd_first_tok_i, fd_last_tok_i, fd_name_tok_i, fd_body_node_i;
     unsigned short fd_flags;

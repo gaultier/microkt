@@ -59,6 +59,4 @@ fun empty_return() {
 }
 empty_return()
 
-fun foo(){
-  1
-}
+

@@ -294,8 +294,8 @@ static parser_t parser_init(const char* file_name0, const char* source,
                                       .fd_name_tok_i = fn_main_name_tok_i,
                                       .fd_last_tok_i = fn_main_name_tok_i,
                                       .fd_body_node_i = 0,
-                                      .fd_flags = FN_FLAG_SYNTHETIC |
-                                                  FN_FLAG_PUBLIC}}}));
+                                      .fd_flags = FN_FLAGS_SYNTHETIC |
+                                                  FN_FLAGS_PUBLIC}}}));
     int* node_decls = NULL;
     buf_grow(node_decls, 10);
     buf_push(node_decls,
@@ -1008,6 +1008,9 @@ static res_t parser_parse_jump_expr(parser_t* parser, int* new_node_i) {
         const type_kind_t type_kind = parser->par_types[type_i].ty_kind;
         log_debug("New return %d type=%s", *new_node_i, type_to_str[type_kind]);
 
+        parser->par_nodes[parser->par_fn_i].node_n.node_fn_decl.fd_flags |=
+            FN_FLAGS_SEEN_RETURN;
+
         return RES_OK;
     }
 
@@ -1719,12 +1722,26 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
 
     if (parser_peek(parser) != TOK_ID_FUN) return RES_NONE;
 
-    int dummy = -1, first_tok_i = -1, name_tok_i = -1;
-    const unsigned short flags = FN_FLAG_PRIVATE;
+    int dummy = -1, first_tok_i = -1;
 
     parser_match(parser, &first_tok_i, 1, TOK_ID_FUN);
 
-    if (!parser_match(parser, &name_tok_i, 1, TOK_ID_IDENTIFIER))
+    buf_push(
+        parser->par_nodes,
+        ((node_t){.node_type_i = TYPE_UNIT_I,
+                  .node_kind = NODE_FN_DECL,
+                  .node_n = {.node_fn_decl = {.fd_first_tok_i = first_tok_i,
+                                              .fd_name_tok_i = -1,
+                                              .fd_last_tok_i = -1,
+                                              .fd_body_node_i = -1,
+                                              .fd_flags = FN_FLAGS_PRIVATE}}}));
+    parser->par_fn_i = *new_node_i = buf_size(parser->par_nodes) - 1;
+    buf_push(parser->par_node_decls, *new_node_i);
+
+    if (!parser_match(
+            parser,
+            &parser->par_nodes[*new_node_i].node_n.node_fn_decl.fd_name_tok_i,
+            1, TOK_ID_IDENTIFIER))
         return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
     if (!parser_match(parser, &dummy, 1, TOK_ID_LPAREN))
         return parser_err_unexpected_token(parser, TOK_ID_LPAREN);
@@ -1766,23 +1783,17 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     const type_kind_t declared_type =
         parser->par_types[declared_type_i].ty_kind;
 
+    fn_decl_t* const fn_decl =
+        &parser->par_nodes[*new_node_i].node_n.node_fn_decl;
     const int last_tok_i =
         parser->par_nodes[body_node_i].node_n.node_block.bl_last_tok_i;
-    buf_push(
-        parser->par_nodes,
-        ((node_t){.node_type_i = declared_type_i,
-                  .node_kind = NODE_FN_DECL,
-                  .node_n = {.node_fn_decl = {.fd_first_tok_i = first_tok_i,
-                                              .fd_name_tok_i = name_tok_i,
-                                              .fd_last_tok_i = last_tok_i,
-                                              .fd_body_node_i = body_node_i,
-                                              .fd_flags = flags}}}));
-    *new_node_i = buf_size(parser->par_nodes) - 1;
-    buf_push(parser->par_node_decls, *new_node_i);
+    fn_decl->fd_last_tok_i = last_tok_i;
+    fn_decl->fd_body_node_i = body_node_i;
+    parser->par_nodes[*new_node_i].node_type_i = declared_type_i;
 
-    log_debug("new fn decl=%d flags=%d body_node_i=%d type=%s last_tok_i=%d",
-              *new_node_i, flags, body_node_i, type_to_str[declared_type],
-              last_tok_i);
+    log_debug("new fn decl=%d flags=%d body_node_i=%d type=%s", *new_node_i,
+              fn_decl->fd_flags, fn_decl->fd_body_node_i,
+              type_to_str[declared_type]);
 
     if (actual_type != declared_type)
         return parser_err_non_matching_types(

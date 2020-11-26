@@ -573,7 +573,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
             &parser->par_lexer.lex_source[pos_range.pr_start];
         const int name_len = pos_range.pr_end - pos_range.pr_start;
 
-        if (fn_decl.fd_flags & FN_FLAG_PUBLIC)
+        if (fn_decl.fd_flags & FN_FLAGS_PUBLIC)
             println(".global %.*s",
                     name_len == 0 ? (int)sizeof("_main") : name_len,
                     name_len == 0 ? "_main" : name);
