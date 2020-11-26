@@ -998,6 +998,8 @@ static res_t parser_parse_jump_expr(parser_t* parser, int* new_node_i) {
                                                    parser, expr),
                                                .un_node_i = expr_node_i}}}));
         *new_node_i = buf_size(parser->par_nodes) - 1;
+        const type_kind_t type_kind = parser->par_types[type_i].ty_kind;
+        log_debug("New return %d type=%s", *new_node_i, type_to_str[type_kind]);
 
         return RES_OK;
     }
@@ -1511,7 +1513,8 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
 
     const int* const nodes_i =
         parser->par_nodes[parser->par_scope_i].node_n.node_block.bl_nodes_i;
-    const int last_node_i = buf_size(nodes_i) > 0 ? nodes_i[0] : -1;
+    const int last_node_i =
+        buf_size(nodes_i) > 0 ? nodes_i[buf_size(nodes_i) - 1] : -1;
     const int type_i = last_node_i >= 0
                            ? parser->par_nodes[last_node_i].node_type_i
                            : TYPE_UNIT_I;
@@ -1519,6 +1522,12 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
     parser->par_nodes[*new_node_i].node_type_i = type_i;
 
     parser->par_scope_i = current_scope_i;
+
+    const type_kind_t type_kind = parser->par_types[type_i].ty_kind;
+    log_debug("block=%d parent=%d last_node_i=%d type=%s", *new_node_i,
+              block.node_n.node_block.bl_parent_scope_i, last_node_i,
+              type_to_str[type_kind]);
+
     return res;
 }
 
