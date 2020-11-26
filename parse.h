@@ -1710,6 +1710,24 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     if (!parser_match(parser, &dummy, 1, TOK_ID_RPAREN))
         return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
 
+    int explicit_type_tok_i = -1;
+    type_kind_t explicit_type_kind = -1;
+    if (parser_match(parser, &dummy, 1, TOK_ID_COLON)) {
+        if (!parser_match(parser, &explicit_type_tok_i, 1, TOK_ID_IDENTIFIER)) {
+            return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
+        }
+        if (!parser_parse_identifier_to_type_kind(parser, explicit_type_tok_i,
+                                                  &explicit_type_kind)) {
+            parser_print_source_on_error(parser, explicit_type_tok_i,
+                                         explicit_type_tok_i);
+            log_debug(
+                "Encountered user type in function signature, not yet "
+                "implemented:%s",
+                "");
+            UNIMPLEMENTED();
+        }
+    }
+
     int body_node_i = -1;
     const int current_scope_i = parser->par_scope_i;
     res_t res = parser_parse_block(parser, &body_node_i);
