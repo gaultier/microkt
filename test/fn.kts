@@ -29,18 +29,24 @@ println("C") // expect: C
 func_with_var() // expect: 5
 
 
-fun return_long() {
+fun return_long(): Long {
   return 42
 }
 
 println(return_long()) // expect: 42
 
-fun return_true() {
+fun return_true(): Boolean {
   return true
 }
-fun return_false() {
+fun return_false(): Boolean {
   return false
 }
 
 println(return_false()) // expect: false
 println(return_true()) // expect: true
+
+fun return_other_func(): Long {
+  return return_long()
+}
+
+println(return_other_func()) // expect: 42
