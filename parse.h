@@ -486,10 +486,12 @@ static void node_dump(const parser_t* parser, int node_i, int indent) {
 
             node_dump(parser, node->node_n.node_while.wh_cond_i, indent + 2);
             node_dump(parser, node->node_n.node_while.wh_body_i, indent + 2);
+            return;
         }
         case NODE_FN_DECL: {
 #ifdef WITH_LOGS
             const fn_decl_t fn_decl = node->node_n.node_fn_decl;
+            const int arity = buf_size(fn_decl.fd_arg_nodes_i);
             const pos_range_t pos_range =
                 parser->par_lexer.lex_tok_pos_ranges[fn_decl.fd_name_tok_i];
             const char* const name =
@@ -497,9 +499,11 @@ static void node_dump(const parser_t* parser, int node_i, int indent) {
             const int name_len = pos_range.pr_end - pos_range.pr_start;
 #endif
             log_debug_with_indent(
-                indent, "node #%d `%.*s` %s type=%s", node_i, name_len, name,
-                node_kind_to_str[node->node_kind],
-                type_to_str[parser->par_types[node->node_type_i].ty_kind]);
+                indent, "node #%d `%.*s` %s type=%s arity=%d", node_i, name_len,
+                name, node_kind_to_str[node->node_kind],
+                type_to_str[parser->par_types[node->node_type_i].ty_kind],
+                arity);
+            return;
         }
         case NODE_CALL: {
 #ifdef WITH_LOGS
@@ -512,6 +516,7 @@ static void node_dump(const parser_t* parser, int node_i, int indent) {
 
             node_dump(parser, call.ca_var_node_i, indent + 2);
 #endif
+            return;
         }
     }
 }
@@ -1785,7 +1790,8 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
                                               .fd_name_tok_i = -1,
                                               .fd_last_tok_i = -1,
                                               .fd_body_node_i = -1,
-                                              .fd_flags = FN_FLAGS_PRIVATE}}}));
+                                              .fd_flags = FN_FLAGS_PRIVATE,
+                                              .fd_arg_nodes_i = NULL}}}));
     parser->par_fn_i = *new_node_i = buf_size(parser->par_nodes) - 1;
     buf_push(parser->par_node_decls, *new_node_i);
 
@@ -1798,6 +1804,8 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     res_t res = RES_NONE;
     if ((res = parser_parse_fn_value_params(parser, &arg_nodes_i)) != RES_OK)
         return res;
+    parser->par_nodes[*new_node_i].node_n.node_fn_decl.fd_arg_nodes_i =
+        arg_nodes_i;
 
     int declared_type_tok_i = -1, declared_type_i = -1;
     type_kind_t declared_type_kind = -1;

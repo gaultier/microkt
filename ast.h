@@ -126,7 +126,8 @@ typedef struct {
 } while_t;
 
 typedef struct {
-    int fd_first_tok_i, fd_last_tok_i, fd_name_tok_i, fd_body_node_i;
+    int fd_first_tok_i, fd_last_tok_i, fd_name_tok_i, fd_body_node_i,
+        *fd_arg_nodes_i;
     unsigned short fd_flags;
 } fn_decl_t;
 
