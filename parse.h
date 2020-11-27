@@ -1716,6 +1716,37 @@ static res_t parser_parse_property_declaration(parser_t* parser,
     return RES_OK;
 }
 
+static res_t parser_parse_parameter(parser_t* parser, int** new_nodes_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_nodes_i, !=, NULL, "%p");
+
+    int identifier_tok_i = -1, dummy = -1, type_tok_i = -1;
+
+    if (!parser_match(parser, &identifier_tok_i, 1, TOK_ID_IDENTIFIER))
+        return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
+
+    if (!parser_match(parser, &dummy, 1, TOK_ID_COLON))
+        return parser_err_unexpected_token(parser, TOK_ID_COLON);
+
+    if (!parser_match(parser, &type_tok_i, 1, TOK_ID_IDENTIFIER))
+        return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
+
+    buf_push(parser->par_nodes,
+             ((node_t){
+                 .node_kind = NODE_VAR_DEF,
+                 .node_type_i = TYPE_UNIT_I,
+                 .node_n = {.node_var_def = {.vd_name_tok_i = identifier_tok_i,
+                                             .vd_first_tok_i = identifier_tok_i,
+                                             .vd_last_tok_i = type_tok_i,
+                                             .vd_init_node_i = -1,
+                                             .vd_stack_offset = 0}}}));
+    const int new_node_i = buf_size(parser->par_nodes) - 1;
+
+    buf_push(*new_nodes_i, new_node_i);
+
+    return RES_OK;
+}
+
 static res_t parser_parse_fn_value_params(parser_t* parser, int** new_nodes_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_nodes_i, !=, NULL, "%p");
@@ -1723,6 +1754,13 @@ static res_t parser_parse_fn_value_params(parser_t* parser, int** new_nodes_i) {
     int dummy = -1;
     if (!parser_match(parser, &dummy, 1, TOK_ID_LPAREN))
         return parser_err_unexpected_token(parser, TOK_ID_LPAREN);
+
+    if (parser_match(parser, &dummy, 1, TOK_ID_RPAREN)) return RES_OK;
+
+    res_t res = RES_NONE;
+    if ((res = parser_parse_parameter(parser, new_nodes_i)) != RES_OK)
+        return res;
+
     if (!parser_match(parser, &dummy, 1, TOK_ID_RPAREN))
         return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
 
