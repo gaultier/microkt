@@ -1789,15 +1789,15 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     parser->par_fn_i = *new_node_i = buf_size(parser->par_nodes) - 1;
     buf_push(parser->par_node_decls, *new_node_i);
 
-    res_t res = RES_NONE;
-    if ((res = parser_parse_fn_value_params(parser, &arg_nodes_i)) != RES_OK)
-        return res;
-
     if (!parser_match(
             parser,
             &parser->par_nodes[*new_node_i].node_n.node_fn_decl.fd_name_tok_i,
             1, TOK_ID_IDENTIFIER))
         return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
+
+    res_t res = RES_NONE;
+    if ((res = parser_parse_fn_value_params(parser, &arg_nodes_i)) != RES_OK)
+        return res;
 
     int declared_type_tok_i = -1, declared_type_i = -1;
     type_kind_t declared_type_kind = -1;

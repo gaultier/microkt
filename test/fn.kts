@@ -68,3 +68,7 @@ fun return_string(): String {
   return a
 }
 println(return_string()) // expect: return_string
+
+
+// Parameters
+fun one_param(a: Int) {}
