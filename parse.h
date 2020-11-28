@@ -39,6 +39,20 @@ static node_t* parser_current_block(parser_t* parser) {
     return &parser->par_nodes[parser->par_scope_i];
 }
 
+static int parser_node_find_fn_decl_for_call(const parser_t* parser,
+                                             int node_i) {
+    const node_t* const node = &parser->par_nodes[node_i];
+    switch (node->node_kind) {
+        case NODE_VAR:
+            return parser_node_find_fn_decl_for_call(
+                parser, node->node_n.node_var.va_var_node_i);
+        case NODE_FN_DECL:
+            return node_i;
+        default:
+            UNIMPLEMENTED();
+    }
+}
+
 // TODO: optimize, currently it is O(n*m) where n= # of stmt and m = # of var
 // def per scope
 static res_t parser_resolve_var(const parser_t* parser, int tok_i,
@@ -1319,9 +1333,9 @@ static res_t parser_parse_infix_op(parser_t* parser, int* new_node_i) {
     return parser_parse_elvis_expr(parser, new_node_i);
 }
 
-static res_t parser_parse_value_args(parser_t* parser, int* new_node_i) {
+static res_t parser_parse_value_args(parser_t* parser, int** arg_nodes_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)arg_nodes_i, !=, NULL, "%p");
 
     if (parser_peek(parser) != TOK_ID_LPAREN) return RES_NONE;
 
@@ -1334,11 +1348,11 @@ static res_t parser_parse_value_args(parser_t* parser, int* new_node_i) {
     return RES_OK;
 }
 
-static res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i) {
+static res_t parser_parse_call_suffix(parser_t* parser, int** arg_nodes_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)arg_nodes_i, !=, NULL, "%p");
 
-    return parser_parse_value_args(parser, new_node_i);
+    return parser_parse_value_args(parser, arg_nodes_i);
 }
 
 static res_t parser_parse_generical_call_like_comparison(parser_t* parser,
@@ -1350,18 +1364,26 @@ static res_t parser_parse_generical_call_like_comparison(parser_t* parser,
     if (res != RES_OK) return res;
 
     // TODO: loop + expand
-    int node_i = -1;
-    res = parser_parse_call_suffix(parser, &node_i);
+    int* arg_nodes_i = NULL;
+    res = parser_parse_call_suffix(parser, &arg_nodes_i);
     if (res == RES_NONE) return RES_OK;  // Optional
     if (res != RES_OK) return res;
 
-    const int type_i = parser->par_nodes[*new_node_i]
-                           .node_type_i;  // FIXME? `node_i` is unused
+    const int type_i = parser->par_nodes[*new_node_i].node_type_i;
+
+    const int fn_decl_node_i =
+        parser_node_find_fn_decl_for_call(parser, *new_node_i);
+    const node_t* const fn_decl_node = &parser->par_nodes[fn_decl_node_i];
+    const fn_decl_t fn_decl = fn_decl_node->node_n.node_fn_decl;
+    const int declared_arity = buf_size(fn_decl.fd_arg_nodes_i);
+    const int found_arity = buf_size(arg_nodes_i);
+    if (declared_arity != found_arity) UNIMPLEMENTED();  // TODO: err
+
     buf_push(
         parser->par_nodes,
         ((node_t){.node_type_i = type_i,
                   .node_kind = NODE_CALL,
-                  .node_n = {.node_call = {.ca_arity = 0 /* FIXME */,
+                  .node_n = {.node_call = {.ca_arity = declared_arity,
                                            .ca_var_node_i = *new_node_i}}}));
     *new_node_i = buf_size(parser->par_nodes) - 1;
 
