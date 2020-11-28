@@ -43,6 +43,9 @@ static node_t* parser_current_block(parser_t* parser) {
 // def per scope
 static res_t parser_resolve_var(const parser_t* parser, int tok_i,
                                 int* def_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)def_node_i, !=, NULL, "%p");
+
     const char* var_source = NULL;
     int var_source_len = 0;
     parser_tok_source(parser, tok_i, &var_source, &var_source_len);
