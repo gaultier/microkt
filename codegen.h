@@ -13,6 +13,11 @@ static const long long int syscall_exit = 60;
 
 static FILE* output_file = NULL;
 
+static const char fn_args[6][5] = {
+    [0] = "%rdi", [1] = "%rsi", [2] = "%rdx",
+    [3] = "%rcx", [4] = "%r8",  [5] = "%r9",
+};
+
 static void emit_stmt(const parser_t* parser, int stmt_i);
 
 #if defined(__clang__) || defined(__GNUC__) || defined(__GNUG__)
@@ -408,6 +413,13 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
         }
         case NODE_CALL: {
             const call_t call = expr->node_n.node_call;
+            for (int i = 0; i < (int)buf_size(call.ca_arg_nodes_i); i++) {
+                emit_expr(parser, call.ca_arg_nodes_i[i]);
+                println("mov %%rax, %s", fn_args[i]);
+
+                // TODO: preserver registers by spilling
+                // TODO: use the stack if # args > 6
+            }
 
             emit_expr(parser, call.ca_lhs_node_i);
             return;
