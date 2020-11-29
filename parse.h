@@ -1776,6 +1776,8 @@ static res_t parser_parse_parameter(parser_t* parser, int** new_nodes_i) {
     if (!parser_match(parser, &type_tok_i, 1, TOK_ID_IDENTIFIER))
         return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
 
+    // TODO: enter scope
+
     buf_push(parser->par_nodes,
              ((node_t){
                  .node_kind = NODE_VAR_DEF,
