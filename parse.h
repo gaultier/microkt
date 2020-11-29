@@ -39,23 +39,19 @@ static node_t* parser_current_block(parser_t* parser) {
     return &parser->par_nodes[parser->par_scope_i];
 }
 
-static int parser_enter_scope(parser_t* parser, int* new_node_i) {
+static int parser_enter_scope(parser_t* parser, int block_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
     const int parent_scope_i = parser->par_scope_i;
-
-    const node_t block = {
-        .node_kind = NODE_BLOCK,
-        .node_type_i = TYPE_ANY_I,
-        .node_n = {.node_block = {.bl_first_tok_i = -1,
-                                  .bl_last_tok_i = -1,
-                                  .bl_nodes_i = NULL,
-                                  .bl_parent_scope_i = parent_scope_i}}};
-    buf_push(parser->par_nodes, block);
-    parser->par_scope_i = *new_node_i = buf_size(parser->par_nodes) - 1;
+    parser->par_scope_i = block_node_i;
 
     return parent_scope_i;
+}
+
+static void parser_leave_scope(parser_t* parser, int parent_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+
+    parser->par_scope_i = parent_node_i;
 }
 
 static int parser_node_find_fn_decl_for_call(const parser_t* parser,
@@ -1566,7 +1562,16 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
-    const int parent_scope_i = parser_enter_scope(parser, new_node_i);
+    const node_t block = {
+        .node_kind = NODE_BLOCK,
+        .node_type_i = TYPE_ANY_I,
+        .node_n = {.node_block = {.bl_first_tok_i = -1,
+                                  .bl_last_tok_i = -1,
+                                  .bl_nodes_i = NULL,
+                                  .bl_parent_scope_i = parser->par_scope_i}}};
+    buf_push(parser->par_nodes, block);
+    *new_node_i = buf_size(parser->par_nodes) - 1;
+    const int parent_scope_i = parser_enter_scope(parser, *new_node_i);
 
     if (!parser_match(
             parser,
@@ -1596,7 +1601,7 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
 
     parser->par_nodes[*new_node_i].node_type_i = type_i;
 
-    parser->par_scope_i = parent_scope_i;
+    parser_leave_scope(parser, parent_scope_i);
 
     const type_kind_t type_kind = parser->par_types[type_i].ty_kind;
     log_debug("block=%d parent=%d last_node_i=%d type=%s last_tok_i=%d",
@@ -1789,8 +1794,6 @@ static res_t parser_parse_parameter(parser_t* parser, int** new_nodes_i) {
     if (!parser_match(parser, &type_tok_i, 1, TOK_ID_IDENTIFIER))
         return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
 
-    // TODO: enter scope
-
     buf_push(parser->par_nodes,
              ((node_t){
                  .node_kind = NODE_VAR_DEF,
@@ -1855,6 +1858,18 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
             &parser->par_nodes[*new_node_i].node_n.node_fn_decl.fd_name_tok_i,
             1, TOK_ID_IDENTIFIER))
         return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
+
+    const node_t synthetic_params_scope = {
+        .node_kind = NODE_BLOCK,
+        .node_type_i = TYPE_UNIT_I,
+        .node_n = {.node_block = {.bl_first_tok_i = -1,
+                                  .bl_last_tok_i = -1,
+                                  .bl_nodes_i = NULL,
+                                  .bl_parent_scope_i = parser->par_scope_i}}};
+    buf_push(parser->par_nodes, synthetic_params_scope);
+    const int synthetic_params_scope_node_i = buf_size(parser->par_nodes) - 1;
+    const int parent_scope_i =
+        parser_enter_scope(parser, synthetic_params_scope_node_i);
 
     res_t res = RES_NONE;
     if ((res = parser_parse_fn_value_params(parser, &arg_nodes_i)) != RES_OK)
@@ -1931,6 +1946,8 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
         return parser_err_non_matching_types(
             parser, body_node_i,
             *new_node_i);  // TODO: implement custom error function
+
+    parser_leave_scope(parser, parent_scope_i);
 
     return RES_OK;
 }
