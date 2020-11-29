@@ -1411,6 +1411,8 @@ static res_t parser_parse_generical_call_like_comparison(parser_t* parser,
     const int found_arity = buf_size(arg_nodes_i);
     if (declared_arity != found_arity) UNIMPLEMENTED();  // TODO: err
 
+    const int current_scope_i =
+        parser_enter_scope(parser, fn_decl.fd_body_node_i);
     for (int i = 0; i < (int)buf_size(fn_decl.fd_arg_nodes_i); i++) {
         const int decl_arg_i = fn_decl.fd_arg_nodes_i[i];
         const node_t* const decl_arg = &parser->par_nodes[decl_arg_i];
@@ -1432,6 +1434,7 @@ static res_t parser_parse_generical_call_like_comparison(parser_t* parser,
                      .node_n = {.node_binary = {.bi_lhs_i = decl_arg_i,
                                                 .bi_rhs_i = arg_nodes_i[i]}}}));
     }
+    parser_leave_scope(parser, current_scope_i);
 
     buf_push(
         parser->par_nodes,

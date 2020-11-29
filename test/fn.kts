@@ -76,5 +76,4 @@ fun one_param_unused(a: Long) {}
 one_param_unused(100)
 
 
-fun one_param(a: Int) { println(a) }
-one_param(200) // expect: 200
+fun one_param(a: Long) { println(a) }
