@@ -1916,6 +1916,8 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     parser->par_nodes[*new_node_i].node_n.node_fn_decl.fd_arg_nodes_i =
         arg_nodes_i;
 
+    parser->par_nodes[body_node_i].node_n.node_block.bl_nodes_i = arg_nodes_i;
+
     int declared_type_tok_i = -1, declared_type_i = -1;
     type_kind_t declared_type_kind = -1;
     if (parser_match(parser, &dummy, 1, TOK_ID_COLON)) {
