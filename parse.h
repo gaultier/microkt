@@ -1833,7 +1833,8 @@ static res_t parser_parse_parameter(parser_t* parser, int** new_nodes_i) {
                                              .vd_first_tok_i = identifier_tok_i,
                                              .vd_last_tok_i = type_tok_i,
                                              .vd_init_node_i = -1,
-                                             .vd_stack_offset = 0}}}));
+                                             .vd_stack_offset = 0,
+                                             .vd_flags = VAR_FLAGS_VAR}}}));
     const int new_node_i = buf_size(parser->par_nodes) - 1;
 
     buf_push(*new_nodes_i, new_node_i);
