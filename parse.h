@@ -1571,9 +1571,7 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
                                                  .bl_parent_scope_i =
                                                      parser->par_scope_i}}}));
     *new_node_i = buf_size(parser->par_nodes) - 1;
-    const int parent_scope_i =
-        parser->par_nodes[*new_node_i].node_n.node_block.bl_parent_scope_i =
-            parser_enter_scope(parser, *new_node_i);
+    const int parent_scope_i = parser_enter_scope(parser, *new_node_i);
 
     if (!parser_match(
             parser,
