@@ -556,7 +556,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
     emit_stdlib();
 
     println(".file 1 \"%s\"", parser->par_file_name0);
-    // Reverse traversal to end up with main at the end
+    // Reverse traversal to end up with main at the end (needed?)
     for (int i = (int)buf_size(parser->par_node_decls) - 1; i >= 0; i--) {
         const int node_i = parser->par_node_decls[i];
         const node_t* const node = &parser->par_nodes[node_i];
