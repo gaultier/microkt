@@ -71,6 +71,10 @@ println(return_string()) // expect: return_string
 
 
 // Parameters
-fun one_param(a: Int) {}
+fun one_param_unused(a: Int) {}
 
-one_param(100)
+one_param_unused(100)
+
+
+fun one_param(a: Int) { println(a) }
+one_param(200) // expect: 200
