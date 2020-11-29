@@ -529,7 +529,7 @@ static void node_dump(const parser_t* parser, int node_i, int indent) {
                 indent, "node #%d %s type=%s arity=%d", node_i,
                 node_kind_to_str[node->node_kind],
                 type_to_str[parser->par_types[node->node_type_i].ty_kind],
-                call.ca_arity);
+                (int)buf_size(call.ca_arg_nodes_i));
 
             node_dump(parser, call.ca_var_node_i, indent + 2);
 #endif
@@ -1333,6 +1333,13 @@ static res_t parser_parse_infix_op(parser_t* parser, int* new_node_i) {
     return parser_parse_elvis_expr(parser, new_node_i);
 }
 
+static res_t parser_parse_value_arg(parser_t* parser, int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
+    return parser_parse_expr(parser, new_node_i);
+}
+
 static res_t parser_parse_value_args(parser_t* parser, int** arg_nodes_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)arg_nodes_i, !=, NULL, "%p");
@@ -1341,6 +1348,14 @@ static res_t parser_parse_value_args(parser_t* parser, int** arg_nodes_i) {
 
     int dummy = -1;
     parser_match(parser, &dummy, 1, TOK_ID_LPAREN);
+
+    int new_node_i = -1;
+    res_t res = parser_parse_value_arg(parser, &new_node_i);
+    if (res == RES_OK) {
+        buf_push(*arg_nodes_i, new_node_i);
+    } else if (res != RES_NONE) {
+        return res;
+    }
 
     if (!parser_match(parser, &dummy, 1, TOK_ID_RPAREN))
         return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
@@ -1383,7 +1398,7 @@ static res_t parser_parse_generical_call_like_comparison(parser_t* parser,
         parser->par_nodes,
         ((node_t){.node_type_i = type_i,
                   .node_kind = NODE_CALL,
-                  .node_n = {.node_call = {.ca_arity = declared_arity,
+                  .node_n = {.node_call = {.ca_arg_nodes_i = arg_nodes_i,
                                            .ca_var_node_i = *new_node_i}}}));
     *new_node_i = buf_size(parser->par_nodes) - 1;
 
