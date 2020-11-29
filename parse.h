@@ -533,10 +533,10 @@ static void node_dump(const parser_t* parser, int node_i, int indent) {
             const int name_len = pos_range.pr_end - pos_range.pr_start;
 #endif
             log_debug_with_indent(
-                indent, "node #%d `%.*s` %s type=%s arity=%d", node_i, name_len,
-                name, node_kind_to_str[node->node_kind],
+                indent, "node #%d %s `%.*s` type=%s arity=%d body_i=%d", node_i,
+                node_kind_to_str[node->node_kind], name_len, name,
                 type_to_str[parser->par_types[node->node_type_i].ty_kind],
-                arity);
+                arity, fn_decl.fd_body_node_i);
             return;
         }
         case NODE_CALL: {
@@ -1931,6 +1931,8 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
               fn_decl->fd_flags, fn_decl->fd_body_node_i,
               type_to_str[declared_type]);
 
+    parser_leave_scope(parser, parent_scope_i);
+
     const bool seen_return = fn_decl->fd_flags & FN_FLAGS_SEEN_RETURN;
     if (declared_type != TYPE_UNIT && !seen_return) {
         const loc_t loc = parser->par_lexer.lex_locs[last_tok_i];
@@ -1953,8 +1955,6 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
         return parser_err_non_matching_types(
             parser, body_node_i,
             *new_node_i);  // TODO: implement custom error function
-
-    parser_leave_scope(parser, parent_scope_i);
 
     return RES_OK;
 }
