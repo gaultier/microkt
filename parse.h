@@ -39,8 +39,29 @@ static node_t* parser_current_block(parser_t* parser) {
     return &parser->par_nodes[parser->par_scope_i];
 }
 
+static int parser_enter_scope(parser_t* parser, int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
+    const int parent_scope_i = parser->par_scope_i;
+
+    const node_t block = {
+        .node_kind = NODE_BLOCK,
+        .node_type_i = TYPE_ANY_I,
+        .node_n = {.node_block = {.bl_first_tok_i = -1,
+                                  .bl_last_tok_i = -1,
+                                  .bl_nodes_i = NULL,
+                                  .bl_parent_scope_i = parent_scope_i}}};
+    buf_push(parser->par_nodes, block);
+    parser->par_scope_i = *new_node_i = buf_size(parser->par_nodes) - 1;
+
+    return parent_scope_i;
+}
+
 static int parser_node_find_fn_decl_for_call(const parser_t* parser,
                                              int node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+
     const node_t* const node = &parser->par_nodes[node_i];
     switch (node->node_kind) {
         case NODE_VAR:
@@ -1545,22 +1566,15 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
-    int first_tok_i = -1;
-    if (!parser_match(parser, &first_tok_i, 1, TOK_ID_LCURLY))
+    const int parent_scope_i = parser_enter_scope(parser, new_node_i);
+
+    if (!parser_match(
+            parser,
+            &parser->par_nodes[*new_node_i].node_n.node_block.bl_first_tok_i, 1,
+            TOK_ID_LCURLY))
         return parser_err_unexpected_token(parser, TOK_ID_LCURLY);
 
     res_t res = RES_NONE;
-    node_t block = {
-        .node_kind = NODE_BLOCK,
-        .node_type_i = TYPE_ANY_I,
-        .node_n = {.node_block = {.bl_first_tok_i = first_tok_i,
-                                  .bl_last_tok_i = -1,
-                                  .bl_nodes_i = NULL,
-                                  .bl_parent_scope_i = parser->par_scope_i}}};
-    buf_push(parser->par_nodes, block);
-    const int current_scope_i = parser->par_scope_i;
-    parser->par_scope_i = *new_node_i = buf_size(parser->par_nodes) - 1;
-
     if ((res = parser_parse_stmts(parser)) != RES_OK) {
         log_debug("failed to parse expr in optional curlies %d", res);
         return res;
@@ -1582,12 +1596,11 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
 
     parser->par_nodes[*new_node_i].node_type_i = type_i;
 
-    parser->par_scope_i = current_scope_i;
+    parser->par_scope_i = parent_scope_i;
 
     const type_kind_t type_kind = parser->par_types[type_i].ty_kind;
     log_debug("block=%d parent=%d last_node_i=%d type=%s last_tok_i=%d",
-              *new_node_i, block.node_n.node_block.bl_parent_scope_i,
-              last_node_i, type_to_str[type_kind],
+              *new_node_i, parent_scope_i, last_node_i, type_to_str[type_kind],
               parser->par_nodes[*new_node_i].node_n.node_block.bl_last_tok_i);
 
     return res;
