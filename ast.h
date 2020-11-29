@@ -132,7 +132,7 @@ typedef struct {
 } fn_decl_t;
 
 typedef struct {
-    int ca_first_tok_i, ca_last_tok_i, ca_var_node_i, *ca_arg_nodes_i;
+    int ca_first_tok_i, ca_last_tok_i, ca_lhs_node_i, *ca_arg_nodes_i;
 } call_t;
 
 typedef struct {

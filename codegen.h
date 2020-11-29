@@ -409,7 +409,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
         case NODE_CALL: {
             const call_t call = expr->node_n.node_call;
 
-            emit_expr(parser, call.ca_var_node_i);
+            emit_expr(parser, call.ca_lhs_node_i);
             return;
         }
 
