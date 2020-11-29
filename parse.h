@@ -45,12 +45,14 @@ static int parser_enter_scope(parser_t* parser, int block_node_i) {
     const int parent_scope_i = parser->par_scope_i;
     parser->par_scope_i = block_node_i;
 
+    log_debug("%d -> %d", parent_scope_i, parser->par_scope_i);
     return parent_scope_i;
 }
 
 static void parser_leave_scope(parser_t* parser, int parent_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
 
+    log_debug("%d <- %d", parent_node_i, parser->par_scope_i);
     parser->par_scope_i = parent_node_i;
 }
 
@@ -1835,6 +1837,12 @@ static res_t parser_parse_parameter(parser_t* parser, int** new_nodes_i) {
     const int new_node_i = buf_size(parser->par_nodes) - 1;
 
     buf_push(*new_nodes_i, new_node_i);
+
+    const char* source = NULL;
+    int source_len = 0;
+    parser_tok_source(parser, identifier_tok_i, &source, &source_len);
+    log_debug("New fn param: `%.*s` type=%s scope=%d", source_len, source,
+              type_to_str[type_kind], parser->par_scope_i);
 
     return RES_OK;
 }
