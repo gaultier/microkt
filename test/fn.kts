@@ -71,7 +71,7 @@ println(return_string()) // expect: return_string
 
 
 // Parameters
-fun one_param_unused(a: Int) {}
+fun one_param_unused(a: Long) {}
 
 one_param_unused(100)
 

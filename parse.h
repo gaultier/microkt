@@ -1411,6 +1411,28 @@ static res_t parser_parse_generical_call_like_comparison(parser_t* parser,
     const int found_arity = buf_size(arg_nodes_i);
     if (declared_arity != found_arity) UNIMPLEMENTED();  // TODO: err
 
+    for (int i = 0; i < (int)buf_size(fn_decl.fd_arg_nodes_i); i++) {
+        const int decl_arg_i = fn_decl.fd_arg_nodes_i[i];
+        const node_t* const decl_arg = &parser->par_nodes[decl_arg_i];
+        const type_kind_t decl_type_kind =
+            parser->par_types[decl_arg->node_type_i].ty_kind;
+        const int found_arg_i = arg_nodes_i[i];
+        const node_t* const found_arg = &parser->par_nodes[found_arg_i];
+        const type_kind_t found_type_kind =
+            parser->par_types[found_arg->node_type_i].ty_kind;
+
+        if (decl_type_kind != found_type_kind)
+            return parser_err_non_matching_types(parser, decl_arg_i,
+                                                 found_arg_i);
+
+        buf_push(parser->par_nodes,
+                 ((node_t){
+                     .node_kind = NODE_ASSIGN,
+                     .node_type_i = TYPE_UNIT_I,
+                     .node_n = {.node_binary = {.bi_lhs_i = decl_arg_i,
+                                                .bi_rhs_i = arg_nodes_i[i]}}}));
+    }
+
     buf_push(
         parser->par_nodes,
         ((node_t){.node_type_i = type_i,
@@ -1794,10 +1816,14 @@ static res_t parser_parse_parameter(parser_t* parser, int** new_nodes_i) {
     if (!parser_match(parser, &type_tok_i, 1, TOK_ID_IDENTIFIER))
         return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
 
+    type_kind_t type_kind = TYPE_UNIT;
+    if (!parser_parse_identifier_to_type_kind(parser, type_tok_i, &type_kind))
+        UNIMPLEMENTED();
+    const int type_i = parser_make_type(parser, type_kind);
     buf_push(parser->par_nodes,
              ((node_t){
                  .node_kind = NODE_VAR_DEF,
-                 .node_type_i = TYPE_UNIT_I,
+                 .node_type_i = type_i,
                  .node_n = {.node_var_def = {.vd_name_tok_i = identifier_tok_i,
                                              .vd_first_tok_i = identifier_tok_i,
                                              .vd_last_tok_i = type_tok_i,
