@@ -77,3 +77,5 @@ one_param_unused(100)
 
 
 fun one_param(a: Long) { println(a) }
+
+one_param(200) // expect: 200

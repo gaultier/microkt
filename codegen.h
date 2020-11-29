@@ -481,7 +481,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
         }
         case NODE_VAR_DEF: {
             const var_def_t var_def = stmt->node_n.node_var_def;
-            if (var_def.vd_init_node_i < 0) UNIMPLEMENTED();
+            if (var_def.vd_init_node_i < 0) return;
 
             emit_expr(parser, var_def.vd_init_node_i);
 

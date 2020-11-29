@@ -1913,10 +1913,13 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     res_t res = RES_NONE;
     if ((res = parser_parse_fn_value_params(parser, &arg_nodes_i)) != RES_OK)
         return res;
-    parser->par_nodes[*new_node_i].node_n.node_fn_decl.fd_arg_nodes_i =
-        arg_nodes_i;
 
     parser->par_nodes[body_node_i].node_n.node_block.bl_nodes_i = arg_nodes_i;
+
+    for (int i = 0; i < (int)buf_size(arg_nodes_i); i++)
+        buf_push(
+            parser->par_nodes[*new_node_i].node_n.node_fn_decl.fd_arg_nodes_i,
+            arg_nodes_i[i]);
 
     int declared_type_tok_i = -1, declared_type_i = -1;
     type_kind_t declared_type_kind = -1;
@@ -1967,9 +1970,10 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     fn_decl->fd_last_tok_i = last_tok_i;
     parser->par_nodes[*new_node_i].node_type_i = declared_type_i;
 
-    log_debug("new fn decl=%d flags=%d body_node_i=%d type=%s", *new_node_i,
-              fn_decl->fd_flags, fn_decl->fd_body_node_i,
-              type_to_str[declared_type]);
+    log_debug("new fn decl=%d flags=%d body_node_i=%d type=%s arity=%d",
+              *new_node_i, fn_decl->fd_flags, fn_decl->fd_body_node_i,
+              type_to_str[declared_type],
+              (int)buf_size(fn_decl->fd_arg_nodes_i));
 
     parser_leave_scope(parser, parent_scope_i);
 
