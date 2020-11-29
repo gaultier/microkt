@@ -1859,17 +1859,18 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
             1, TOK_ID_IDENTIFIER))
         return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
 
-    const node_t synthetic_params_scope = {
-        .node_kind = NODE_BLOCK,
-        .node_type_i = TYPE_UNIT_I,
-        .node_n = {.node_block = {.bl_first_tok_i = -1,
-                                  .bl_last_tok_i = -1,
-                                  .bl_nodes_i = NULL,
-                                  .bl_parent_scope_i = parser->par_scope_i}}};
-    buf_push(parser->par_nodes, synthetic_params_scope);
-    const int synthetic_params_scope_node_i = buf_size(parser->par_nodes) - 1;
-    const int parent_scope_i =
-        parser_enter_scope(parser, synthetic_params_scope_node_i);
+    buf_push(parser->par_nodes,
+             ((node_t){.node_kind = NODE_BLOCK,
+                       .node_type_i = TYPE_UNIT_I,
+                       .node_n = {.node_block = {.bl_first_tok_i = -1,
+                                                 .bl_last_tok_i = -1,
+                                                 .bl_nodes_i = NULL,
+                                                 .bl_parent_scope_i =
+                                                     parser->par_scope_i}}}));
+    const int body_node_i =
+        parser->par_nodes[*new_node_i].node_n.node_fn_decl.fd_body_node_i =
+            buf_size(parser->par_nodes) - 1;
+    const int parent_scope_i = parser_enter_scope(parser, body_node_i);
 
     res_t res = RES_NONE;
     if ((res = parser_parse_fn_value_params(parser, &arg_nodes_i)) != RES_OK)
@@ -1897,15 +1898,22 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     } else
         declared_type_i = TYPE_UNIT_I;
 
-    int body_node_i = -1;
-    const int current_scope_i = parser->par_scope_i;
-    res = parser_parse_block(parser, &body_node_i);
-    parser->par_scope_i = current_scope_i;
+    if (!parser_match(
+            parser,
+            &parser->par_nodes[body_node_i].node_n.node_block.bl_first_tok_i, 1,
+            TOK_ID_LCURLY))
+        return parser_err_unexpected_token(parser, TOK_ID_LCURLY);
 
-    if (res == RES_NONE) {
-        UNIMPLEMENTED();
-    } else if (res != RES_OK)
-        return res;
+    res = parser_parse_stmts(parser);
+    if (res != RES_OK) return res;
+    parser->par_nodes[body_node_i].node_type_i =
+        parser->par_nodes[buf_size(parser->par_nodes) - 1].node_type_i;
+
+    if (!parser_match(
+            parser,
+            &parser->par_nodes[body_node_i].node_n.node_block.bl_last_tok_i, 1,
+            TOK_ID_RCURLY))
+        return parser_err_unexpected_token(parser, TOK_ID_RCURLY);
 
     const int actual_type_i = parser->par_nodes[body_node_i].node_type_i;
     const type_kind_t actual_type = parser->par_types[actual_type_i].ty_kind;
@@ -1917,7 +1925,6 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     const int last_tok_i =
         parser->par_nodes[body_node_i].node_n.node_block.bl_last_tok_i;
     fn_decl->fd_last_tok_i = last_tok_i;
-    fn_decl->fd_body_node_i = body_node_i;
     parser->par_nodes[*new_node_i].node_type_i = declared_type_i;
 
     log_debug("new fn decl=%d flags=%d body_node_i=%d type=%s", *new_node_i,
