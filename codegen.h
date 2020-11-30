@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ast.h"
 #include "parse.h"
 
 // TODO: use platform headers for that?
@@ -38,12 +39,24 @@ static int emit_align_to_16(int stack_size) {
     return (stack_size + 16 - 1) / 16 * 16;
 }
 
-static void fn_prolog(int aligned_stack_size) {
+static void fn_prolog(const parser_t* parser, const fn_decl_t* fn_decl,
+                      int aligned_stack_size) {
     println("# prolog");
     println("push %%rbp");
     println("mov %%rsp, %%rbp");
 
     println("sub $%d, %%rsp\n", aligned_stack_size);
+
+    int stack_offset = 0;
+    for (int i = 0; i < (int)buf_size(fn_decl->fd_arg_nodes_i); i++) {
+        const int arg_i = fn_decl->fd_arg_nodes_i[i];
+        const node_t* const arg = &parser->par_nodes[arg_i];
+        const int var_stack_offset = arg->node_n.node_var_def.vd_stack_offset;
+        stack_offset += var_stack_offset;
+
+        // TODO: size
+        println("mov %s, -%d(%%rbp)", fn_args[i], stack_offset);
+    }
 }
 
 static void fn_epilog(int aligned_stack_size) {
@@ -595,7 +608,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
 
         const int aligned_stack_size =
             emit_align_to_16(parser->par_offset);  // FIXME
-        fn_prolog(aligned_stack_size);
+        fn_prolog(parser, &fn_decl, aligned_stack_size);
         emit_stmt(parser, fn_decl.fd_body_node_i);
         if (i > 0)
             fn_epilog(aligned_stack_size);
