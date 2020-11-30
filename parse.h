@@ -1825,6 +1825,8 @@ static res_t parser_parse_parameter(parser_t* parser, int** new_nodes_i) {
     if (!parser_parse_identifier_to_type_kind(parser, type_tok_i, &type_kind))
         UNIMPLEMENTED();
     const int type_i = parser_make_type(parser, type_kind);
+    const int type_size = parser->par_types[type_i].ty_size;
+
     buf_push(parser->par_nodes,
              ((node_t){
                  .node_kind = NODE_VAR_DEF,
@@ -1833,7 +1835,7 @@ static res_t parser_parse_parameter(parser_t* parser, int** new_nodes_i) {
                                              .vd_first_tok_i = identifier_tok_i,
                                              .vd_last_tok_i = type_tok_i,
                                              .vd_init_node_i = -1,
-                                             .vd_stack_offset = 0,
+                                             .vd_stack_offset = type_size,
                                              .vd_flags = VAR_FLAGS_VAR}}}));
     const int new_node_i = buf_size(parser->par_nodes) - 1;
 
