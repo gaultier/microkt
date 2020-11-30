@@ -79,3 +79,8 @@ one_param_unused(100)
 fun one_param(a: Long) { println(a) }
 
 one_param(200) // expect: 200
+
+fun one_param_and_local(a: Long): Long {return 300+a}
+println(one_param_and_local(400)) // expect: 700
+
+
