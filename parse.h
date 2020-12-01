@@ -1368,14 +1368,19 @@ static res_t parser_parse_value_args(parser_t* parser, int** arg_nodes_i) {
     int dummy = -1;
     parser_match(parser, &dummy, 1, TOK_ID_LPAREN);
 
-    int new_node_i = -1;
-    res_t res = parser_parse_value_arg(parser, &new_node_i);
-    if (res == RES_OK) {
-        buf_push(*arg_nodes_i, new_node_i);
-    } else if (res != RES_NONE) {
-        return res;
-    }
+    res_t res = RES_NONE;
 
+    while (parser_peek(parser) != TOK_ID_EOF &&
+           parser_peek(parser) != TOK_ID_RPAREN) {
+        int new_node_i = -1;
+        res = parser_parse_value_arg(parser, &new_node_i);
+        if (res == RES_OK) {
+            buf_push(*arg_nodes_i, new_node_i);
+        } else if (res == RES_NONE)
+            break;
+        else
+            return res;
+    }
     if (!parser_match(parser, &dummy, 1, TOK_ID_RPAREN))
         return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
 
@@ -1812,40 +1817,46 @@ static res_t parser_parse_parameter(parser_t* parser, int** new_nodes_i) {
 
     int identifier_tok_i = -1, dummy = -1, type_tok_i = -1;
 
-    if (!parser_match(parser, &identifier_tok_i, 1, TOK_ID_IDENTIFIER))
-        return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
+    while (parser_peek(parser) != TOK_ID_EOF &&
+           parser_peek(parser) != TOK_ID_RPAREN) {
+        if (!parser_match(parser, &identifier_tok_i, 1, TOK_ID_IDENTIFIER))
+            return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
 
-    if (!parser_match(parser, &dummy, 1, TOK_ID_COLON))
-        return parser_err_unexpected_token(parser, TOK_ID_COLON);
+        if (!parser_match(parser, &dummy, 1, TOK_ID_COLON))
+            return parser_err_unexpected_token(parser, TOK_ID_COLON);
 
-    if (!parser_match(parser, &type_tok_i, 1, TOK_ID_IDENTIFIER))
-        return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
+        if (!parser_match(parser, &type_tok_i, 1, TOK_ID_IDENTIFIER))
+            return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
 
-    type_kind_t type_kind = TYPE_UNIT;
-    if (!parser_parse_identifier_to_type_kind(parser, type_tok_i, &type_kind))
-        UNIMPLEMENTED();
-    const int type_i = parser_make_type(parser, type_kind);
-    const int type_size = parser->par_types[type_i].ty_size;
+        type_kind_t type_kind = TYPE_UNIT;
+        if (!parser_parse_identifier_to_type_kind(parser, type_tok_i,
+                                                  &type_kind))
+            UNIMPLEMENTED();
 
-    buf_push(parser->par_nodes,
-             ((node_t){
-                 .node_kind = NODE_VAR_DEF,
-                 .node_type_i = type_i,
-                 .node_n = {.node_var_def = {.vd_name_tok_i = identifier_tok_i,
-                                             .vd_first_tok_i = identifier_tok_i,
-                                             .vd_last_tok_i = type_tok_i,
-                                             .vd_init_node_i = -1,
-                                             .vd_stack_offset = type_size,
-                                             .vd_flags = VAR_FLAGS_VAR}}}));
-    const int new_node_i = buf_size(parser->par_nodes) - 1;
+        const int type_i = parser_make_type(parser, type_kind);
+        const int type_size = parser->par_types[type_i].ty_size;
 
-    buf_push(*new_nodes_i, new_node_i);
+        buf_push(parser->par_nodes,
+                 ((node_t){.node_kind = NODE_VAR_DEF,
+                           .node_type_i = type_i,
+                           .node_n = {.node_var_def = {
+                                          .vd_name_tok_i = identifier_tok_i,
+                                          .vd_first_tok_i = identifier_tok_i,
+                                          .vd_last_tok_i = type_tok_i,
+                                          .vd_init_node_i = -1,
+                                          .vd_stack_offset = type_size,
+                                          .vd_flags = VAR_FLAGS_VAR}}}));
+        const int new_node_i = buf_size(parser->par_nodes) - 1;
+        buf_push(*new_nodes_i, new_node_i);
 
-    const char* source = NULL;
-    int source_len = 0;
-    parser_tok_source(parser, identifier_tok_i, &source, &source_len);
-    log_debug("New fn param: `%.*s` type=%s scope=%d", source_len, source,
-              type_to_str[type_kind], parser->par_scope_i);
+        const char* source = NULL;
+        int source_len = 0;
+        parser_tok_source(parser, identifier_tok_i, &source, &source_len);
+        log_debug("New fn param: `%.*s` type=%s scope=%d", source_len, source,
+                  type_to_str[type_kind], parser->par_scope_i);
+    }
+    if (!parser_match(parser, &dummy, 1, TOK_ID_RPAREN))
+        return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
 
     return RES_OK;
 }
@@ -1863,9 +1874,6 @@ static res_t parser_parse_fn_value_params(parser_t* parser, int** new_nodes_i) {
     res_t res = RES_NONE;
     if ((res = parser_parse_parameter(parser, new_nodes_i)) != RES_OK)
         return res;
-
-    if (!parser_match(parser, &dummy, 1, TOK_ID_RPAREN))
-        return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
 
     return RES_OK;
 }
