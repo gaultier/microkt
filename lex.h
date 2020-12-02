@@ -39,6 +39,7 @@ typedef enum {
     TOK_ID_WHILE,
     TOK_ID_FUN,
     TOK_ID_RETURN,
+    TOK_ID_COMMA,
     TOK_ID_EOF,
     TOK_ID_INVALID,
 } token_id_t;
@@ -77,6 +78,7 @@ const char token_id_to_str[][30] = {
     [TOK_ID_WHILE] = "while",
     [TOK_ID_FUN] = "fun",
     [TOK_ID_RETURN] = "return",
+    [TOK_ID_COMMA] = ",",
     [TOK_ID_EOF] = "Eof",
     [TOK_ID_INVALID] = "Invalid",
 };
@@ -440,6 +442,11 @@ static token_t lex_next(lexer_t* lexer, int* line, int* start_col, int* col) {
             }
             case ')': {
                 result.tok_id = TOK_ID_RPAREN;
+                lex_advance(lexer, col);
+                goto outer;
+            }
+            case ',': {
+                result.tok_id = TOK_ID_COMMA;
                 lex_advance(lexer, col);
                 goto outer;
             }
