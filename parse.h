@@ -1819,6 +1819,8 @@ static res_t parser_parse_parameter(parser_t* parser, int** new_nodes_i) {
 
     if (parser_match(parser, &dummy, 1, TOK_ID_RPAREN)) return RES_OK;
 
+    int offset = 0;
+
     do {
         if (!parser_match(parser, &identifier_tok_i, 1, TOK_ID_IDENTIFIER))
             return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
@@ -1836,6 +1838,7 @@ static res_t parser_parse_parameter(parser_t* parser, int** new_nodes_i) {
 
         const int type_i = parser_make_type(parser, type_kind);
         const int type_size = parser->par_types[type_i].ty_size;
+        offset += type_size;
 
         buf_push(parser->par_nodes,
                  ((node_t){.node_kind = NODE_VAR_DEF,
@@ -1845,7 +1848,7 @@ static res_t parser_parse_parameter(parser_t* parser, int** new_nodes_i) {
                                           .vd_first_tok_i = identifier_tok_i,
                                           .vd_last_tok_i = type_tok_i,
                                           .vd_init_node_i = -1,
-                                          .vd_stack_offset = type_size,
+                                          .vd_stack_offset = offset,
                                           .vd_flags = VAR_FLAGS_VAR}}}));
         const int new_node_i = buf_size(parser->par_nodes) - 1;
         buf_push(*new_nodes_i, new_node_i);
@@ -1853,8 +1856,8 @@ static res_t parser_parse_parameter(parser_t* parser, int** new_nodes_i) {
         const char* source = NULL;
         int source_len = 0;
         parser_tok_source(parser, identifier_tok_i, &source, &source_len);
-        log_debug("New fn param: `%.*s` type=%s scope=%d", source_len, source,
-                  type_to_str[type_kind], parser->par_scope_i);
+        log_debug("New fn param: `%.*s` type=%s scope=%d offset=%d", source_len,
+                  source, type_to_str[type_kind], parser->par_scope_i, offset);
     } while (parser_match(parser, &dummy, 1, TOK_ID_COMMA));
 
     if (!parser_match(parser, &dummy, 1, TOK_ID_RPAREN))

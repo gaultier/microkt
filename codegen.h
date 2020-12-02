@@ -47,12 +47,10 @@ static void fn_prolog(const parser_t* parser, const fn_decl_t* fn_decl,
 
     println("sub $%d, %%rsp\n", aligned_stack_size);
 
-    int stack_offset = 0;
     for (int i = 0; i < (int)buf_size(fn_decl->fd_arg_nodes_i); i++) {
         const int arg_i = fn_decl->fd_arg_nodes_i[i];
         const node_t* const arg = &parser->par_nodes[arg_i];
-        const int var_stack_offset = arg->node_n.node_var_def.vd_stack_offset;
-        stack_offset += var_stack_offset;
+        const int stack_offset = arg->node_n.node_var_def.vd_stack_offset;
 
         // TODO: size
         println("mov %s, -%d(%%rbp)", fn_args[i], stack_offset);
