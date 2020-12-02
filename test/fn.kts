@@ -84,3 +84,5 @@ fun one_param_and_local(a: Long): Long {return 300+a}
 println(one_param_and_local(400)) // expect: 700
 
 
+fun two_params(a: Long, b: Long) : Long { return a + b }
+println(two_params(999, 998)) // expect: 1997
