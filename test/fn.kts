@@ -94,6 +94,7 @@ println(three_params(800, 100, 20)) // expect: 795
 
 fun factorial(n: Long) : Long { 
   if (n == 0) return 1
+
   return n * factorial(n-1)
 }
 println(factorial(5)) // expect: 120

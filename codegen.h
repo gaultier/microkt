@@ -14,6 +14,8 @@ static const long long int syscall_exit = 60;
 
 static FILE* output_file = NULL;
 
+static int current_fn_i = 0;
+
 static const char fn_args[6][5] = {
     [0] = "%rdi", [1] = "%rsi", [2] = "%rdx",
     [3] = "%rcx", [4] = "%r8",  [5] = "%r9",
@@ -58,6 +60,7 @@ static void fn_prolog(const parser_t* parser, const fn_decl_t* fn_decl,
 }
 
 static void fn_epilog(int aligned_stack_size) {
+    println(".L.return.%d:", current_fn_i);
     println("addq $%d, %%rsp", aligned_stack_size);
     println("popq %%rbp");
     println("ret\n");
@@ -320,6 +323,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             if (expr->node_n.node_unary.un_node_i >= 0)
                 emit_expr(parser, expr->node_n.node_unary.un_node_i);
 
+            println("jmp .L.return.%d", current_fn_i);
             return;
         }
         case NODE_NOT: {
@@ -407,6 +411,9 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
                 else
                     println("mov -%d(%%rbp), %%rax", offset);
             } else if (node_def->node_kind == NODE_FN_DECL) {
+                const int caller_current_fn_i = current_fn_i;
+                current_fn_i = var.va_var_node_i;
+
                 const fn_decl_t fn_decl = node_def->node_n.node_fn_decl;
                 const char* name = NULL;
                 int name_len = 0;
@@ -417,6 +424,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 
                 println("call %.*s", name_len, name);
 
+                current_fn_i = caller_current_fn_i;
             } else
                 UNREACHABLE();
 
@@ -604,6 +612,9 @@ static void emit(const parser_t* parser, FILE* asm_file) {
         println("%.*s:", name_len == 0 ? (int)sizeof("_main") : name_len,
                 name_len == 0 ? "_main" : name);
 
+        const int caller_current_fn_i = current_fn_i;
+        current_fn_i = node_i;
+
         const int aligned_stack_size =
             emit_align_to_16(parser->par_offset);  // FIXME
         fn_prolog(parser, &fn_decl, aligned_stack_size);
@@ -612,5 +623,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
             fn_epilog(aligned_stack_size);
         else
             emit_program_epilog();
+
+        current_fn_i = caller_current_fn_i;
     }
 }
