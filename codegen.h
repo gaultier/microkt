@@ -191,15 +191,20 @@ static void emit_stdlib() {
         syscall_write, syscall_write, syscall_write, syscall_write);
 }
 
+static void emit_loc(const parser_t* parser, const node_t* const node) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+
+    const loc_t loc =
+        parser->par_lexer.lex_locs[node_first_token(parser, node)];
+    println(".loc 1 %d %d\t## %s:%d:%d", loc.loc_line, loc.loc_column,
+            parser->par_file_name0, loc.loc_line, loc.loc_column);
+}
+
 static void emit_expr(const parser_t* parser, const int expr_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
 
     const node_t* const expr = &parser->par_nodes[expr_i];
     const type_t* const type = &parser->par_types[expr->node_type_i];
-    const loc_t loc =
-        parser->par_lexer.lex_locs[node_first_token(parser, expr)];
-    println(".loc 1 %d %d\t## %s:%d:%d", loc.loc_line, loc.loc_column,
-            parser->par_file_name0, loc.loc_line, loc.loc_column);
 
     const char *ax, *di, *dx;
     if (type->ty_size == 8) {
@@ -214,19 +219,23 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 
     switch (expr->node_kind) {
         case NODE_KEYWORD_BOOL: {
+            emit_loc(parser, expr);
             println("mov $%d, %s", (int8_t)expr->node_n.node_num.nu_val, ax);
             return;
         }
         case NODE_STRING: {
+            emit_loc(parser, expr);
             println("lea .L%d(%%rip), %%rax", expr_i);
 
             return;
         }
         case NODE_CHAR: {
+            emit_loc(parser, expr);
             println("mov $%d, %s", (char)expr->node_n.node_num.nu_val, ax);
             return;
         }
         case NODE_LONG: {
+            emit_loc(parser, expr);
             println("mov $%lld, %s", expr->node_n.node_num.nu_val, ax);
             return;
         }
@@ -236,6 +245,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             emit_expr(parser, bin.bi_rhs_i);
             emit_push();
             emit_expr(parser, bin.bi_lhs_i);
+            emit_loc(parser, expr);
             println("pop %%rdi");
             println("cqo");  // ?
             println("xor %%rdx, %%rdx");
@@ -250,6 +260,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             emit_expr(parser, bin.bi_rhs_i);
             emit_push();
             emit_expr(parser, bin.bi_lhs_i);
+            emit_loc(parser, expr);
             println("pop %%rdi");
             println("cqo");  // ?
             println("idiv %%rdi");
@@ -262,6 +273,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             emit_expr(parser, bin.bi_rhs_i);
             emit_push();
             emit_expr(parser, bin.bi_lhs_i);
+            emit_loc(parser, expr);
             println("pop %%rdi");
             println("imul %%rdi, %%rax");
 
@@ -273,6 +285,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             emit_expr(parser, bin.bi_rhs_i);
             emit_push();
             emit_expr(parser, bin.bi_lhs_i);
+            emit_loc(parser, expr);
             println("pop %%rdi");
             println("sub %%rdi, %%rax");
 
@@ -284,6 +297,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             emit_expr(parser, bin.bi_rhs_i);
             emit_push();
             emit_expr(parser, bin.bi_lhs_i);
+            emit_loc(parser, expr);
             println("pop %%rdi");
             println("add %s, %s", di, ax);
 
@@ -300,6 +314,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             emit_expr(parser, bin.bi_rhs_i);
             emit_push();
             emit_expr(parser, bin.bi_lhs_i);
+            emit_loc(parser, expr);
             println("pop %%rdi");
             println("cmp %%rdi, %%rax");
 
@@ -323,11 +338,13 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             if (expr->node_n.node_unary.un_node_i >= 0)
                 emit_expr(parser, expr->node_n.node_unary.un_node_i);
 
+            emit_loc(parser, expr);
             println("jmp .L.return.%d", current_fn_i);
             return;
         }
         case NODE_NOT: {
             emit_expr(parser, expr->node_n.node_unary.un_node_i);
+            emit_loc(parser, expr);
             println("cmp $0, %%rax");
             println("sete %%al");
             return;
@@ -336,6 +353,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             const if_t node = expr->node_n.node_if;
 
             emit_expr(parser, node.if_node_cond_i);
+            emit_loc(parser, expr);
             println("cmp $0, %%rax");
             println("je .L.else.%d", expr_i);
 
@@ -360,6 +378,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             const type_kind_t type =
                 parser->par_types[arg->node_type_i].ty_kind;
 
+            emit_loc(parser, expr);
             println("mov %%rax, %%rdi");
 
             if (type == TYPE_LONG || type == TYPE_INT || type == TYPE_SHORT ||
@@ -398,6 +417,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             const int type_size =
                 parser->par_types[node_def->node_type_i].ty_size;
 
+            emit_loc(parser, expr);
             if (node_def->node_kind == NODE_VAR_DEF) {
                 const var_def_t var_def = node_def->node_n.node_var_def;
                 const int offset = var_def.vd_stack_offset;
@@ -434,6 +454,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             const call_t call = expr->node_n.node_call;
             for (int i = 0; i < (int)buf_size(call.ca_arg_nodes_i); i++) {
                 emit_expr(parser, call.ca_arg_nodes_i[i]);
+                emit_loc(parser, expr);
                 println("mov %%rax, %s", fn_args[i]);
 
                 // TODO: preserver registers by spilling
@@ -499,6 +520,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
 
             const int type_size = parser->par_types[stmt->node_type_i].ty_size;
 
+            emit_loc(parser, stmt);
             if (type_size == 1)
                 println("mov %%al, -%d(%%rbp)", offset);
             else if (type_size == 2)
@@ -519,6 +541,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
             const int type_size = parser->par_types[stmt->node_type_i].ty_size;
             const int offset = var_def.vd_stack_offset;
 
+            emit_loc(parser, stmt);
             if (type_size == 1)
                 println("mov %%al, -%d(%%rbp)", offset);
             else if (type_size == 2)
@@ -536,6 +559,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
         }
         case NODE_WHILE: {
             const while_t w = stmt->node_n.node_while;
+            emit_loc(parser, stmt);
             println(".Lwhile_loop_start%d:", stmt_i);
             emit_expr(parser, w.wh_cond_i);
 
