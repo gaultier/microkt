@@ -32,6 +32,7 @@ static void parser_tok_source(const parser_t* parser, int tok_i,
                               const char** source, int* source_len);
 static void parser_print_source_on_error(const parser_t* parser,
                                          int first_tok_i, int last_tok_i);
+static res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i);
 
 static node_t* parser_current_block(parser_t* parser) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
@@ -1161,9 +1162,16 @@ static res_t parser_parse_postfix_unary_expr(parser_t* parser,
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
-    // TODO
+    res_t res = parser_parse_primary_expr(parser, new_node_i);
+    if (res != RES_OK) return res;
 
-    return parser_parse_primary_expr(parser, new_node_i);
+    // Optional
+    res = parser_parse_call_suffix(parser, new_node_i);
+    if (res == RES_NONE) return RES_OK;
+
+    if (res != RES_OK) return res;
+
+    return RES_OK;
 }
 
 static res_t parser_parse_prefix_unary_expr(parser_t* parser, int* new_node_i) {
@@ -1388,25 +1396,12 @@ static res_t parser_parse_value_args(parser_t* parser, int** arg_nodes_i) {
     return RES_OK;
 }
 
-static res_t parser_parse_call_suffix(parser_t* parser, int** arg_nodes_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)arg_nodes_i, !=, NULL, "%p");
-
-    return parser_parse_value_args(parser, arg_nodes_i);
-}
-
-static res_t parser_parse_generical_call_like_comparison(parser_t* parser,
-                                                         int* new_node_i) {
+static res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
 
-    res_t res = parser_parse_infix_op(parser, new_node_i);
-    if (res != RES_OK) return res;
-
-    // TODO: loop + expand
     int* arg_nodes_i = NULL;
-    res = parser_parse_call_suffix(parser, &arg_nodes_i);
-    if (res == RES_NONE) return RES_OK;  // Optional
+    res_t res = parser_parse_value_args(parser, &arg_nodes_i);
     if (res != RES_OK) return res;
 
     const int type_i = parser->par_nodes[*new_node_i].node_type_i;
@@ -1452,7 +1447,15 @@ static res_t parser_parse_generical_call_like_comparison(parser_t* parser,
                                            .ca_lhs_node_i = *new_node_i}}}));
     *new_node_i = buf_size(parser->par_nodes) - 1;
 
-    return res;
+    return RES_OK;
+}
+
+static res_t parser_parse_generical_call_like_comparison(parser_t* parser,
+                                                         int* new_node_i) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+
+    return parser_parse_infix_op(parser, new_node_i);
 }
 
 static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
