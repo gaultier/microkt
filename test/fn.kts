@@ -86,3 +86,7 @@ println(one_param_and_local(400)) // expect: 700
 
 fun two_params(a: Long, b: Long) : Long { return a + b }
 println(two_params(999, 998)) // expect: 1997
+
+
+fun three_params(a: Long, b: Long, c: Long) : Long { return a - b / c }
+println(three_params(800, 100, 20)) // expect: 795
