@@ -68,6 +68,7 @@ static int parser_node_find_fn_decl_for_call(const parser_t* parser,
         case NODE_FN_DECL:
             return node_i;
         default:
+            log_debug("kind: %s", node_kind_to_str[node->node_kind]);
             UNIMPLEMENTED();
     }
 }
@@ -1904,6 +1905,10 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     parser->par_fn_i = *new_node_i = buf_size(parser->par_nodes) - 1;
     buf_push(parser->par_node_decls, *new_node_i);
 
+    buf_push(
+        parser->par_nodes[parser->par_scope_i].node_n.node_block.bl_nodes_i,
+        *new_node_i);
+
     if (!parser_match(
             parser,
             &parser->par_nodes[*new_node_i].node_n.node_fn_decl.fd_name_tok_i,
@@ -1954,6 +1959,8 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     } else
         declared_type_i = TYPE_UNIT_I;
 
+    parser->par_nodes[*new_node_i].node_type_i = declared_type_i;
+
     if (!parser_match(
             parser,
             &parser->par_nodes[body_node_i].node_n.node_block.bl_first_tok_i, 1,
@@ -1981,7 +1988,6 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     const int last_tok_i =
         parser->par_nodes[body_node_i].node_n.node_block.bl_last_tok_i;
     fn_decl->fd_last_tok_i = last_tok_i;
-    parser->par_nodes[*new_node_i].node_type_i = declared_type_i;
 
     log_debug("new fn decl=%d flags=%d body_node_i=%d type=%s arity=%d",
               *new_node_i, fn_decl->fd_flags, fn_decl->fd_body_node_i,

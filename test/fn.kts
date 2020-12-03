@@ -90,3 +90,10 @@ println(two_params(999, 998)) // expect: 1997
 
 fun three_params(a: Long, b: Long, c: Long) : Long { return a - b / c }
 println(three_params(800, 100, 20)) // expect: 795
+
+
+fun factorial(n: Long) : Long { 
+  if (n == 0) return 1
+  return n * factorial(n-1)
+}
+println(factorial(5)) // expect: 120
