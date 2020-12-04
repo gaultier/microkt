@@ -159,17 +159,3 @@ struct node_t {
     } node_n;
 };
 
-#define NODE_VAR(type_i, tok_i, var_node_i)              \
-    ((node_t){.node_kind = NODE_VAR,                     \
-              .node_type_i = type_i,                     \
-              .node_n = {.node_var = {.va_tok_i = tok_i, \
-                                      .va_var_node_i = var_node_i}}})
-
-#define NODE_WHILE(type_i, first_tok_i, last_tok_i, cond_i, body_i)    \
-    ((node_t){.node_kind = NODE_WHILE,                                 \
-              .node_type_i = type_i,                                   \
-              .node_n = {.node_while = {.wh_first_tok_i = first_tok_i, \
-                                        .wh_last_tok_i = last_tok_i,   \
-                                        .wh_cond_i = cond_i,           \
-                                        .wh_body_i = body_i}}})
-

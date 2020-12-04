@@ -2142,9 +2142,13 @@ static res_t parser_parse_while_stmt(parser_t* parser, int* new_node_i) {
     } else if (res != RES_OK)
         return res;
 
-    const node_t new_node =
-        NODE_WHILE(TYPE_ANY_I, first_tok_i, last_tok_i, cond_i, body_i);
-    buf_push(parser->par_nodes, new_node);
+    buf_push(parser->par_nodes,
+             ((node_t){.node_kind = NODE_WHILE,
+                       .node_type_i = TYPE_UNIT_I,
+                       .node_n = {.node_while = {.wh_first_tok_i = first_tok_i,
+                                                 .wh_last_tok_i = last_tok_i,
+                                                 .wh_cond_i = cond_i,
+                                                 .wh_body_i = body_i}}}));
     *new_node_i = buf_size(parser->par_nodes) - 1;
 
     log_debug("new while=%d current_scope_i=%d cond=%d body=%d", *new_node_i,
