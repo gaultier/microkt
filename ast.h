@@ -159,17 +159,6 @@ struct node_t {
     } node_n;
 };
 
-#define NODE_VAR_DEF(type_i, first_tok_i, name_tok_i, last_tok_i, init_node_i, \
-                     offset, flags)                                            \
-    ((node_t){.node_kind = NODE_VAR_DEF,                                       \
-              .node_type_i = type_i,                                           \
-              .node_n = {.node_var_def = {.vd_first_tok_i = first_tok_i,       \
-                                          .vd_last_tok_i = last_tok_i,         \
-                                          .vd_name_tok_i = name_tok_i,         \
-                                          .vd_init_node_i = init_node_i,       \
-                                          .vd_stack_offset = offset,           \
-                                          .vd_flags = flags}}})
-
 #define NODE_VAR(type_i, tok_i, var_node_i)              \
     ((node_t){.node_kind = NODE_VAR,                     \
               .node_type_i = type_i,                     \
