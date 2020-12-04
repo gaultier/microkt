@@ -4,7 +4,31 @@ A work-in-progress tiny compiler for a subset of the Kotlin language, with zero 
 
 For now it only supports x86_64 (macOS & Linux) although it would not be hard to add more platforms.
 
-Have a look at the `test` directory to get a feeling of what's supported.
+Have a look at the `test` directory to get a feeling of what's supported. Here's a sample:
+
+```kotlin
+// Compute the 35th fibonacci number iteratively
+var a: Long = 0
+var b: Long = 1
+var i: Long = 1
+
+while (i < 35) {
+    val tmp: Long = b
+    b = b + a
+    a = tmp
+    i = i + 1
+}
+println(b) // expect: 9227465
+
+// Compute the 35th fibonacci number recursively
+fun fibonacci(n: Long) : Long {
+  if (n == 0) return 0
+  if (n == 1) return 1
+
+  return fibonacci(n-1) + fibonacci(n-2)
+}
+println(fibonacci(35)) // expect: 9227465
+```
 
 ## Features
 
@@ -61,7 +85,7 @@ Hello, world!
 
 ## Develop
 
-```
+```sh
 # Debug build
 make DEBUG=1 test
 
