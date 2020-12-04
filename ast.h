@@ -28,10 +28,6 @@ static const unsigned short FN_FLAGS_PUBLIC = 0x2;
 static const unsigned short FN_FLAGS_PRIVATE = 0x4;
 static const unsigned short FN_FLAGS_SEEN_RETURN = 0x8;
 
-struct node_t;
-
-typedef struct node_t node_t;
-
 typedef struct {
     int bp_arg_i, bp_keyword_print_i, bp_rparen_i;
 } builtin_println_t;
@@ -139,7 +135,7 @@ typedef struct {
     int un_first_tok_i, un_last_tok_i, un_node_i;
 } unary_t;
 
-struct node_t {
+typedef struct {
     node_kind_t node_kind;
     int node_type_i;
     union {
@@ -157,5 +153,5 @@ struct node_t {
         fn_decl_t node_fn_decl;  // NODE_FN_DECL
         call_t node_call;        // NODE_CALL
     } node_n;
-};
+} node_t;
 
