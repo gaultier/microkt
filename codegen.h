@@ -638,14 +638,9 @@ static void emit(const parser_t* parser, FILE* asm_file) {
         const int caller_current_fn_i = current_fn_i;
         current_fn_i = node_i;
 
-        const int arity = buf_size(fn_decl.fd_arg_nodes_i);
-        const int stack_size =
-            arity == 0 ? 0
-                       : parser->par_nodes[fn_decl.fd_arg_nodes_i[arity - 1]]
-                             .node_n.node_var_def.vd_stack_offset;
-        const int aligned_stack_size = emit_align_to_16(stack_size);
+        const int aligned_stack_size = emit_align_to_16(fn_decl.fd_stack_size);
         log_debug("%.*s: stack_size=%d aligned_stack_size=%d", name_len, name,
-                  stack_size, aligned_stack_size);
+                  fn_decl.fd_stack_size, aligned_stack_size);
         fn_prolog(parser, &fn_decl, aligned_stack_size);
         emit_stmt(parser, fn_decl.fd_body_node_i);
         if (i > 0)

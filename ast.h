@@ -127,7 +127,7 @@ typedef struct {
 
 typedef struct {
     int fd_first_tok_i, fd_last_tok_i, fd_name_tok_i, fd_body_node_i,
-        *fd_arg_nodes_i;
+        fd_stack_size, *fd_arg_nodes_i;
     unsigned short fd_flags;
 } fn_decl_t;
 

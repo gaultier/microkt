@@ -18,7 +18,6 @@ typedef struct {
     int* par_node_decls;  // Declarations that need to be generated first e.g.
                           // functions
     type_t* par_types;
-    int par_offset;  // Local variable stack offset inside the current function
     bool par_is_tty;
 } parser_t;
 
@@ -1798,19 +1797,21 @@ static res_t parser_parse_property_declaration(parser_t* parser,
     }
     const int type_i = parser_make_type(parser, type_kind);
     const int type_size = parser->par_types[type_i].ty_size;
-    log_debug("parsed type %s size=%d offset=%d", type_to_str[type_kind],
-              type_size, parser->par_offset);
+    log_debug("parsed type %s size=%d", type_to_str[type_kind], type_size);
 
-    parser->par_offset += type_size;
+    parser->par_nodes[parser->par_fn_i].node_n.node_fn_decl.fd_stack_size +=
+        type_size;
 
+    const int offset =
+        parser->par_nodes[parser->par_fn_i].node_n.node_fn_decl.fd_stack_size;
     const node_t new_node =
         NODE_VAR_DEF(type_i, first_tok_i, name_tok_i, last_tok_i, init_node_i,
-                     parser->par_offset, flags);
+                     flags, offset);
     buf_push(parser->par_nodes, new_node);
     *new_node_i = buf_size(parser->par_nodes) - 1;
 
     log_debug("new var def=%d current_scope_i=%d flags=%d offset=%d",
-              *new_node_i, parser->par_scope_i, flags, parser->par_offset);
+              *new_node_i, parser->par_scope_i, flags, offset);
 
     return RES_OK;
 }
