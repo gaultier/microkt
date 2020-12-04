@@ -48,7 +48,7 @@ Hello, world!
 
 # Also works in Docker
 docker build -t microkt .
-docker run -it microkt sh -c 'microktc /usr/local/share/microktc/hello_world.kts \
+docker run --rm -it microkt sh -c 'microktc /usr/local/share/microktc/hello_world.kts \
     && /usr/local/share/microktc/hello_world.exe'
 
 Hello, world!
