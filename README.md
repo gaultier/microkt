@@ -4,12 +4,9 @@ A work-in-progress tiny compiler for a subset of the Kotlin language, with zero 
 
 For now it only supports x86_64 (macOS & Linux) although it would not be hard to add more platforms.
 
-Have a look at the `test` directory to get a feeling of what's supported. Here's a sample:
+Have a look at the `test` directory to get a feeling of what's supported. Here's a sample (see the `Quickstart` section to learn how to run it):
 
 ```kotlin
-// Try it out: save this code to `test.kts` and run:
-// microktc test.kts && ./test.exe
-
 // Compute the 35th fibonacci number iteratively
 var a: Long = 0
 var b: Long = 1
