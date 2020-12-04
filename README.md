@@ -93,10 +93,10 @@ In no particular order:
 ## Develop
 
 ```sh
-# Debug build
+# Debug build and run the tests
 make DEBUG=1 test
 
-# Release build, this is the default
+# Release build and run the tests, this is the default
 make DEBUG=0 test
 ```
 
