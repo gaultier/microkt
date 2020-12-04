@@ -1053,8 +1053,8 @@ static res_t parser_parse_jump_expr(parser_t* parser, int* new_node_i) {
                                                    parser, expr),
                                                .un_node_i = expr_node_i}}}));
         *new_node_i = buf_size(parser->par_nodes) - 1;
-        const type_kind_t type_kind = parser->par_types[type_i].ty_kind;
-        log_debug("New return %d type=%s", *new_node_i, type_to_str[type_kind]);
+        log_debug("New return %d type=%s", *new_node_i,
+                  type_to_str[parser->par_types[type_i].ty_kind]);
 
         parser->par_nodes[parser->par_fn_i].node_n.node_fn_decl.fd_flags |=
             FN_FLAGS_SEEN_RETURN;
@@ -1682,9 +1682,9 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
 
     parser_leave_scope(parser, parent_scope_i);
 
-    const type_kind_t type_kind = parser->par_types[type_i].ty_kind;
     log_debug("block=%d parent=%d last_node_i=%d type=%s last_tok_i=%d",
-              *new_node_i, parent_scope_i, last_node_i, type_to_str[type_kind],
+              *new_node_i, parent_scope_i, last_node_i,
+              type_to_str[parser->par_types[type_i].ty_kind],
               parser->par_nodes[*new_node_i].node_n.node_block.bl_last_tok_i);
 
     return res;
