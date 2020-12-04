@@ -33,6 +33,30 @@ fun fibonacci(n: Long) : Long {
 println(fibonacci(35)) // expect: 9227465
 ```
 
+## Quickstart
+
+```sh
+# Only requires a C99 compiler toolchain and a POSIX environment (make, awk).
+make
+
+# Run the tests
+make test
+
+# Compile a source file (requires `as` and `ld` in the PATH)
+./microktc test/hello_world.kts
+
+# And then run the executable
+./test/hello_world.exe
+Hello, world!
+
+# Also works in Docker
+docker build -t microkt .
+docker run -it microkt sh -c 'microktc /usr/local/share/microktc/hello_world.kts \
+    && /usr/local/share/microktc/hello_world.exe'
+
+Hello, world!
+```
+
 ## Present features and goals
 
 - Small, fast, and portable: the code is written in C99 with zero dependencies. It compiles under a second to an executable no bigger than 100 Kib
@@ -67,30 +91,6 @@ In no particular order:
 - Compiling to JVM bytecode
 - Compiling to JS
 - Compiling to WebAssembly
-
-## Quickstart
-
-```sh
-# Only requires a C99 compiler toolchain and a POSIX environment (make, awk).
-make
-
-# Run the tests
-make test
-
-# Compile a source file (requires `as` and `ld` in the PATH)
-./microktc test/hello_world.kts
-
-# And then run the executable
-./test/hello_world.exe
-Hello, world!
-
-# Also works in Docker
-docker build -t microkt .
-docker run -it microkt sh -c 'microktc /usr/local/share/microktc/hello_world.kts \
-    && /usr/local/share/microktc/hello_world.exe'
-
-Hello, world!
-```
 
 
 ## Develop
