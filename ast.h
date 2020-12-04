@@ -159,11 +159,6 @@ struct node_t {
     } node_n;
 };
 
-#define NODE_STRING(n, type_i)          \
-    ((node_t){.node_kind = NODE_STRING, \
-              .node_type_i = type_i,    \
-              .node_n = {.node_string = n}})
-
 #define NODE_BINARY(kind, lhs_i, rhs_i, type_i)                          \
     ((node_t){.node_kind = kind,                                         \
               .node_type_i = type_i,                                     \
