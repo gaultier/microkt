@@ -92,8 +92,7 @@ static res_t parser_resolve_var(const parser_t* parser, int tok_i,
         log_debug("resolving var %.*s in scope %d", var_source_len, var_source,
                   current_scope_i);
 
-        // Reverse order to allow for shadowing
-        for (int i = (int)buf_size(b.bl_nodes_i) - 1; i >= 0; i--) {
+        for (int i = 0; i < (int)buf_size(b.bl_nodes_i); i++) {
             const int stmt_i = b.bl_nodes_i[i];
             const node_t* const stmt = &parser->par_nodes[stmt_i];
             const char* def_source = NULL;
