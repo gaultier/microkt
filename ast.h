@@ -145,8 +145,8 @@ struct node_t {
     union {
         builtin_println_t node_builtin_println;  // NODE_BUILTIN_PRINTLN
         int node_string;                         // NODE_STRING, int = tok_i
-        node_number_t node_num;  // NODE_LONG, NODE_CHAR, NODE_BOOL
-        binary_t node_binary;    // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
+        node_number_t node_num;                  // NODE_LONG, NODE_CHAR
+        binary_t node_binary;  // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
         // NODE_DIVIDE, NODE_MODULO
         unary_t node_unary;      // NODE_NOT, NODE_RETURN
         if_t node_if;            // NODE_IF
@@ -158,11 +158,6 @@ struct node_t {
         call_t node_call;        // NODE_CALL
     } node_n;
 };
-
-#define NODE_BOOL(n, type_i)                  \
-    ((node_t){.node_kind = NODE_KEYWORD_BOOL, \
-              .node_type_i = type_i,          \
-              .node_n = {.node_boolean = n}})
 
 #define NODE_STRING(n, type_i)          \
     ((node_t){.node_kind = NODE_STRING, \
