@@ -47,6 +47,7 @@ println(fibonacci(35)) // expect: 9227465
 - Cross-compilation
 - Classes
 - Floats and doubles
+- Integer literal suffixes (e.g. `10L`)
 
 ## Non features
 
