@@ -88,7 +88,7 @@ Hello, world!
 # Debug build
 make DEBUG=1 test
 
-# Release build
+# Release build, this is the default
 make DEBUG=0 test
 ```
 
