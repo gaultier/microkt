@@ -26,7 +26,7 @@ typedef struct {
 static const unsigned short FN_FLAGS_SYNTHETIC = 0x1;
 static const unsigned short FN_FLAGS_PUBLIC = 0x2;
 static const unsigned short FN_FLAGS_PRIVATE = 0x4;
-static const unsigned short FN_FLAGS_SEEN_RETURN = 0x08;
+static const unsigned short FN_FLAGS_SEEN_RETURN = 0x8;
 
 struct node_t;
 
@@ -114,8 +114,8 @@ typedef struct {
     unsigned short vd_flags;
 } var_def_t;
 
-static const unsigned short VAR_FLAGS_VAL = 0x01;
-static const unsigned short VAR_FLAGS_VAR = 0x02;
+static const unsigned short VAR_FLAGS_VAL = 0x1;
+static const unsigned short VAR_FLAGS_VAR = 0x2;
 
 typedef struct {
     int va_tok_i, va_var_node_i;  // Node the variable refers to
