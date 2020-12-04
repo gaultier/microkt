@@ -37,7 +37,7 @@ typedef struct {
 } builtin_println_t;
 
 typedef struct {
-    int bi_type_i, bi_lhs_i, bi_rhs_i;
+    int bi_lhs_i, bi_rhs_i;
 } binary_t;
 
 typedef enum {
