@@ -69,6 +69,8 @@ Hello, world!
 - Classes
 - Floats and doubles
 - Integer literal suffixes (e.g. `10L`)
+- Type inference
+- Out-of-order declarations (e.g. use before declare)
 
 ## Non features
 
