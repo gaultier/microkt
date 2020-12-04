@@ -51,7 +51,7 @@ In no particular order:
 - Source code formatter
 - Support for other architectures e.g. ARM or RISC
 - 32 bits support
-- Windows/FreeBSD/NetBSD/OpenBSD support
+- Windows/FreeBSD/NetBSD/OpenBSD/Illumos support (although Linux executables should work just fine on FreeBSD, NetBSD and Illumos; Windows has WSL)
 - Linter
 - Compiling to JVM bytecode
 - Compiling to JS
@@ -59,9 +59,8 @@ In no particular order:
 
 ## Quickstart
 
-
 ```sh
-# Only requires a C99 compiler and a POSIX environment (make, awk).
+# Only requires a C99 compiler toolchain and a POSIX environment (make, awk).
 make
 
 # Run the tests
