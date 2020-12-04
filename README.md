@@ -85,9 +85,9 @@ In no particular order:
 - 32 bits support
 - Windows/FreeBSD/NetBSD/OpenBSD/Illumos support (although Linux executables should work just fine on FreeBSD, NetBSD and Illumos; Windows has WSL)
 - Linter
-- Compiling to JVM bytecode
-- Compiling to JS
-- Compiling to WebAssembly
+- Compile to JVM bytecode
+- Compile to JS
+- Compile to WebAssembly
 - Highly optimized generated assembler instructions a la LLVM/GCC
 
 
