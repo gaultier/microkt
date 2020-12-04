@@ -88,6 +88,7 @@ In no particular order:
 - Compiling to JVM bytecode
 - Compiling to JS
 - Compiling to WebAssembly
+- Highly optimized generated assembler instructions a la LLVM/GCC
 
 
 ## Develop
