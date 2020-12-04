@@ -1679,9 +1679,13 @@ static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i) {
         if (!parser_match(parser, &rparen, 1, TOK_ID_RPAREN))
             return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
 
-        const node_t new_node =
-            NODE_PRINTLN(arg_i, keyword_print_i, rparen, TYPE_UNIT_I);
-        buf_push(parser->par_nodes, new_node);
+        buf_push(parser->par_nodes,
+                 ((node_t){.node_kind = NODE_BUILTIN_PRINTLN,
+                           .node_type_i = TYPE_UNIT_I,
+                           .node_n = {.node_builtin_println = {
+                                          .bp_arg_i = arg_i,
+                                          .bp_keyword_print_i = keyword_print_i,
+                                          .bp_rparen_i = rparen}}}));
         *new_node_i = (int)buf_size(parser->par_nodes) - 1;
 
         return RES_OK;

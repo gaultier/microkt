@@ -159,13 +159,6 @@ struct node_t {
     } node_n;
 };
 
-#define NODE_PRINTLN(arg, keyword, rparen, type_i)                         \
-    ((node_t){                                                             \
-        .node_kind = NODE_BUILTIN_PRINTLN,                                 \
-        .node_type_i = type_i,                                             \
-        .node_n = {.node_builtin_println = {.bp_arg_i = arg,               \
-                                            .bp_keyword_print_i = keyword, \
-                                            .bp_rparen_i = rparen}}})
 #define NODE_LONG(tok_i, type_i, val)                                   \
     ((node_t){.node_kind = NODE_LONG,                                   \
               .node_type_i = type_i,                                    \
