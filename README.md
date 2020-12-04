@@ -62,7 +62,11 @@ Hello, world!
 ## Develop
 
 ```
-make DEBUG=1
+# Debug build
+make DEBUG=1 test
+
+# Release build
+make DEBUG=0 test
 ```
 
 ## License
