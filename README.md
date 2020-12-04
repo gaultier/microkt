@@ -72,9 +72,7 @@ Hello, world!
 
 ## Non features
 
-Things that we do not have today. Maybe we will have them in the future, and maybe not. PRs welcome, I guess.
-
-In no particular order:
+*Things that we do not have today. Maybe we will have them in the future, and maybe not. PRs welcome, I guess. In no particular order:*
 
 - Support for the full Kotlin language
 - Production grade quality. There will be bugs; use at your own risk
