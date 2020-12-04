@@ -167,7 +167,7 @@ static bool lex_is_at_end(const lexer_t* lexer) {
 static char lex_peek(const lexer_t* lexer) {
     PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
     PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
-    PG_ASSERT_COND(lex_is_at_end(lexer), !=, true, "%d");
+    if (lex_is_at_end(lexer)) return '\0';
 
     return lexer->lex_source[lexer->lex_index];
 }
