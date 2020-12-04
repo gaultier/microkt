@@ -1158,8 +1158,12 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         const node_t* const node_def = &parser->par_nodes[node_def_i];
         const int type_i = node_def->node_type_i;
 
-        const node_t new_node = NODE_VAR(type_i, tok_i, node_def_i);
-        buf_push(parser->par_nodes, new_node);
+        buf_push(
+            parser->par_nodes,
+            ((node_t){.node_kind = NODE_VAR,
+                      .node_type_i = type_i,
+                      .node_n = {.node_var = {.va_tok_i = tok_i,
+                                              .va_var_node_i = node_def_i}}}));
         *new_node_i = (int)buf_size(parser->par_nodes) - 1;
 
         return RES_OK;
@@ -1765,8 +1769,12 @@ static res_t parser_parse_assignment(parser_t* parser, int* new_node_i) {
 
         const int type_i = node_def->node_type_i;
 
-        const node_t var_node = NODE_VAR(type_i, lhs_tok_i, node_def_i);
-        buf_push(parser->par_nodes, var_node);
+        buf_push(
+            parser->par_nodes,
+            ((node_t){.node_kind = NODE_VAR,
+                      .node_type_i = type_i,
+                      .node_n = {.node_var = {.va_tok_i = lhs_tok_i,
+                                              .va_var_node_i = node_def_i}}}));
         int lhs_node_i = (int)buf_size(parser->par_nodes) - 1;
 
         parser_match(parser, &dummy, 1, TOK_ID_EQ);
