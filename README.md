@@ -30,10 +30,10 @@ fun fibonacci(n: Long) : Long {
 println(fibonacci(35)) // expect: 9227465
 ```
 
-## Features
+## Features and goals
 
 - Small, fast, and portable: the code is written in C99 with zero dependencies. It compiles under a second to an executable no bigger than 100 Kib
-- Produces small native executables under 10 Kib: while the generated machine code is not optimized, they are fast by virtue of being native executables
+- Produces small native executables under 10 Kib in a few milliseconds
 - Produces portable executables that don't even depend on the C standard library. Portable here means portable within the same OS and architecture but across OS versions. An executable produced today should work on a 15 year old Linux system just fine because of the stable ABI guarantees Linux offers. On macOS, we link with libSystem as recommended by Apple which guarantees some level compatibility with past and future macOS versions
 - Friendly error messages
 - Tiny memory usage
