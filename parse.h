@@ -1133,8 +1133,11 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         const int type_i = parser_make_type(parser, TYPE_CHAR);
 
         const long long int val = parse_tok_to_char(parser, tok_i);
-        const node_t new_node = NODE_CHAR(tok_i, type_i, val);
-        buf_push(parser->par_nodes, new_node);
+        buf_push(parser->par_nodes,
+                 ((node_t){.node_kind = NODE_CHAR,
+                           .node_type_i = type_i,
+                           .node_n = {.node_num = (node_number_t){
+                                          .nu_tok_i = tok_i, .nu_val = val}}}));
         *new_node_i = (int)buf_size(parser->par_nodes) - 1;
 
         return RES_OK;
