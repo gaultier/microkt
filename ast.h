@@ -159,13 +159,6 @@ struct node_t {
     } node_n;
 };
 
-#define NODE_BINARY(kind, lhs_i, rhs_i, type_i)                          \
-    ((node_t){.node_kind = kind,                                         \
-              .node_type_i = type_i,                                     \
-              .node_n = {.node_binary = ((binary_t){.bi_type_i = type_i, \
-                                                    .bi_lhs_i = lhs_i,   \
-                                                    .bi_rhs_i = rhs_i})}})
-
 #define NODE_UNARY(kind, type_i, lhs_i) \
     ((node_t){.node_kind = kind,        \
               .node_type_i = type_i,    \

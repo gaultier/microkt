@@ -1281,13 +1281,17 @@ static res_t parser_parse_multiplicative_expr(parser_t* parser,
             return parser_err_non_matching_types(parser, lhs_i, rhs_i);
         }
 
-        const node_t new_node = NODE_BINARY(
-            (tok_id == TOK_ID_STAR)
-                ? NODE_MULTIPLY
-                : (tok_id == TOK_ID_SLASH ? NODE_DIVIDE : NODE_MODULO),
-            lhs_i, rhs_i, lhs_type_i);
-
-        buf_push(parser->par_nodes, new_node);
+        buf_push(
+            parser->par_nodes,
+            ((node_t){
+                .node_kind =
+                    (tok_id == TOK_ID_STAR)
+                        ? NODE_MULTIPLY
+                        : (tok_id == TOK_ID_SLASH ? NODE_DIVIDE : NODE_MODULO),
+                .node_type_i = lhs_type_i,
+                .node_n = {.node_binary = ((binary_t){.bi_type_i = lhs_type_i,
+                                                      .bi_lhs_i = lhs_i,
+                                                      .bi_rhs_i = rhs_i})}}));
         *new_node_i = lhs_i = (int)buf_size(parser->par_nodes) - 1;
     }
 
@@ -1322,11 +1326,14 @@ static res_t parser_parse_additive_expr(parser_t* parser, int* new_node_i) {
         if (lhs_type_kind != rhs_type_kind)
             return parser_err_non_matching_types(parser, lhs_i, rhs_i);
 
-        const node_t new_node =
-            NODE_BINARY(tok_id == TOK_ID_PLUS ? NODE_ADD : NODE_SUBTRACT, lhs_i,
-                        rhs_i, lhs_type_i);
-
-        buf_push(parser->par_nodes, new_node);
+        buf_push(
+            parser->par_nodes,
+            ((node_t){
+                .node_kind = tok_id == TOK_ID_PLUS ? NODE_ADD : NODE_SUBTRACT,
+                .node_type_i = lhs_type_i,
+                .node_n = {.node_binary = ((binary_t){.bi_type_i = lhs_type_i,
+                                                      .bi_lhs_i = lhs_i,
+                                                      .bi_rhs_i = rhs_i})}}));
         *new_node_i = lhs_i = (int)buf_size(parser->par_nodes) - 1;
     }
 
@@ -1497,20 +1504,41 @@ static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
 
         const int type_i = parser_make_type(parser, TYPE_BOOL);
 
-        node_t new_node;
-
         if (tok_id == TOK_ID_LT)
-            new_node = NODE_BINARY(NODE_LT, lhs_i, rhs_i, type_i);
+            buf_push(parser->par_nodes,
+                     ((node_t){.node_kind = NODE_LT,
+                               .node_type_i = type_i,
+                               .node_n = {.node_binary = ((binary_t){
+                                              .bi_type_i = type_i,
+                                              .bi_lhs_i = lhs_i,
+                                              .bi_rhs_i = rhs_i})}}));
         else if (tok_id == TOK_ID_LE)
-            new_node = NODE_BINARY(NODE_LE, lhs_i, rhs_i, type_i);
+            buf_push(parser->par_nodes,
+                     ((node_t){.node_kind = NODE_LE,
+                               .node_type_i = type_i,
+                               .node_n = {.node_binary = ((binary_t){
+                                              .bi_type_i = type_i,
+                                              .bi_lhs_i = lhs_i,
+                                              .bi_rhs_i = rhs_i})}}));
         else if (tok_id == TOK_ID_GE)
-            new_node = NODE_BINARY(NODE_LE, rhs_i, lhs_i, type_i);
+            buf_push(parser->par_nodes,
+                     ((node_t){.node_kind = NODE_LE,
+                               .node_type_i = type_i,
+                               .node_n = {.node_binary = ((binary_t){
+                                              .bi_type_i = type_i,
+                                              .bi_lhs_i = rhs_i,
+                                              .bi_rhs_i = lhs_i})}}));
         else if (tok_id == TOK_ID_GT)
-            new_node = NODE_BINARY(NODE_LT, rhs_i, lhs_i, type_i);
+            buf_push(parser->par_nodes,
+                     ((node_t){.node_kind = NODE_LT,
+                               .node_type_i = type_i,
+                               .node_n = {.node_binary = ((binary_t){
+                                              .bi_type_i = type_i,
+                                              .bi_lhs_i = rhs_i,
+                                              .bi_rhs_i = lhs_i})}}));
         else
             UNREACHABLE();
 
-        buf_push(parser->par_nodes, new_node);
         *new_node_i = lhs_i = (int)buf_size(parser->par_nodes) - 1;
     }
 
@@ -1544,12 +1572,14 @@ static res_t parser_parse_equality(parser_t* parser, int* new_node_i) {
 
         const int type_i = parser_make_type(parser, TYPE_BOOL);
 
-        node_t new_node;
-
-        new_node = NODE_BINARY(tok_id == TOK_ID_EQ_EQ ? NODE_EQ : NODE_NEQ,
-                               lhs_i, rhs_i, type_i);
-
-        buf_push(parser->par_nodes, new_node);
+        buf_push(
+            parser->par_nodes,
+            ((node_t){
+                .node_kind = tok_id == TOK_ID_EQ_EQ ? NODE_EQ : NODE_NEQ,
+                .node_type_i = type_i,
+                .node_n = {.node_binary = ((binary_t){.bi_type_i = type_i,
+                                                      .bi_lhs_i = lhs_i,
+                                                      .bi_rhs_i = rhs_i})}}));
         *new_node_i = lhs_i = (int)buf_size(parser->par_nodes) - 1;
     }
 
@@ -1751,9 +1781,13 @@ static res_t parser_parse_assignment(parser_t* parser, int* new_node_i) {
                                                  lhs_node_i);
         }
 
-        const node_t new_node =
-            NODE_BINARY(NODE_ASSIGN, lhs_node_i, expr_node_i, lhs_type_i);
-        buf_push(parser->par_nodes, new_node);
+        buf_push(parser->par_nodes,
+                 ((node_t){.node_kind = NODE_ASSIGN,
+                           .node_type_i = type_i,
+                           .node_n = {.node_binary = ((binary_t){
+                                          .bi_type_i = lhs_type_i,
+                                          .bi_lhs_i = lhs_node_i,
+                                          .bi_rhs_i = expr_node_i})}}));
         *new_node_i = buf_size(parser->par_nodes) - 1;
 
         return RES_OK;
