@@ -1094,8 +1094,11 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         // The source is either `true` or `false` hence the len is either 4
         // or 5
         const int8_t val = (memcmp("true", source, 4) == 0);
-        const node_t new_node = NODE_LONG(tok_i, type_i, val);
-        buf_push(parser->par_nodes, new_node);
+        buf_push(parser->par_nodes,
+                 ((node_t){.node_kind = NODE_LONG,
+                           .node_type_i = type_i,
+                           .node_n = {.node_num = (node_number_t){
+                                          .nu_tok_i = tok_i, .nu_val = val}}}));
         *new_node_i = (int)buf_size(parser->par_nodes) - 1;
 
         return RES_OK;
@@ -1117,8 +1120,11 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         const int type_i = parser_make_type(parser, TYPE_LONG);
 
         const long long int val = parse_tok_to_long(parser, tok_i);
-        const node_t new_node = NODE_LONG(tok_i, type_i, val);
-        buf_push(parser->par_nodes, new_node);
+        buf_push(parser->par_nodes,
+                 ((node_t){.node_kind = NODE_LONG,
+                           .node_type_i = type_i,
+                           .node_n = {.node_num = (node_number_t){
+                                          .nu_tok_i = tok_i, .nu_val = val}}}));
         *new_node_i = (int)buf_size(parser->par_nodes) - 1;
 
         return RES_OK;

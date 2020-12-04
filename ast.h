@@ -159,12 +159,6 @@ struct node_t {
     } node_n;
 };
 
-#define NODE_LONG(tok_i, type_i, val)                                   \
-    ((node_t){.node_kind = NODE_LONG,                                   \
-              .node_type_i = type_i,                                    \
-              .node_n = {.node_num = (node_number_t){.nu_tok_i = tok_i, \
-                                                     .nu_val = val}}})
-
 #define NODE_CHAR(tok_i, type_i, val)                                   \
     ((node_t){.node_kind = NODE_CHAR,                                   \
               .node_type_i = type_i,                                    \
