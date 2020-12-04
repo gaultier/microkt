@@ -1009,10 +1009,17 @@ static res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
                                                  node_else_i);
         }
     }
-    const node_t new_node = NODE_IF(then_type_i, first_tok_i, last_tok_i,
-                                    node_cond_i, node_then_i, node_else_i);
 
-    buf_push(parser->par_nodes, new_node);
+    buf_push(
+        parser->par_nodes,
+        ((node_t){
+            .node_kind = NODE_IF,
+            .node_type_i = then_type_i,
+            .node_n = {.node_if = ((if_t){.if_first_tok_i = first_tok_i,
+                                          .if_last_tok_i = last_tok_i,
+                                          .if_node_cond_i = node_cond_i,
+                                          .if_node_then_i = node_then_i,
+                                          .if_node_else_i = node_else_i})}}));
     *new_node_i = (int)buf_size(parser->par_nodes) - 1;
 
     // Reset current scope

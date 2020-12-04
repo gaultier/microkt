@@ -159,21 +159,6 @@ struct node_t {
     } node_n;
 };
 
-#define NODE_UNARY(kind, type_i, lhs_i) \
-    ((node_t){.node_kind = kind,        \
-              .node_type_i = type_i,    \
-              .node_n = {.node_unary = lhs_i}})
-
-#define NODE_IF(type_i, first_tok_i, last_tok_i, node_cond_i, node_then_i, \
-                node_else_i)                                               \
-    ((node_t){.node_kind = NODE_IF,                                        \
-              .node_type_i = type_i,                                       \
-              .node_n = {.node_if = ((if_t){.if_first_tok_i = first_tok_i, \
-                                            .if_last_tok_i = last_tok_i,   \
-                                            .if_node_cond_i = node_cond_i, \
-                                            .if_node_then_i = node_then_i, \
-                                            .if_node_else_i = node_else_i})}})
-
 #define NODE_VAR_DEF(type_i, first_tok_i, name_tok_i, last_tok_i, init_node_i, \
                      offset, flags)                                            \
     ((node_t){.node_kind = NODE_VAR_DEF,                                       \
