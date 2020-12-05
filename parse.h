@@ -148,6 +148,11 @@ static res_t parser_resolve_var(const parser_t* parser, int tok_i,
 
 static res_t parser_err_assigning_val(const parser_t* parser, int assign_tok_i,
                                       const var_def_t* var_def) {
+    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND((void*)var_def, !=, NULL, "%p");
+    PG_ASSERT_COND(assign_tok_i, >=, 0, "%d");
+    PG_ASSERT_COND(assign_tok_i, <, parser->par_lexer.lex_source_len, "%d");
+
     const loc_t vd_loc_start =
         parser->par_lexer.lex_locs[var_def->vd_first_tok_i];
     const loc_t assign_loc_start = parser->par_lexer.lex_locs[assign_tok_i];
