@@ -405,7 +405,7 @@ static long long int parse_tok_to_long(const parser_t* parser, int tok_i,
 
     memcpy(string0, string, (size_t)string_len);
 
-    *type_kind = TYPE_LONG;
+    *type_kind = string[string_len - 1] == 'L' ? TYPE_LONG : TYPE_INT;
 
     return strtoll(string0, NULL, 10);
 }

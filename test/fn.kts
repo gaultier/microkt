@@ -30,7 +30,7 @@ func_with_var() // expect: 5
 
 
 fun return_long(): Long {
-  return 42
+  return 42L
 }
 
 println(return_long()) // expect: 42
@@ -73,28 +73,28 @@ println(return_string()) // expect: return_string
 // Parameters
 fun one_param_unused(a: Long) {}
 
-one_param_unused(100)
+one_param_unused(100L)
 
 
 fun one_param(a: Long) { println(a) }
 
-one_param(200) // expect: 200
+one_param(200L) // expect: 200
 
-fun one_param_and_local(a: Long): Long {return 300+a}
-println(one_param_and_local(400)) // expect: 700
+fun one_param_and_local(a: Long): Long {return 300L+a}
+println(one_param_and_local(400L)) // expect: 700
 
 
 fun two_params(a: Long, b: Long) : Long { return a + b }
-println(two_params(999, 998)) // expect: 1997
+println(two_params(999L, 998L)) // expect: 1997
 
 
 fun three_params(a: Long, b: Long, c: Long) : Long { return a - b / c }
-println(three_params(800, 100, 20)) // expect: 795
+println(three_params(800L, 100L, 20L)) // expect: 795
 
 
 fun factorial(n: Long) : Long { 
-  if (n == 0) return 1
+  if (n == 0L) return 1L
 
-  return n * factorial(n-1)
+  return n * factorial(n-1L)
 }
-println(factorial(5)) // expect: 120
+println(factorial(5L)) // expect: 120

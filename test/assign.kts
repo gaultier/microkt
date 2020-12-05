@@ -1,5 +1,5 @@
-var long : Long = 5
-long = 6
+var long : Long = 5L
+long = 6L
 println(long) // expect: 6
 
 var int: Int = 99

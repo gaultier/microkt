@@ -1,9 +1,9 @@
-var a: Long = 0
-while (a<5) {
+var a: Long = 0L
+while (a<5L) {
   println(a)
-  a = a + 1
+  a = a + 1L
 }
-println(2*a)
+println(2L*a)
 // expect: 0
 // expect: 1
 // expect: 2
