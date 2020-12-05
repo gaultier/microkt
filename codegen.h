@@ -454,8 +454,15 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
                 else
                     println("mov -%d(%%rbp), %%rax", offset);
             } else if (node_def->node_kind == NODE_FN_DECL) {
+                CHECK(current_fn_i, >=, 0, "%d");
+                CHECK(current_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
                 const int caller_current_fn_i = current_fn_i;
+
+                CHECK(current_fn_i, >=, 0, "%d");
+                CHECK(current_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
                 current_fn_i = var.va_var_node_i;
+                CHECK(current_fn_i, >=, 0, "%d");
+                CHECK(current_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
 
                 const fn_decl_t fn_decl = node_def->node_n.node_fn_decl;
                 const char* name = NULL;
