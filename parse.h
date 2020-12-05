@@ -382,7 +382,8 @@ static parser_t parser_init(const char* file_name0, const char* source,
     return parser;
 }
 
-static long long int parse_tok_to_long(const parser_t* parser, int tok_i) {
+static long long int parse_tok_to_long(const parser_t* parser, int tok_i,
+                                       type_kind_t* type_kind) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)parser->par_lexer.lex_tok_pos_ranges, !=, NULL, "%p");
     CHECK((void*)parser->par_lexer.lex_source, !=, NULL, "%p");
@@ -390,6 +391,7 @@ static long long int parse_tok_to_long(const parser_t* parser, int tok_i) {
     CHECK(tok_i, <, parser->par_lexer.lex_source_len, "%d");
 
     static char string0[25];
+    memset(string0, 0, sizeof(string0));
 
     const pos_range_t pos_range = parser->par_lexer.lex_tok_pos_ranges[tok_i];
     const char* const string =
@@ -401,9 +403,9 @@ static long long int parse_tok_to_long(const parser_t* parser, int tok_i) {
     CHECK(string_len, >, 0, "%d");
     CHECK(string_len, <, (int)sizeof(string0), "%d");
 
-    // TOOD: limit in the lexer the length of a number literal
-    memset(string0, 0, sizeof(string0));
     memcpy(string0, string, (size_t)string_len);
+
+    *type_kind = TYPE_LONG;
 
     return strtoll(string0, NULL, 10);
 }
@@ -1242,11 +1244,12 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         return RES_OK;
     }
     if (parser_match(parser, &tok_i, 1, TOK_ID_LONG)) {
-        const int type_i = parser_make_type(parser, TYPE_LONG);
+        type_kind_t type_kind = TYPE_ANY;
+        const long long int val = parse_tok_to_long(parser, tok_i, &type_kind);
+        const int type_i = parser_make_type(parser, type_kind);
         CHECK(type_i, >=, 0, "%d");
         CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
 
-        const long long int val = parse_tok_to_long(parser, tok_i);
         buf_push(parser->par_nodes,
                  ((node_t){.node_kind = NODE_LONG,
                            .node_type_i = type_i,

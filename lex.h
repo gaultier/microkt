@@ -254,7 +254,7 @@ static res_t lex_number(lexer_t* lexer, token_t* result, int* col) {
 
     while (lexer->lex_index < lexer->lex_source_len) {
         c = lex_peek(lexer);
-        if (!lex_is_digit(c)) break;
+        if (!(lex_is_digit(c) || c == 'L')) break;
 
         lex_advance(lexer, col);
     }
