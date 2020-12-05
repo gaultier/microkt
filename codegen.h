@@ -70,6 +70,9 @@ static void fn_prolog(const parser_t* parser, const fn_decl_t* fn_decl,
 }
 
 static void fn_epilog(int aligned_stack_size) {
+    CHECK(aligned_stack_size, >=, 0, "%d");
+    CHECK(aligned_stack_size % 16, ==, 0, "%d");
+
     println(".L.return.%d:", current_fn_i);
     println("addq $%d, %%rsp", aligned_stack_size);
     println("popq %%rbp");
@@ -203,6 +206,7 @@ static void emit_stdlib() {
 
 static void emit_loc(const parser_t* parser, const node_t* const node) {
     CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)node, !=, NULL, "%p");
 
     const loc_t loc =
         parser->par_lexer.lex_locs[node_first_token(parser, node)];
