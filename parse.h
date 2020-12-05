@@ -928,6 +928,7 @@ static bool parser_match(parser_t* parser, int* return_token_index,
     CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, 0, "%d");
     CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, parser->par_tok_i,
           "%d");
+    CHECK(id_count, >=, 0, "%d");
 
     const token_id_t current_id = parser_peek(parser);
 
@@ -957,11 +958,22 @@ static bool parser_match(parser_t* parser, int* return_token_index,
 static res_t parser_err_non_matching_types(const parser_t* parser,
                                            int lhs_node_i, int rhs_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
+    CHECK(lhs_node_i, >=, 0, "%d");
+    CHECK(lhs_node_i, <, (int)buf_size(parser->par_nodes), "%d");
+    CHECK(rhs_node_i, >=, 0, "%d");
+    CHECK(rhs_node_i, <, (int)buf_size(parser->par_nodes), "%d");
 
     const node_t* const lhs = &parser->par_nodes[lhs_node_i];
+    CHECK((void*)lhs, !=, NULL, "%p");
+
+    CHECK(lhs->node_type_i, >=, 0, "%d");
+    CHECK(lhs->node_type_i, <, (int)buf_size(parser->par_types), "%d");
     const type_kind_t lhs_type_kind =
         parser->par_types[lhs->node_type_i].ty_kind;
+
     const int lhs_first_tok_i = node_first_token(parser, lhs);
+    CHECK(lhs_first_tok_i, >=, 0, "%d");
+    CHECK(lhs_first_tok_i, <, parser->par_lexer.lex_source_len, "%d");
 
     int rhs_type_kind = TYPE_BOOL;
     int rhs_last_tok_i = node_last_token(parser, lhs);
