@@ -4,7 +4,6 @@
 #include <unistd.h>
 
 #include "ast.h"
-#include "common.h"
 #include "lex.h"
 
 static const int TYPE_UNIT_I = 0;  // see parser_init
@@ -174,6 +173,12 @@ static res_t parser_err_assigning_val(const parser_t* parser, int assign_tok_i,
 
 static res_t parser_err_missing_rhs(const parser_t* parser, int first_tok_i,
                                     int last_tok_i) {
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK(first_tok_i, >=, 0, "%d");
+    CHECK(first_tok_i, <, parser->par_lexer.lex_source_len, "%d");
+    CHECK(last_tok_i, >=, first_tok_i, "%d");
+    CHECK(last_tok_i, <, parser->par_lexer.lex_source_len, "%d");
+
     const loc_t first_tok_loc = parser->par_lexer.lex_locs[first_tok_i];
 
     fprintf(stderr, "%s%s:%d:%d:%sMissing right hand-side operand\n",
