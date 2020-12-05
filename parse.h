@@ -1378,8 +1378,11 @@ static res_t parser_parse_multiplicative_expr(parser_t* parser,
     int lhs_i = -1;
     if ((res = parser_parse_as_expr(parser, &lhs_i)) != RES_OK) return res;
     CHECK(lhs_i, >=, 0, "%d");
+    CHECK(lhs_i, <, (int)buf_size(parser->par_nodes), "%d");
 
     const int lhs_type_i = parser->par_nodes[lhs_i].node_type_i;
+    CHECK(lhs_type_i, >=, 0, "%d");
+    CHECK(lhs_type_i, <, (int)buf_size(parser->par_types), "%d");
 
     const type_kind_t lhs_type_kind = parser->par_types[lhs_type_i].ty_kind;
 
@@ -1405,8 +1408,12 @@ static res_t parser_parse_multiplicative_expr(parser_t* parser,
             return res;
         }
         CHECK(rhs_i, >=, 0, "%d");
+        CHECK(rhs_i, <, (int)buf_size(parser->par_nodes), "%d");
 
         const int rhs_type_i = parser->par_nodes[rhs_i].node_type_i;
+        CHECK(rhs_type_i, >=, 0, "%d");
+        CHECK(rhs_type_i, <, (int)buf_size(parser->par_types), "%d");
+
         const type_kind_t rhs_type_kind = parser->par_types[rhs_type_i].ty_kind;
 
         if (rhs_type_kind != TYPE_LONG && rhs_type_kind != TYPE_INT &&
