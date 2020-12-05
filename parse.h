@@ -396,7 +396,7 @@ static long long int parse_tok_to_long(const parser_t* parser, int tok_i) {
 
     const int string_len = pos_range.pr_end - pos_range.pr_start;
 
-    CHECK(string_len, >, (int)0, "%d");
+    CHECK(string_len, >, 0, "%d");
     CHECK(string_len, <, (int)sizeof(string0), "%d");
 
     // TOOD: limit in the lexer the length of a number literal
@@ -418,8 +418,8 @@ static long long int parse_tok_to_char(const parser_t* parser, int tok_i) {
 
     int string_len = pos_range.pr_end - pos_range.pr_start - 2;
 
-    CHECK(string_len, >, (int)0, "%d");
-    CHECK(string_len, <, (int)2, "%d");  // TODO: expand
+    CHECK(string_len, >, 0, "%d");
+    CHECK(string_len, <, 2, "%d");  // TODO: expand
 
     return string[0];
 }
@@ -740,8 +740,9 @@ static token_id_t parser_previous(const parser_t* parser) {
 }
 static void parser_advance_until_after(parser_t* parser, token_id_t id) {
     CHECK((void*)parser, !=, NULL, "%p");
+    CHECK(parser->par_tok_i, >=, 0, "%d");
     CHECK((void*)parser->par_lexer.lex_tokens, !=, NULL, "%p");
-    CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, (int)0, "%d");
+    CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, 0, "%d");
     CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, parser->par_tok_i,
           "%d");
 
@@ -759,7 +760,7 @@ static void parser_advance_until_after(parser_t* parser, token_id_t id) {
 static token_id_t parser_peek(parser_t* parser) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)parser->par_lexer.lex_tokens, !=, NULL, "%p");
-    CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, (int)0, "%d");
+    CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, 0, "%d");
     CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, parser->par_tok_i,
           "%d");
 
@@ -779,7 +780,7 @@ static token_id_t parser_peek(parser_t* parser) {
 static token_id_t parser_peek_next(parser_t* parser) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)parser->par_lexer.lex_tokens, !=, NULL, "%p");
-    CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, (int)0, "%d");
+    CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, 0, "%d");
     CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, parser->par_tok_i,
           "%d");
 
@@ -896,7 +897,7 @@ static bool parser_match(parser_t* parser, int* return_token_index,
                          int id_count, ...) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)parser->par_lexer.lex_tokens, !=, NULL, "%p");
-    CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, (int)0, "%d");
+    CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, 0, "%d");
     CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, parser->par_tok_i,
           "%d");
 
