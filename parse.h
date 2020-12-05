@@ -1597,6 +1597,7 @@ static res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i) {
 
     const int current_scope_i =
         parser_enter_scope(parser, fn_decl.fd_body_node_i);
+
     for (int i = 0; i < (int)buf_size(fn_decl.fd_arg_nodes_i); i++) {
         const int decl_arg_i = fn_decl.fd_arg_nodes_i[i];
         const node_t* const decl_arg = &parser->par_nodes[decl_arg_i];
@@ -1649,7 +1650,14 @@ static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
     if ((res = parser_parse_generical_call_like_comparison(parser, &lhs_i)) !=
         RES_OK)
         return res;
+
+    CHECK(lhs_i, >=, 0, "%d");
+    CHECK(lhs_i, <, (int)buf_size(parser->par_nodes), "%d");
+
     const int lhs_type_i = parser->par_nodes[lhs_i].node_type_i;
+    CHECK(lhs_type_i, >=, 0, "%d");
+    CHECK(lhs_type_i, <, (int)buf_size(parser->par_types), "%d");
+
     const type_kind_t lhs_type_kind = parser->par_types[lhs_type_i].ty_kind;
     *new_node_i = lhs_i;
 
