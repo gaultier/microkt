@@ -1096,10 +1096,17 @@ static res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
             log_debug("failed to parse else-branch %d", res);
             return res;
         }
+        CHECK(node_else_i, >=, 0, "%d");
+        CHECK(node_else_i, <, (int)buf_size(parser->par_nodes), "%d");
 
         const node_t* const node_else = &parser->par_nodes[node_else_i];
+
+        CHECK(node_else->node_type_i, >=, 0, "%d");
+        CHECK(node_else->node_type_i, <, (int)buf_size(parser->par_types),
+              "%d");
         const type_kind_t else_type_kind =
             parser->par_types[node_else->node_type_i].ty_kind;
+
         // Unit gets a pass for now (until we have assignements)
         if (then_type_kind != else_type_kind && then_type_kind != TYPE_UNIT &&
             else_type_kind != TYPE_UNIT) {
