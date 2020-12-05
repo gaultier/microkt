@@ -37,11 +37,18 @@ println(char* fmt, ...) {
 // The System V ABI requires a 16-bit aligned stack.
 // Round up to a multiple of 16
 static int emit_align_to_16(int stack_size) {
+    CHECK(stack_size, >=, 0, "%d");
+
     return (stack_size + 16 - 1) / 16 * 16;
 }
 
 static void fn_prolog(const parser_t* parser, const fn_decl_t* fn_decl,
                       int aligned_stack_size) {
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)fn_decl, !=, NULL, "%p");
+    CHECK(aligned_stack_size, >=, 0, "%d");
+    CHECK(aligned_stack_size % 16, ==, 0, "%d");
+
     println("# prolog");
     println("push %%rbp");
     println("mov %%rsp, %%rbp");
