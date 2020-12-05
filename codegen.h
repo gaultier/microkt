@@ -439,6 +439,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
                   "%d");
             const int type_size =
                 parser->par_types[node_def->node_type_i].ty_size;
+            CHECK(type_size, >=, 0, "%d");
 
             emit_loc(parser, expr);
             if (node_def->node_kind == NODE_VAR_DEF) {
@@ -565,6 +566,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
             CHECK(stmt->node_type_i, >=, 0, "%d");
             CHECK(stmt->node_type_i, <, (int)buf_size(parser->par_types), "%d");
             const int type_size = parser->par_types[stmt->node_type_i].ty_size;
+            CHECK(type_size, >=, 0, "%d");
 
             emit_loc(parser, stmt);
             if (type_size == 1)
@@ -585,7 +587,10 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
             emit_expr(parser, var_def.vd_init_node_i);
 
             const int type_size = parser->par_types[stmt->node_type_i].ty_size;
+            CHECK(type_size, >=, 0, "%d");
+
             const int offset = var_def.vd_stack_offset;
+            CHECK(offset, >=, 0, "%d");
 
             emit_loc(parser, stmt);
             if (type_size == 1)
