@@ -89,6 +89,9 @@ static res_t parser_resolve_var(const parser_t* parser, int tok_i,
 
     int current_scope_i = parser->par_scope_i;
     while (current_scope_i >= 0) {
+        PG_ASSERT_COND(current_scope_i, <, (int)buf_size(parser->par_nodes),
+                       "%d");
+
         const node_t* block = &parser->par_nodes[current_scope_i];
         const block_t b = block->node_n.node_block;
 
@@ -97,6 +100,9 @@ static res_t parser_resolve_var(const parser_t* parser, int tok_i,
 
         for (int i = 0; i < (int)buf_size(b.bl_nodes_i); i++) {
             const int stmt_i = b.bl_nodes_i[i];
+            PG_ASSERT_COND(stmt_i, >=, 0, "%d");
+            PG_ASSERT_COND(stmt_i, <, (int)buf_size(parser->par_nodes), "%d");
+
             const node_t* const stmt = &parser->par_nodes[stmt_i];
             const char* def_source = NULL;
             int def_source_len = 0;
