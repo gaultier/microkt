@@ -1864,9 +1864,13 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
         parser->par_nodes[parser->par_scope_i].node_n.node_block.bl_nodes_i;
     const int last_node_i =
         buf_size(nodes_i) > 0 ? nodes_i[buf_size(nodes_i) - 1] : -1;
+    CHECK(last_node_i, <, (int)buf_size(parser->par_nodes), "%d");
+
     const int type_i = last_node_i >= 0
                            ? parser->par_nodes[last_node_i].node_type_i
                            : TYPE_UNIT_I;
+    CHECK(type_i, >=, 0, "%d");
+    CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
 
     parser->par_nodes[*new_node_i].node_type_i = type_i;
 
