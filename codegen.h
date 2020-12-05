@@ -657,6 +657,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
         parser_tok_source(parser, node->node_n.node_string, &source,
                           &source_len);
         CHECK((void*)source, !=, NULL, "%p");
+        CHECK(source_len, >=, 0, "%d");
         CHECK(source_len, <, parser->par_lexer.lex_source_len, "%d");
 
         println(".L%d: .asciz \"\\%03o\\%03o\\%03o\\%03o%.*s\"", node_i,
@@ -672,10 +673,16 @@ static void emit(const parser_t* parser, FILE* asm_file) {
     // Reverse traversal to end up with main at the end (needed?)
     for (int i = (int)buf_size(parser->par_node_decls) - 1; i >= 0; i--) {
         const int node_i = parser->par_node_decls[i];
+        CHECK(node_i, >=, 0, "%d");
+        CHECK(node_i, <, (int)buf_size(parser->par_nodes), "%d");
+
         const node_t* const node = &parser->par_nodes[node_i];
         if (node->node_kind != NODE_FN_DECL) continue;
 
         const fn_decl_t fn_decl = node->node_n.node_fn_decl;
+        CHECK(fn_decl.fd_name_tok_i, >=, 0, "%d");
+        CHECK(fn_decl.fd_name_tok_i, <, parser->par_lexer.lex_source_len, "%d");
+
         const loc_t loc = parser->par_lexer.lex_locs[fn_decl.fd_name_tok_i];
         println(".loc 1 %d %d\t## %s:%d:%d", loc.loc_line, loc.loc_column,
                 parser->par_file_name0, loc.loc_line, loc.loc_column);
@@ -685,6 +692,9 @@ static void emit(const parser_t* parser, FILE* asm_file) {
         const char* const name =
             &parser->par_lexer.lex_source[pos_range.pr_start];
         const int name_len = pos_range.pr_end - pos_range.pr_start;
+        CHECK((void*)name, !=, NULL, "%p");
+        CHECK(name_len, >=, 0, "%d");
+        CHECK(name_len, <, parser->par_lexer.lex_source_len, "%d");
 
         if (fn_decl.fd_flags & FN_FLAGS_PUBLIC)
             println(".global %.*s",
@@ -695,6 +705,8 @@ static void emit(const parser_t* parser, FILE* asm_file) {
                 name_len == 0 ? "_main" : name);
 
         const int caller_current_fn_i = current_fn_i;
+        CHECK(current_fn_i, >=, 0, "%d");
+        CHECK(current_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
         current_fn_i = node_i;
 
         const int aligned_stack_size = emit_align_to_16(fn_decl.fd_stack_size);
@@ -708,5 +720,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
             emit_program_epilog();
 
         current_fn_i = caller_current_fn_i;
+        CHECK(current_fn_i, >=, 0, "%d");
+        CHECK(current_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
     }
 }
