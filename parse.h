@@ -1003,14 +1003,24 @@ static res_t parser_err_non_matching_types(const parser_t* parser,
 static res_t parser_err_unexpected_type(const parser_t* parser, int lhs_node_i,
                                         type_kind_t expected_type_kind) {
     CHECK((void*)parser, !=, NULL, "%p");
+    CHECK(lhs_node_i, >=, 0, "%d");
+    CHECK(lhs_node_i, <, (int)buf_size(parser->par_nodes), "%d");
 
     const node_t* const lhs = &parser->par_nodes[lhs_node_i];
+    CHECK((void*)lhs, !=, NULL, "%p");
 
+    CHECK(lhs->node_type_i, >=, 0, "%d");
+    CHECK(lhs->node_type_i, <, (int)buf_size(parser->par_types), "%d");
     const type_kind_t lhs_type_kind =
         parser->par_types[lhs->node_type_i].ty_kind;
 
     const int lhs_first_tok_i = node_first_token(parser, lhs);
+    CHECK(lhs_first_tok_i, >=, 0, "%d");
+    CHECK(lhs_first_tok_i, <, parser->par_lexer.lex_source_len, "%d");
+
     const int lhs_last_tok_i = node_last_token(parser, lhs);
+    CHECK(lhs_last_tok_i, >=, 0, "%d");
+    CHECK(lhs_last_tok_i, <, parser->par_lexer.lex_source_len, "%d");
 
     const loc_t lhs_first_tok_loc = parser->par_lexer.lex_locs[lhs_first_tok_i];
 
