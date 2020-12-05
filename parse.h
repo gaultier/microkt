@@ -86,6 +86,8 @@ static res_t parser_resolve_var(const parser_t* parser, int tok_i,
     const char* var_source = NULL;
     int var_source_len = 0;
     parser_tok_source(parser, tok_i, &var_source, &var_source_len);
+    PG_ASSERT_COND((void*)var_source, !=, NULL, "%p");
+    PG_ASSERT_COND(var_source_len, >=, 0, "%d");
 
     int current_scope_i = parser->par_scope_i;
     while (current_scope_i >= 0) {
@@ -117,6 +119,9 @@ static res_t parser_resolve_var(const parser_t* parser, int tok_i,
                                   &def_source, &def_source_len);
             } else
                 continue;
+
+            PG_ASSERT_COND((void*)def_source, !=, NULL, "%p");
+            PG_ASSERT_COND(def_source_len, >=, 0, "%d");
 
             log_debug("considering var def: name=`%.*s` kind=%s scope=%d",
                       def_source_len, def_source,
