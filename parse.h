@@ -238,6 +238,7 @@ static bool parser_check_keyword(const parser_t* parser,
                                  type_kind_t expected) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)type_kind, !=, NULL, "%p");
+    CHECK((void*)source_start, !=, NULL, "%p");
     CHECK((void*)(source_start + suffix_len), <,
           (void*)(parser->par_lexer.lex_source +
                   parser->par_lexer.lex_source_len),
