@@ -780,6 +780,7 @@ static token_id_t parser_peek(parser_t* parser) {
 static token_id_t parser_peek_next(parser_t* parser) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)parser->par_lexer.lex_tokens, !=, NULL, "%p");
+    CHECK(parser->par_tok_i, >=, 0, "%d");
     CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, 0, "%d");
     CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, parser->par_tok_i,
           "%d");
@@ -800,6 +801,10 @@ static token_id_t parser_peek_next(parser_t* parser) {
 static void parser_print_source_on_error(const parser_t* parser,
                                          int first_tok_i, int last_tok_i) {
     CHECK((void*)parser, !=, NULL, "%p");
+    CHECK(first_tok_i, >=, 0, "%d");
+    CHECK(first_tok_i, <, parser->par_lexer.lex_source_len, "%d");
+    CHECK(last_tok_i, >=, first_tok_i, "%d");
+    CHECK(last_tok_i, <, parser->par_lexer.lex_source_len, "%d");
 
     const pos_range_t first_tok_pos_range =
         parser->par_lexer.lex_tok_pos_ranges[first_tok_i];
