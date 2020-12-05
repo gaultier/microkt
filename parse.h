@@ -882,6 +882,8 @@ static void parser_print_source_on_error(const parser_t* parser,
 
     const int source_before_without_squiggly_len =
         first_tok_pos_range.pr_start - first_line_start_tok_pos.pr_start;
+    CHECK(source_before_without_squiggly_len, <=,
+          parser->par_lexer.lex_source_len, "%d");
 
     for (int i = 0; i < prefix_len + source_before_without_squiggly_len; i++)
         fprintf(stderr, " ");
@@ -890,7 +892,10 @@ static void parser_print_source_on_error(const parser_t* parser,
 
     const int squiggly_len =
         last_tok_pos_range.pr_end - first_tok_pos_range.pr_start;
+    CHECK(squiggly_len, <=, parser->par_lexer.lex_source_len, "%d");
+
     for (int i = 0; i < squiggly_len; i++) fprintf(stderr, "^");
+
     if (parser->par_is_tty) fprintf(stderr, "%s", color_reset);
 
     fprintf(stderr, "\n");
@@ -918,6 +923,7 @@ static res_t parser_err_unexpected_token(const parser_t* parser,
 static bool parser_match(parser_t* parser, int* return_token_index,
                          int id_count, ...) {
     CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)return_token_index, !=, NULL, "%p");
     CHECK((void*)parser->par_lexer.lex_tokens, !=, NULL, "%p");
     CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, 0, "%d");
     CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, parser->par_tok_i,
