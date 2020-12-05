@@ -1149,6 +1149,8 @@ static res_t parser_parse_jump_expr(parser_t* parser, int* new_node_i) {
         const int type_i = expr_node_i >= 0
                                ? parser->par_nodes[expr_node_i].node_type_i
                                : TYPE_UNIT_I;
+        CHECK(type_i, >=, 0, "%d");
+        CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
 
         const node_t* const expr =
             expr_node_i >= 0 ? &parser->par_nodes[expr_node_i] : NULL;
