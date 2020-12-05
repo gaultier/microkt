@@ -57,10 +57,14 @@ static void fn_prolog(const parser_t* parser, const fn_decl_t* fn_decl,
 
     for (int i = 0; i < (int)buf_size(fn_decl->fd_arg_nodes_i); i++) {
         const int arg_i = fn_decl->fd_arg_nodes_i[i];
+        CHECK(arg_i, >=, 0, "%d");
+        CHECK(arg_i, <, (int)buf_size(parser->par_nodes), "%d");
+
         const node_t* const arg = &parser->par_nodes[arg_i];
         const int stack_offset = arg->node_n.node_var_def.vd_stack_offset;
+        CHECK(stack_offset, >=, 0, "%d");
 
-        // TODO: size
+        CHECK(i, <, 6, "%d");  // FIXME: stack args
         println("mov %s, -%d(%%rbp)", fn_args[i], stack_offset);
     }
 }
