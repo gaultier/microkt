@@ -37,11 +37,11 @@ static const char res_to_str[][100] = {
 
 #define STR(s) #s
 
-#define PG_ASSERT_COND(a, cond, b, fmt)                           \
+#define CHECK(a, cond, b, fmt)                                    \
     do {                                                          \
         if (!((a)cond(b))) {                                      \
             fprintf(stderr,                                       \
-                    __FILE__ ":%d:PG_ASSERT_COND failed: " fmt    \
+                    __FILE__ ":%d:CHECK failed: " fmt             \
                              " " STR(cond) " " fmt " is false\n", \
                     __LINE__, a, b);                              \
             assert(0);                                            \
@@ -98,8 +98,8 @@ static bool is_space(char c) {
 }
 
 static void trim_end(const char** string, int* string_len) {
-    PG_ASSERT_COND((void*)string, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)string_len, !=, NULL, "%p");
+    CHECK((void*)string, !=, NULL, "%p");
+    CHECK((void*)string_len, !=, NULL, "%p");
 
     while (*string_len > 0 && is_space((*string)[*string_len - 1]))
         (*string_len)--;

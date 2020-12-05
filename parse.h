@@ -34,13 +34,13 @@ static void parser_print_source_on_error(const parser_t* parser,
 static res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i);
 
 static node_t* parser_current_block(parser_t* parser) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
 
     return &parser->par_nodes[parser->par_scope_i];
 }
 
 static int parser_enter_scope(parser_t* parser, int block_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
 
     const int parent_scope_i = parser->par_scope_i;
     parser->par_scope_i = block_node_i;
@@ -50,8 +50,8 @@ static int parser_enter_scope(parser_t* parser, int block_node_i) {
 }
 
 static void parser_leave_scope(parser_t* parser, int parent_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND(parent_node_i, >=, 0, "%d");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK(parent_node_i, >=, 0, "%d");
 
     log_debug("%d <- %d", parent_node_i, parser->par_scope_i);
     parser->par_scope_i = parent_node_i;
@@ -59,8 +59,8 @@ static void parser_leave_scope(parser_t* parser, int parent_node_i) {
 
 static int parser_node_find_fn_decl_for_call(const parser_t* parser,
                                              int node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND(node_i, >=, 0, "%d");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK(node_i, >=, 0, "%d");
 
     const node_t* const node = &parser->par_nodes[node_i];
     switch (node->node_kind) {
@@ -79,20 +79,19 @@ static int parser_node_find_fn_decl_for_call(const parser_t* parser,
 // def per scope
 static res_t parser_resolve_var(const parser_t* parser, int tok_i,
                                 int* def_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)def_node_i, !=, NULL, "%p");
-    PG_ASSERT_COND(tok_i, >=, 0, "%d");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)def_node_i, !=, NULL, "%p");
+    CHECK(tok_i, >=, 0, "%d");
 
     const char* var_source = NULL;
     int var_source_len = 0;
     parser_tok_source(parser, tok_i, &var_source, &var_source_len);
-    PG_ASSERT_COND((void*)var_source, !=, NULL, "%p");
-    PG_ASSERT_COND(var_source_len, >=, 0, "%d");
+    CHECK((void*)var_source, !=, NULL, "%p");
+    CHECK(var_source_len, >=, 0, "%d");
 
     int current_scope_i = parser->par_scope_i;
     while (current_scope_i >= 0) {
-        PG_ASSERT_COND(current_scope_i, <, (int)buf_size(parser->par_nodes),
-                       "%d");
+        CHECK(current_scope_i, <, (int)buf_size(parser->par_nodes), "%d");
 
         const node_t* block = &parser->par_nodes[current_scope_i];
         const block_t b = block->node_n.node_block;
@@ -102,8 +101,8 @@ static res_t parser_resolve_var(const parser_t* parser, int tok_i,
 
         for (int i = 0; i < (int)buf_size(b.bl_nodes_i); i++) {
             const int stmt_i = b.bl_nodes_i[i];
-            PG_ASSERT_COND(stmt_i, >=, 0, "%d");
-            PG_ASSERT_COND(stmt_i, <, (int)buf_size(parser->par_nodes), "%d");
+            CHECK(stmt_i, >=, 0, "%d");
+            CHECK(stmt_i, <, (int)buf_size(parser->par_nodes), "%d");
 
             const node_t* const stmt = &parser->par_nodes[stmt_i];
             const char* def_source = NULL;
@@ -120,8 +119,8 @@ static res_t parser_resolve_var(const parser_t* parser, int tok_i,
             } else
                 continue;
 
-            PG_ASSERT_COND((void*)def_source, !=, NULL, "%p");
-            PG_ASSERT_COND(def_source_len, >=, 0, "%d");
+            CHECK((void*)def_source, !=, NULL, "%p");
+            CHECK(def_source_len, >=, 0, "%d");
 
             log_debug("considering var def: name=`%.*s` kind=%s scope=%d",
                       def_source_len, def_source,
@@ -148,10 +147,10 @@ static res_t parser_resolve_var(const parser_t* parser, int tok_i,
 
 static res_t parser_err_assigning_val(const parser_t* parser, int assign_tok_i,
                                       const var_def_t* var_def) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)var_def, !=, NULL, "%p");
-    PG_ASSERT_COND(assign_tok_i, >=, 0, "%d");
-    PG_ASSERT_COND(assign_tok_i, <, parser->par_lexer.lex_source_len, "%d");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)var_def, !=, NULL, "%p");
+    CHECK(assign_tok_i, >=, 0, "%d");
+    CHECK(assign_tok_i, <, parser->par_lexer.lex_source_len, "%d");
 
     const loc_t vd_loc_start =
         parser->par_lexer.lex_locs[var_def->vd_first_tok_i];
@@ -189,7 +188,7 @@ static res_t parser_err_missing_rhs(const parser_t* parser, int first_tok_i,
 static int parser_make_type(parser_t* parser,
                             type_kind_t type_kind) {  // Returns type_i
                                                       // TODO: deduplicate?
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
 
     type_t type = {.ty_kind = type_kind, .ty_size = 0};
 
@@ -232,12 +231,12 @@ static bool parser_check_keyword(const parser_t* parser,
                                  const char* source_start, const char suffix[],
                                  int suffix_len, type_kind_t* type_kind,
                                  type_kind_t expected) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)type_kind, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)(source_start + suffix_len), <,
-                   (void*)(parser->par_lexer.lex_source +
-                           parser->par_lexer.lex_source_len),
-                   "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)type_kind, !=, NULL, "%p");
+    CHECK((void*)(source_start + suffix_len), <,
+          (void*)(parser->par_lexer.lex_source +
+                  parser->par_lexer.lex_source_len),
+          "%p");
 
     const int remaining_len =
         (parser->par_lexer.lex_source + parser->par_lexer.lex_source_len) -
@@ -254,7 +253,7 @@ static bool parser_check_keyword(const parser_t* parser,
 static bool parser_parse_identifier_to_type_kind(const parser_t* parser,
                                                  int tok_i,
                                                  type_kind_t* type_kind) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
 
     const char* source = NULL;
     int source_len = 0;
@@ -315,8 +314,8 @@ static bool parser_parse_identifier_to_type_kind(const parser_t* parser,
 
 static parser_t parser_init(const char* file_name0, const char* source,
                             int source_len) {
-    PG_ASSERT_COND((void*)file_name0, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)source, !=, NULL, "%p");
+    CHECK((void*)file_name0, !=, NULL, "%p");
+    CHECK((void*)source, !=, NULL, "%p");
 
     lexer_t lexer = lex_init(source, source_len);
 
@@ -373,9 +372,9 @@ static parser_t parser_init(const char* file_name0, const char* source,
 }
 
 static long long int parse_tok_to_long(const parser_t* parser, int tok_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)parser->par_lexer.lex_tok_pos_ranges, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)parser->par_lexer.lex_source, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)parser->par_lexer.lex_tok_pos_ranges, !=, NULL, "%p");
+    CHECK((void*)parser->par_lexer.lex_source, !=, NULL, "%p");
 
     static char string0[25];
 
@@ -384,8 +383,8 @@ static long long int parse_tok_to_long(const parser_t* parser, int tok_i) {
         &parser->par_lexer.lex_source[pos_range.pr_start];
     const int string_len = pos_range.pr_end - pos_range.pr_start;
 
-    PG_ASSERT_COND(string_len, >, (int)0, "%d");
-    PG_ASSERT_COND(string_len, <, (int)25, "%d");
+    CHECK(string_len, >, (int)0, "%d");
+    CHECK(string_len, <, (int)25, "%d");
 
     // TOOD: limit in the lexer the length of a number literal
     memset(string0, 0, sizeof(string0));
@@ -395,21 +394,21 @@ static long long int parse_tok_to_long(const parser_t* parser, int tok_i) {
 }
 
 static long long int parse_tok_to_char(const parser_t* parser, int tok_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
 
     const pos_range_t pos_range = parser->par_lexer.lex_tok_pos_ranges[tok_i];
     const char* const string =
         &parser->par_lexer.lex_source[pos_range.pr_start + 1];
     int string_len = pos_range.pr_end - pos_range.pr_start - 2;
 
-    PG_ASSERT_COND(string_len, >, (int)0, "%d");
-    PG_ASSERT_COND(string_len, <, (int)2, "%d");  // TODO: expand
+    CHECK(string_len, >, (int)0, "%d");
+    CHECK(string_len, <, (int)2, "%d");  // TODO: expand
 
     return string[0];
 }
 
 static void node_dump(const parser_t* parser, int node_i, int indent) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
 
     const node_t* node = &parser->par_nodes[node_i];
     switch (node->node_kind) {
@@ -577,8 +576,8 @@ static void node_dump(const parser_t* parser, int node_i, int indent) {
 }
 
 static int node_first_token(const parser_t* parser, const node_t* node) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)node, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)node, !=, NULL, "%p");
 
     switch (node->node_kind) {
         case NODE_BUILTIN_PRINTLN:
@@ -627,7 +626,7 @@ static int node_first_token(const parser_t* parser, const node_t* node) {
 }
 
 static int node_last_token(const parser_t* parser, const node_t* node) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
     if (node == NULL) return -1;
 
     switch (node->node_kind) {
@@ -678,9 +677,9 @@ static int node_last_token(const parser_t* parser, const node_t* node) {
 
 static void parser_tok_source(const parser_t* parser, int tok_i,
                               const char** source, int* source_len) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)source, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)source_len, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)source, !=, NULL, "%p");
+    CHECK((void*)source_len, !=, NULL, "%p");
 
     const token_id_t tok = parser->par_lexer.lex_tokens[tok_i].tok_id;
     const pos_range_t pos_range = parser->par_lexer.lex_tok_pos_ranges[tok_i];
@@ -696,50 +695,48 @@ static void parser_tok_source(const parser_t* parser, int tok_i,
 }
 
 static bool parser_is_at_end(const parser_t* parser) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
 
     return parser->par_tok_i >= (int)buf_size(parser->par_lexer.lex_tokens);
 }
 
 static token_id_t parser_current(const parser_t* parser) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
     return parser->par_lexer.lex_tokens[parser->par_tok_i].tok_id;
 }
 
 static token_id_t parser_previous(const parser_t* parser) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND(parser->par_tok_i, >, 1, "%d");
-    PG_ASSERT_COND(parser->par_tok_i, <,
-                   (int)buf_size(parser->par_lexer.lex_tokens), "%d");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK(parser->par_tok_i, >, 1, "%d");
+    CHECK(parser->par_tok_i, <, (int)buf_size(parser->par_lexer.lex_tokens),
+          "%d");
 
     return parser->par_lexer.lex_tokens[parser->par_tok_i - 1].tok_id;
 }
 static void parser_advance_until_after(parser_t* parser, token_id_t id) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)parser->par_lexer.lex_tokens, !=, NULL, "%p");
-    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tokens), >, (int)0,
-                   "%d");
-    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tokens), >,
-                   parser->par_tok_i, "%d");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)parser->par_lexer.lex_tokens, !=, NULL, "%p");
+    CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, (int)0, "%d");
+    CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, parser->par_tok_i,
+          "%d");
 
     while (!parser_is_at_end(parser) && parser_current(parser) != id) {
-        PG_ASSERT_COND(parser->par_tok_i, <,
-                       (int)buf_size(parser->par_lexer.lex_tokens), "%d");
+        CHECK(parser->par_tok_i, <, (int)buf_size(parser->par_lexer.lex_tokens),
+              "%d");
         parser->par_tok_i += 1;
-        PG_ASSERT_COND(parser->par_tok_i, <,
-                       (int)buf_size(parser->par_lexer.lex_tokens), "%d");
+        CHECK(parser->par_tok_i, <, (int)buf_size(parser->par_lexer.lex_tokens),
+              "%d");
     }
 
     parser->par_tok_i += 1;
 }
 
 static token_id_t parser_peek(parser_t* parser) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)parser->par_lexer.lex_tokens, !=, NULL, "%p");
-    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tokens), >, (int)0,
-                   "%d");
-    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tokens), >,
-                   parser->par_tok_i, "%d");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)parser->par_lexer.lex_tokens, !=, NULL, "%p");
+    CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, (int)0, "%d");
+    CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, parser->par_tok_i,
+          "%d");
 
     while (parser->par_tok_i < (int)buf_size(parser->par_lexer.lex_tokens)) {
         const token_id_t id =
@@ -755,12 +752,11 @@ static token_id_t parser_peek(parser_t* parser) {
 }
 
 static token_id_t parser_peek_next(parser_t* parser) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)parser->par_lexer.lex_tokens, !=, NULL, "%p");
-    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tokens), >, (int)0,
-                   "%d");
-    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tokens), >,
-                   parser->par_tok_i, "%d");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)parser->par_lexer.lex_tokens, !=, NULL, "%p");
+    CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, (int)0, "%d");
+    CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, parser->par_tok_i,
+          "%d");
 
     int i = parser->par_tok_i;
     while (i < (int)buf_size(parser->par_lexer.lex_tokens) - 1) {
@@ -777,7 +773,7 @@ static token_id_t parser_peek_next(parser_t* parser) {
 
 static void parser_print_source_on_error(const parser_t* parser,
                                          int first_tok_i, int last_tok_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
 
     const pos_range_t first_tok_pos_range =
         parser->par_lexer.lex_tok_pos_ranges[first_tok_i];
@@ -788,7 +784,7 @@ static void parser_print_source_on_error(const parser_t* parser,
 
     const int first_line = first_tok_loc.loc_line;
     const int last_line = last_tok_loc.loc_line;
-    PG_ASSERT_COND(first_line, <=, last_line, "%d");
+    CHECK(first_line, <=, last_line, "%d");
 
     int first_line_start_tok_i = first_tok_i;
     while (true) {
@@ -854,7 +850,7 @@ static void parser_print_source_on_error(const parser_t* parser,
 
 static res_t parser_err_unexpected_token(const parser_t* parser,
                                          token_id_t expected) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
 
     const res_t res = RES_UNEXPECTED_TOKEN;
 
@@ -873,12 +869,11 @@ static res_t parser_err_unexpected_token(const parser_t* parser,
 
 static bool parser_match(parser_t* parser, int* return_token_index,
                          int id_count, ...) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)parser->par_lexer.lex_tokens, !=, NULL, "%p");
-    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tokens), >, (int)0,
-                   "%d");
-    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tokens), >,
-                   parser->par_tok_i, "%d");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)parser->par_lexer.lex_tokens, !=, NULL, "%p");
+    CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, (int)0, "%d");
+    CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, parser->par_tok_i,
+          "%d");
 
     const token_id_t current_id = parser_peek(parser);
 
@@ -893,8 +888,8 @@ static bool parser_match(parser_t* parser, int* return_token_index,
         if (id != current_id) continue;
 
         parser_advance_until_after(parser, id);
-        PG_ASSERT_COND(parser->par_tok_i, <,
-                       (int)buf_size(parser->par_lexer.lex_tokens), "%d");
+        CHECK(parser->par_tok_i, <, (int)buf_size(parser->par_lexer.lex_tokens),
+              "%d");
 
         *return_token_index = parser->par_tok_i - 1;
 
@@ -907,7 +902,7 @@ static bool parser_match(parser_t* parser, int* return_token_index,
 
 static res_t parser_err_non_matching_types(const parser_t* parser,
                                            int lhs_node_i, int rhs_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
 
     const node_t* const lhs = &parser->par_nodes[lhs_node_i];
     const type_kind_t lhs_type_kind =
@@ -938,7 +933,7 @@ static res_t parser_err_non_matching_types(const parser_t* parser,
 
 static res_t parser_err_unexpected_type(const parser_t* parser, int lhs_node_i,
                                         type_kind_t expected_type_kind) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
 
     const node_t* const lhs = &parser->par_nodes[lhs_node_i];
 
@@ -963,8 +958,8 @@ static res_t parser_err_unexpected_type(const parser_t* parser, int lhs_node_i,
 }
 
 static res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
 
     int first_tok_i = -1, last_tok_i = -1, dummy = -1;
     if (!parser_match(parser, &first_tok_i, 1, TOK_ID_IF))
@@ -980,7 +975,7 @@ static res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
         log_debug("failed to parse if-cond %d", res);
         return res;
     }
-    PG_ASSERT_COND(node_cond_i, >=, 0, "%d");
+    CHECK(node_cond_i, >=, 0, "%d");
 
     const node_t* const node_cond = &parser->par_nodes[node_cond_i];
     const type_kind_t cond_type_kind =
@@ -1000,7 +995,7 @@ static res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
         log_debug("failed to parse if-branch %d", res);
         return res;
     }
-    PG_ASSERT_COND(node_then_i, >=, 0, "%d");
+    CHECK(node_then_i, >=, 0, "%d");
 
     const node_t* const node_then = &parser->par_nodes[node_then_i];
     const int then_type_i = node_then->node_type_i;
@@ -1047,8 +1042,8 @@ static res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
 }
 
 static res_t parser_parse_jump_expr(parser_t* parser, int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
 
     int tok_i = -1;
     res_t res = RES_NONE;
@@ -1085,8 +1080,8 @@ static res_t parser_parse_jump_expr(parser_t* parser, int* new_node_i) {
 }
 
 static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
 
     int tok_i = -1;
     res_t res = RES_NONE;
@@ -1196,8 +1191,8 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
 
 static res_t parser_parse_postfix_unary_expr(parser_t* parser,
                                              int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
 
     res_t res = parser_parse_primary_expr(parser, new_node_i);
     if (res != RES_OK) return res;
@@ -1212,8 +1207,8 @@ static res_t parser_parse_postfix_unary_expr(parser_t* parser,
 }
 
 static res_t parser_parse_prefix_unary_expr(parser_t* parser, int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
 
     res_t res = RES_NONE;
 
@@ -1251,8 +1246,8 @@ static res_t parser_parse_prefix_unary_expr(parser_t* parser, int* new_node_i) {
 }
 
 static res_t parser_parse_as_expr(parser_t* parser, int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
 
     // TODO
 
@@ -1265,7 +1260,7 @@ static res_t parser_parse_multiplicative_expr(parser_t* parser,
 
     int lhs_i = -1;
     if ((res = parser_parse_as_expr(parser, &lhs_i)) != RES_OK) return res;
-    PG_ASSERT_COND(lhs_i, >=, 0, "%d");
+    CHECK(lhs_i, >=, 0, "%d");
 
     const int lhs_type_i = parser->par_nodes[lhs_i].node_type_i;
 
@@ -1292,7 +1287,7 @@ static res_t parser_parse_multiplicative_expr(parser_t* parser,
         } else if (res != RES_OK) {
             return res;
         }
-        PG_ASSERT_COND(rhs_i, >=, 0, "%d");
+        CHECK(rhs_i, >=, 0, "%d");
 
         const int rhs_type_i = parser->par_nodes[rhs_i].node_type_i;
         const type_kind_t rhs_type_kind = parser->par_types[rhs_type_i].ty_kind;
@@ -1367,8 +1362,8 @@ static res_t parser_parse_additive_expr(parser_t* parser, int* new_node_i) {
 }
 
 static res_t parser_parse_range_expr(parser_t* parser, int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
 
     // TODO
 
@@ -1376,8 +1371,8 @@ static res_t parser_parse_range_expr(parser_t* parser, int* new_node_i) {
 }
 
 static res_t parser_parse_infix_fn_call(parser_t* parser, int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
 
     // TODO
 
@@ -1385,8 +1380,8 @@ static res_t parser_parse_infix_fn_call(parser_t* parser, int* new_node_i) {
 }
 
 static res_t parser_parse_elvis_expr(parser_t* parser, int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
 
     // TODO
 
@@ -1394,8 +1389,8 @@ static res_t parser_parse_elvis_expr(parser_t* parser, int* new_node_i) {
 }
 
 static res_t parser_parse_infix_op(parser_t* parser, int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
 
     // TODO
 
@@ -1403,15 +1398,15 @@ static res_t parser_parse_infix_op(parser_t* parser, int* new_node_i) {
 }
 
 static res_t parser_parse_value_arg(parser_t* parser, int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
 
     return parser_parse_expr(parser, new_node_i);
 }
 
 static res_t parser_parse_value_args(parser_t* parser, int** arg_nodes_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)arg_nodes_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)arg_nodes_i, !=, NULL, "%p");
 
     if (parser_peek(parser) != TOK_ID_LPAREN) return RES_NONE;
 
@@ -1438,8 +1433,8 @@ static res_t parser_parse_value_args(parser_t* parser, int** arg_nodes_i) {
 }
 
 static res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
 
     int* arg_nodes_i = NULL;
     res_t res = parser_parse_value_args(parser, &arg_nodes_i);
@@ -1493,15 +1488,15 @@ static res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i) {
 
 static res_t parser_parse_generical_call_like_comparison(parser_t* parser,
                                                          int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
 
     return parser_parse_infix_op(parser, new_node_i);
 }
 
 static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
 
     res_t res = RES_NONE;
 
@@ -1572,8 +1567,8 @@ static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
 }
 
 static res_t parser_parse_equality(parser_t* parser, int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
 
     res_t res = RES_NONE;
 
@@ -1611,8 +1606,8 @@ static res_t parser_parse_equality(parser_t* parser, int* new_node_i) {
 }
 
 static res_t parser_parse_conjunction(parser_t* parser, int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
 
     // TODO
 
@@ -1620,8 +1615,8 @@ static res_t parser_parse_conjunction(parser_t* parser, int* new_node_i) {
 }
 
 static res_t parser_parse_disjunction(parser_t* parser, int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
 
     // TODO
 
@@ -1629,14 +1624,14 @@ static res_t parser_parse_disjunction(parser_t* parser, int* new_node_i) {
 }
 
 static res_t parser_parse_expr(parser_t* parser, int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
 
     return parser_parse_disjunction(parser, new_node_i);
 }
 
 static res_t parser_parse_stmts(parser_t* parser) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
 
     res_t res = RES_NONE;
     while (1) {
@@ -1657,8 +1652,8 @@ static res_t parser_parse_stmts(parser_t* parser) {
 }
 
 static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
 
     buf_push(parser->par_nodes,
              ((node_t){.node_kind = NODE_BLOCK,
@@ -1711,8 +1706,8 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
 
 static res_t parser_parse_control_structure_body(parser_t* parser,
                                                  int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
 
     if (parser_peek(parser) == TOK_ID_LCURLY)
         return parser_parse_block(parser, new_node_i);
@@ -1721,8 +1716,8 @@ static res_t parser_parse_control_structure_body(parser_t* parser,
 }
 
 static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
 
     int keyword_print_i = -1;
     res_t res = RES_NONE;
@@ -1757,8 +1752,8 @@ static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i) {
 }
 
 static res_t parser_parse_assignment(parser_t* parser, int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
 
     res_t res = RES_NONE;
     int dummy = -1, expr_node_i = -1, lhs_tok_i = -1;
@@ -1825,8 +1820,8 @@ static res_t parser_parse_assignment(parser_t* parser, int* new_node_i) {
 
 static res_t parser_parse_property_declaration(parser_t* parser,
                                                int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
 
     if (!(parser_peek(parser) == TOK_ID_VAL ||
           parser_peek(parser) == TOK_ID_VAR))
@@ -1851,7 +1846,7 @@ static res_t parser_parse_property_declaration(parser_t* parser,
 
     if (!parser_match(parser, &type_tok_i, 1, TOK_ID_IDENTIFIER))
         return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
-    PG_ASSERT_COND(type_tok_i, >=, 0, "%d");
+    CHECK(type_tok_i, >=, 0, "%d");
 
     if (!parser_match(parser, &dummy, 1, TOK_ID_EQ))
         return parser_err_unexpected_token(parser, TOK_ID_EQ);
@@ -1897,8 +1892,8 @@ static res_t parser_parse_property_declaration(parser_t* parser,
 }
 
 static res_t parser_parse_parameter(parser_t* parser, int** new_nodes_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_nodes_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_nodes_i, !=, NULL, "%p");
 
     int identifier_tok_i = -1, dummy = -1, type_tok_i = -1;
 
@@ -1954,8 +1949,8 @@ static res_t parser_parse_parameter(parser_t* parser, int** new_nodes_i) {
 }
 
 static res_t parser_parse_fn_value_params(parser_t* parser, int** new_nodes_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_nodes_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_nodes_i, !=, NULL, "%p");
 
     int dummy = -1;
     if (!parser_match(parser, &dummy, 1, TOK_ID_LPAREN))
@@ -1969,8 +1964,8 @@ static res_t parser_parse_fn_value_params(parser_t* parser, int** new_nodes_i) {
 }
 
 static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
 
     if (parser_peek(parser) != TOK_ID_FUN) return RES_NONE;
 
@@ -2109,8 +2104,8 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
 }
 
 static res_t parser_parse_declaration(parser_t* parser, int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
 
     res_t res = RES_NONE;
 
@@ -2121,8 +2116,8 @@ static res_t parser_parse_declaration(parser_t* parser, int* new_node_i) {
 }
 
 static res_t parser_parse_while_stmt(parser_t* parser, int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
 
     int dummy = -1, first_tok_i = -1, last_tok_i = -1, cond_i = -1, body_i = -1;
 
@@ -2170,8 +2165,8 @@ static res_t parser_parse_while_stmt(parser_t* parser, int* new_node_i) {
 }
 
 static res_t parser_parse_loop(parser_t* parser, int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
 
     // TODO
 
@@ -2179,8 +2174,8 @@ static res_t parser_parse_loop(parser_t* parser, int* new_node_i) {
 }
 
 static res_t parser_parse_stmt(parser_t* parser, int* new_node_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)new_node_i, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
 
     if (parser_peek(parser) == TOK_ID_EOF) return RES_NONE;
 
@@ -2197,12 +2192,11 @@ static res_t parser_parse_stmt(parser_t* parser, int* new_node_i) {
 }
 
 static res_t parser_parse(parser_t* parser) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)parser->par_lexer.lex_tokens, !=, NULL, "%p");
-    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tokens), >, (int)0,
-                   "%d");
-    PG_ASSERT_COND((int)buf_size(parser->par_lexer.lex_tokens), >,
-                   parser->par_tok_i, "%d");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)parser->par_lexer.lex_tokens, !=, NULL, "%p");
+    CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, 0, "%d");
+    CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, parser->par_tok_i,
+          "%d");
 
     int new_node_i = -1;
     res_t res = RES_NONE;

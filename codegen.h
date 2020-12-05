@@ -191,7 +191,7 @@ static void emit_stdlib() {
 }
 
 static void emit_loc(const parser_t* parser, const node_t* const node) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
 
     const loc_t loc =
         parser->par_lexer.lex_locs[node_first_token(parser, node)];
@@ -200,7 +200,7 @@ static void emit_loc(const parser_t* parser, const node_t* const node) {
 }
 
 static void emit_expr(const parser_t* parser, const int expr_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
 
     const node_t* const expr = &parser->par_nodes[expr_i];
     const type_t* const type = &parser->par_types[expr->node_type_i];
@@ -475,7 +475,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 }
 
 static void emit_stmt(const parser_t* parser, int stmt_i) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
 
     const node_t* const stmt = &parser->par_nodes[stmt_i];
     const loc_t loc =
@@ -583,8 +583,8 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
 }
 
 static void emit(const parser_t* parser, FILE* asm_file) {
-    PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)parser->par_nodes, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)parser->par_nodes, !=, NULL, "%p");
 
     output_file = asm_file;
     println(".data");

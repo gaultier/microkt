@@ -148,10 +148,10 @@ static bool lex_is_identifier_char(char c) {
 }
 
 static char lex_advance(lexer_t* lexer, int* col) {
-    PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)col, !=, NULL, "%p");
-    PG_ASSERT_COND(lexer->lex_index, <=, lexer->lex_source_len, "%d");
+    CHECK((void*)lexer, !=, NULL, "%p");
+    CHECK((void*)lexer->lex_source, !=, NULL, "%p");
+    CHECK((void*)col, !=, NULL, "%p");
+    CHECK(lexer->lex_index, <=, lexer->lex_source_len, "%d");
 
     lexer->lex_index += 1;
     *col += 1;
@@ -160,34 +160,34 @@ static char lex_advance(lexer_t* lexer, int* col) {
 }
 
 static bool lex_is_at_end(const lexer_t* lexer) {
-    PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
+    CHECK((void*)lexer, !=, NULL, "%p");
 
     return lexer->lex_index == lexer->lex_source_len;
 }
 
 static char lex_peek(const lexer_t* lexer) {
-    PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
+    CHECK((void*)lexer, !=, NULL, "%p");
+    CHECK((void*)lexer->lex_source, !=, NULL, "%p");
 
     if (lex_is_at_end(lexer)) return '\0';
 
-    PG_ASSERT_COND(lexer->lex_index, <, lexer->lex_source_len, "%d");
+    CHECK(lexer->lex_index, <, lexer->lex_source_len, "%d");
     return lexer->lex_source[lexer->lex_index];
 }
 
 static char lex_peek_next(const lexer_t* lexer) {
-    PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
-    PG_ASSERT_COND(lexer->lex_index, <, lexer->lex_source_len - 1, "%d");
+    CHECK((void*)lexer, !=, NULL, "%p");
+    CHECK((void*)lexer->lex_source, !=, NULL, "%p");
+    CHECK(lexer->lex_index, <, lexer->lex_source_len - 1, "%d");
 
     return lex_is_at_end(lexer) ? '\0'
                                 : lexer->lex_source[lexer->lex_index + 1];
 }
 
 static bool lex_match(lexer_t* lexer, char c, int* col) {
-    PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)col, !=, NULL, "%p");
+    CHECK((void*)lexer, !=, NULL, "%p");
+    CHECK((void*)lexer->lex_source, !=, NULL, "%p");
+    CHECK((void*)col, !=, NULL, "%p");
 
     if (lex_is_at_end(lexer)) return false;
 
@@ -198,10 +198,10 @@ static bool lex_match(lexer_t* lexer, char c, int* col) {
 }
 
 static void lex_advance_until_newline_or_eof(lexer_t* lexer, int* col) {
-    PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
-    PG_ASSERT_COND(lexer->lex_index, <, lexer->lex_source_len - 1, "%d");
-    PG_ASSERT_COND((void*)col, !=, NULL, "%p");
+    CHECK((void*)lexer, !=, NULL, "%p");
+    CHECK((void*)lexer->lex_source, !=, NULL, "%p");
+    CHECK(lexer->lex_index, <, lexer->lex_source_len - 1, "%d");
+    CHECK((void*)col, !=, NULL, "%p");
 
     while (true) {
         const char c = lex_peek(lexer);
@@ -214,13 +214,13 @@ static void lex_advance_until_newline_or_eof(lexer_t* lexer, int* col) {
 }
 
 static void lex_identifier(lexer_t* lexer, token_t* result, int* col) {
-    PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)result, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)col, !=, NULL, "%p");
+    CHECK((void*)lexer, !=, NULL, "%p");
+    CHECK((void*)lexer->lex_source, !=, NULL, "%p");
+    CHECK((void*)result, !=, NULL, "%p");
+    CHECK((void*)col, !=, NULL, "%p");
 
     char c = lex_advance(lexer, col);
-    PG_ASSERT_COND(lex_is_identifier_char(c), ==, true, "%d");
+    CHECK(lex_is_identifier_char(c), ==, true, "%d");
 
     while (lexer->lex_index < lexer->lex_source_len) {
         c = lex_peek(lexer);
@@ -229,8 +229,8 @@ static void lex_identifier(lexer_t* lexer, token_t* result, int* col) {
         lex_advance(lexer, col);
     }
 
-    PG_ASSERT_COND(lexer->lex_index, <, lexer->lex_source_len, "%d");
-    PG_ASSERT_COND(lexer->lex_index, >=, result->tok_pos_range.pr_start, "%d");
+    CHECK(lexer->lex_index, <, lexer->lex_source_len, "%d");
+    CHECK(lexer->lex_index, >=, result->tok_pos_range.pr_start, "%d");
 
     const token_id_t* id = NULL;
 
@@ -244,13 +244,13 @@ static void lex_identifier(lexer_t* lexer, token_t* result, int* col) {
 }
 
 static res_t lex_number(lexer_t* lexer, token_t* result, int* col) {
-    PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)result, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)col, !=, NULL, "%p");
+    CHECK((void*)lexer, !=, NULL, "%p");
+    CHECK((void*)lexer->lex_source, !=, NULL, "%p");
+    CHECK((void*)result, !=, NULL, "%p");
+    CHECK((void*)col, !=, NULL, "%p");
 
     char c = lex_advance(lexer, col);
-    PG_ASSERT_COND(lex_is_digit(c), ==, true, "%d");
+    CHECK(lex_is_digit(c), ==, true, "%d");
 
     while (lexer->lex_index < lexer->lex_source_len) {
         c = lex_peek(lexer);
@@ -266,13 +266,13 @@ static res_t lex_number(lexer_t* lexer, token_t* result, int* col) {
 // TODO: escape sequences
 // TODO: multiline
 static void lex_string(lexer_t* lexer, token_t* result, int* col) {
-    PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)result, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)col, !=, NULL, "%p");
+    CHECK((void*)lexer, !=, NULL, "%p");
+    CHECK((void*)lexer->lex_source, !=, NULL, "%p");
+    CHECK((void*)result, !=, NULL, "%p");
+    CHECK((void*)col, !=, NULL, "%p");
 
     char c = lex_peek(lexer);
-    PG_ASSERT_COND(c, ==, '"', "%c");
+    CHECK(c, ==, '"', "%c");
     lex_advance(lexer, col);
 
     while (lexer->lex_index < lexer->lex_source_len) {
@@ -289,7 +289,7 @@ static void lex_string(lexer_t* lexer, token_t* result, int* col) {
             c, lexer->lex_index);
         result->tok_id = TOK_ID_INVALID;
     } else {
-        PG_ASSERT_COND(c, ==, '"', "%c");
+        CHECK(c, ==, '"', "%c");
         result->tok_id = TOK_ID_STRING;
         lex_advance(lexer, col);
     }
@@ -298,13 +298,13 @@ static void lex_string(lexer_t* lexer, token_t* result, int* col) {
 // TODO: escape sequences
 // TODO: unicode literals
 static void lex_char(lexer_t* lexer, token_t* result, int* col) {
-    PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)result, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)col, !=, NULL, "%p");
+    CHECK((void*)lexer, !=, NULL, "%p");
+    CHECK((void*)lexer->lex_source, !=, NULL, "%p");
+    CHECK((void*)result, !=, NULL, "%p");
+    CHECK((void*)col, !=, NULL, "%p");
 
     char c = lex_peek(lexer);
-    PG_ASSERT_COND(c, ==, '\'', "%c");
+    CHECK(c, ==, '\'', "%c");
     lex_advance(lexer, col);
 
     int len = 0;
@@ -323,7 +323,7 @@ static void lex_char(lexer_t* lexer, token_t* result, int* col) {
             c, lexer->lex_index);
         result->tok_id = TOK_ID_INVALID;
     } else {
-        PG_ASSERT_COND(c, ==, '\'', "%c");
+        CHECK(c, ==, '\'', "%c");
         result->tok_id = TOK_ID_CHAR;
         lex_advance(lexer, col);
     }
@@ -334,11 +334,11 @@ static void lex_char(lexer_t* lexer, token_t* result, int* col) {
 }
 
 static token_t lex_next(lexer_t* lexer, int* line, int* start_col, int* col) {
-    PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)lexer->lex_source, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)line, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)start_col, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)col, !=, NULL, "%p");
+    CHECK((void*)lexer, !=, NULL, "%p");
+    CHECK((void*)lexer->lex_source, !=, NULL, "%p");
+    CHECK((void*)line, !=, NULL, "%p");
+    CHECK((void*)start_col, !=, NULL, "%p");
+    CHECK((void*)col, !=, NULL, "%p");
 
     token_t result = {.tok_id = TOK_ID_EOF,
                       .tok_pos_range = {.pr_start = lexer->lex_index}};
@@ -546,8 +546,8 @@ outer:
 }
 
 static void token_dump(const token_t* t, int i, const lexer_t* lexer) {
-    PG_ASSERT_COND((void*)t, !=, NULL, "%p");
-    PG_ASSERT_COND((void*)lexer, !=, NULL, "%p");
+    CHECK((void*)t, !=, NULL, "%p");
+    CHECK((void*)lexer, !=, NULL, "%p");
 
     loc_t loc = lexer->lex_locs[i];
 #ifndef WITH_LOGS
@@ -562,7 +562,7 @@ static void token_dump(const token_t* t, int i, const lexer_t* lexer) {
 }
 
 static lexer_t lex_init(const char* source, const int source_len) {
-    PG_ASSERT_COND((void*)source, !=, NULL, "%p");
+    CHECK((void*)source, !=, NULL, "%p");
 
     lexer_t lexer = {.lex_source = source, .lex_source_len = source_len};
     buf_grow(lexer.lex_tokens, source_len / 8);
@@ -583,10 +583,10 @@ static lexer_t lex_init(const char* source, const int source_len) {
         if (token.tok_id == TOK_ID_EOF) break;
         i++;
     }
-    PG_ASSERT_COND((int)buf_size(lexer.lex_tokens), ==,
-                   (int)buf_size(lexer.lex_tok_pos_ranges), "%d");
-    PG_ASSERT_COND((int)buf_size(lexer.lex_tokens), ==,
-                   (int)buf_size(lexer.lex_locs), "%d");
+    CHECK((int)buf_size(lexer.lex_tokens), ==,
+          (int)buf_size(lexer.lex_tok_pos_ranges), "%d");
+    CHECK((int)buf_size(lexer.lex_tokens), ==, (int)buf_size(lexer.lex_locs),
+          "%d");
 
     return lexer;
 }

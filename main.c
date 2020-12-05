@@ -13,7 +13,7 @@ static bool is_file_name_valid(const char* file_name0) {
 
 static void base_source_file_name(const char* file_name0,
                                   char* base_file_name0) {
-    PG_ASSERT_COND(is_file_name_valid(file_name0), ==, true, "%d");
+    CHECK(is_file_name_valid(file_name0), ==, true, "%d");
 
     const int len = strlen(file_name0);
 
@@ -24,7 +24,7 @@ static void base_source_file_name(const char* file_name0,
 }
 
 static res_t run(const char* file_name0) {
-    PG_ASSERT_COND((void*)file_name0, !=, NULL, "%p");
+    CHECK((void*)file_name0, !=, NULL, "%p");
 
     static char base_file_name0[MAXPATHLEN + 1] = "";
     static char argv0[3 * MAXPATHLEN] = "";
