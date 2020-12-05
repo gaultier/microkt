@@ -637,6 +637,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
 static void emit(const parser_t* parser, FILE* asm_file) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)parser->par_nodes, !=, NULL, "%p");
+    CHECK((void*)asm_file, !=, NULL, "%p");
 
     output_file = asm_file;
     println(".data");
@@ -645,6 +646,9 @@ static void emit(const parser_t* parser, FILE* asm_file) {
 
     for (int i = 0; i < (int)buf_size(parser->par_node_decls); i++) {
         const int node_i = parser->par_node_decls[i];
+        CHECK(node_i, >=, 0, "%d");
+        CHECK(node_i, <, (int)buf_size(parser->par_nodes), "%d");
+
         const node_t* const node = &parser->par_nodes[node_i];
         if (node->node_kind != NODE_STRING) continue;
 
@@ -652,6 +656,9 @@ static void emit(const parser_t* parser, FILE* asm_file) {
         int source_len = 0;
         parser_tok_source(parser, node->node_n.node_string, &source,
                           &source_len);
+        CHECK((void*)source, !=, NULL, "%p");
+        CHECK(source_len, <, parser->par_lexer.lex_source_len, "%d");
+
         println(".L%d: .asciz \"\\%03o\\%03o\\%03o\\%03o%.*s\"", node_i,
                 (char)(source_len >> 0), (char)(source_len >> 8),
                 (char)(source_len >> 16), (char)(source_len >> 24), source_len,
