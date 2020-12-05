@@ -2191,6 +2191,8 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     parser->par_fn_i = *new_node_i = buf_size(parser->par_nodes) - 1;
     buf_push(parser->par_node_decls, *new_node_i);
 
+    CHECK(parser->par_scope_i, >=, 0, "%d");
+    CHECK(parser->par_scope_i, <, (int)buf_size(parser->par_nodes), "%d");
     buf_push(
         parser->par_nodes[parser->par_scope_i].node_n.node_block.bl_nodes_i,
         *new_node_i);
@@ -2245,6 +2247,8 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     } else
         declared_type_i = TYPE_UNIT_I;
 
+    CHECK(declared_type_i, >=, 0, "%d");
+    CHECK(declared_type_i, <, (int)buf_size(parser->par_types), "%d");
     parser->par_nodes[*new_node_i].node_type_i = declared_type_i;
 
     if (!parser_match(
@@ -2265,6 +2269,9 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
         return parser_err_unexpected_token(parser, TOK_ID_RCURLY);
 
     const int actual_type_i = parser->par_nodes[body_node_i].node_type_i;
+    CHECK(actual_type_i, >=, 0, "%d");
+    CHECK(actual_type_i, <, (int)buf_size(parser->par_types), "%d");
+
     const type_kind_t actual_type = parser->par_types[actual_type_i].ty_kind;
     const type_kind_t declared_type =
         parser->par_types[declared_type_i].ty_kind;
