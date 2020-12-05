@@ -1945,17 +1945,22 @@ static res_t parser_parse_assignment(parser_t* parser, int* new_node_i) {
         if (parser_resolve_var(parser, lhs_tok_i, &node_def_i) != RES_OK) {
             return RES_UNKNOWN_VAR;
         }
+        CHECK(node_def_i, >=, 0, "%d");
+        CHECK(node_def_i, <, (int)buf_size(parser->par_nodes), "%d");
 
         const node_t* const node_def = &parser->par_nodes[node_def_i];
         if (node_def->node_kind != NODE_VAR_DEF) {
             UNIMPLEMENTED();  // err
         }
+        CHECK((void*)node_def, !=, NULL, "%p");
 
         const var_def_t var_def = node_def->node_n.node_var_def;
         if (var_def.vd_flags & VAR_FLAGS_VAL)
             return parser_err_assigning_val(parser, lhs_tok_i, &var_def);
 
         const int type_i = node_def->node_type_i;
+        CHECK(type_i, >=, 0, "%d");
+        CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
 
         buf_push(
             parser->par_nodes,
@@ -1975,7 +1980,13 @@ static res_t parser_parse_assignment(parser_t* parser, int* new_node_i) {
             return res;
 
         const int lhs_type_i = parser->par_nodes[lhs_node_i].node_type_i;
+        CHECK(lhs_type_i, >=, 0, "%d");
+        CHECK(lhs_type_i, <, (int)buf_size(parser->par_types), "%d");
+
         const int rhs_type_i = parser->par_nodes[expr_node_i].node_type_i;
+        CHECK(rhs_type_i, >=, 0, "%d");
+        CHECK(rhs_type_i, <, (int)buf_size(parser->par_types), "%d");
+
         const type_kind_t lhs_type_kind = parser->par_types[lhs_type_i].ty_kind;
         const type_kind_t rhs_type_kind = parser->par_types[rhs_type_i].ty_kind;
 
@@ -2045,9 +2056,14 @@ static res_t parser_parse_property_declaration(parser_t* parser,
         UNIMPLEMENTED();
     }
     const int type_i = parser_make_type(parser, type_kind);
+    CHECK(type_i, >=, 0, "%d");
+    CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
+
     const int type_size = parser->par_types[type_i].ty_size;
     log_debug("parsed type %s size=%d", type_to_str[type_kind], type_size);
 
+    CHECK(parser->par_fn_i, >=, 0, "%d");
+    CHECK(parser->par_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
     parser->par_nodes[parser->par_fn_i].node_n.node_fn_decl.fd_stack_size +=
         type_size;
 
@@ -2095,7 +2111,13 @@ static res_t parser_parse_parameter(parser_t* parser, int** new_nodes_i) {
             UNIMPLEMENTED();
 
         const int type_i = parser_make_type(parser, type_kind);
+        CHECK(type_i, >=, 0, "%d");
+        CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
+
         const int type_size = parser->par_types[type_i].ty_size;
+
+        CHECK(parser->par_fn_i, >=, 0, "%d");
+        CHECK(parser->par_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
         parser->par_nodes[parser->par_fn_i].node_n.node_fn_decl.fd_stack_size +=
             type_size;
 
