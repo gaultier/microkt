@@ -1202,9 +1202,16 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
     }
     if (parser_match(parser, &tok_i, 2, TOK_ID_TRUE, TOK_ID_FALSE)) {
         const int type_i = parser_make_type(parser, TYPE_BOOL);
+        CHECK(type_i, >=, 0, "%d");
+        CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
 
+        CHECK(tok_i, >=, 0, "%d");
+        CHECK(tok_i, <, parser->par_lexer.lex_source_len, "%d");
         const pos_range_t pos_range =
             parser->par_lexer.lex_tok_pos_ranges[tok_i];
+
+        CHECK(pos_range.pr_start, >=, 0, "%d");
+        CHECK(pos_range.pr_start, <, parser->par_lexer.lex_source_len, "%d");
         const char* const source =
             &parser->par_lexer.lex_source[pos_range.pr_start];
         // The source is either `true` or `false` hence the len is either 4
