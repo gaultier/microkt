@@ -1576,11 +1576,20 @@ static res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i) {
     res_t res = parser_parse_value_args(parser, &arg_nodes_i);
     if (res != RES_OK) return res;
 
+    CHECK(*new_node_i, >=, 0, "%d");
+    CHECK(*new_node_i, <, (int)buf_size(parser->par_nodes), "%d");
     const int type_i = parser->par_nodes[*new_node_i].node_type_i;
+    CHECK(type_i, >=, 0, "%d");
+    CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
 
     const int fn_decl_node_i =
         parser_node_find_fn_decl_for_call(parser, *new_node_i);
+    CHECK(fn_decl_node_i, >=, 0, "%d");
+    CHECK(fn_decl_node_i, <, (int)buf_size(parser->par_nodes), "%d");
+
     const node_t* const fn_decl_node = &parser->par_nodes[fn_decl_node_i];
+    CHECK((void*)fn_decl_node, !=, NULL, "%p");
+
     const fn_decl_t fn_decl = fn_decl_node->node_n.node_fn_decl;
     const int declared_arity = buf_size(fn_decl.fd_arg_nodes_i);
     const int found_arity = buf_size(arg_nodes_i);
