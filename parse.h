@@ -699,6 +699,8 @@ static void parser_tok_source(const parser_t* parser, int tok_i,
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)source, !=, NULL, "%p");
     CHECK((void*)source_len, !=, NULL, "%p");
+    CHECK(tok_i, >=, 0, "%d");
+    CHECK(tok_i, <, parser->par_lexer.lex_source_len, "%d");
 
     const token_id_t tok = parser->par_lexer.lex_tokens[tok_i].tok_id;
     const pos_range_t pos_range = parser->par_lexer.lex_tok_pos_ranges[tok_i];
