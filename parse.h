@@ -335,9 +335,12 @@ static parser_t parser_init(const char* file_name0, const char* source,
     buf_push(lexer.lex_tok_pos_ranges,
              ((pos_range_t){.pr_start = 0, .pr_end = 0}));
     buf_push(lexer.lex_locs, ((loc_t){.loc_line = 1, .loc_column = 1}));
+
     const int fn_main_name_tok_i = buf_size(lexer.lex_tokens) - 1;
+
     node_t* nodes = NULL;
     buf_grow(nodes, 100);
+
     // Add initial scope
     buf_push(nodes,
              ((node_t){.node_kind = NODE_BLOCK,
