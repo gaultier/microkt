@@ -426,8 +426,10 @@ static long long int parse_tok_to_char(const parser_t* parser, int tok_i) {
 
 static void node_dump(const parser_t* parser, int node_i, int indent) {
     CHECK((void*)parser, !=, NULL, "%p");
+    CHECK(node_i, >=, 0, "%d");
+    CHECK(node_i, <, (int)buf_size(parser->par_nodes), "%d");
 
-    const node_t* node = &parser->par_nodes[node_i];
+    const node_t* const node = &parser->par_nodes[node_i];
     switch (node->node_kind) {
         case NODE_BUILTIN_PRINTLN: {
             log_debug_with_indent(
