@@ -1228,6 +1228,8 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
     }
     if (parser_match(parser, &tok_i, 1, TOK_ID_STRING)) {
         const int type_i = parser_make_type(parser, TYPE_STRING);
+        CHECK(type_i, >=, 0, "%d");
+        CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
 
         const node_t node = {.node_kind = NODE_STRING,
                              .node_type_i = type_i,
@@ -1241,6 +1243,8 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
     }
     if (parser_match(parser, &tok_i, 1, TOK_ID_LONG)) {
         const int type_i = parser_make_type(parser, TYPE_LONG);
+        CHECK(type_i, >=, 0, "%d");
+        CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
 
         const long long int val = parse_tok_to_long(parser, tok_i);
         buf_push(parser->par_nodes,
@@ -1254,6 +1258,8 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
     }
     if (parser_match(parser, &tok_i, 1, TOK_ID_CHAR)) {
         const int type_i = parser_make_type(parser, TYPE_CHAR);
+        CHECK(type_i, >=, 0, "%d");
+        CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
 
         const long long int val = parse_tok_to_char(parser, tok_i);
         buf_push(parser->par_nodes,
