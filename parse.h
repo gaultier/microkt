@@ -384,16 +384,20 @@ static long long int parse_tok_to_long(const parser_t* parser, int tok_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)parser->par_lexer.lex_tok_pos_ranges, !=, NULL, "%p");
     CHECK((void*)parser->par_lexer.lex_source, !=, NULL, "%p");
+    CHECK(tok_i, >=, 0, "%d");
+    CHECK(tok_i, <, parser->par_lexer.lex_source_len, "%d");
 
     static char string0[25];
 
     const pos_range_t pos_range = parser->par_lexer.lex_tok_pos_ranges[tok_i];
     const char* const string =
         &parser->par_lexer.lex_source[pos_range.pr_start];
+    CHECK((void*)string, !=, NULL, "%p");
+
     const int string_len = pos_range.pr_end - pos_range.pr_start;
 
     CHECK(string_len, >, (int)0, "%d");
-    CHECK(string_len, <, (int)25, "%d");
+    CHECK(string_len, <, (int)sizeof(string0), "%d");
 
     // TOOD: limit in the lexer the length of a number literal
     memset(string0, 0, sizeof(string0));
@@ -404,10 +408,14 @@ static long long int parse_tok_to_long(const parser_t* parser, int tok_i) {
 
 static long long int parse_tok_to_char(const parser_t* parser, int tok_i) {
     CHECK((void*)parser, !=, NULL, "%p");
+    CHECK(tok_i, >=, 0, "%d");
+    CHECK(tok_i, <, parser->par_lexer.lex_source_len, "%d");
 
     const pos_range_t pos_range = parser->par_lexer.lex_tok_pos_ranges[tok_i];
     const char* const string =
         &parser->par_lexer.lex_source[pos_range.pr_start + 1];
+    CHECK((void*)string, !=, NULL, "%p");
+
     int string_len = pos_range.pr_end - pos_range.pr_start - 2;
 
     CHECK(string_len, >, (int)0, "%d");
