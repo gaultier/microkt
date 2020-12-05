@@ -977,6 +977,9 @@ static res_t parser_err_non_matching_types(const parser_t* parser,
 
     int rhs_type_kind = TYPE_BOOL;
     int rhs_last_tok_i = node_last_token(parser, lhs);
+    CHECK(rhs_last_tok_i, >=, 0, "%d");
+    CHECK(rhs_last_tok_i, <, parser->par_lexer.lex_source_len, "%d");
+
     if (rhs_node_i >= 0) {
         const node_t* const rhs = &parser->par_nodes[rhs_node_i];
         rhs_type_kind = parser->par_types[rhs->node_type_i].ty_kind;
