@@ -216,8 +216,13 @@ static void emit_loc(const parser_t* parser, const node_t* const node) {
 
 static void emit_expr(const parser_t* parser, const int expr_i) {
     CHECK((void*)parser, !=, NULL, "%p");
+    CHECK(expr_i, >=, 0, "%d");
+    CHECK(expr_i, <, (int)buf_size(parser->par_nodes), "%d");
 
     const node_t* const expr = &parser->par_nodes[expr_i];
+
+    CHECK(expr->node_type_i, >=, 0, "%d");
+    CHECK(expr->node_type_i, <, (int)buf_size(parser->par_types), "%d");
     const type_t* const type = &parser->par_types[expr->node_type_i];
 
     const char *ax, *di, *dx;
