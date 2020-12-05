@@ -723,6 +723,8 @@ static bool parser_is_at_end(const parser_t* parser) {
 
 static token_id_t parser_current(const parser_t* parser) {
     CHECK((void*)parser, !=, NULL, "%p");
+    CHECK(parser->par_tok_i, <, parser->par_lexer.lex_source_len, "%d");
+
     return parser->par_lexer.lex_tokens[parser->par_tok_i].tok_id;
 }
 
