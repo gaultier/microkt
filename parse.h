@@ -1278,7 +1278,11 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         }
 
         const node_t* const node_def = &parser->par_nodes[node_def_i];
+        CHECK((void*)node_def, !=, NULL, "%p");
+
         const int type_i = node_def->node_type_i;
+        CHECK(type_i, >=, 0, "%d");
+        CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
 
         buf_push(
             parser->par_nodes,
