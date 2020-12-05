@@ -1079,9 +1079,13 @@ static res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
         return res;
     }
     CHECK(node_then_i, >=, 0, "%d");
+    CHECK(node_then_i, <, (int)buf_size(parser->par_nodes), "%d");
 
     const node_t* const node_then = &parser->par_nodes[node_then_i];
     const int then_type_i = node_then->node_type_i;
+    CHECK(then_type_i, >=, 0, "%d");
+    CHECK(then_type_i, <, (int)buf_size(parser->par_types), "%d");
+
     const type_kind_t then_type_kind = parser->par_types[then_type_i].ty_kind;
 
     // Else is optional
