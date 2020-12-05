@@ -514,6 +514,8 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 
 static void emit_stmt(const parser_t* parser, int stmt_i) {
     CHECK((void*)parser, !=, NULL, "%p");
+    CHECK(stmt_i, >=, 0, "%d");
+    CHECK(stmt_i, <, (int)buf_size(parser->par_nodes), "%d");
 
     const node_t* const stmt = &parser->par_nodes[stmt_i];
     const loc_t loc =
@@ -550,11 +552,18 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
             emit_expr(parser, binary.bi_rhs_i);
 
             const var_t var = lhs->node_n.node_var;
+
+            CHECK(var.va_var_node_i, >=, 0, "%d");
+            CHECK(var.va_var_node_i, <, (int)buf_size(parser->par_nodes), "%d");
             const node_t* const node_def =
                 &parser->par_nodes[var.va_var_node_i];
+
             const var_def_t var_def = node_def->node_n.node_var_def;
             const int offset = var_def.vd_stack_offset;
+            CHECK(offset, >=, 0, "%d");
 
+            CHECK(stmt->node_type_i, >=, 0, "%d");
+            CHECK(stmt->node_type_i, <, (int)buf_size(parser->par_types), "%d");
             const int type_size = parser->par_types[stmt->node_type_i].ty_size;
 
             emit_loc(parser, stmt);
