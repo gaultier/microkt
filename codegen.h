@@ -433,6 +433,10 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             const var_t var = expr->node_n.node_var;
             const node_t* const node_def =
                 &parser->par_nodes[var.va_var_node_i];
+
+            CHECK(node_def->node_type_i, >=, 0, "%d");
+            CHECK(node_def->node_type_i, <, (int)buf_size(parser->par_types),
+                  "%d");
             const int type_size =
                 parser->par_types[node_def->node_type_i].ty_size;
 
@@ -458,12 +462,19 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
                 int name_len = 0;
                 parser_tok_source(parser, fn_decl.fd_name_tok_i, &name,
                                   &name_len);
+                CHECK((void*)name, !=, NULL, "%p");
+                CHECK(name_len, >=, 0, "%d");
+                CHECK(name_len, <, parser->par_lexer.lex_source_len, "%d");
 
                 // TODO: args, etc
 
                 println("call %.*s", name_len, name);
 
+                CHECK(current_fn_i, >=, 0, "%d");
+                CHECK(current_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
                 current_fn_i = caller_current_fn_i;
+                CHECK(current_fn_i, >=, 0, "%d");
+                CHECK(current_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
             } else
                 UNREACHABLE();
 
