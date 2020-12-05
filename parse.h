@@ -2345,7 +2345,13 @@ static res_t parser_parse_while_stmt(parser_t* parser, int* new_node_i) {
     } else if (res != RES_OK)
         return res;
 
+    CHECK(cond_i, >=, 0, "%d");
+    CHECK(cond_i, <, (int)buf_size(parser->par_nodes), "%d");
+
     const int cond_type_i = parser->par_nodes[cond_i].node_type_i;
+    CHECK(cond_type_i, >=, 0, "%d");
+    CHECK(cond_type_i, <, (int)buf_size(parser->par_types), "%d");
+
     const type_kind_t cond_type_kind = parser->par_types[cond_type_i].ty_kind;
     if (cond_type_kind != TYPE_BOOL) {
         return parser_err_non_matching_types(parser, cond_type_i, -1);
