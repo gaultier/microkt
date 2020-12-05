@@ -264,6 +264,8 @@ static bool parser_parse_identifier_to_type_kind(const parser_t* parser,
     const char* source = NULL;
     int source_len = 0;
     parser_tok_source(parser, tok_i, &source, &source_len);
+    CHECK((void*)source, !=, NULL, "%p");
+    CHECK(source_len, <=, parser->par_lexer.lex_source_len, "%d");
 
     if (source_len <= 2) return RES_NONE;
 
@@ -713,6 +715,8 @@ static void parser_tok_source(const parser_t* parser, int tok_i,
     *source_len = (tok == TOK_ID_STRING || tok == TOK_ID_CHAR)
                       ? (pos_range.pr_end - pos_range.pr_start - 2)
                       : (pos_range.pr_end - pos_range.pr_start);
+    CHECK((void*)*source, !=, NULL, "%p");
+    CHECK(*source_len, <=, parser->par_lexer.lex_source_len, "%d");
 }
 
 static bool parser_is_at_end(const parser_t* parser) {
@@ -863,6 +867,8 @@ static void parser_print_source_on_error(const parser_t* parser,
         &parser->par_lexer.lex_source[first_line_start_tok_pos.pr_start];
     int source_len =
         last_line_start_tok_pos.pr_end - first_line_start_tok_pos.pr_start;
+    CHECK(source_len, <=, parser->par_lexer.lex_source_len, "%d");
+
     trim_end(&source, &source_len);
 
     static char prefix[MAXPATHLEN + 50] = "\0";
@@ -1980,6 +1986,9 @@ static res_t parser_parse_parameter(parser_t* parser, int** new_nodes_i) {
         const char* source = NULL;
         int source_len = 0;
         parser_tok_source(parser, identifier_tok_i, &source, &source_len);
+        CHECK((void*)source, !=, NULL, "%p");
+        CHECK(source_len, <=, parser->par_lexer.lex_source_len, "%d");
+
         log_debug("New fn param: `%.*s` type=%s scope=%d offset=%d", source_len,
                   source, type_to_str[type_kind], parser->par_scope_i, offset);
     } while (parser_match(parser, &dummy, 1, TOK_ID_COMMA));
