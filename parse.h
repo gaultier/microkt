@@ -1335,11 +1335,15 @@ static res_t parser_parse_prefix_unary_expr(parser_t* parser, int* new_node_i) {
         }
 
         const int type_i = parser->par_nodes[node_i].node_type_i;
+        CHECK(type_i, >=, 0, "%d");
+        CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
         const type_kind_t type_kind = parser->par_types[type_i].ty_kind;
         if (type_kind != TYPE_BOOL) {
             return parser_err_unexpected_type(parser, node_i, TYPE_BOOL);
         }
 
+        CHECK(node_i, >=, 0, "%d");
+        CHECK(node_i, <, (int)buf_size(parser->par_nodes), "%d");
         const node_t* const node = &parser->par_nodes[node_i];
 
         buf_push(parser->par_nodes,
