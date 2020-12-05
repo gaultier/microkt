@@ -819,14 +819,19 @@ static void parser_print_source_on_error(const parser_t* parser,
 
     int first_line_start_tok_i = first_tok_i;
     while (true) {
+        first_line_start_tok_i--;
+
         if (first_line_start_tok_i < 0 ||
             parser->par_lexer.lex_locs[first_line_start_tok_i].loc_line <
                 first_line) {
             first_line_start_tok_i++;
+
+            CHECK(first_line_start_tok_i, >=, 0, "%d");
+            CHECK(first_line_start_tok_i, <,
+                  (int)parser->par_lexer.lex_source_len, "%d");
+
             break;
         }
-
-        first_line_start_tok_i--;
     }
 
     pos_range_t first_line_start_tok_pos =
@@ -834,15 +839,21 @@ static void parser_print_source_on_error(const parser_t* parser,
 
     int last_line_start_tok_i = last_tok_i;
     while (true) {
+        last_line_start_tok_i++;
+
         if (last_line_start_tok_i >=
                 (int)buf_size(parser->par_lexer.lex_locs) ||
             last_line <
                 parser->par_lexer.lex_locs[last_line_start_tok_i].loc_line) {
             last_line_start_tok_i--;
+
+            CHECK(last_line_start_tok_i, >=, 0, "%d");
+            CHECK(last_line_start_tok_i, >=, first_line_start_tok_i, "%d");
+            CHECK(last_line_start_tok_i, <,
+                  (int)parser->par_lexer.lex_source_len, "%d");
+
             break;
         }
-
-        last_line_start_tok_i++;
     }
 
     pos_range_t last_line_start_tok_pos =
