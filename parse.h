@@ -1046,7 +1046,7 @@ static res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
 
     res_t res = RES_NONE;
 
-    if (!parser_match(parser, &first_tok_i, 1, TOK_ID_LPAREN))
+    if (!parser_match(parser, &dummy, 1, TOK_ID_LPAREN))
         return parser_err_unexpected_token(parser, TOK_ID_LPAREN);
 
     int node_cond_i = -1, node_then_i = -1, node_else_i = -1;
@@ -1055,10 +1055,14 @@ static res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
         return res;
     }
     CHECK(node_cond_i, >=, 0, "%d");
-
+    CHECK(node_cond_i, <, (int)buf_size(parser->par_nodes), "%d");
     const node_t* const node_cond = &parser->par_nodes[node_cond_i];
+
+    CHECK(node_cond->node_type_i, >=, 0, "%d");
+    CHECK(node_cond->node_type_i, <, (int)buf_size(parser->par_types), "%d");
     const type_kind_t cond_type_kind =
         parser->par_types[node_cond->node_type_i].ty_kind;
+
     if (cond_type_kind != TYPE_BOOL) {
         log_debug("if-cond type is not bool, got %s",
                   type_to_str[cond_type_kind]);
