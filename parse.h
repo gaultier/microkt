@@ -51,6 +51,7 @@ static int parser_enter_scope(parser_t* parser, int block_node_i) {
 
 static void parser_leave_scope(parser_t* parser, int parent_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND(parent_node_i, >=, 0, "%d");
 
     log_debug("%d <- %d", parent_node_i, parser->par_scope_i);
     parser->par_scope_i = parent_node_i;
@@ -59,6 +60,7 @@ static void parser_leave_scope(parser_t* parser, int parent_node_i) {
 static int parser_node_find_fn_decl_for_call(const parser_t* parser,
                                              int node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
+    PG_ASSERT_COND(node_i, >=, 0, "%d");
 
     const node_t* const node = &parser->par_nodes[node_i];
     switch (node->node_kind) {
@@ -79,6 +81,7 @@ static res_t parser_resolve_var(const parser_t* parser, int tok_i,
                                 int* def_node_i) {
     PG_ASSERT_COND((void*)parser, !=, NULL, "%p");
     PG_ASSERT_COND((void*)def_node_i, !=, NULL, "%p");
+    PG_ASSERT_COND(tok_i, >=, 0, "%d");
 
     const char* var_source = NULL;
     int var_source_len = 0;
