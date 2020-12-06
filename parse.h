@@ -1257,8 +1257,8 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         buf_push(parser->par_nodes,
                  ((node_t){.node_kind = NODE_LONG,
                            .node_type_i = TYPE_BOOL_I,
-                           .node_n = {.node_num = (node_number_t){
-                                          .nu_tok_i = tok_i, .nu_val = val}}}));
+                           .node_n = {.node_num = (number_t){.nu_tok_i = tok_i,
+                                                             .nu_val = val}}}));
         *new_node_i = (int)buf_size(parser->par_nodes) - 1;
 
         return RES_OK;
@@ -1291,8 +1291,8 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         buf_push(parser->par_nodes,
                  ((node_t){.node_kind = NODE_LONG,
                            .node_type_i = type_i,
-                           .node_n = {.node_num = (node_number_t){
-                                          .nu_tok_i = tok_i, .nu_val = val}}}));
+                           .node_n = {.node_num = (number_t){.nu_tok_i = tok_i,
+                                                             .nu_val = val}}}));
         *new_node_i = (int)buf_size(parser->par_nodes) - 1;
 
         return RES_OK;
@@ -1302,8 +1302,8 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         buf_push(parser->par_nodes,
                  ((node_t){.node_kind = NODE_CHAR,
                            .node_type_i = TYPE_CHAR_I,
-                           .node_n = {.node_num = (node_number_t){
-                                          .nu_tok_i = tok_i, .nu_val = val}}}));
+                           .node_n = {.node_num = (number_t){.nu_tok_i = tok_i,
+                                                             .nu_val = val}}}));
         *new_node_i = (int)buf_size(parser->par_nodes) - 1;
 
         return RES_OK;

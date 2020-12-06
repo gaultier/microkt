@@ -94,7 +94,7 @@ const char node_kind_to_str[][30] = {
 typedef struct {
     long long int nu_val;
     int nu_tok_i;
-} node_number_t;
+} number_t;
 
 typedef struct {
     int if_first_tok_i, if_last_tok_i, if_node_cond_i, if_node_then_i,
@@ -147,7 +147,7 @@ typedef struct {
     union {
         builtin_println_t node_builtin_println;  // NODE_BUILTIN_PRINTLN
         string_t node_string;                    // NODE_STRING
-        node_number_t node_num;                  // NODE_LONG, NODE_CHAR
+        number_t node_num;                       // NODE_LONG, NODE_CHAR
         binary_t node_binary;  // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
         // NODE_DIVIDE, NODE_MODULO
         unary_t node_unary;      // NODE_NOT, NODE_RETURN
