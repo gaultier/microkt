@@ -1,9 +1,9 @@
 #pragma once
 
 #include <stdarg.h>
-#include <unistd.h>
 
 #include "ast.h"
+#include "common.h"
 #include "lex.h"
 
 static const int TYPE_UNIT_I = 0;    // see parser_init
@@ -314,35 +314,42 @@ static bool parser_parse_identifier_to_type_kind(const parser_t* parser,
     }
 }
 
-static parser_t parser_init(const char* file_name0, const char* source,
-                            int source_len) {
+static res_t parser_init(const char* file_name0, const char* source,
+                         int source_len, parser_t* parser) {
     CHECK((void*)file_name0, !=, NULL, "%p");
     CHECK((void*)source, !=, NULL, "%p");
+    CHECK((void*)parser, !=, NULL, "%p");
 
-    lexer_t lexer = lex_init(source, source_len);
+    parser->par_file_name0 = file_name0;
+    parser->par_is_tty = isatty(2);
+
+    res_t res = RES_NONE;
+    if ((res = lex_init(file_name0, source, source_len, &parser->par_lexer)) !=
+        RES_OK)
+        return res;
 
     // Add root main function
-    buf_push(lexer.lex_tokens,
+    buf_push(parser->par_lexer.lex_tokens,
              ((token_t){.tok_id = TOK_ID_IDENTIFIER,
                         .tok_pos_range = {.pr_start = 0, .pr_end = 0}}));
-    buf_push(lexer.lex_tok_pos_ranges,
+    buf_push(parser->par_lexer.lex_tok_pos_ranges,
              ((pos_range_t){.pr_start = 0, .pr_end = 0}));
-    buf_push(lexer.lex_locs, ((loc_t){.loc_line = 1, .loc_column = 1}));
+    buf_push(parser->par_lexer.lex_locs,
+             ((loc_t){.loc_line = 1, .loc_column = 1}));
 
-    const int fn_main_name_tok_i = buf_size(lexer.lex_tokens) - 1;
+    const int fn_main_name_tok_i = buf_size(parser->par_lexer.lex_tokens) - 1;
 
-    node_t* nodes = NULL;
-    buf_grow(nodes, 100);
+    buf_grow(parser->par_nodes, 100);
 
     // Add initial scope
-    buf_push(nodes,
+    buf_push(parser->par_nodes,
              ((node_t){.node_kind = NODE_BLOCK,
                        .node_type_i = TYPE_UNIT_I,
                        .node_n = {.node_block = {.bl_first_tok_i = -1,
                                                  .bl_last_tok_i = -1,
                                                  .bl_nodes_i = NULL,
                                                  .bl_parent_scope_i = -1}}}));
-    buf_push(nodes,
+    buf_push(parser->par_nodes,
              ((node_t){.node_type_i = TYPE_UNIT_I,
                        .node_kind = NODE_FN_DECL,
                        .node_n = {.node_fn_decl = {
@@ -352,45 +359,44 @@ static parser_t parser_init(const char* file_name0, const char* source,
                                       .fd_body_node_i = 0,
                                       .fd_flags = FN_FLAGS_SYNTHETIC |
                                                   FN_FLAGS_PUBLIC}}}));
-    int* node_decls = NULL;
-    buf_grow(node_decls, 10);
-    buf_push(node_decls,
-             buf_size(nodes) - 1);  // Last node is the main function
+    buf_grow(parser->par_node_decls, 10);
+    buf_push(
+        parser->par_node_decls,
+        buf_size(parser->par_nodes) - 1);  // Last node is the main function
 
-    type_t* types = NULL;
-    buf_grow(types, 100);
+    buf_grow(parser->par_types, 100);
     // Pre-allocate common types
-    buf_push(types, ((type_t){.ty_kind = TYPE_UNIT,
-                              .ty_size = 0}));  // Hence TYPE_UNIT_I = 0
-    buf_push(types, ((type_t){.ty_kind = TYPE_ANY,
-                              .ty_size = 0}));  // Hence TYPE_ANY_I = 1
-    buf_push(types, ((type_t){.ty_kind = TYPE_LONG,
-                              .ty_size = 8}));  // Hence TYPE_LONG_I = 2
-    buf_push(types, ((type_t){.ty_kind = TYPE_INT,
-                              .ty_size = 4}));  // Hence TYPE_INT_I = 3
-    buf_push(types, ((type_t){.ty_kind = TYPE_BOOL,
-                              .ty_size = 1}));  // Hence TYPE_BOOL_I = 4
-    buf_push(types, ((type_t){.ty_kind = TYPE_CHAR,
-                              .ty_size = 1}));  // Hence TYPE_CHAR_I = 5
-    buf_push(types, ((type_t){.ty_kind = TYPE_STRING,
-                              .ty_size = 8}));  // Hence TYPE_STRING_I = 6
-    buf_push(types, ((type_t){.ty_kind = TYPE_BYTE,
-                              .ty_size = 1}));  // Hence TYPE_BYTE_I = 7
-    buf_push(types, ((type_t){.ty_kind = TYPE_SHORT,
-                              .ty_size = 2}));  // Hence TYPE_SHORT_I = 8
+    buf_push(parser->par_types,
+             ((type_t){.ty_kind = TYPE_UNIT,
+                       .ty_size = 0}));  // Hence TYPE_UNIT_I = 0
+    buf_push(
+        parser->par_types,
+        ((type_t){.ty_kind = TYPE_ANY, .ty_size = 0}));  // Hence TYPE_ANY_I = 1
+    buf_push(parser->par_types,
+             ((type_t){.ty_kind = TYPE_LONG,
+                       .ty_size = 8}));  // Hence TYPE_LONG_I = 2
+    buf_push(
+        parser->par_types,
+        ((type_t){.ty_kind = TYPE_INT, .ty_size = 4}));  // Hence TYPE_INT_I = 3
+    buf_push(parser->par_types,
+             ((type_t){.ty_kind = TYPE_BOOL,
+                       .ty_size = 1}));  // Hence TYPE_BOOL_I = 4
+    buf_push(parser->par_types,
+             ((type_t){.ty_kind = TYPE_CHAR,
+                       .ty_size = 1}));  // Hence TYPE_CHAR_I = 5
+    buf_push(parser->par_types,
+             ((type_t){.ty_kind = TYPE_STRING,
+                       .ty_size = 8}));  // Hence TYPE_STRING_I = 6
+    buf_push(parser->par_types,
+             ((type_t){.ty_kind = TYPE_BYTE,
+                       .ty_size = 1}));  // Hence TYPE_BYTE_I = 7
+    buf_push(parser->par_types,
+             ((type_t){.ty_kind = TYPE_SHORT,
+                       .ty_size = 2}));  // Hence TYPE_SHORT_I = 8
 
-    parser_t parser = {
-        .par_file_name0 = file_name0,
-        .par_node_decls = node_decls,
-        .par_nodes = nodes,
-        .par_lexer = lexer,
-        .par_is_tty = isatty(2),
-        .par_types = types,
-        .par_fn_i = node_decls[0],
-        .par_scope_i = 0,
-    };
+    parser->par_fn_i = parser->par_node_decls[0];
 
-    return parser;
+    return RES_OK;
 }
 
 static long long int parse_tok_to_long(const parser_t* parser, int tok_i,

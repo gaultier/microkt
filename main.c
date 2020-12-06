@@ -58,7 +58,9 @@ static res_t run(const char* file_name0) {
         return res;
     }
 
-    parser_t parser = parser_init(file_name0, source, file_size);
+    parser_t parser = {0};
+    if ((res = parser_init(file_name0, source, file_size, &parser)) != RES_OK)
+        return res;
 
     if ((res = parser_parse(&parser)) != RES_OK) return res;
 

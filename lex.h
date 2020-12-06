@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string.h>
+#include <unistd.h>  // isatty
 
 #include "buf.h"
 #include "common.h"
@@ -559,6 +560,7 @@ static token_t lex_next(lexer_t* lexer, int* line, int* start_col, int* col) {
             }
             default: {
                 result.tok_id = TOK_ID_INVALID;
+                log_debug("Invalid token: `%c`", c);
                 lex_advance(lexer, col);
                 goto outer;
             }
@@ -588,33 +590,48 @@ static void token_dump(const token_t* t, int i, const lexer_t* lexer) {
               &lexer->lex_source[t->tok_pos_range.pr_start]);
 }
 
-static lexer_t lex_init(const char* source, const int source_len) {
+static res_t lex_init(const char* file_name0, const char* source,
+                      const int source_len, lexer_t* lexer) {
+    CHECK((void*)file_name0, !=, NULL, "%p");
     CHECK((void*)source, !=, NULL, "%p");
+    CHECK((void*)lexer, !=, NULL, "%p");
 
-    lexer_t lexer = {.lex_source = source, .lex_source_len = source_len};
-    buf_grow(lexer.lex_tokens, source_len / 8);
-    buf_grow(lexer.lex_tok_pos_ranges, source_len / 8);
+    lexer->lex_source = source;
+    lexer->lex_source_len = source_len;
+    buf_grow(lexer->lex_tokens, source_len / 8);
+    buf_grow(lexer->lex_tok_pos_ranges, source_len / 8);
 
+    const bool is_tty = isatty(2);
+    bool err = false;
     int i = 0, col = 1, line = 1;
     while (true) {
         int start_col = col;
-        const token_t token = lex_next(&lexer, &line, &start_col, &col);
+        const token_t token = lex_next(lexer, &line, &start_col, &col);
+        if (token.tok_id == TOK_ID_INVALID) {
+            fprintf(stderr, "%s%s:%d:%d:Invalid token: `%c`%s\n",
+                    is_tty ? color_grey : "", file_name0, line, start_col,
+                    source[token.tok_pos_range.pr_start],
+                    is_tty ? color_reset : "");
+            err = true;
+        }
 
-        buf_push(lexer.lex_tokens, token);
-        buf_push(lexer.lex_tok_pos_ranges, token.tok_pos_range);
-        buf_push(lexer.lex_locs,
+        buf_push(lexer->lex_tokens, token);
+        buf_push(lexer->lex_tok_pos_ranges, token.tok_pos_range);
+        buf_push(lexer->lex_locs,
                  ((loc_t){.loc_line = line, .loc_column = start_col}));
 
-        token_dump(&token, i, &lexer);
+        token_dump(&token, i, lexer);
 
         if (token.tok_id == TOK_ID_EOF) break;
         i++;
     }
-    CHECK((int)buf_size(lexer.lex_tokens), ==,
-          (int)buf_size(lexer.lex_tok_pos_ranges), "%d");
-    CHECK((int)buf_size(lexer.lex_tokens), ==, (int)buf_size(lexer.lex_locs),
+    if (err) return RES_ERR;
+
+    CHECK((int)buf_size(lexer->lex_tokens), ==,
+          (int)buf_size(lexer->lex_tok_pos_ranges), "%d");
+    CHECK((int)buf_size(lexer->lex_tokens), ==, (int)buf_size(lexer->lex_locs),
           "%d");
 
-    return lexer;
+    return RES_OK;
 }
 
