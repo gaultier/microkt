@@ -608,8 +608,9 @@ static res_t lex_init(const char* file_name0, const char* source,
         int start_col = col;
         const token_t token = lex_next(lexer, &line, &start_col, &col);
         if (token.tok_id == TOK_ID_INVALID) {
-            fprintf(stderr, "%s%s:%d:%d:Invalid token: `%c`%s\n",
+            fprintf(stderr, "%s%s:%d:%d:Invalid token: %s%c%s\n",
                     is_tty ? color_grey : "", file_name0, line, start_col,
+                    is_tty ? color_reset : "",
                     source[token.tok_pos_range.pr_start],
                     is_tty ? color_reset : "");
             err = true;
