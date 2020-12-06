@@ -1,4 +1,5 @@
 #pragma once
+#include <stdbool.h>
 
 typedef enum {
     TYPE_ANY,
@@ -30,6 +31,11 @@ typedef struct {
 typedef struct {
     int bi_lhs_i, bi_rhs_i;
 } binary_t;
+
+typedef struct {
+    int st_tok_i;
+    bool st_multiline;
+} string_t;
 
 typedef enum {
     NODE_BUILTIN_PRINTLN,
@@ -140,7 +146,7 @@ typedef struct {
     int node_type_i;
     union {
         builtin_println_t node_builtin_println;  // NODE_BUILTIN_PRINTLN
-        int node_string;                         // NODE_STRING, int = tok_i
+        string_t node_string;                    // NODE_STRING
         node_number_t node_num;                  // NODE_LONG, NODE_CHAR
         binary_t node_binary;  // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
         // NODE_DIVIDE, NODE_MODULO

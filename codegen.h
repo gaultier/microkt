@@ -654,7 +654,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
 
         const char* source = NULL;
         int source_len = 0;
-        parser_tok_source(parser, node->node_n.node_string, &source,
+        parser_tok_source(parser, node->node_n.node_string.st_tok_i, &source,
                           &source_len);
         CHECK((void*)source, !=, NULL, "%p");
         CHECK(source_len, >=, 0, "%d");

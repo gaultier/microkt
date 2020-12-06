@@ -617,7 +617,7 @@ static int node_first_token(const parser_t* parser, const node_t* node) {
         case NODE_BUILTIN_PRINTLN:
             return node->node_n.node_builtin_println.bp_keyword_print_i;
         case NODE_STRING:
-            return node->node_n.node_string;
+            return node->node_n.node_string.st_tok_i;
         case NODE_KEYWORD_BOOL:
         case NODE_CHAR:
         case NODE_LONG:
@@ -667,7 +667,7 @@ static int node_last_token(const parser_t* parser, const node_t* node) {
         case NODE_BUILTIN_PRINTLN:
             return node->node_n.node_builtin_println.bp_rparen_i;
         case NODE_STRING:
-            return node->node_n.node_string;
+            return node->node_n.node_string.st_tok_i;
         case NODE_KEYWORD_BOOL:
         case NODE_LONG:
         case NODE_CHAR:
@@ -1236,9 +1236,16 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         return RES_OK;
     }
     if (parser_match(parser, &tok_i, 1, TOK_ID_STRING)) {
-        const node_t node = {.node_kind = NODE_STRING,
-                             .node_type_i = TYPE_STRING_I,
-                             .node_n = {.node_string = tok_i}};
+        const pos_range_t pos_range =
+            parser->par_lexer.lex_tok_pos_ranges[tok_i];
+        const bool multiline =
+            parser->par_lexer.lex_source[pos_range.pr_start] == '"';
+
+        const node_t node = {
+            .node_kind = NODE_STRING,
+            .node_type_i = TYPE_STRING_I,
+            .node_n = {
+                .node_string = {.st_tok_i = tok_i, .st_multiline = multiline}}};
         buf_push(parser->par_nodes, node);
         *new_node_i = buf_size(parser->par_nodes) - 1;
 
