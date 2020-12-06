@@ -237,6 +237,7 @@ static void lex_identifier(lexer_t* lexer, token_t* result, int* col) {
         lex_advance(lexer, col);
     }
 
+    CHECK(lexer->lex_index, >=, 0, "%d");
     CHECK(lexer->lex_index, <, lexer->lex_source_len, "%d");
     CHECK(lexer->lex_index, >=, result->tok_pos_range.pr_start, "%d");
 
@@ -562,6 +563,7 @@ static token_t lex_next(lexer_t* lexer, int* line, int* start_col, int* col) {
     }
 outer:
     result.tok_pos_range.pr_end = lexer->lex_index;
+    CHECK(result.tok_pos_range.pr_end, >=, result.tok_pos_range.pr_start, "%d");
 
     return result;
 }
