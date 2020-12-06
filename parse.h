@@ -199,7 +199,6 @@ static res_t parser_err_missing_rhs(const parser_t* parser, int first_tok_i,
 
 static int parser_make_type(parser_t* parser,
                             type_kind_t type_kind) {  // Returns type_i
-                                                      // TODO: deduplicate?
     CHECK((void*)parser, !=, NULL, "%p");
 
     switch (type_kind) {
