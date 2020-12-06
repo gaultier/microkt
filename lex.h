@@ -178,10 +178,18 @@ static char lex_peek(const lexer_t* lexer) {
 static char lex_peek_next(const lexer_t* lexer) {
     CHECK((void*)lexer, !=, NULL, "%p");
     CHECK((void*)lexer->lex_source, !=, NULL, "%p");
-    CHECK(lexer->lex_index, <, lexer->lex_source_len - 1, "%d");
 
     return lex_is_at_end(lexer) ? '\0'
                                 : lexer->lex_source[lexer->lex_index + 1];
+}
+
+static char lex_peek_next_next(const lexer_t* lexer) {
+    CHECK((void*)lexer, !=, NULL, "%p");
+    CHECK((void*)lexer->lex_source, !=, NULL, "%p");
+
+    return lexer->lex_index >= (lexer->lex_source_len + 2)
+               ? '\0'
+               : lexer->lex_source[lexer->lex_index + 2];
 }
 
 static bool lex_match(lexer_t* lexer, char c, int* col) {
@@ -275,24 +283,37 @@ static void lex_string(lexer_t* lexer, token_t* result, int* col) {
     CHECK(c, ==, '"', "%c");
     lex_advance(lexer, col);
 
+    const bool multiline =
+        lex_peek(lexer) == '"' && lex_peek_next(lexer) == '"';
+    if (multiline) {
+        lex_advance(lexer, col);
+        lex_advance(lexer, col);
+    }
+
     while (lexer->lex_index < lexer->lex_source_len) {
         c = lex_peek(lexer);
-        if (c == '"') break;
+        if (c == '"' && !multiline) {
+            result->tok_id = TOK_ID_STRING;
+            lex_advance(lexer, col);
+            return;
+        }
+        if (c == '"' && lex_peek_next(lexer) == '"' &&
+            lex_peek_next_next(lexer) == '"' && multiline) {
+            result->tok_id = TOK_ID_STRING;
+            lex_advance(lexer, col);
+            lex_advance(lexer, col);
+            lex_advance(lexer, col);
+            return;
+        }
 
         lex_advance(lexer, col);
     }
 
-    if (c != '"') {
-        log_debug(
-            "Unterminated string, missing trailing quote: c=`%c` "
-            "lex_index=%d",
-            c, lexer->lex_index);
-        result->tok_id = TOK_ID_INVALID;
-    } else {
-        CHECK(c, ==, '"', "%c");
-        result->tok_id = TOK_ID_STRING;
-        lex_advance(lexer, col);
-    }
+    log_debug(
+        "Unterminated string, missing trailing quote: c=`%c` "
+        "lex_index=%d",
+        c, lexer->lex_index);
+    result->tok_id = TOK_ID_INVALID;
 }
 
 // TODO: escape sequences
