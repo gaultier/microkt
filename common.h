@@ -102,5 +102,5 @@ static void trim_end(const char** string, int* string_len) {
     CHECK((void*)string_len, !=, NULL, "%p");
 
     while (*string_len > 0 && is_space((*string)[*string_len - 1]))
-        (*string_len)--;
+        *string_len -= 1;
 }

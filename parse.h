@@ -890,6 +890,7 @@ static void parser_print_source_on_error(const parser_t* parser,
             break;
         }
     }
+    CHECK(last_line_start_tok_i, >=, first_line_start_tok_i, "%d");
 
     pos_range_t last_line_start_tok_pos =
         parser->par_lexer.lex_tok_pos_ranges[last_line_start_tok_i];
@@ -898,9 +899,12 @@ static void parser_print_source_on_error(const parser_t* parser,
         &parser->par_lexer.lex_source[first_line_start_tok_pos.pr_start];
     int source_len =
         last_line_start_tok_pos.pr_end - first_line_start_tok_pos.pr_start;
+    CHECK(source_len, >, 0, "%d");
     CHECK(source_len, <=, parser->par_lexer.lex_source_len, "%d");
 
     trim_end(&source, &source_len);
+    CHECK(source_len, >, 0, "%d");
+    CHECK(is_space(source[source_len - 1]), ==, false, "%d");
 
     static char prefix[MAXPATHLEN + 50] = "\0";
     snprintf(prefix, sizeof(prefix), "%s:%d:%d:", parser->par_file_name0,
