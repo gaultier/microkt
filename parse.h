@@ -8,6 +8,8 @@
 
 static const int TYPE_UNIT_I = 0;  // see parser_init
 static const int TYPE_ANY_I = 1;   // see parser_init
+static const int TYPE_LONG_I = 2;  // see parser_init
+static const int TYPE_INT_I = 3;   // see parser_init
 
 typedef struct {
     const char* par_file_name0;
@@ -327,9 +329,6 @@ static parser_t parser_init(const char* file_name0, const char* source,
 
     lexer_t lexer = lex_init(source, source_len);
 
-    type_t* types = NULL;
-    buf_grow(types, 100);
-
     // Add root main function
     buf_push(lexer.lex_tokens,
              ((token_t){.tok_id = TOK_ID_IDENTIFIER,
@@ -366,6 +365,9 @@ static parser_t parser_init(const char* file_name0, const char* source,
     buf_push(node_decls,
              buf_size(nodes) - 1);  // Last node is the main function
 
+    type_t* types = NULL;
+    buf_grow(types, 100);
+
     parser_t parser = {
         .par_file_name0 = file_name0,
         .par_node_decls = node_decls,
@@ -378,12 +380,14 @@ static parser_t parser_init(const char* file_name0, const char* source,
     };
     parser_make_type(&parser, TYPE_UNIT);  // Hence TYPE_UNIT_I = 0
     parser_make_type(&parser, TYPE_ANY);   // Hence TYPE_ANY_I = 1
+    parser_make_type(&parser, TYPE_LONG);  // Hence TYPE_LONG_I = 2
+    parser_make_type(&parser, TYPE_INT);   // Hence TYPE_INT_I = 3
 
     return parser;
 }
 
 static long long int parse_tok_to_long(const parser_t* parser, int tok_i,
-                                       type_kind_t* type_kind) {
+                                       int* type_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)parser->par_lexer.lex_tok_pos_ranges, !=, NULL, "%p");
     CHECK((void*)parser->par_lexer.lex_source, !=, NULL, "%p");
@@ -405,7 +409,7 @@ static long long int parse_tok_to_long(const parser_t* parser, int tok_i,
 
     memcpy(string0, string, (size_t)string_len);
 
-    *type_kind = string[string_len - 1] == 'L' ? TYPE_LONG : TYPE_INT;
+    *type_i = string[string_len - 1] == 'L' ? TYPE_LONG_I : TYPE_INT_I;
 
     return strtoll(string0, NULL, 10);
 }
@@ -1244,9 +1248,8 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         return RES_OK;
     }
     if (parser_match(parser, &tok_i, 1, TOK_ID_LONG)) {
-        type_kind_t type_kind = TYPE_ANY;
-        const long long int val = parse_tok_to_long(parser, tok_i, &type_kind);
-        const int type_i = parser_make_type(parser, type_kind);
+        int type_i = TYPE_ANY_I;
+        const long long int val = parse_tok_to_long(parser, tok_i, &type_i);
         CHECK(type_i, >=, 0, "%d");
         CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
 
