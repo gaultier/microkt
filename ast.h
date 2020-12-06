@@ -29,6 +29,10 @@ typedef struct {
 } builtin_println_t;
 
 typedef struct {
+    int as_arg_i, as_keyword_print_i, as_rparen_i;
+} asm_t;
+
+typedef struct {
     int bi_lhs_i, bi_rhs_i;
 } binary_t;
 
@@ -62,6 +66,7 @@ typedef enum {
     NODE_FN_DECL,
     NODE_CALL,
     NODE_RETURN,
+    NODE_ASM,
 } node_kind_t;
 
 const char node_kind_to_str[][30] = {
@@ -89,6 +94,7 @@ const char node_kind_to_str[][30] = {
     [NODE_FN_DECL] = "FnDecl",
     [NODE_RETURN] = "Return",
     [NODE_CALL] = "Call",
+    [NODE_ASM] = "Asm",
 };
 
 typedef struct {
@@ -146,6 +152,7 @@ typedef struct {
     int node_type_i;
     union {
         builtin_println_t node_builtin_println;  // NODE_BUILTIN_PRINTLN
+        asm_t node_asm;                          // NODE_ASM
         string_t node_string;                    // NODE_STRING
         number_t node_num;                       // NODE_LONG, NODE_CHAR
         binary_t node_binary;  // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,

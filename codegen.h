@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ast.h"
 #include "parse.h"
 
 // TODO: use platform headers for that?
@@ -388,6 +389,10 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 
             return;
         }
+        case NODE_ASM: {
+            emit_expr(parser, expr->node_n.node_asm.as_arg_i);
+            return;
+        }
         case NODE_BUILTIN_PRINTLN: {
             const builtin_println_t builtin_println =
                 expr->node_n.node_builtin_println;
@@ -526,6 +531,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
 
     switch (stmt->node_kind) {
         case NODE_BUILTIN_PRINTLN:
+        case NODE_ASM:
         case NODE_BLOCK:
         case NODE_LONG:
         case NODE_CHAR:
