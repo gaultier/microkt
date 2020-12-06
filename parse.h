@@ -13,6 +13,8 @@ static const int TYPE_INT_I = 3;     // see parser_init
 static const int TYPE_BOOL_I = 4;    // see parser_init
 static const int TYPE_CHAR_I = 5;    // see parser_init
 static const int TYPE_STRING_I = 6;  // see parser_init
+static const int TYPE_BYTE_I = 7;    // see parser_init
+static const int TYPE_SHORT_I = 8;   // see parser_init
 
 typedef struct {
     const char* par_file_name0;
@@ -200,41 +202,29 @@ static int parser_make_type(parser_t* parser,
                                                       // TODO: deduplicate?
     CHECK((void*)parser, !=, NULL, "%p");
 
-    type_t type = {.ty_kind = type_kind, .ty_size = 0};
-
     switch (type_kind) {
         case TYPE_LONG:
+            return TYPE_LONG_I;
         case TYPE_STRING:
-        case TYPE_ANY: {
-            type.ty_size = 8;
-            break;
-        }
-        case TYPE_INT: {
-            type.ty_size = 4;
-            break;
-        }
-        case TYPE_SHORT: {
-            type.ty_size = 2;
-            break;
-        }
+            return TYPE_STRING_I;
+        case TYPE_ANY:
+            return TYPE_ANY_I;
+        case TYPE_INT:
+            return TYPE_INT_I;
+        case TYPE_SHORT:
+            return TYPE_SHORT_I;
         case TYPE_BOOL:
+            return TYPE_BOOL_I;
         case TYPE_BYTE:
-        case TYPE_CHAR: {
-            type.ty_size = 1;
-            break;
-        }
-        case TYPE_UNIT: {
-            type.ty_size = 0;
-            break;
-        }
+            return TYPE_BYTE_I;
+        case TYPE_CHAR:
+            return TYPE_CHAR_I;
+        case TYPE_UNIT:
+            return TYPE_UNIT_I;
             // User defined type
         default:
             UNIMPLEMENTED();
     }
-
-    buf_push(parser->par_types, type);
-
-    return buf_size(parser->par_types) - 1;
 }
 
 static bool parser_check_keyword(const parser_t* parser,
@@ -370,6 +360,25 @@ static parser_t parser_init(const char* file_name0, const char* source,
 
     type_t* types = NULL;
     buf_grow(types, 100);
+    // Pre-allocate common types
+    buf_push(types, ((type_t){.ty_kind = TYPE_UNIT,
+                              .ty_size = 0}));  // Hence TYPE_UNIT_I = 0
+    buf_push(types, ((type_t){.ty_kind = TYPE_ANY,
+                              .ty_size = 0}));  // Hence TYPE_ANY_I = 1
+    buf_push(types, ((type_t){.ty_kind = TYPE_LONG,
+                              .ty_size = 8}));  // Hence TYPE_LONG_I = 2
+    buf_push(types, ((type_t){.ty_kind = TYPE_INT,
+                              .ty_size = 4}));  // Hence TYPE_INT_I = 3
+    buf_push(types, ((type_t){.ty_kind = TYPE_BOOL,
+                              .ty_size = 1}));  // Hence TYPE_BOOL_I = 4
+    buf_push(types, ((type_t){.ty_kind = TYPE_CHAR,
+                              .ty_size = 1}));  // Hence TYPE_CHAR_I = 5
+    buf_push(types, ((type_t){.ty_kind = TYPE_STRING,
+                              .ty_size = 8}));  // Hence TYPE_STRING_I = 6
+    buf_push(types, ((type_t){.ty_kind = TYPE_BYTE,
+                              .ty_size = 1}));  // Hence TYPE_BYTE_I = 7
+    buf_push(types, ((type_t){.ty_kind = TYPE_SHORT,
+                              .ty_size = 2}));  // Hence TYPE_SHORT_I = 8
 
     parser_t parser = {
         .par_file_name0 = file_name0,
@@ -381,13 +390,6 @@ static parser_t parser_init(const char* file_name0, const char* source,
         .par_fn_i = node_decls[0],
         .par_scope_i = 0,
     };
-    parser_make_type(&parser, TYPE_UNIT);    // Hence TYPE_UNIT_I = 0
-    parser_make_type(&parser, TYPE_ANY);     // Hence TYPE_ANY_I = 1
-    parser_make_type(&parser, TYPE_LONG);    // Hence TYPE_LONG_I = 2
-    parser_make_type(&parser, TYPE_INT);     // Hence TYPE_INT_I = 3
-    parser_make_type(&parser, TYPE_BOOL);    // Hence TYPE_BOOL_I = 4
-    parser_make_type(&parser, TYPE_CHAR);    // Hence TYPE_CHAR_I = 5
-    parser_make_type(&parser, TYPE_STRING);  // Hence TYPE_STRING_I = 6
 
     return parser;
 }
