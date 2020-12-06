@@ -721,14 +721,32 @@ static void parser_tok_source(const parser_t* parser, int tok_i,
     const pos_range_t pos_range = parser->par_lexer.lex_tok_pos_ranges[tok_i];
 
     // Without quotes for char/string
-    *source = &parser->par_lexer
-                   .lex_source[(tok == TOK_ID_STRING || tok == TOK_ID_CHAR)
-                                   ? pos_range.pr_start + 1
-                                   : pos_range.pr_start];
-    *source_len = (tok == TOK_ID_STRING || tok == TOK_ID_CHAR)
-                      ? (pos_range.pr_end - pos_range.pr_start - 2)
-                      : (pos_range.pr_end - pos_range.pr_start);
+    if (tok == TOK_ID_CHAR) {
+        *source = &parser->par_lexer
+                       .lex_source[(tok == TOK_ID_STRING || tok == TOK_ID_CHAR)
+                                       ? pos_range.pr_start + 1
+                                       : pos_range.pr_start];
+        *source_len = pos_range.pr_end - pos_range.pr_start - 2;
+    } else if (tok == TOK_ID_STRING) {
+        const pos_range_t pos_range =
+            parser->par_lexer.lex_tok_pos_ranges[tok_i];
+        const bool multiline =
+            parser->par_lexer.lex_source[pos_range.pr_end - 1] == '"' &&
+            parser->par_lexer.lex_source[pos_range.pr_end - 2] == '"';
+
+        *source =
+            &parser->par_lexer.lex_source[multiline ? pos_range.pr_start + 3
+                                                    : pos_range.pr_start + 1];
+
+        *source_len =
+            pos_range.pr_end - pos_range.pr_start - (multiline ? 6 : 2);
+    } else {
+        *source = &parser->par_lexer.lex_source[pos_range.pr_start];
+        *source_len = pos_range.pr_end - pos_range.pr_start;
+    }
+
     CHECK((void*)*source, !=, NULL, "%p");
+    CHECK(*source_len, >=, 0, "%d");
     CHECK(*source_len, <=, parser->par_lexer.lex_source_len, "%d");
 }
 
@@ -1239,7 +1257,8 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         const pos_range_t pos_range =
             parser->par_lexer.lex_tok_pos_ranges[tok_i];
         const bool multiline =
-            parser->par_lexer.lex_source[pos_range.pr_start] == '"';
+            parser->par_lexer.lex_source[pos_range.pr_end - 1] == '"' &&
+            parser->par_lexer.lex_source[pos_range.pr_end - 2] == '"';
 
         const node_t node = {
             .node_kind = NODE_STRING,

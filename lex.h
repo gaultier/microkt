@@ -310,9 +310,9 @@ static void lex_string(lexer_t* lexer, token_t* result, int* col) {
     }
 
     log_debug(
-        "Unterminated string, missing trailing quote: c=`%c` "
+        "Unterminated string, missing terminating quote%s: c=`%c` "
         "lex_index=%d",
-        c, lexer->lex_index);
+        multiline ? "s" : "", c, lexer->lex_index);
     result->tok_id = TOK_ID_INVALID;
 }
 
