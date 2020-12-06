@@ -6,11 +6,13 @@
 #include "ast.h"
 #include "lex.h"
 
-static const int TYPE_UNIT_I = 0;  // see parser_init
-static const int TYPE_ANY_I = 1;   // see parser_init
-static const int TYPE_LONG_I = 2;  // see parser_init
-static const int TYPE_INT_I = 3;   // see parser_init
-static const int TYPE_BOOL_I = 4;  // see parser_init
+static const int TYPE_UNIT_I = 0;    // see parser_init
+static const int TYPE_ANY_I = 1;     // see parser_init
+static const int TYPE_LONG_I = 2;    // see parser_init
+static const int TYPE_INT_I = 3;     // see parser_init
+static const int TYPE_BOOL_I = 4;    // see parser_init
+static const int TYPE_CHAR_I = 5;    // see parser_init
+static const int TYPE_STRING_I = 6;  // see parser_init
 
 typedef struct {
     const char* par_file_name0;
@@ -379,11 +381,13 @@ static parser_t parser_init(const char* file_name0, const char* source,
         .par_fn_i = node_decls[0],
         .par_scope_i = 0,
     };
-    parser_make_type(&parser, TYPE_UNIT);  // Hence TYPE_UNIT_I = 0
-    parser_make_type(&parser, TYPE_ANY);   // Hence TYPE_ANY_I = 1
-    parser_make_type(&parser, TYPE_LONG);  // Hence TYPE_LONG_I = 2
-    parser_make_type(&parser, TYPE_INT);   // Hence TYPE_INT_I = 3
-    parser_make_type(&parser, TYPE_BOOL);  // Hence TYPE_BOOL_I = 4
+    parser_make_type(&parser, TYPE_UNIT);    // Hence TYPE_UNIT_I = 0
+    parser_make_type(&parser, TYPE_ANY);     // Hence TYPE_ANY_I = 1
+    parser_make_type(&parser, TYPE_LONG);    // Hence TYPE_LONG_I = 2
+    parser_make_type(&parser, TYPE_INT);     // Hence TYPE_INT_I = 3
+    parser_make_type(&parser, TYPE_BOOL);    // Hence TYPE_BOOL_I = 4
+    parser_make_type(&parser, TYPE_CHAR);    // Hence TYPE_CHAR_I = 5
+    parser_make_type(&parser, TYPE_STRING);  // Hence TYPE_STRING_I = 6
 
     return parser;
 }
@@ -1209,10 +1213,6 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         return RES_OK;
     }
     if (parser_match(parser, &tok_i, 2, TOK_ID_TRUE, TOK_ID_FALSE)) {
-        const int type_i = TYPE_BOOL_I;
-        CHECK(type_i, >=, 0, "%d");
-        CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
-
         CHECK(tok_i, >=, 0, "%d");
         CHECK(tok_i, <, parser->par_lexer.lex_source_len, "%d");
         const pos_range_t pos_range =
@@ -1227,7 +1227,7 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         const int8_t val = (memcmp("true", source, 4) == 0);
         buf_push(parser->par_nodes,
                  ((node_t){.node_kind = NODE_LONG,
-                           .node_type_i = type_i,
+                           .node_type_i = TYPE_BOOL_I,
                            .node_n = {.node_num = (node_number_t){
                                           .nu_tok_i = tok_i, .nu_val = val}}}));
         *new_node_i = (int)buf_size(parser->par_nodes) - 1;
@@ -1235,12 +1235,8 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         return RES_OK;
     }
     if (parser_match(parser, &tok_i, 1, TOK_ID_STRING)) {
-        const int type_i = parser_make_type(parser, TYPE_STRING);
-        CHECK(type_i, >=, 0, "%d");
-        CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
-
         const node_t node = {.node_kind = NODE_STRING,
-                             .node_type_i = type_i,
+                             .node_type_i = TYPE_STRING_I,
                              .node_n = {.node_string = tok_i}};
         buf_push(parser->par_nodes, node);
         *new_node_i = buf_size(parser->par_nodes) - 1;
@@ -1265,14 +1261,10 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         return RES_OK;
     }
     if (parser_match(parser, &tok_i, 1, TOK_ID_CHAR)) {
-        const int type_i = parser_make_type(parser, TYPE_CHAR);
-        CHECK(type_i, >=, 0, "%d");
-        CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
-
         const long long int val = parse_tok_to_char(parser, tok_i);
         buf_push(parser->par_nodes,
                  ((node_t){.node_kind = NODE_CHAR,
-                           .node_type_i = type_i,
+                           .node_type_i = TYPE_CHAR_I,
                            .node_n = {.node_num = (node_number_t){
                                           .nu_tok_i = tok_i, .nu_val = val}}}));
         *new_node_i = (int)buf_size(parser->par_nodes) - 1;
