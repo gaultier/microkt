@@ -29,7 +29,7 @@ typedef struct {
 } builtin_println_t;
 
 typedef struct {
-    int as_arg_i, as_keyword_print_i, as_rparen_i;
+    int as_arg_tok_i, as_keyword_print_i, as_rparen_i;
 } asm_t;
 
 typedef struct {

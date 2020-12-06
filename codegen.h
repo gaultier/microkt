@@ -390,7 +390,11 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             return;
         }
         case NODE_ASM: {
-            emit_expr(parser, expr->node_n.node_asm.as_arg_i);
+            const char* source = NULL;
+            int source_len = 0;
+            parser_tok_source(parser, expr->node_n.node_asm.as_arg_tok_i,
+                              &source, &source_len);
+            println("%.*s", source_len, source);
             return;
         }
         case NODE_BUILTIN_PRINTLN: {
@@ -649,6 +653,8 @@ static void emit(const parser_t* parser, FILE* asm_file) {
     println(".data");
     println(".Ltrue: .ascii \"true\\n\"");
     println(".Lfalse: .ascii \"false\\n\"");
+    println(".Lsyscall_exit: .long %lld", syscall_exit);
+    println(".Lsyscall_write: .long %lld", syscall_write);
 
     for (int i = 0; i < (int)buf_size(parser->par_node_decls); i++) {
         const int node_i = parser->par_node_decls[i];

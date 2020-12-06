@@ -467,7 +467,6 @@ static void node_dump(const parser_t* parser, int node_i, int indent) {
                 indent, "node #%d %s type=%s", node_i,
                 node_kind_to_str[node->node_kind],
                 type_to_str[parser->par_types[node->node_type_i].ty_kind]);
-            node_dump(parser, node->node_n.node_asm.as_arg_i, indent + 2);
             break;
         }
         case NODE_LT:
@@ -1945,20 +1944,17 @@ static res_t parser_parse_asm(parser_t* parser, int* new_node_i) {
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
     int keyword_print_i = -1;
-    res_t res = RES_NONE;
     // Temporary
     if (parser_match(parser, &keyword_print_i, 1, TOK_ID_ASM)) {
         int lparen = 0;
         if (!parser_match(parser, &lparen, 1, TOK_ID_LPAREN))
             return parser_err_unexpected_token(parser, TOK_ID_LPAREN);
 
-        int arg_i = 0;
-        res = parser_parse_expr(parser, &arg_i);
-        if (res == RES_NONE) {
+        int arg_tok_i = -1;
+        if (!parser_match(parser, &arg_tok_i, 1, TOK_ID_STRING)) {
             fprintf(stderr, "Missing println parameter\n");
             return RES_MISSING_PARAM;
-        } else if (res != RES_OK)
-            return res;
+        }
         int rparen = 0;
         if (!parser_match(parser, &rparen, 1, TOK_ID_RPAREN))
             return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
@@ -1967,7 +1963,7 @@ static res_t parser_parse_asm(parser_t* parser, int* new_node_i) {
                  ((node_t){.node_kind = NODE_ASM,
                            .node_type_i = TYPE_UNIT_I,
                            .node_n = {.node_asm = {
-                                          .as_arg_i = arg_i,
+                                          .as_arg_tok_i = arg_tok_i,
                                           .as_keyword_print_i = keyword_print_i,
                                           .as_rparen_i = rparen}}}));
         *new_node_i = (int)buf_size(parser->par_nodes) - 1;
