@@ -23,7 +23,7 @@ done
 
 # Files with errors
 for f in err/*.kts; do
-    ./microktc "$f"
+    ./mktc "$f"
 
     exit_code=$?
     if [ $exit_code = 1 ]; then

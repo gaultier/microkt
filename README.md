@@ -40,7 +40,7 @@ make
 make test
 
 # Compile a source file (requires `as` and `ld` in the PATH)
-./microktc test/hello_world.kts
+./mktc test/hello_world.kts
 
 # And then run the executable
 ./test/hello_world.exe
@@ -48,8 +48,8 @@ Hello, world!
 
 # Also works in Docker
 docker build -t microkt .
-docker run --rm -it microkt sh -c 'microktc /usr/local/share/microktc/hello_world.kts \
-    && /usr/local/share/microktc/hello_world.exe'
+docker run --rm -it microkt sh -c 'mktc /usr/local/share/mktc/hello_world.kts \
+    && /usr/local/share/mktc/hello_world.exe'
 
 Hello, world!
 ```

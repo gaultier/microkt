@@ -2,18 +2,18 @@ FROM alpine as builder
 
 RUN apk add --no-cache make gcc musl-dev
 
-WORKDIR /microktc
+WORKDIR /mktc
 
 COPY . .
 
-RUN make microktc test BIN_TEST=./microktc
+RUN make mktc test BIN_TEST=./mktc
 
 FROM alpine
 RUN apk add --no-cache binutils
-COPY --from=builder /microktc /usr/local/bin/
-RUN mkdir -p  /usr/local/share/microktc/ && echo 'println("Hello, world!")' > /usr/local/share/microktc/hello_world.kts
+COPY --from=builder /mktc /usr/local/bin/
+RUN mkdir -p  /usr/local/share/mktc/ && echo 'println("Hello, world!")' > /usr/local/share/mktc/hello_world.kts
 
 # Sanity check
-RUN microktc /usr/local/share/microktc/hello_world.kts && /usr/local/share/microktc/hello_world.exe > /dev/null
+RUN mktc /usr/local/share/mktc/hello_world.kts && /usr/local/share/mktc/hello_world.exe > /dev/null
 
-CMD ["microktc"]
+CMD ["mktc"]
