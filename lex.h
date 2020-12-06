@@ -274,7 +274,7 @@ static res_t lex_number(lexer_t* lexer, token_t* result, int* col) {
 
 // TODO: escape sequences
 // TODO: multiline
-static void lex_string(lexer_t* lexer, token_t* result, int* col) {
+static void lex_string(lexer_t* lexer, token_t* result, int* line, int* col) {
     CHECK((void*)lexer, !=, NULL, "%p");
     CHECK((void*)lexer->lex_source, !=, NULL, "%p");
     CHECK((void*)result, !=, NULL, "%p");
@@ -305,6 +305,10 @@ static void lex_string(lexer_t* lexer, token_t* result, int* col) {
             lex_advance(lexer, col);
             lex_advance(lexer, col);
             return;
+        }
+        if (c == '\n') {
+            *line += 1;
+            *col = 1;
         }
 
         lex_advance(lexer, col);
@@ -476,7 +480,7 @@ static token_t lex_next(lexer_t* lexer, int* line, int* start_col, int* col) {
                 goto outer;
             }
             case '"': {
-                lex_string(lexer, &result, col);
+                lex_string(lexer, &result, line, col);
                 goto outer;
             }
             case '\'': {
