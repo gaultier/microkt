@@ -41,6 +41,7 @@ typedef enum {
     TOK_ID_FUN,
     TOK_ID_RETURN,
     TOK_ID_COMMA,
+    TOK_ID_ASM,
     TOK_ID_EOF,
     TOK_ID_INVALID,
 } token_id_t;
@@ -80,6 +81,7 @@ const char token_id_to_str[][30] = {
     [TOK_ID_FUN] = "fun",
     [TOK_ID_RETURN] = "return",
     [TOK_ID_COMMA] = ",",
+    [TOK_ID_ASM] = "asm",
     [TOK_ID_EOF] = "Eof",
     [TOK_ID_INVALID] = "Invalid",
 };
@@ -115,6 +117,7 @@ static const keyword_t keywords[] = {
     {.key_id = TOK_ID_WHILE, .key_str = "while"},
     {.key_id = TOK_ID_FUN, .key_str = "fun"},
     {.key_id = TOK_ID_RETURN, .key_str = "return"},
+    {.key_id = TOK_ID_ASM, .key_str = "asm"},
 };
 
 typedef struct {
