@@ -10,6 +10,7 @@ static const int TYPE_UNIT_I = 0;  // see parser_init
 static const int TYPE_ANY_I = 1;   // see parser_init
 static const int TYPE_LONG_I = 2;  // see parser_init
 static const int TYPE_INT_I = 3;   // see parser_init
+static const int TYPE_BOOL_I = 4;  // see parser_init
 
 typedef struct {
     const char* par_file_name0;
@@ -382,6 +383,7 @@ static parser_t parser_init(const char* file_name0, const char* source,
     parser_make_type(&parser, TYPE_ANY);   // Hence TYPE_ANY_I = 1
     parser_make_type(&parser, TYPE_LONG);  // Hence TYPE_LONG_I = 2
     parser_make_type(&parser, TYPE_INT);   // Hence TYPE_INT_I = 3
+    parser_make_type(&parser, TYPE_BOOL);  // Hence TYPE_BOOL_I = 4
 
     return parser;
 }
@@ -1207,7 +1209,7 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         return RES_OK;
     }
     if (parser_match(parser, &tok_i, 2, TOK_ID_TRUE, TOK_ID_FALSE)) {
-        const int type_i = parser_make_type(parser, TYPE_BOOL);
+        const int type_i = TYPE_BOOL_I;
         CHECK(type_i, >=, 0, "%d");
         CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
 
@@ -1688,16 +1690,12 @@ static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
         if (lhs_type_kind != rhs_type_kind)
             return parser_err_non_matching_types(parser, lhs_i, rhs_i);
 
-        const int type_i = parser_make_type(parser, TYPE_BOOL);
-        CHECK(type_i, >=, 0, "%d");
-        CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
-
         if (tok_id == TOK_ID_LT)
             buf_push(
                 parser->par_nodes,
                 ((node_t){
                     .node_kind = NODE_LT,
-                    .node_type_i = type_i,
+                    .node_type_i = TYPE_BOOL_I,
                     .node_n = {.node_binary = ((binary_t){
                                    .bi_lhs_i = lhs_i, .bi_rhs_i = rhs_i})}}));
         else if (tok_id == TOK_ID_LE)
@@ -1705,7 +1703,7 @@ static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
                 parser->par_nodes,
                 ((node_t){
                     .node_kind = NODE_LE,
-                    .node_type_i = type_i,
+                    .node_type_i = TYPE_BOOL_I,
                     .node_n = {.node_binary = ((binary_t){
                                    .bi_lhs_i = lhs_i, .bi_rhs_i = rhs_i})}}));
         else if (tok_id == TOK_ID_GE)
@@ -1713,7 +1711,7 @@ static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
                 parser->par_nodes,
                 ((node_t){
                     .node_kind = NODE_LE,
-                    .node_type_i = type_i,
+                    .node_type_i = TYPE_BOOL_I,
                     .node_n = {.node_binary = ((binary_t){
                                    .bi_lhs_i = rhs_i, .bi_rhs_i = lhs_i})}}));
         else if (tok_id == TOK_ID_GT)
@@ -1721,7 +1719,7 @@ static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
                 parser->par_nodes,
                 ((node_t){
                     .node_kind = NODE_LT,
-                    .node_type_i = type_i,
+                    .node_type_i = TYPE_BOOL_I,
                     .node_n = {.node_binary = ((binary_t){
                                    .bi_lhs_i = rhs_i, .bi_rhs_i = lhs_i})}}));
         else
@@ -1771,14 +1769,10 @@ static res_t parser_parse_equality(parser_t* parser, int* new_node_i) {
         if (lhs_type_kind != rhs_type_kind)
             return parser_err_non_matching_types(parser, lhs_i, rhs_i);
 
-        const int type_i = parser_make_type(parser, TYPE_BOOL);
-        CHECK(type_i, >=, 0, "%d");
-        CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
-
         buf_push(
             parser->par_nodes,
             ((node_t){.node_kind = tok_id == TOK_ID_EQ_EQ ? NODE_EQ : NODE_NEQ,
-                      .node_type_i = type_i,
+                      .node_type_i = TYPE_BOOL_I,
                       .node_n = {.node_binary = ((binary_t){
                                      .bi_lhs_i = lhs_i, .bi_rhs_i = rhs_i})}}));
         *new_node_i = lhs_i = (int)buf_size(parser->par_nodes) - 1;
