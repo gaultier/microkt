@@ -1,5 +1,5 @@
-microktc
-microktc_debug
+mktc
+mktc_debug
 *.dSYM
 test/*
 !test/*.kts
