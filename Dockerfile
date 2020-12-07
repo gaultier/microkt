@@ -1,12 +1,12 @@
 FROM alpine:3.12 as builder
 
-RUN apk add --no-cache make gcc musl-dev
+RUN apk add --no-cache make clang musl-dev
 
 WORKDIR /mktc
 
 COPY . .
 
-RUN make mktc test BIN_TEST=./mktc
+RUN make mktc test
 
 FROM alpine:3.12
 RUN apk add --no-cache binutils

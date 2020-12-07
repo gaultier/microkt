@@ -5,8 +5,10 @@
 
 // TODO: use platform headers for that?
 #ifdef __APPLE__
+static const char name_prefix[] = "_";
 static const long long int syscall_exit = 0x2000001;
 #else
+static const char name_prefix[] = "";
 static const long long int syscall_exit = 60;
 #endif
 
@@ -297,16 +299,16 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 
             if (type == TYPE_LONG || type == TYPE_INT || type == TYPE_SHORT ||
                 type == TYPE_BYTE)
-                println("call _println_int");
+                println("call %sprintln_int", name_prefix);
             else if (type == TYPE_CHAR)
-                println("call _println_char");
+                println("call %sprintln_char", name_prefix);
             else if (type == TYPE_BOOL)
-                println("call _println_bool");
+                println("call %sprintln_bool", name_prefix);
             else if (type == TYPE_STRING) {
                 println("movsbl (%%rax), %%esi");
                 println("add $4, %%rax");
                 println("mov %%rax, %%rdi");
-                println("call _println_string");
+                println("call %sprintln_string", name_prefix);
             } else {
                 log_debug("Type %s unimplemented", type_to_str[type]);
                 UNIMPLEMENTED();
