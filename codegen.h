@@ -108,69 +108,8 @@ static void emit_stdlib() {
 
         "    syscall\n"
         "    xorq %%rax, %%rax\n"
-        "    ret\n\n"
-
-        "__println_int: \n"
-        "    pushq %%rbp\n"
-        "    movq %%rsp, %%rbp\n"
-        "    subq $32, %%rsp # char data[23]\n"
-        "  \n"
-
-        "    movq %%rdi, %%r9 # Store original value of the argument \n"
-        "    # Abs \n"
-        "    negq %%rdi      \n"
-        "    cmovlq %%r9, %%rdi\n"
-
-        "    xorq %%r8, %%r8 # r8: Loop index and length\n"
-        "    leaq -1(%%rsp), %%rsi # end ptr\n"
-        "    movb $0x0a, (%%rsi) # Trailing newline \n"
-        "    \n"
-        "    __println_int_loop:\n"
-        "        decq %%rsi # end--\n"
-        "\n"
-        "        # n / 10\n"
-        "        movq $10, %%rcx \n"
-        "        xorq %%rdx, %%rdx\n"
-        "        movq %%rdi, %%rax\n"
-        "        idiv %%rcx\n"
-        "        movq %%rax, %%rdi\n"
-        "    \n"
-        "        # *end = rem + '0'\n"
-        "        add $48, %%rdx # Convert integer to character by adding '0'\n"
-        "        movb %%dl, (%%rsi)\n"
-        "\n"
-        "        incq %%r8 # len++\n"
-        "        cmpq $0, %%rdi # Do-While n != 0\n"
-        "        jz __println_int_end\n"
-        "\n"
-        "        jmp __println_int_loop\n"
-        "\n"
-        "    __println_int_end:\n"
-        "      incq %%r8 # Count newline as well \n"
-
-        "      # Print minus sign ? \n"
-        "      cmpq $0, %%r9 \n"
-        "      jge __println_int_end_epilog \n"
-
-        "      incq %%r8 \n"
-        "      decq %%rsi \n"
-        "      movb $45, (%%rsi) \n"
-
-        "    __println_int_end_epilog: \n"
-        "      movq $%lld, %%rax\n"
-        "      movq $1, %%rdi\n"
-        "      movq %%r8, %%rdx\n"
-        "      movq %%rsp, %%rsi\n"
-        "      subq %%r8, %%rsi\n"
-        "\n"
-        "      syscall\n"
-        "      xorq %%rax, %%rax\n"
-        "\n"
-        "      # Epilog\n"
-        "      addq $32, %%rsp\n"
-        "      popq %%rbp\n"
-        "      ret\n",
-        syscall_write, syscall_write);
+        "    ret\n\n",
+        syscall_write);
 }
 
 static void emit_loc(const parser_t* parser, const node_t* const node) {
@@ -379,7 +318,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 
             if (type == TYPE_LONG || type == TYPE_INT || type == TYPE_SHORT ||
                 type == TYPE_BYTE)
-                println("call __println_int");
+                println("call _println_int");
             else if (type == TYPE_CHAR)
                 println("call _println_char");
             else if (type == TYPE_BOOL)

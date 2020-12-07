@@ -23,3 +23,22 @@ void println_char(char c) {
     char s[2] = {c, '\n'};
     write(1, s, 2);
 }
+
+void println_int(long long int n) {
+    char s[23] = "";
+    int len = 0;
+    s[23 - 1 - len++] = '\n';
+
+    const int neg = n < 0;
+    n = neg ? -n : n;
+
+    do {
+        const char rem = n % 10;
+        n /= 10;
+        s[23 - 1 - len++] = rem + '0';
+    } while (n != 0);
+
+    if (neg) s[23 - 1 - len++] = '-';
+
+    write(1, s + 23 - len, len);
+}
