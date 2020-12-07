@@ -1,9 +1,14 @@
+
 long long int write(int fildes, const void* buf, unsigned long long int nbyte);
 __asm(
     ".globl _write\n"
     "_write:\n"
     ".cfi_startproc\n"
+#ifdef __APPLE__
     "mov $0x2000004, %rax\n"
+#else
+    "mov $1, %rax\n"
+#endif
     "mov $1, %rdi\n"
     "syscall\n"
     "ret\n"

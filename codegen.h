@@ -5,10 +5,8 @@
 
 // TODO: use platform headers for that?
 #ifdef __APPLE__
-static const long long int syscall_write = 0x2000004;
 static const long long int syscall_exit = 0x2000001;
 #else
-static const long long int syscall_write = 1;
 static const long long int syscall_exit = 60;
 #endif
 
@@ -539,10 +537,6 @@ static void emit(const parser_t* parser, FILE* asm_file) {
 
     output_file = asm_file;
     println(".data");
-    println(".Ltrue: .ascii \"true\\n\"");
-    println(".Lfalse: .ascii \"false\\n\"");
-    println(".Lsyscall_exit: .long %lld", syscall_exit);
-    println(".Lsyscall_write: .long %lld", syscall_write);
 
     for (int i = 0; i < (int)buf_size(parser->par_node_decls); i++) {
         const int node_i = parser->par_node_decls[i];
