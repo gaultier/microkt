@@ -42,5 +42,5 @@ test: mktc $(TESTS_SRC) $(TESTS_ACTUAL) $(TESTS_EXPECTED) test.sh
 	@./test.sh
 
 clean:
-	rm -f mktc $(TESTS_EXE) $(TESTS_ASM) $(TESTS_O) $(TESTS_ACTUAL) $(TESTS_EXPECTED) $(TESTS_DIFF)
+	rm -f mktc $(TESTS_EXE) $(TESTS_ASM) $(TESTS_O) $(TESTS_ACTUAL) $(TESTS_EXPECTED) $(TESTS_DIFF) stdlib.o stdlib.asm
 	rm -rf ./*.dSYM
