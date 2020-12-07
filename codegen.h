@@ -110,25 +110,6 @@ static void emit_stdlib() {
         "    xorq %%rax, %%rax\n"
         "    ret\n\n"
 
-        "__println_char:\n"
-        "    pushq %%rbp\n"
-        "    movq %%rsp, %%rbp\n"
-        "    subq $16, %%rsp # char data[2]\n"
-
-        "    movq $%lld, %%rax\n"
-        "    movq %%rdi, (%%rsp)\n"
-        "    movq %%rsp, %%rsi\n"
-        "    # Put a newline in place of the nul terminator\n"
-        "    movq $0x0a, 1(%%rsp)\n"
-        "    movq $1, %%rdi\n"
-        "    movq $2, %%rdx\n"
-        "    syscall\n"
-        "    xorq %%rax, %%rax\n"
-
-        "    addq $16, %%rsp\n"
-        "    popq %%rbp\n"
-        "    ret\n\n"
-
         "__println_int: \n"
         "    pushq %%rbp\n"
         "    movq %%rsp, %%rbp\n"
@@ -189,7 +170,7 @@ static void emit_stdlib() {
         "      addq $32, %%rsp\n"
         "      popq %%rbp\n"
         "      ret\n",
-        syscall_write, syscall_write, syscall_write);
+        syscall_write, syscall_write);
 }
 
 static void emit_loc(const parser_t* parser, const node_t* const node) {
@@ -400,7 +381,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
                 type == TYPE_BYTE)
                 println("call __println_int");
             else if (type == TYPE_CHAR)
-                println("call __println_char");
+                println("call _println_char");
             else if (type == TYPE_BOOL)
                 println("call _println_bool");
             else if (type == TYPE_STRING) {

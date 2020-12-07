@@ -18,3 +18,8 @@ void println_bool(int b) {
         write(1, s, sizeof(s) - 1);
     }
 }
+
+void println_char(char c) {
+    char s[2] = {c, '\n'};
+    write(1, s, 2);
+}
