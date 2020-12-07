@@ -1,4 +1,4 @@
-FROM alpine as builder
+FROM alpine:3.12 as builder
 
 RUN apk add --no-cache make gcc musl-dev
 
@@ -8,7 +8,7 @@ COPY . .
 
 RUN make mktc test BIN_TEST=./mktc
 
-FROM alpine
+FROM alpine:3.12
 RUN apk add --no-cache binutils
 COPY --from=builder /mktc /usr/local/bin/
 RUN mkdir -p  /usr/local/share/mktc/ && echo 'println("Hello, world!")' > /usr/local/share/mktc/hello_world.kts
