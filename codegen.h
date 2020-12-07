@@ -93,25 +93,6 @@ static void emit_program_epilog() {
 
 static void emit_push() { println("push %%rax"); }
 
-static void emit_stdlib() {
-    println(
-        "__println_string:\n"
-        "    movq $%lld, %%rax\n"
-        "    movq %%rsi, %%rdx\n"
-        "    movq %%rdi, %%rsi\n"
-        "    movq $1, %%rdi\n\n"
-
-        "    # Put a newline in place of the nul terminator\n"
-        "    # s[len++] =0x0a \n"
-        "    movb $0x0a, (%%rsi, %%rdx)\n"
-        "    incq %%rdx\n\n"
-
-        "    syscall\n"
-        "    xorq %%rax, %%rax\n"
-        "    ret\n\n",
-        syscall_write);
-}
-
 static void emit_loc(const parser_t* parser, const node_t* const node) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)node, !=, NULL, "%p");
@@ -327,7 +308,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
                 println("movsbl (%%rax), %%esi");
                 println("add $4, %%rax");
                 println("mov %%rax, %%rdi");
-                println("call __println_string");
+                println("call _println_string");
             } else {
                 log_debug("Type %s unimplemented", type_to_str[type]);
                 UNIMPLEMENTED();
@@ -586,7 +567,6 @@ static void emit(const parser_t* parser, FILE* asm_file) {
     }
 
     println("\n.text");
-    emit_stdlib();
 
     println(".file 1 \"%s\"", parser->par_file_name0);
     // Reverse traversal to end up with main at the end (needed?)

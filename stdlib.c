@@ -1,4 +1,4 @@
-long long int write(int fildes, const void *buf, unsigned long long int nbyte);
+long long int write(int fildes, const void* buf, unsigned long long int nbyte);
 __asm(
     ".globl _write\n"
     "_write:\n"
@@ -41,4 +41,9 @@ void println_int(long long int n) {
     if (neg) s[23 - 1 - len++] = '-';
 
     write(1, s + 23 - len, len);
+}
+
+void println_string(char* s, int len) {
+    s[len++] = '\n';
+    write(1, s, len);
 }
