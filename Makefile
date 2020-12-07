@@ -20,8 +20,12 @@ TESTS_EXPECTED := $(TESTS_SRC:.kts=.expected)
 TESTS_DIFF := $(TESTS_SRC:.kts=.diff)
 
 .DEFAULT:
-mktc: $(SRC) $(HEADERS)
+mktc: $(SRC) $(HEADERS) stdlib.o
 	$(CC) $(CFLAGS) $(SRC) -o $@
+
+
+stdlib.o: stdlib.c
+	$(CC) $(CFLAGS_COMMON) $(CFLAGS_0) $^ -c
 
 .SUFFIXES: .kts .exe .actual .expected
 

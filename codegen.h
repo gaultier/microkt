@@ -95,23 +95,6 @@ static void emit_push() { println("push %%rax"); }
 
 static void emit_stdlib() {
     println(
-        "__println_bool:\n"
-        "    test %%rdi, %%rdi\n"
-        "    leaq .Lfalse(%%rip), %%rax\n"
-        "    leaq .Ltrue(%%rip), %%rsi\n"
-        "    # len +1 to include the newline\n"
-        "    movq $6, %%rdi\n"
-        "    movq $5, %%rdx\n"
-        "    cmoveq %%rax, %%rsi\n\n"
-        "    cmoveq %%rdi, %%rdx\n\n"
-
-        "    movq $%lld, %%rax\n"
-        "    movq $1, %%rdi\n\n"
-
-        "    syscall\n"
-        "    xorq %%rax, %%rax\n"
-        "    ret\n\n"
-
         "__println_string:\n"
         "    movq $%lld, %%rax\n"
         "    movq %%rsi, %%rdx\n"
@@ -206,7 +189,7 @@ static void emit_stdlib() {
         "      addq $32, %%rsp\n"
         "      popq %%rbp\n"
         "      ret\n",
-        syscall_write, syscall_write, syscall_write, syscall_write);
+        syscall_write, syscall_write, syscall_write);
 }
 
 static void emit_loc(const parser_t* parser, const node_t* const node) {
@@ -419,7 +402,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             else if (type == TYPE_CHAR)
                 println("call __println_char");
             else if (type == TYPE_BOOL)
-                println("call __println_bool");
+                println("call _println_bool");
             else if (type == TYPE_STRING) {
                 println("movsbl (%%rax), %%esi");
                 println("add $4, %%rax");
