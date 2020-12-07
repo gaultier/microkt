@@ -51,7 +51,10 @@ static void fn_prolog(const parser_t* parser, const fn_decl_t* fn_decl,
     CHECK(aligned_stack_size % 16, ==, 0, "%d");
 
     println("# prolog");
+    println(".cfi_startproc");
     println("push %%rbp");
+    println(".cfi_def_cfa_offset 16");
+    println(".cfi_offset %%rbp, -16");
     println("mov %%rsp, %%rbp");
 
     println("sub $%d, %%rsp\n", aligned_stack_size);
@@ -77,6 +80,7 @@ static void fn_epilog(int aligned_stack_size) {
     println(".L.return.%d:", current_fn_i);
     println("addq $%d, %%rsp", aligned_stack_size);
     println("popq %%rbp");
+    println(".cfi_endproc");
     println("ret\n");
 }
 
@@ -726,10 +730,9 @@ static void emit(const parser_t* parser, FILE* asm_file) {
                   fn_decl.fd_stack_size, aligned_stack_size);
         fn_prolog(parser, &fn_decl, aligned_stack_size);
         emit_stmt(parser, fn_decl.fd_body_node_i);
-        if (i > 0)
-            fn_epilog(aligned_stack_size);
-        else
-            emit_program_epilog();
+        if (i == 0) emit_program_epilog();
+
+        fn_epilog(aligned_stack_size);
 
         current_fn_i = caller_current_fn_i;
         CHECK(current_fn_i, >=, 0, "%d");
