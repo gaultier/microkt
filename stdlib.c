@@ -1,8 +1,12 @@
-
 long long int write(int fildes, const void* buf, unsigned long long int nbyte);
 __asm(
+#ifdef __APPLE__
     ".globl _write\n"
     "_write:\n"
+#else
+    ".globl write\n"
+    "write:\n"
+#endif
     ".cfi_startproc\n"
 #ifdef __APPLE__
     "mov $0x2000004, %rax\n"
@@ -52,3 +56,25 @@ void println_string(char* s, int len) {
     s[len++] = '\n';
     write(1, s, len);
 }
+
+void* mmap(void* addr, unsigned long long int len, int prot, int flags, int fd,
+           unsigned int offset);
+__asm(
+#ifdef __APPLE__
+    ".globl _mmap\n"
+    "_mmap:\n"
+#else
+    ".globl mmap\n"
+    "mmap:\n"
+#endif
+    ".cfi_startproc\n"
+#ifdef __APPLE__
+    "mov $0x2000197, %rax\n"
+#else
+    "mov $9, %rax\n"
+#endif
+    "syscall\n"
+    ".cfi_endproc\n"
+    "ret\n");
+
+char* alloc(long long int len) { return mmap(0, len, 0x03, 0x1002, 0, 0); }
