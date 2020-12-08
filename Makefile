@@ -4,7 +4,7 @@ SRC = main.c
 HEADERS := $(wildcard *.h)
 
 DEBUG = 0
-CFLAGS_COMMON =-Wall -Wextra -pedantic -g -std=c99 -march=native -fno-omit-frame-pointer
+CFLAGS_COMMON =-Wall -Wextra -pedantic -g -std=c99 -march=native -fno-omit-frame-pointer -fno-stack-protector
 # Debug: build with `make DEBUG=1`
 CFLAGS_1 = -O0 -fsanitize=address -DWITH_LOGS
 # Release: default
