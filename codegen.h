@@ -141,9 +141,13 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             CHECK(source_len, <, parser->par_lexer.lex_source_len, "%d");
 
             emit_loc(parser, expr);
-            println("leaq .L%d(%%rip), %%rdi", expr_i);
-            println("mov $%d, %%rsi", 8 + source_len);
-            println("call %sstrndup", name_prefix);
+            /* println("leaq .L%d(%%rip), %%rdi", expr_i); */
+            println("mov $%d, %%rdi", 8 + source_len);
+            println("call _malloc");
+            println("movq $%d, -8(%%rax)", source_len);
+
+            for (int i = 0; i < source_len; i++)
+                println("movb $%d, +%d(%%rax)", source[i], i);
 
             return;
         }
@@ -307,8 +311,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             else if (type == TYPE_BOOL)
                 println("call %sprintln_bool", name_prefix);
             else if (type == TYPE_STRING) {
-                println("mov (%%rax), %%rsi");
-                println("add $8, %%rax");
+                println("movq -8(%%rax), %%rsi");
                 println("mov %%rax, %%rdi");
                 println("call %sprintln_string", name_prefix);
             } else {
@@ -540,30 +543,6 @@ static void emit(const parser_t* parser, FILE* asm_file) {
 
     output_file = asm_file;
     println(".data");
-
-    for (int i = 0; i < (int)buf_size(parser->par_node_decls); i++) {
-        const int node_i = parser->par_node_decls[i];
-        CHECK(node_i, >=, 0, "%d");
-        CHECK(node_i, <, (int)buf_size(parser->par_nodes), "%d");
-
-        const node_t* const node = &parser->par_nodes[node_i];
-        if (node->node_kind != NODE_STRING) continue;
-
-        const char* source = NULL;
-        int source_len = 0;
-        parser_tok_source(parser, node->node_n.node_string.st_tok_i, &source,
-                          &source_len);
-        CHECK((void*)source, !=, NULL, "%p");
-        CHECK(source_len, >=, 0, "%d");
-        CHECK(source_len, <, parser->par_lexer.lex_source_len, "%d");
-
-        println(
-            ".L%d: .asciz "
-            "\"\\%03o\\%03o\\%03o\\%03o\\%03o\\%03o\\%03o\\%03o%.*s\"",
-            node_i, (char)(source_len >> 0), (char)(source_len >> 8),
-            (char)(source_len >> 16), (char)(source_len >> 24), 0, 0, 0, 0,
-            source_len, source);
-    }
 
     println("\n.text");
 
