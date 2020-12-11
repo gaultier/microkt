@@ -143,7 +143,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             emit_loc(parser, expr);
             /* println("leaq .L%d(%%rip), %%rdi", expr_i); */
             println("mov $%d, %%rdi", 8 + source_len);
-            println("call _malloc");
+            println("call %smalloc", name_prefix);
             println("movq $%d, -8(%%rax)", source_len);
 
             for (int i = 0; i < source_len; i++)
@@ -226,7 +226,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             if (type_kind == TYPE_STRING) {
                 println("mov %%rax, %%rdi");
                 println("pop %%rsi");
-                println("call _string_concat");
+                println("call %sstring_concat", name_prefix);
             } else {
                 println("pop %%rdi");
                 println("add %s, %s", di, ax);
