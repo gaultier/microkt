@@ -38,14 +38,14 @@ void println_int(long long int n) {
     write(1, s + 23 - len, len);
 }
 
-void println_string(char* s, long long int len) {
+void println_string(char* s, size_t len) {
     s[len++] = '\n';
     write(1, s, len);
 }
 
 char* string_concat(const char* a, const char* b) {
-    const long long int a_len = *(a - 8);
-    const long long int b_len = *(b - 8);
+    const size_t a_len = *(a - 8);
+    const size_t b_len = *(b - 8);
 
     char* const ret = alloc(a_len + b_len);
     memcpy(ret, a, a_len);
