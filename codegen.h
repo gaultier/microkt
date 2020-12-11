@@ -220,8 +220,17 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             emit_push();
             emit_expr(parser, bin.bi_lhs_i);
             emit_loc(parser, expr);
-            println("pop %%rdi");
-            println("add %s, %s", di, ax);
+
+            const type_kind_t type_kind =
+                parser->par_types[expr->node_type_i].ty_kind;
+            if (type_kind == TYPE_STRING) {
+                println("mov %%rax, %%rdi");
+                println("pop %%rsi");
+                println("call _string_concat");
+            } else {
+                println("pop %%rdi");
+                println("add %s, %s", di, ax);
+            }
 
             return;
         }

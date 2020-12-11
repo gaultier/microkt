@@ -11,3 +11,9 @@ lazy
 // expect:      over the 
 // expect: lazy 
 // expect:   dog
+
+
+val a: String = "May the "
+val b: String = "Force be with you"
+val ab: String = a + b
+println(ab) // expect: May the Force be with you
