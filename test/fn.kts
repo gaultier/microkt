@@ -98,3 +98,13 @@ fun factorial(n: Long) : Long {
   return n * factorial(n-1L)
 }
 println(factorial(5L)) // expect: 120
+
+
+// With allocations
+fun local_string_var(): String {
+  var a: String = "You're a wizard, Harry"
+  return a
+}
+
+var s: String = local_string_var()
+println(s) // expect: You're a wizard, Harry
