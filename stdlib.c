@@ -11,9 +11,14 @@ static size_t* objs = NULL;
 void mkt_scan_stack(runtime_val_header* stack_bottom,
                     runtime_val_header* stack_top) {
     printf("Stack size: %zu\n", stack_top - stack_bottom);
-    runtime_val_header* header = (runtime_val_header*)stack_bottom;
-    printf("header: size=%llu color=%u tag=%u\n", header->rv_size,
-           header->rv_color, header->rv_tag);
+
+    const size_t header_val = *(size_t*)stack_bottom;
+    runtime_val_header header = {.rv_size = (header_val >> 10),
+                                 .rv_color = (header_val >> 54) & 512,
+                                 .rv_tag = (header_val & 0xff)};
+
+    printf("header: size=%llu color=%u tag=%u\n", header.rv_size,
+           header.rv_color, header.rv_tag);
 }
 
 void* mkt_alloc(size_t size, runtime_val_header* stack_bottom,
