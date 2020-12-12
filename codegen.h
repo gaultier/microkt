@@ -65,13 +65,13 @@ static void fn_prolog(const parser_t* parser, const fn_decl_t* fn_decl,
         CHECK(arg_i, <, (int)buf_size(parser->par_nodes), "%d");
 
         const node_t* const arg = &parser->par_nodes[arg_i];
-        const int stack_offset = (int)sizeof(runtime_val_header) +
-                                 arg->node_n.node_var_def.vd_stack_offset;
+        const int stack_offset = arg->node_n.node_var_def.vd_stack_offset -
+                                 sizeof(runtime_val_header);
         CHECK(stack_offset, >=, 0, "%d");
 
         CHECK(i, <, 6, "%d");  // FIXME: stack args
-        println("movq $0, -%d(%%rbp)",
-                stack_offset - (int)sizeof(runtime_val_header));  // FIXME
+        println("movq $8888, -%d(%%rbp)",
+                stack_offset + (int)sizeof(runtime_val_header));  // FIXME
         println("mov %s, -%d(%%rbp)", fn_args[i], stack_offset);
     }
 }
@@ -359,7 +359,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             if (node_def->node_kind == NODE_VAR_DEF) {
                 const var_def_t var_def = node_def->node_n.node_var_def;
                 const int offset =
-                    (int)sizeof(runtime_val_header) + var_def.vd_stack_offset;
+                    var_def.vd_stack_offset - sizeof(runtime_val_header);
 
                 if (type_size == 1)
                     println("mov -%d(%%rbp), %%al", offset);
@@ -475,7 +475,8 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
                 &parser->par_nodes[var.va_var_node_i];
 
             const var_def_t var_def = node_def->node_n.node_var_def;
-            const int offset = var_def.vd_stack_offset;
+            const int offset =
+                var_def.vd_stack_offset - sizeof(runtime_val_header);
             CHECK(offset, >=, 0, "%d");
 
             CHECK(stmt->node_type_i, >=, 0, "%d");
@@ -507,13 +508,13 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
             CHECK(type_size, >=, 0, "%d");
 
             const int offset =
-                (int)sizeof(runtime_val_header) + var_def.vd_stack_offset;
+                var_def.vd_stack_offset - (int)sizeof(runtime_val_header);
             CHECK(offset, >=, 0, "%d");
 
             emit_loc(parser, stmt);
 
-            println("movq $0, -%d(%%rbp)",
-                    offset - (int)sizeof(runtime_val_header));  // FIXME
+            println("movq $9999, -%d(%%rbp)",
+                    offset + (int)sizeof(runtime_val_header));  // FIXME
 
             if (type_size == 1)
                 println("mov %%al, -%d(%%rbp)", offset);
