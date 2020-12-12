@@ -368,31 +368,50 @@ static res_t parser_init(const char* file_name0, const char* source,
     // Pre-allocate common types
     buf_push(parser->par_types,
              ((type_t){.ty_kind = TYPE_UNIT,
-                       .ty_size = 0}));  // Hence TYPE_UNIT_I = 0
+                       .ty_header = {
+                           .rv_size = 0,
+                           .rv_tag = TYPE_UNIT}}));  // Hence TYPE_UNIT_I = 0
     buf_push(
         parser->par_types,
-        ((type_t){.ty_kind = TYPE_ANY, .ty_size = 0}));  // Hence TYPE_ANY_I = 1
+        ((type_t){.ty_kind = TYPE_ANY,
+                  .ty_header = {.rv_size = 0,
+                                .rv_tag = TYPE_ANY}}));  // Hence TYPE_ANY_I = 1
     buf_push(parser->par_types,
              ((type_t){.ty_kind = TYPE_LONG,
-                       .ty_size = 8}));  // Hence TYPE_LONG_I = 2
+                       .ty_header = {
+                           .rv_size = 8,
+                           .rv_tag = TYPE_LONG}}));  // Hence TYPE_LONG_I = 2
     buf_push(
         parser->par_types,
-        ((type_t){.ty_kind = TYPE_INT, .ty_size = 4}));  // Hence TYPE_INT_I = 3
+        ((type_t){.ty_kind = TYPE_INT,
+                  .ty_header = {.rv_size = 4,
+                                .rv_tag = TYPE_INT}}));  // Hence TYPE_INT_I = 3
     buf_push(parser->par_types,
              ((type_t){.ty_kind = TYPE_BOOL,
-                       .ty_size = 1}));  // Hence TYPE_BOOL_I = 4
+                       .ty_header = {
+                           .rv_size = 1,
+                           .rv_tag = TYPE_BOOL}}));  // Hence TYPE_BOOL_I = 4
     buf_push(parser->par_types,
              ((type_t){.ty_kind = TYPE_CHAR,
-                       .ty_size = 1}));  // Hence TYPE_CHAR_I = 5
-    buf_push(parser->par_types,
-             ((type_t){.ty_kind = TYPE_STRING,
-                       .ty_size = 8}));  // Hence TYPE_STRING_I = 6
+                       .ty_header = {
+                           .rv_size = 1,
+                           .rv_tag = TYPE_CHAR}}));  // Hence TYPE_CHAR_I = 5
+    buf_push(
+        parser->par_types,
+        ((type_t){
+            .ty_kind = TYPE_STRING,
+            .ty_header = {.rv_size = 8,
+                          .rv_tag = TYPE_STRING}}));  // Hence TYPE_STRING_I = 6
     buf_push(parser->par_types,
              ((type_t){.ty_kind = TYPE_BYTE,
-                       .ty_size = 1}));  // Hence TYPE_BYTE_I = 7
+                       .ty_header = {
+                           .rv_size = 1,
+                           .rv_tag = TYPE_BYTE}}));  // Hence TYPE_BYTE_I = 7
     buf_push(parser->par_types,
              ((type_t){.ty_kind = TYPE_SHORT,
-                       .ty_size = 2}));  // Hence TYPE_SHORT_I = 8
+                       .ty_header = {
+                           .rv_size = 2,
+                           .rv_tag = TYPE_STRING}}));  // Hence TYPE_SHORT_I = 8
 
     parser->par_fn_i = parser->par_node_decls[0];
 
@@ -2089,13 +2108,13 @@ static res_t parser_parse_property_declaration(parser_t* parser,
     CHECK(type_i, >=, 0, "%d");
     CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
 
-    const int type_size = parser->par_types[type_i].ty_size;
+    const int type_size = parser->par_types[type_i].ty_header.rv_size;
     log_debug("parsed type %s size=%d", type_to_str[type_kind], type_size);
 
     CHECK(parser->par_fn_i, >=, 0, "%d");
     CHECK(parser->par_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
     parser->par_nodes[parser->par_fn_i].node_n.node_fn_decl.fd_stack_size +=
-        type_size;
+        (int)sizeof(runtime_val_header) + type_size;
 
     const int offset =
         parser->par_nodes[parser->par_fn_i].node_n.node_fn_decl.fd_stack_size;
@@ -2144,12 +2163,12 @@ static res_t parser_parse_parameter(parser_t* parser, int** new_nodes_i) {
         CHECK(type_i, >=, 0, "%d");
         CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
 
-        const int type_size = parser->par_types[type_i].ty_size;
+        const int type_size = parser->par_types[type_i].ty_header.rv_size;
 
         CHECK(parser->par_fn_i, >=, 0, "%d");
         CHECK(parser->par_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
         parser->par_nodes[parser->par_fn_i].node_n.node_fn_decl.fd_stack_size +=
-            type_size;
+            (int)sizeof(runtime_val_header) + type_size;
 
         const int offset = parser->par_nodes[parser->par_fn_i]
                                .node_n.node_fn_decl.fd_stack_size;

@@ -65,10 +65,13 @@ static void fn_prolog(const parser_t* parser, const fn_decl_t* fn_decl,
         CHECK(arg_i, <, (int)buf_size(parser->par_nodes), "%d");
 
         const node_t* const arg = &parser->par_nodes[arg_i];
-        const int stack_offset = arg->node_n.node_var_def.vd_stack_offset;
+        const int stack_offset = (int)sizeof(runtime_val_header) +
+                                 arg->node_n.node_var_def.vd_stack_offset;
         CHECK(stack_offset, >=, 0, "%d");
 
         CHECK(i, <, 6, "%d");  // FIXME: stack args
+        println("movq $0, -%d(%%rbp)",
+                stack_offset - (int)sizeof(runtime_val_header));  // FIXME
         println("mov %s, -%d(%%rbp)", fn_args[i], stack_offset);
     }
 }
@@ -115,7 +118,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
     const type_t* const type = &parser->par_types[expr->node_type_i];
 
     const char *ax, *di, *dx;
-    if (type->ty_size == 8) {
+    if (type->ty_header.rv_size == 8) {
         ax = "%rax";
         di = "%rdi";
         dx = "%rdx";
@@ -349,13 +352,14 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             CHECK(node_def->node_type_i, <, (int)buf_size(parser->par_types),
                   "%d");
             const int type_size =
-                parser->par_types[node_def->node_type_i].ty_size;
+                parser->par_types[node_def->node_type_i].ty_header.rv_size;
             CHECK(type_size, >=, 0, "%d");
 
             emit_loc(parser, expr);
             if (node_def->node_kind == NODE_VAR_DEF) {
                 const var_def_t var_def = node_def->node_n.node_var_def;
-                const int offset = var_def.vd_stack_offset;
+                const int offset =
+                    (int)sizeof(runtime_val_header) + var_def.vd_stack_offset;
 
                 if (type_size == 1)
                     println("mov -%d(%%rbp), %%al", offset);
@@ -476,7 +480,8 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
 
             CHECK(stmt->node_type_i, >=, 0, "%d");
             CHECK(stmt->node_type_i, <, (int)buf_size(parser->par_types), "%d");
-            const int type_size = parser->par_types[stmt->node_type_i].ty_size;
+            const int type_size =
+                parser->par_types[stmt->node_type_i].ty_header.rv_size;
             CHECK(type_size, >=, 0, "%d");
 
             emit_loc(parser, stmt);
@@ -497,13 +502,19 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
 
             emit_expr(parser, var_def.vd_init_node_i);
 
-            const int type_size = parser->par_types[stmt->node_type_i].ty_size;
+            const int type_size =
+                parser->par_types[stmt->node_type_i].ty_header.rv_size;
             CHECK(type_size, >=, 0, "%d");
 
-            const int offset = var_def.vd_stack_offset;
+            const int offset =
+                (int)sizeof(runtime_val_header) + var_def.vd_stack_offset;
             CHECK(offset, >=, 0, "%d");
 
             emit_loc(parser, stmt);
+
+            println("movq $0, -%d(%%rbp)",
+                    offset - (int)sizeof(runtime_val_header));  // FIXME
+
             if (type_size == 1)
                 println("mov %%al, -%d(%%rbp)", offset);
             else if (type_size == 2)
