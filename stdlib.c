@@ -14,7 +14,7 @@ void mkt_scan_stack(runtime_val_header* stack_bottom,
 
     const size_t header_val = *(size_t*)stack_bottom;
     runtime_val_header header = {.rv_size = (header_val >> 10),
-                                 .rv_color = (header_val >> 54) & 512,
+                                 .rv_color = (header_val >> 54) & (1 << 9),
                                  .rv_tag = (header_val & 0xff)};
 
     printf("header: size=%llu color=%u tag=%u\n", header.rv_size,
