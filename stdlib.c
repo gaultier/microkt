@@ -3,15 +3,21 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "ast.h"
 #include "buf.h"
 
 static size_t* objs = NULL;
 
-void mkt_scan_stack(size_t* stack_bottom, size_t* stack_top) {
+void mkt_scan_stack(runtime_val_header* stack_bottom,
+                    runtime_val_header* stack_top) {
     printf("Stack size: %zu\n", stack_top - stack_bottom);
+    runtime_val_header* header = (runtime_val_header*)stack_bottom;
+    printf("header: size=%llu color=%u tag=%u\n", header->rv_size,
+           header->rv_color, header->rv_tag);
 }
 
-void* mkt_alloc(size_t size, size_t* stack_bottom, size_t* stack_top) {
+void* mkt_alloc(size_t size, runtime_val_header* stack_bottom,
+                runtime_val_header* stack_top) {
     mkt_scan_stack(stack_bottom, stack_top);
     void* obj = malloc(size);
     buf_push(objs, (size_t)obj);
@@ -57,8 +63,9 @@ void mkt_println_string(char* s, size_t len) {
     write(1, s, len);
 }
 
-char* mkt_string_concat(const char* a, const char* b, size_t* stack_bottom,
-                        size_t* stack_top) {
+char* mkt_string_concat(const char* a, const char* b,
+                        runtime_val_header* stack_bottom,
+                        runtime_val_header* stack_top) {
     const size_t a_len = *(a - 8);
     const size_t b_len = *(b - 8);
 

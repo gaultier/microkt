@@ -151,9 +151,9 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             CHECK(source_len, <, parser->par_lexer.lex_source_len, "%d");
 
             emit_loc(parser, expr);
-            println("mov $%d, %%rdi", 8 + source_len);
-            println("mov %%rsp, %%rsi");
-            println("mov %%rbp, %%rdx");
+            println("mov $%d, %s", 8 + source_len, fn_args[0]);
+            println("mov %%rsp, %s", fn_args[1]);
+            println("mov %%rbp, %s", fn_args[2]);
             println("call %smkt_alloc", name_prefix);
             println("movq $%d, -8(%%rax)", source_len);
 
