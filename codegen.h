@@ -151,8 +151,9 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             CHECK(source_len, <, parser->par_lexer.lex_source_len, "%d");
 
             emit_loc(parser, expr);
-            /* println("leaq .L%d(%%rip), %%rdi", expr_i); */
             println("mov $%d, %%rdi", 8 + source_len);
+            println("mov %%rsp, %%rsi");
+            println("mov %%rbp, %%rdx");
             println("call %smkt_alloc", name_prefix);
             println("movq $%d, -8(%%rax)", source_len);
 
@@ -236,6 +237,8 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             if (type_kind == TYPE_STRING) {
                 println("mov %%rax, %%rdi");
                 println("pop %%rsi");
+                println("mov %%rsp, %s", fn_args[2]);
+                println("mov %%rbp, %s", fn_args[3]);
                 println("call %smkt_string_concat", name_prefix);
             } else {
                 println("pop %%rdi");
@@ -579,8 +582,8 @@ static void emit(const parser_t* parser, FILE* asm_file) {
     println("\n.text");
 
     println(".file 1 \"%s\"", parser->par_file_name0);
-    // Reverse traversal to end up with main at the end (needed?)
-    for (int i = (int)buf_size(parser->par_node_decls) - 1; i >= 0; i--) {
+
+    for (int i = 0; i < (int)buf_size(parser->par_node_decls); i++) {
         const int node_i = parser->par_node_decls[i];
         CHECK(node_i, >=, 0, "%d");
         CHECK(node_i, <, (int)buf_size(parser->par_nodes), "%d");

@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -6,7 +7,12 @@
 
 static size_t* objs = NULL;
 
-void* mkt_alloc(size_t size) {
+void mkt_scan_stack(size_t* stack_bottom, size_t* stack_top) {
+    printf("Stack size: %zu\n", stack_top - stack_bottom);
+}
+
+void* mkt_alloc(size_t size, size_t* stack_bottom, size_t* stack_top) {
+    mkt_scan_stack(stack_bottom, stack_top);
     void* obj = malloc(size);
     buf_push(objs, (size_t)obj);
     return obj;
@@ -51,11 +57,12 @@ void mkt_println_string(char* s, size_t len) {
     write(1, s, len);
 }
 
-char* mkt_string_concat(const char* a, const char* b) {
+char* mkt_string_concat(const char* a, const char* b, size_t* stack_bottom,
+                        size_t* stack_top) {
     const size_t a_len = *(a - 8);
     const size_t b_len = *(b - 8);
 
-    char* const ret = mkt_alloc(a_len + b_len);
+    char* const ret = mkt_alloc(a_len + b_len, stack_bottom, stack_top);
     memcpy(ret, a, a_len);
     memcpy(ret + a_len, b, b_len);
     *(ret - 8) = a_len + b_len;
