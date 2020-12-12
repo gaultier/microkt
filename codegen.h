@@ -65,13 +65,20 @@ static void fn_prolog(const parser_t* parser, const fn_decl_t* fn_decl,
         CHECK(arg_i, <, (int)buf_size(parser->par_nodes), "%d");
 
         const node_t* const arg = &parser->par_nodes[arg_i];
+        const runtime_val_header header =
+            parser->par_types[arg->node_type_i].ty_header;
         const int stack_offset = arg->node_n.node_var_def.vd_stack_offset -
                                  sizeof(runtime_val_header);
         CHECK(stack_offset, >=, 0, "%d");
 
         CHECK(i, <, 6, "%d");  // FIXME: stack args
-        println("movq $8888, -%d(%%rbp)",
-                stack_offset + (int)sizeof(runtime_val_header));  // FIXME
+
+        const long long unsigned int header_val =
+            (header.rv_size << 10) | (header.rv_color << 8) | header.rv_tag;
+        println("movq $%llu, -%d(%%rbp) # tag: size=%llu color=%u tag=%u ",
+                header_val, stack_offset + (int)sizeof(runtime_val_header),
+                header.rv_size, header.rv_color, header.rv_tag);
+
         println("mov %s, -%d(%%rbp)", fn_args[i], stack_offset);
     }
 }
@@ -503,8 +510,9 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
 
             emit_expr(parser, var_def.vd_init_node_i);
 
-            const int type_size =
-                parser->par_types[stmt->node_type_i].ty_header.rv_size;
+            const runtime_val_header header =
+                parser->par_types[stmt->node_type_i].ty_header;
+            const int type_size = header.rv_size;
             CHECK(type_size, >=, 0, "%d");
 
             const int offset =
@@ -513,8 +521,11 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
 
             emit_loc(parser, stmt);
 
-            println("movq $9999, -%d(%%rbp)",
-                    offset + (int)sizeof(runtime_val_header));  // FIXME
+            const long long unsigned int header_val =
+                (header.rv_size << 10) | (header.rv_color << 8) | header.rv_tag;
+            println("movq $%llu, -%d(%%rbp) # tag: size=%llu color=%u tag=%u ",
+                    header_val, offset + (int)sizeof(runtime_val_header),
+                    header.rv_size, header.rv_color, header.rv_tag);
 
             if (type_size == 1)
                 println("mov %%al, -%d(%%rbp)", offset);

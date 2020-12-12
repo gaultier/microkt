@@ -20,8 +20,8 @@ static const char type_to_str[][20] = {
 };
 
 typedef struct {
-    unsigned long long int rv_size : 53;
-    unsigned int rv_color : 1;
+    unsigned long long int rv_size : 54;
+    unsigned int rv_color : 2;
     unsigned int rv_tag : 8;
 } runtime_val_header;
 
