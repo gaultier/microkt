@@ -157,7 +157,6 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             println("mov %%rsp, %s", fn_args[1]);
             println("mov %%rbp, %s", fn_args[2]);
             println("call %smkt_alloc", name_prefix);
-            println("movq $%d, -8(%%rax)", source_len);
 
             for (int i = 0; i < source_len; i++)
                 println("movb $%d, +%d(%%rax)", source[i], i);
@@ -335,7 +334,6 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             else if (type == TYPE_BOOL)
                 println("call %smkt_println_bool", name_prefix);
             else if (type == TYPE_STRING) {
-                println("movq -8(%%rax), %%rsi");
                 println("mov %%rax, %%rdi");
                 println("call %smkt_println_string", name_prefix);
             } else {

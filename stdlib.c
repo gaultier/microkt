@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include "ast.h"
+#include "common.h"
 
 static size_t* objs = NULL;
 static size_t* objs_end = NULL;
@@ -32,7 +33,6 @@ void mkt_scan_stack(runtime_val_header* stack_bottom,
     printf("Stack size: %zu\n", stack_top - stack_bottom);
 
     while (stack_bottom < stack_top) {
-        printf("Stack: bottom=%p top=%p\n", stack_bottom, stack_top);
         const size_t header_val = *(size_t*)stack_bottom;
         runtime_val_header header = {.rv_size = (header_val >> 10),
                                      .rv_color = (header_val >> 54) & (1 << 9),
@@ -98,9 +98,15 @@ void mkt_println_int(long long int n) {
     write(1, s + 23 - len, len);
 }
 
-void mkt_println_string(char* s, size_t len) {
-    s[len++] = '\n';
-    write(1, s, len);
+void mkt_println_string(char* s) {
+    const size_t header_val = *(s - 8);
+    runtime_val_header header = {.rv_size = (header_val >> 10),
+                                 .rv_color = (header_val >> 54) & (1 << 9),
+                                 .rv_tag = (header_val & 0xff)};
+    printf("mkt_println_string: header size=%llu\n", header.rv_size);
+    const char newline = '\n';
+    write(1, s, header.rv_size);
+    write(1, &newline, 1);
 }
 
 char* mkt_string_concat(const char* a, const char* b,

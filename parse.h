@@ -411,7 +411,7 @@ static res_t parser_init(const char* file_name0, const char* source,
              ((type_t){.ty_kind = TYPE_SHORT,
                        .ty_header = {
                            .rv_size = 2,
-                           .rv_tag = TYPE_STRING}}));  // Hence TYPE_SHORT_I = 8
+                           .rv_tag = TYPE_SHORT}}));  // Hence TYPE_SHORT_I = 8
 
     parser->par_fn_i = parser->par_node_decls[0];
 
