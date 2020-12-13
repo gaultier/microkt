@@ -9,8 +9,11 @@
 static char* objs = NULL;
 static char* objs_end = NULL;
 
+static const size_t heap_size_initial =
+    2 * 1024 * 1024;  // 2 Mib initial heap size
+
 void mkt_init() {
-    objs = calloc(50, 1);  // FIXME
+    objs = calloc(heap_size_initial, 1);
     objs_end = objs;
 }
 
