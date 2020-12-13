@@ -29,8 +29,16 @@ void mkt_scan_stack(runtime_val_header* stack_bottom,
 void* mkt_alloc(size_t size, runtime_val_header* stack_bottom,
                 runtime_val_header* stack_top) {
     mkt_scan_stack(stack_bottom, stack_top);
-    void* obj = malloc(size);
+    size_t* obj = malloc(sizeof(runtime_val_header) + size);
+
+    runtime_val_header header = {
+        .rv_size = size, .rv_color = 0, .rv_tag = TYPE_STRING};
+    const long long unsigned int header_val =
+        (header.rv_size << 10) | (header.rv_color << 8) | header.rv_tag;
+
+    *obj = header_val;
     buf_push(objs, (size_t)obj);
+    obj += 1;
     return obj;
 }
 
