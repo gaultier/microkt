@@ -6,8 +6,8 @@
 #include "ast.h"
 #include "common.h"
 
-static size_t* objs = NULL;
-static size_t* objs_end = NULL;
+static char* objs = NULL;
+static char* objs_end = NULL;
 
 void mkt_init() {
     objs = calloc(50, 1);  // FIXME
@@ -47,8 +47,10 @@ void* mkt_alloc(size_t size, char* stack_bottom, char* stack_top) {
     runtime_val_header header = {
         .rv_size = size, .rv_color = 0, .rv_tag = TYPE_STRING};
     size_t* header_val = (size_t*)&header;
-    *obj = *header_val;
+    size_t* obj_header = (size_t*)obj;
+    *obj_header = *header_val;
     obj += sizeof(runtime_val_header);
+
     return obj;
 }
 
@@ -88,8 +90,8 @@ void mkt_println_int(long long int n) {
 
 void mkt_println_string(char* s) {
     runtime_val_header header = *(runtime_val_header*)(s - 8);
-    printf("mkt_println_string: header size=%llu tag=%u\n", header.rv_size,
-           header.rv_tag);
+    CHECK(header.rv_tag & TYPE_STRING, !=, 0, "%u");
+
     const char newline = '\n';
     write(1, s, header.rv_size);
     write(1, &newline, 1);
