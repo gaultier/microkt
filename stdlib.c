@@ -4,9 +4,28 @@
 #include <unistd.h>
 
 #include "ast.h"
-#include "buf.h"
 
 static size_t* objs = NULL;
+static size_t* objs_end = NULL;
+
+void mkt_init() {
+    objs = calloc(8000, 1);
+    objs_end = objs;
+}
+
+void mkt_scan_heap() {
+    size_t* obj = objs;
+    while (obj < objs_end) {
+        const size_t header_val = *obj;
+        runtime_val_header header = {.rv_size = (header_val >> 10),
+                                     .rv_color = (header_val >> 54) & (1 << 9),
+                                     .rv_tag = (header_val & 0xff)};
+
+        printf("Heap: header: size=%llu color=%u tag=%u\n", header.rv_size,
+               header.rv_color, header.rv_tag);
+        obj += sizeof(runtime_val_header) + header.rv_size;
+    }
+}
 
 void mkt_scan_stack(runtime_val_header* stack_bottom,
                     runtime_val_header* stack_top) {
@@ -19,7 +38,7 @@ void mkt_scan_stack(runtime_val_header* stack_bottom,
                                      .rv_color = (header_val >> 54) & (1 << 9),
                                      .rv_tag = (header_val & 0xff)};
 
-        printf("header: size=%llu color=%u tag=%u\n", header.rv_size,
+        printf("Stack: header: size=%llu color=%u tag=%u\n", header.rv_size,
                header.rv_color, header.rv_tag);
 
         stack_bottom += sizeof(runtime_val_header) + header.rv_size;
@@ -29,7 +48,11 @@ void mkt_scan_stack(runtime_val_header* stack_bottom,
 void* mkt_alloc(size_t size, runtime_val_header* stack_bottom,
                 runtime_val_header* stack_top) {
     mkt_scan_stack(stack_bottom, stack_top);
-    size_t* obj = malloc(sizeof(runtime_val_header) + size);
+    mkt_scan_heap();
+
+    // TODO: realloc
+    size_t* obj = objs_end;
+    objs_end += sizeof(runtime_val_header) + size;
 
     runtime_val_header header = {
         .rv_size = size, .rv_color = 0, .rv_tag = TYPE_STRING};
@@ -37,7 +60,6 @@ void* mkt_alloc(size_t size, runtime_val_header* stack_bottom,
         (header.rv_size << 10) | (header.rv_color << 8) | header.rv_tag;
 
     *obj = header_val;
-    buf_push(objs, (size_t)obj);
     obj += 1;
     return obj;
 }

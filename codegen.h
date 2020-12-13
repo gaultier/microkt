@@ -585,6 +585,24 @@ static void emit(const parser_t* parser, FILE* asm_file) {
 
     println(".file 1 \"%s\"", parser->par_file_name0);
 
+    println(".globl _start");
+    println("_start:");
+    println(".cfi_startproc");
+    println(
+        "push %%rbp\n"
+        ".cfi_def_cfa_offset 16\n"
+        ".cfi_offset %%rbp, -16\n"
+        "mov %%rsp, %%rbp\n"
+        "sub $0, %%rsp");
+
+    println("call %smkt_init", name_prefix);
+    println("call %smain", name_prefix);
+    println(
+        "addq $16, %%rsp\n"
+        "popq %%rbp");
+    println(".cfi_endproc");
+    println("ret");
+
     for (int i = 0; i < (int)buf_size(parser->par_node_decls); i++) {
         const int node_i = parser->par_node_decls[i];
         CHECK(node_i, >=, 0, "%d");
