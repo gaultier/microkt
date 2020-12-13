@@ -13,7 +13,7 @@ static const size_t heap_size_initial =
     2 * 1024 * 1024;  // 2 Mib initial heap size
 
 void mkt_init() {
-    objs = calloc(heap_size_initial, 1);
+    objs = malloc(heap_size_initial);
     objs_end = objs;
 }
 
