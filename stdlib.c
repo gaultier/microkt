@@ -10,13 +10,13 @@ static size_t* objs = NULL;
 static size_t* objs_end = NULL;
 
 void mkt_init() {
-    objs = calloc(8000, 1);
+    objs = calloc(50, 1);  // FIXME
     objs_end = objs;
 }
 
 void mkt_scan_heap() {
-    size_t* obj = objs;
-    while (obj < objs_end) {
+    char* obj = (char*)objs;
+    while (obj < (char*)objs_end) {
         runtime_val_header header = *(runtime_val_header*)obj;
         printf("Heap: header: size=%llu color=%u tag=%u\n", header.rv_size,
                header.rv_color, header.rv_tag);
@@ -24,8 +24,7 @@ void mkt_scan_heap() {
     }
 }
 
-void mkt_scan_stack(runtime_val_header* stack_bottom,
-                    runtime_val_header* stack_top) {
+void mkt_scan_stack(char* stack_bottom, char* stack_top) {
     printf("Stack size: %zu\n", stack_top - stack_bottom);
 
     while (stack_bottom < stack_top) {
@@ -37,20 +36,19 @@ void mkt_scan_stack(runtime_val_header* stack_bottom,
     }
 }
 
-void* mkt_alloc(size_t size, runtime_val_header* stack_bottom,
-                runtime_val_header* stack_top) {
+void* mkt_alloc(size_t size, char* stack_bottom, char* stack_top) {
     mkt_scan_stack(stack_bottom, stack_top);
     mkt_scan_heap();
 
     // TODO: realloc
-    size_t* obj = objs_end;
+    char* obj = (char*)objs_end;
     objs_end += sizeof(runtime_val_header) + size;
 
     runtime_val_header header = {
         .rv_size = size, .rv_color = 0, .rv_tag = TYPE_STRING};
     size_t* header_val = (size_t*)&header;
     *obj = *header_val;
-    obj += 1;
+    obj += sizeof(runtime_val_header);
     return obj;
 }
 
@@ -96,9 +94,8 @@ void mkt_println_string(char* s) {
     write(1, &newline, 1);
 }
 
-char* mkt_string_concat(const char* a, const char* b,
-                        runtime_val_header* stack_bottom,
-                        runtime_val_header* stack_top) {
+char* mkt_string_concat(const char* a, const char* b, char* stack_bottom,
+                        char* stack_top) {
     const size_t a_len = *(a - 8);
     const size_t b_len = *(b - 8);
 
