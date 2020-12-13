@@ -17,11 +17,7 @@ void mkt_init() {
 void mkt_scan_heap() {
     size_t* obj = objs;
     while (obj < objs_end) {
-        const size_t header_val = *obj;
-        runtime_val_header header = {.rv_size = (header_val >> 10),
-                                     .rv_color = (header_val >> 54) & (1 << 9),
-                                     .rv_tag = (header_val & 0xff)};
-
+        runtime_val_header header = *(runtime_val_header*)obj;
         printf("Heap: header: size=%llu color=%u tag=%u\n", header.rv_size,
                header.rv_color, header.rv_tag);
         obj += sizeof(runtime_val_header) + header.rv_size;
@@ -33,11 +29,7 @@ void mkt_scan_stack(runtime_val_header* stack_bottom,
     printf("Stack size: %zu\n", stack_top - stack_bottom);
 
     while (stack_bottom < stack_top) {
-        const size_t header_val = *(size_t*)stack_bottom;
-        runtime_val_header header = {.rv_size = (header_val >> 10),
-                                     .rv_color = (header_val >> 54) & (1 << 9),
-                                     .rv_tag = (header_val & 0xff)};
-
+        runtime_val_header header = *(runtime_val_header*)stack_bottom;
         printf("Stack: header: size=%llu color=%u tag=%u\n", header.rv_size,
                header.rv_color, header.rv_tag);
 
@@ -56,10 +48,8 @@ void* mkt_alloc(size_t size, runtime_val_header* stack_bottom,
 
     runtime_val_header header = {
         .rv_size = size, .rv_color = 0, .rv_tag = TYPE_STRING};
-    const long long unsigned int header_val =
-        (header.rv_size << 10) | (header.rv_color << 8) | header.rv_tag;
-
-    *obj = header_val;
+    size_t* header_val = (size_t*)&header;
+    *obj = *header_val;
     obj += 1;
     return obj;
 }
@@ -99,10 +89,7 @@ void mkt_println_int(long long int n) {
 }
 
 void mkt_println_string(char* s) {
-    const size_t header_val = *(s - 8);
-    runtime_val_header header = {.rv_size = (header_val >> 10),
-                                 .rv_color = (header_val >> 54) & (1 << 9),
-                                 .rv_tag = (header_val & 0xff)};
+    runtime_val_header header = *(runtime_val_header*)(s - 8);
     printf("mkt_println_string: header size=%llu\n", header.rv_size);
     const char newline = '\n';
     write(1, s, header.rv_size);

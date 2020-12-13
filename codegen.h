@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ast.h"
+#include "common.h"
 #include "parse.h"
 
 // TODO: use platform headers for that?
@@ -75,10 +76,9 @@ static void fn_prolog(const parser_t* parser, const fn_decl_t* fn_decl,
 
         CHECK(i, <, 6, "%d");  // FIXME: stack args
 
-        const long long unsigned int header_val =
-            (header.rv_size << 10) | (header.rv_color << 8) | header.rv_tag;
-        println("movq $%llu, -%d(%%rbp) # tag: size=%llu color=%u tag=%u ",
-                header_val, stack_offset + (int)sizeof(runtime_val_header),
+        size_t* header_val = (size_t*)&header;
+        println("movq $%zu, -%d(%%rbp) # tag: size=%llu color=%u tag=%u ",
+                *header_val, stack_offset + (int)sizeof(runtime_val_header),
                 header.rv_size, header.rv_color, header.rv_tag);
 
         println("mov %s, -%d(%%rbp)", fn_args[i], stack_offset);
@@ -151,6 +151,9 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             CHECK((void*)source, !=, NULL, "%p");
             CHECK(source_len, >=, 0, "%d");
             CHECK(source_len, <, parser->par_lexer.lex_source_len, "%d");
+
+            // HACK: should be set by the parser
+            parser->par_types[expr_i].ty_header.rv_size = source_len;
 
             emit_loc(parser, expr);
             println("mov $%d, %s # string len=%d", source_len, fn_args[0],
@@ -526,10 +529,10 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
 
             emit_loc(parser, stmt);
 
-            const long long unsigned int header_val =
-                (header.rv_size << 10) | (header.rv_color << 8) | header.rv_tag;
-            println("movq $%llu, -%d(%%rbp) # tag: size=%llu color=%u tag=%u ",
-                    header_val, offset + (int)sizeof(runtime_val_header),
+            size_t* header_val = (size_t*)&header;
+
+            println("movl $%zu, -%d(%%rbp) # tag: size=%llu color=%u tag=%u",
+                    *header_val, offset + (int)sizeof(runtime_val_header),
                     header.rv_size, header.rv_color, header.rv_tag);
 
             if (type_size == 1)
