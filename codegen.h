@@ -161,8 +161,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             println("call %smkt_alloc", name_prefix);
 
             for (int i = 0; i < source_len; i++)
-                println("movb $%d, +%d(%%rax) # string[%d]=`%c`", source[i], i,
-                        i, source[i]);
+                println("movb $%d, +%d(%%rax) # string[%d]", source[i], i, i);
 
             return;
         }
