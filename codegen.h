@@ -128,7 +128,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
     const type_t* const type = &parser->par_types[expr->node_type_i];
 
     const char *ax, *di, *dx;
-    if (type->ty_header.rv_size == 8) {
+    if (type->ty_size == 8) {
         ax = "%rax";
         di = "%rdi";
         dx = "%rdx";
@@ -152,9 +152,6 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             CHECK((void*)source, !=, NULL, "%p");
             CHECK(source_len, >=, 0, "%d");
             CHECK(source_len, <, parser->par_lexer.lex_source_len, "%d");
-
-            // HACK: should be set by the parser
-            parser->par_types[expr_i].ty_header.rv_size = source_len;
 
             emit_loc(parser, expr);
             println("mov $%d, %s # string len=%d", source_len, fn_args[0],
@@ -368,7 +365,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             CHECK(node_def->node_type_i, <, (int)buf_size(parser->par_types),
                   "%d");
             const int type_size =
-                parser->par_types[node_def->node_type_i].ty_header.rv_size;
+                parser->par_types[node_def->node_type_i].ty_size;
             CHECK(type_size, >=, 0, "%d");
 
             emit_loc(parser, expr);
@@ -497,8 +494,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
 
             CHECK(stmt->node_type_i, >=, 0, "%d");
             CHECK(stmt->node_type_i, <, (int)buf_size(parser->par_types), "%d");
-            const int type_size =
-                parser->par_types[stmt->node_type_i].ty_header.rv_size;
+            const int type_size = parser->par_types[stmt->node_type_i].ty_size;
             CHECK(type_size, >=, 0, "%d");
 
             emit_loc(parser, stmt);
@@ -521,7 +517,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
 
             const runtime_val_header header =
                 parser->par_types[stmt->node_type_i].ty_header;
-            const int type_size = header.rv_size;
+            const int type_size = parser->par_types[stmt->node_type_i].ty_size;
             CHECK(type_size, >=, 0, "%d");
 
             const int offset =

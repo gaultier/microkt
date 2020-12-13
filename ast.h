@@ -28,6 +28,7 @@ typedef struct {
 typedef struct {
     runtime_val_header ty_header;
     type_kind_t ty_kind;
+    int ty_size;
 } type_t;
 
 typedef struct {
