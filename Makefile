@@ -25,7 +25,7 @@ mktc: $(SRC) $(HEADERS) stdlib.o
 
 
 stdlib.o: stdlib.c
-	$(CC) $(CFLAGS_COMMON) $(CFLAGS_0) $^ -c
+	$(CC) $(CFLAGS_COMMON) $(CFLAGS_0) -DWITH_LOGS $^ -c
 
 .SUFFIXES: .kts .exe .actual .expected
 

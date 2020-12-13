@@ -18,19 +18,19 @@ void mkt_scan_heap() {
     char* obj = (char*)objs;
     while (obj < (char*)objs_end) {
         runtime_val_header header = *(runtime_val_header*)obj;
-        printf("Heap: header: size=%llu color=%u tag=%u\n", header.rv_size,
-               header.rv_color, header.rv_tag);
+        log_debug("header: size=%llu color=%u tag=%u", header.rv_size,
+                  header.rv_color, header.rv_tag);
         obj += sizeof(runtime_val_header) + header.rv_size;
     }
 }
 
 void mkt_scan_stack(char* stack_bottom, char* stack_top) {
-    printf("Stack size: %zu\n", stack_top - stack_bottom);
+    log_debug("size: %zu", stack_top - stack_bottom);
 
     while (stack_bottom < stack_top) {
         runtime_val_header header = *(runtime_val_header*)stack_bottom;
-        printf("Stack: header: size=%llu color=%u tag=%u\n", header.rv_size,
-               header.rv_color, header.rv_tag);
+        log_debug("header: size=%llu color=%u tag=%u", header.rv_size,
+                  header.rv_color, header.rv_tag);
 
         stack_bottom += sizeof(runtime_val_header) + header.rv_size;
     }
