@@ -33,7 +33,7 @@ stdlib.o: stdlib.c
 	./mktc $<
 
 .exe.actual: mktc $(TESTS_SRC) $(TESTS_EXE) $(TESTS_ACTUAL)
-	./$< > $@
+	./$< | grep -v '[debug]' > $@
 
 .kts.expected: mktc $(TESTS_SRC) $(TESTS_EXPECTED)
 	@awk -F '// expect: ' '/expect: / {print $$2} ' $< > $@

@@ -77,10 +77,10 @@ static void fn_prolog(const parser_t* parser, const fn_decl_t* fn_decl,
         CHECK(i, <, 6, "%d");  // FIXME: stack args
 
         size_t* header_val = (size_t*)&header;
-        // FIXME: r15
-        println("movabsq $%zu, -%d(%%rbp) # tag: size=%llu color=%u tag=%u ",
-                *header_val, stack_offset + (int)sizeof(runtime_val_header),
-                header.rv_size, header.rv_color, header.rv_tag);
+        println("movabsq $%zu, %%r15 # tag: size=%llu color=%u tag=%u ",
+                *header_val, header.rv_size, header.rv_color, header.rv_tag);
+        println("movq %%r15, -%d(%%rbp)",
+                stack_offset + (int)sizeof(runtime_val_header));
 
         println("mov %s, -%d(%%rbp)", fn_args[i], stack_offset);
     }
