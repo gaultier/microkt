@@ -757,7 +757,9 @@ static void parser_tok_source(const parser_t* parser, int tok_i,
             parser->par_lexer.lex_tok_pos_ranges[tok_i];
         const bool multiline =
             parser->par_lexer.lex_source[pos_range.pr_end - 1] == '"' &&
-            parser->par_lexer.lex_source[pos_range.pr_end - 2] == '"';
+            parser->par_lexer.lex_source[pos_range.pr_end - 2] == '"' &&
+            pos_range.pr_end - pos_range.pr_start >= 3 &&
+            parser->par_lexer.lex_source[pos_range.pr_end - 3] == '"';
 
         *source =
             &parser->par_lexer.lex_source[multiline ? pos_range.pr_start + 3
@@ -1287,7 +1289,9 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
             parser->par_lexer.lex_tok_pos_ranges[tok_i];
         const bool multiline =
             parser->par_lexer.lex_source[pos_range.pr_end - 1] == '"' &&
-            parser->par_lexer.lex_source[pos_range.pr_end - 2] == '"';
+            parser->par_lexer.lex_source[pos_range.pr_end - 2] == '"' &&
+            pos_range.pr_end - pos_range.pr_start >= 3 &&
+            parser->par_lexer.lex_source[pos_range.pr_end - 3] == '"';
 
         const node_t node = {
             .node_kind = NODE_STRING,
