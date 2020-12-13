@@ -77,7 +77,8 @@ static void fn_prolog(const parser_t* parser, const fn_decl_t* fn_decl,
         CHECK(i, <, 6, "%d");  // FIXME: stack args
 
         size_t* header_val = (size_t*)&header;
-        println("movq $%zu, -%d(%%rbp) # tag: size=%llu color=%u tag=%u ",
+        // FIXME: r15
+        println("movabsq $%lld, -%d(%%rbp) # tag: size=%llu color=%u tag=%u ",
                 *header_val, stack_offset + (int)sizeof(runtime_val_header),
                 header.rv_size, header.rv_color, header.rv_tag);
 
@@ -531,9 +532,11 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
 
             size_t* header_val = (size_t*)&header;
 
-            println("movl $%zu, -%d(%%rbp) # tag: size=%llu color=%u tag=%u",
-                    *header_val, offset + (int)sizeof(runtime_val_header),
-                    header.rv_size, header.rv_color, header.rv_tag);
+            println("movabsq $%zu, %%r15 # tag: size=%llu color=%u tag=%u",
+                    *header_val, header.rv_size, header.rv_color,
+                    header.rv_tag);
+            println("movq %%r15, -%d(%%rbp)",
+                    offset + (int)sizeof(runtime_val_header));
 
             if (type_size == 1)
                 println("mov %%al, -%d(%%rbp)", offset);

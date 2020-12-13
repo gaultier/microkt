@@ -88,7 +88,8 @@ void mkt_println_int(long long int n) {
 
 void mkt_println_string(char* s) {
     runtime_val_header header = *(runtime_val_header*)(s - 8);
-    printf("mkt_println_string: header size=%llu\n", header.rv_size);
+    printf("mkt_println_string: header size=%llu tag=%u\n", header.rv_size,
+           header.rv_tag);
     const char newline = '\n';
     write(1, s, header.rv_size);
     write(1, &newline, 1);
