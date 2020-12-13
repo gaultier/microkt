@@ -12,13 +12,18 @@ void mkt_scan_stack(runtime_val_header* stack_bottom,
                     runtime_val_header* stack_top) {
     printf("Stack size: %zu\n", stack_top - stack_bottom);
 
-    const size_t header_val = *(size_t*)stack_bottom;
-    runtime_val_header header = {.rv_size = (header_val >> 10),
-                                 .rv_color = (header_val >> 54) & (1 << 9),
-                                 .rv_tag = (header_val & 0xff)};
+    while (stack_bottom < stack_top) {
+        printf("Stack: bottom=%p top=%p\n", stack_bottom, stack_top);
+        const size_t header_val = *(size_t*)stack_bottom;
+        runtime_val_header header = {.rv_size = (header_val >> 10),
+                                     .rv_color = (header_val >> 54) & (1 << 9),
+                                     .rv_tag = (header_val & 0xff)};
 
-    printf("header: size=%llu color=%u tag=%u\n", header.rv_size,
-           header.rv_color, header.rv_tag);
+        printf("header: size=%llu color=%u tag=%u\n", header.rv_size,
+               header.rv_color, header.rv_tag);
+
+        stack_bottom += sizeof(runtime_val_header) + header.rv_size;
+    }
 }
 
 void* mkt_alloc(size_t size, runtime_val_header* stack_bottom,

@@ -58,6 +58,8 @@ static void fn_prolog(const parser_t* parser, const fn_decl_t* fn_decl,
     println("mov %%rsp, %%rbp");
 
     println("sub $%d, %%rsp\n", aligned_stack_size);
+    for (int i = 8; i <= aligned_stack_size; i += 8)
+        println("movq $0, -%d(%%rbp)", i);
 
     for (int i = 0; i < (int)buf_size(fn_decl->fd_arg_nodes_i); i++) {
         const int arg_i = fn_decl->fd_arg_nodes_i[i];
