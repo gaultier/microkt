@@ -78,7 +78,7 @@ static void fn_prolog(const parser_t* parser, const fn_decl_t* fn_decl,
 
         size_t* header_val = (size_t*)&header;
         // FIXME: r15
-        println("movabsq $%lld, -%d(%%rbp) # tag: size=%llu color=%u tag=%u ",
+        println("movabsq $%zu, -%d(%%rbp) # tag: size=%llu color=%u tag=%u ",
                 *header_val, stack_offset + (int)sizeof(runtime_val_header),
                 header.rv_size, header.rv_color, header.rv_tag);
 
