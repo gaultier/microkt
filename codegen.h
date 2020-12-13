@@ -153,13 +153,15 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             CHECK(source_len, <, parser->par_lexer.lex_source_len, "%d");
 
             emit_loc(parser, expr);
-            println("mov $%d, %s", source_len, fn_args[0]);
+            println("mov $%d, %s # string len=%d", source_len, fn_args[0],
+                    source_len);
             println("mov %%rsp, %s", fn_args[1]);
             println("mov %%rbp, %s", fn_args[2]);
             println("call %smkt_alloc", name_prefix);
 
             for (int i = 0; i < source_len; i++)
-                println("movb $%d, +%d(%%rax)", source[i], i);
+                println("movb $%d, +%d(%%rax) # string[%d]=`%c`", source[i], i,
+                        i, source[i]);
 
             return;
         }
