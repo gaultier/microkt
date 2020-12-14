@@ -6,15 +6,14 @@
 #include "common.h"
 #include "lex.h"
 
-static const int TYPE_UNIT_I = 0;    // see parser_init
-static const int TYPE_ANY_I = 1;     // see parser_init
-static const int TYPE_LONG_I = 2;    // see parser_init
-static const int TYPE_INT_I = 3;     // see parser_init
-static const int TYPE_BOOL_I = 4;    // see parser_init
-static const int TYPE_CHAR_I = 5;    // see parser_init
-static const int TYPE_STRING_I = 6;  // see parser_init
-static const int TYPE_BYTE_I = 7;    // see parser_init
-static const int TYPE_SHORT_I = 8;   // see parser_init
+static const int TYPE_UNIT_I = 0;   // see parser_init
+static const int TYPE_ANY_I = 1;    // see parser_init
+static const int TYPE_LONG_I = 2;   // see parser_init
+static const int TYPE_INT_I = 3;    // see parser_init
+static const int TYPE_BOOL_I = 4;   // see parser_init
+static const int TYPE_CHAR_I = 5;   // see parser_init
+static const int TYPE_BYTE_I = 6;   // see parser_init
+static const int TYPE_SHORT_I = 7;  // see parser_init
 
 typedef struct {
     const char* par_file_name0;
@@ -208,7 +207,7 @@ static int parser_make_type(parser_t* parser,
             buf_push(parser->par_types,
                      ((type_t){.ty_kind = TYPE_STRING,
                                .ty_size = 8,
-                               .ty_header = {.rv_tag = TYPE_STRING}}));
+                               .ty_header = {.rv_tag = RV_TAG_STRING}}));
             return buf_size(parser->par_types) - 1;
         case TYPE_ANY:
             return TYPE_ANY_I;
@@ -370,61 +369,36 @@ static res_t parser_init(const char* file_name0, const char* source,
 
     buf_grow(parser->par_types, 100);
     // Pre-allocate common types
-    buf_push(parser->par_types,
-             ((type_t){.ty_kind = TYPE_UNIT,
-                       .ty_size = 0,
-                       .ty_header = {
-                           .rv_size = 0,
-                           .rv_tag = TYPE_UNIT}}));  // Hence TYPE_UNIT_I = 0
-    buf_push(
-        parser->par_types,
-        ((type_t){.ty_kind = TYPE_ANY,
-                  .ty_size = 0,
-                  .ty_header = {.rv_size = 0,
-                                .rv_tag = TYPE_ANY}}));  // Hence TYPE_ANY_I = 1
-    buf_push(parser->par_types,
-             ((type_t){.ty_kind = TYPE_LONG,
-                       .ty_size = 8,
-                       .ty_header = {
-                           .rv_size = 8,
-                           .rv_tag = TYPE_LONG}}));  // Hence TYPE_LONG_I = 2
-    buf_push(
-        parser->par_types,
-        ((type_t){.ty_kind = TYPE_INT,
-                  .ty_size = 4,
-                  .ty_header = {.rv_size = 4,
-                                .rv_tag = TYPE_INT}}));  // Hence TYPE_INT_I = 3
-    buf_push(parser->par_types,
-             ((type_t){.ty_kind = TYPE_BOOL,
-                       .ty_size = 1,
-                       .ty_header = {
-                           .rv_size = 1,
-                           .rv_tag = TYPE_BOOL}}));  // Hence TYPE_BOOL_I = 4
-    buf_push(parser->par_types,
-             ((type_t){.ty_kind = TYPE_CHAR,
-                       .ty_size = 1,
-                       .ty_header = {
-                           .rv_size = 1,
-                           .rv_tag = TYPE_CHAR}}));  // Hence TYPE_CHAR_I = 5
-    buf_push(
-        parser->par_types,
-        ((type_t){
-            .ty_size = 8,
-            .ty_kind = TYPE_STRING,
-            .ty_header = {.rv_size = 0,
-                          .rv_tag = TYPE_STRING}}));  // Hence TYPE_STRING_I = 6
-    buf_push(parser->par_types,
-             ((type_t){.ty_kind = TYPE_BYTE,
-                       .ty_size = 1,
-                       .ty_header = {
-                           .rv_size = 1,
-                           .rv_tag = TYPE_BYTE}}));  // Hence TYPE_BYTE_I = 7
-    buf_push(parser->par_types,
-             ((type_t){.ty_kind = TYPE_SHORT,
-                       .ty_size = 2,
-                       .ty_header = {
-                           .rv_size = 2,
-                           .rv_tag = TYPE_SHORT}}));  // Hence TYPE_SHORT_I = 8
+    buf_push(parser->par_types, ((type_t){
+                                    .ty_kind = TYPE_UNIT,
+                                }));  // Hence TYPE_UNIT_I = 0
+    buf_push(parser->par_types, ((type_t){
+                                    .ty_kind = TYPE_ANY,
+                                }));  // Hence TYPE_ANY_I = 1
+    buf_push(parser->par_types, ((type_t){
+                                    .ty_kind = TYPE_LONG,
+                                    .ty_size = 8,
+                                }));  // Hence TYPE_LONG_I = 2
+    buf_push(parser->par_types, ((type_t){
+                                    .ty_kind = TYPE_INT,
+                                    .ty_size = 4,
+                                }));  // Hence TYPE_INT_I = 3
+    buf_push(parser->par_types, ((type_t){
+                                    .ty_kind = TYPE_BOOL,
+                                    .ty_size = 1,
+                                }));  // Hence TYPE_BOOL_I = 4
+    buf_push(parser->par_types, ((type_t){
+                                    .ty_kind = TYPE_CHAR,
+                                    .ty_size = 1,
+                                }));  // Hence TYPE_CHAR_I = 5
+    buf_push(parser->par_types, ((type_t){
+                                    .ty_kind = TYPE_BYTE,
+                                    .ty_size = 1,
+                                }));  // Hence TYPE_BYTE_I = 6
+    buf_push(parser->par_types, ((type_t){
+                                    .ty_kind = TYPE_SHORT,
+                                    .ty_size = 2,
+                                }));  // Hence TYPE_SHORT_I = 7
 
     parser->par_fn_i = parser->par_node_decls[0];
 

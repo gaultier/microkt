@@ -9,8 +9,7 @@
 static char* objs = NULL;
 static char* objs_end = NULL;
 
-static const size_t heap_size_initial =
-    2 * 1024 * 1024;  // 2 Mib initial heap size
+static const size_t heap_size_initial = 100;  // 2 Mib initial heap size
 
 void mkt_init() {
     objs = malloc(heap_size_initial);
@@ -23,6 +22,9 @@ void mkt_scan_heap() {
         runtime_val_header header = *(runtime_val_header*)obj;
         log_debug("header: size=%llu color=%u tag=%u", header.rv_size,
                   header.rv_color, header.rv_tag);
+
+        if (header.rv_tag == 0) return;
+
         obj += sizeof(runtime_val_header) + header.rv_size;
     }
 }
@@ -34,6 +36,8 @@ void mkt_scan_stack(char* stack_bottom, char* stack_top) {
         runtime_val_header header = *(runtime_val_header*)stack_bottom;
         log_debug("header: size=%llu color=%u tag=%u", header.rv_size,
                   header.rv_color, header.rv_tag);
+
+        if (header.rv_tag == 0) return;
 
         stack_bottom += sizeof(runtime_val_header) + header.rv_size;
     }

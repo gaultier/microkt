@@ -2,15 +2,15 @@
 #include <stdbool.h>
 
 typedef enum {
-    TYPE_ANY = 0x00,
-    TYPE_UNIT = 0x01,
-    TYPE_BOOL = 0x02,
-    TYPE_CHAR = 0x04,
-    TYPE_BYTE = 0x08,
-    TYPE_INT = 0x10,
-    TYPE_SHORT = 0x20,
-    TYPE_LONG = 0x40,
-    TYPE_STRING = 0x80,
+    TYPE_ANY,
+    TYPE_UNIT,
+    TYPE_BOOL,
+    TYPE_CHAR,
+    TYPE_BYTE,
+    TYPE_INT,
+    TYPE_SHORT,
+    TYPE_LONG,
+    TYPE_STRING,
 } type_kind_t;
 
 static const char type_to_str[][20] = {
@@ -19,6 +19,7 @@ static const char type_to_str[][20] = {
     [TYPE_SHORT] = "Short", [TYPE_LONG] = "Long", [TYPE_STRING] = "String",
 };
 
+static const unsigned char RV_TAG_STRING = 0x01;
 typedef struct {
     unsigned long long int rv_size : 54;
     unsigned int rv_color : 2;
