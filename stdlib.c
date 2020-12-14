@@ -9,7 +9,8 @@
 static char* objs = NULL;
 static char* objs_end = NULL;
 
-static const size_t heap_size_initial = 100;  // 2 Mib initial heap size
+static const size_t heap_size_initial =
+    2 * 1024 * 1024;  // 2 Mib initial heap size
 
 void mkt_init() {
     objs = malloc(heap_size_initial);
