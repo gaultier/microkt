@@ -50,6 +50,7 @@ void* mkt_alloc(size_t size, char* stack_bottom, char* stack_top) {
     // TODO: realloc
     char* obj = (char*)objs_end;
     objs_end += sizeof(runtime_val_header) + size;
+    if (objs_end >= objs + heap_size_initial) UNIMPLEMENTED();
 
     runtime_val_header header = {
         .rv_size = size, .rv_color = 0, .rv_tag = TYPE_STRING};
