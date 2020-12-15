@@ -36,13 +36,13 @@ void mkt_scan_stack(char* stack_bottom, char* stack_top) {
               stack_bottom, stack_top);
 
     while (stack_bottom < stack_top) {
-        uintptr_t* addr = (uintptr_t*)stack_bottom;
+        uintptr_t addr = *(uintptr_t*)stack_bottom;
         log_debug("addr=%zu", addr);
-        if (addr < (uintptr_t*)objs || addr >= (uintptr_t*)objs_end) {
+        if (addr < (uintptr_t)objs || addr >= (uintptr_t)objs_end) {
             stack_bottom += 1;
             continue;
         }
-        runtime_val_header header = *(runtime_val_header*)(stack_bottom - 8);
+        runtime_val_header header = *(runtime_val_header*)(addr - 8);
         log_debug("header: size=%llu color=%u tag=%u", header.rv_size,
                   header.rv_color, header.rv_tag);
 
