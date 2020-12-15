@@ -22,8 +22,10 @@ static const char type_to_str[][20] = {
 static const unsigned char RV_COLOR_WHITE = 0;
 static const unsigned char RV_COLOR_GREY = 1;
 static const unsigned char RV_COLOR_BLACK = 2;
+
 static const unsigned char RV_TAG_MARKED = 0x01;
 static const unsigned char RV_TAG_STRING = 0x02;
+
 typedef struct {
     unsigned long long int rv_size : 54;
     unsigned int rv_color : 2;
