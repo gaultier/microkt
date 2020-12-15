@@ -8,17 +8,38 @@
 #include "buf.h"
 #include "common.h"
 
-static char* objs = NULL;
-static char* objs_end = NULL;
+static const unsigned char RV_TAG_MARKED = 0x01;
+static const unsigned char RV_TAG_STRING = 0x02;
+
+typedef struct {
+    unsigned long long int rv_size : 54;
+    unsigned int rv_color : 2;
+    unsigned int rv_tag : 8;
+} runtime_val_header;
+
+struct alloc_atom {
+    struct alloc_atom *aa_next, *aa_previous;
+    runtime_val_header aa_header;
+    char aa_data[];
+};
+
+typedef struct alloc_atom alloc_atom;
+static alloc_atom* objs = NULL;
+static alloc_atom* objs_end = NULL;
 static runtime_val_header** gray_objs = NULL;
 
 static const size_t heap_size_initial =
     2 * 1024 * 1024;  // 2 Mib initial heap size
 
-void mkt_init() {
-    objs = malloc(heap_size_initial);
-    objs_end = objs;
+alloc_atom* mkt_alloc_atom_make(size_t size) {
+    alloc_atom* atom = calloc(1, sizeof(alloc_atom) + size);
+    objs_end->aa_next = atom;
+    atom->aa_previous = objs_end;
+    objs_end = atom;
+    return atom;
 }
+
+void mkt_init() { objs = mkt_alloc_atom_make(0); }
 
 void mkt_obj_mark(runtime_val_header* header) {
     if (header->rv_tag & RV_TAG_MARKED) return;  // Prevent cycles
@@ -29,17 +50,26 @@ void mkt_obj_mark(runtime_val_header* header) {
 }
 
 void mkt_scan_heap() {
-    char* obj = (char*)objs;
-    while (obj < (char*)objs_end) {
-        runtime_val_header* header = (runtime_val_header*)obj;
+    alloc_atom* atom = objs;
+    while (atom) {
+        runtime_val_header* header = &atom->aa_header;
         log_debug("header: size=%llu color=%u tag=%u ptr=%p", header->rv_size,
-                  header->rv_color, header->rv_tag,
-                  (void*)(obj + sizeof(runtime_val_header)));
+                  header->rv_color, header->rv_tag, (void*)atom->aa_data);
 
-        mkt_obj_mark(header);
+        mkt_obj_mark(&atom->aa_header);
 
-        obj += sizeof(runtime_val_header) + header->rv_size;
+        atom = atom->aa_next;
     }
+}
+
+// TODO: optimize
+alloc_atom* mkt_atom_find_data_by_addr(size_t addr) {
+    alloc_atom* atom = objs;
+    while (atom) {
+        if (addr == (size_t)atom->aa_data) return atom;
+        atom = atom->aa_next;
+    }
+    return NULL;
 }
 
 void mkt_scan_stack(char* stack_bottom, char* stack_top) {
@@ -48,12 +78,12 @@ void mkt_scan_stack(char* stack_bottom, char* stack_top) {
 
     while (stack_bottom < stack_top) {
         uintptr_t addr = *(uintptr_t*)stack_bottom;
-        if (addr < (uintptr_t)objs || addr >= (uintptr_t)objs_end) {
+        alloc_atom* atom = mkt_atom_find_data_by_addr(addr);
+        if (atom == NULL) {
             stack_bottom += 1;
             continue;
         }
-        runtime_val_header* header =
-            (runtime_val_header*)(addr - sizeof(runtime_val_header));
+        runtime_val_header* header = &atom->aa_header;
         log_debug("header: size=%llu color=%u tag=%u ptr=%p", header->rv_size,
                   header->rv_color, header->rv_tag, (void*)addr);
 
@@ -82,22 +112,14 @@ void mkt_gc(char* stack_bottom, char* stack_top) {
     mkt_sweep();
 }
 
-void* mkt_alloc(size_t size, char* stack_bottom, char* stack_top) {
+void* mkt_string_make(size_t size, char* stack_bottom, char* stack_top) {
     mkt_gc(stack_bottom, stack_top);
 
-    // TODO: realloc
-    char* obj = (char*)objs_end;
-    objs_end += sizeof(runtime_val_header) + size;
-    if (objs_end >= objs + heap_size_initial) UNIMPLEMENTED();
+    alloc_atom* atom = mkt_alloc_atom_make(size);
+    atom->aa_header =
+        (runtime_val_header){.rv_size = size, .rv_tag = RV_TAG_STRING};
 
-    runtime_val_header header = {.rv_size = size,
-                                 .rv_tag = RV_TAG_STRING};  // FIXME
-    size_t* header_val = (size_t*)&header;
-    size_t* obj_header = (size_t*)obj;
-    *obj_header = *header_val;
-    obj += sizeof(runtime_val_header);
-
-    return obj;
+    return atom->aa_data;
 }
 
 void mkt_println_bool(int b) {
@@ -148,7 +170,7 @@ char* mkt_string_concat(const char* a, const char* b, char* stack_bottom,
     const size_t a_len = *(a - 8);
     const size_t b_len = *(b - 8);
 
-    char* const ret = mkt_alloc(a_len + b_len, stack_bottom, stack_top);
+    char* const ret = mkt_string_make(a_len + b_len, stack_bottom, stack_top);
     memcpy(ret, a, a_len);
     memcpy(ret + a_len, b, b_len);
     *(ret - 8) = a_len + b_len;

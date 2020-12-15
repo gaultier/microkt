@@ -19,15 +19,6 @@ static const char type_to_str[][20] = {
     [TYPE_SHORT] = "Short", [TYPE_LONG] = "Long", [TYPE_STRING] = "String",
 };
 
-static const unsigned char RV_TAG_MARKED = 0x01;
-static const unsigned char RV_TAG_STRING = 0x02;
-
-typedef struct {
-    unsigned long long int rv_size : 54;
-    unsigned int rv_color : 2;
-    unsigned int rv_tag : 8;
-} runtime_val_header;
-
 typedef struct {
     type_kind_t ty_kind;
     int ty_size;

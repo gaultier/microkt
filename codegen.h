@@ -149,7 +149,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
                     source_len);
             println("mov %%rsp, %s", fn_args[1]);
             println("mov %%rbp, %s", fn_args[2]);
-            println("call %smkt_alloc", name_prefix);
+            println("call %smkt_string_make", name_prefix);
 
             for (int i = 0; i < source_len; i++)
                 println("movb $%d, +%d(%%rax) # string[%d]", source[i], i, i);
