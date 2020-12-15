@@ -14,7 +14,7 @@ static const int TYPE_BOOL_I = 4;    // see parser_init
 static const int TYPE_CHAR_I = 5;    // see parser_init
 static const int TYPE_BYTE_I = 6;    // see parser_init
 static const int TYPE_SHORT_I = 7;   // see parser_init
-static const int TYPE_STRING_I = 5;  // see parser_init
+static const int TYPE_STRING_I = 8;  // see parser_init
 
 typedef struct {
     const char* par_file_name0;

@@ -511,8 +511,6 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
 
             emit_loc(parser, stmt);
 
-            println("movq %%rax, -%d(%%rbp)", offset);
-
             if (type_size == 1)
                 println("mov %%al, -%d(%%rbp)", offset);
             else if (type_size == 2)
