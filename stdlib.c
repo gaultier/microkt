@@ -22,8 +22,9 @@ void mkt_scan_heap() {
     char* obj = (char*)objs;
     while (obj < (char*)objs_end) {
         runtime_val_header header = *(runtime_val_header*)obj;
-        log_debug("header: size=%llu color=%u tag=%u ptr=%lu", header.rv_size,
-                  header.rv_color, header.rv_tag, (obj + sizeof(header)));
+        log_debug("header: size=%llu color=%u tag=%u ptr=%p", header.rv_size,
+                  header.rv_color, header.rv_tag,
+                  (void*)(obj + sizeof(header)));
 
         if (header.rv_tag == 0) return;
 
@@ -32,8 +33,8 @@ void mkt_scan_heap() {
 }
 
 void mkt_scan_stack(char* stack_bottom, char* stack_top) {
-    log_debug("size=%zu bottom=%zu top=%zu", stack_top - stack_bottom,
-              stack_bottom, stack_top);
+    log_debug("size=%zu bottom=%p top=%p", stack_top - stack_bottom,
+              (void*)stack_bottom, (void*)stack_top);
 
     while (stack_bottom < stack_top) {
         uintptr_t addr = *(uintptr_t*)stack_bottom;
@@ -61,8 +62,7 @@ void* mkt_alloc(size_t size, char* stack_bottom, char* stack_top) {
     objs_end += sizeof(runtime_val_header) + size;
     if (objs_end >= objs + heap_size_initial) UNIMPLEMENTED();
 
-    runtime_val_header header = {
-        .rv_size = size, .rv_color = 0, .rv_tag = TYPE_STRING};
+    runtime_val_header header = {.rv_size = size};
     size_t* header_val = (size_t*)&header;
     size_t* obj_header = (size_t*)obj;
     *obj_header = *header_val;
@@ -107,7 +107,6 @@ void mkt_println_int(long long int n) {
 
 void mkt_println_string(char* s) {
     runtime_val_header header = *(runtime_val_header*)(s - 8);
-    CHECK(header.rv_tag & TYPE_STRING, !=, 0, "%u");
 
     const char newline = '\n';
     write(1, s, header.rv_size);
