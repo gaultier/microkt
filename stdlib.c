@@ -20,8 +20,8 @@ void mkt_init() {
     objs_end = objs;
 }
 
-void mkt_mark_obj(runtime_val_header* header) {
-    header->rv_tag = RV_TAG_MARKED;
+void mkt_obj_mark(runtime_val_header* header) {
+    header->rv_tag |= RV_TAG_MARKED;
     buf_push(gray_objs, header);
 
     log_debug("marked: header=%p", (void*)header);
@@ -35,7 +35,7 @@ void mkt_scan_heap() {
                   header->rv_color, header->rv_tag,
                   (void*)(obj + sizeof(runtime_val_header)));
 
-        mkt_mark_obj(header);
+        mkt_obj_mark(header);
 
         obj += sizeof(runtime_val_header) + header->rv_size;
     }
@@ -56,17 +56,25 @@ void mkt_scan_stack(char* stack_bottom, char* stack_top) {
         log_debug("header: size=%llu color=%u tag=%u ptr=%p", header->rv_size,
                   header->rv_color, header->rv_tag, (void*)addr);
 
-        mkt_mark_obj(header);
+        mkt_obj_mark(header);
 
         stack_bottom += sizeof(runtime_val_header) + header->rv_size;
     }
 }
 
+void mkt_obj_blacken(runtime_val_header* header) {
+    if (header->rv_tag & RV_TAG_STRING) return;
+}
+
+void mkt_trace_refs() {
+    for (size_t i = 0; i < buf_size(gray_objs); i++)
+        mkt_obj_blacken(gray_objs[i]);
+}
+
 void mkt_gc(char* stack_bottom, char* stack_top) {
     mkt_scan_stack(stack_bottom, stack_top);
     mkt_scan_heap();
-
-    // TODO: trace references (gray -> black)
+    mkt_trace_refs();
 }
 
 void* mkt_alloc(size_t size, char* stack_bottom, char* stack_top) {
@@ -77,7 +85,8 @@ void* mkt_alloc(size_t size, char* stack_bottom, char* stack_top) {
     objs_end += sizeof(runtime_val_header) + size;
     if (objs_end >= objs + heap_size_initial) UNIMPLEMENTED();
 
-    runtime_val_header header = {.rv_size = size};
+    runtime_val_header header = {.rv_size = size,
+                                 .rv_tag = RV_TAG_STRING};  // FIXME
     size_t* header_val = (size_t*)&header;
     size_t* obj_header = (size_t*)obj;
     *obj_header = *header_val;
@@ -122,6 +131,7 @@ void mkt_println_int(long long int n) {
 
 void mkt_println_string(char* s) {
     runtime_val_header header = *(runtime_val_header*)(s - 8);
+    CHECK(header.rv_tag & RV_TAG_STRING, !=, 0, "%u");
 
     const char newline = '\n';
     write(1, s, header.rv_size);
