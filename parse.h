@@ -6,14 +6,15 @@
 #include "common.h"
 #include "lex.h"
 
-static const int TYPE_UNIT_I = 0;   // see parser_init
-static const int TYPE_ANY_I = 1;    // see parser_init
-static const int TYPE_LONG_I = 2;   // see parser_init
-static const int TYPE_INT_I = 3;    // see parser_init
-static const int TYPE_BOOL_I = 4;   // see parser_init
-static const int TYPE_CHAR_I = 5;   // see parser_init
-static const int TYPE_BYTE_I = 6;   // see parser_init
-static const int TYPE_SHORT_I = 7;  // see parser_init
+static const int TYPE_UNIT_I = 0;    // see parser_init
+static const int TYPE_ANY_I = 1;     // see parser_init
+static const int TYPE_LONG_I = 2;    // see parser_init
+static const int TYPE_INT_I = 3;     // see parser_init
+static const int TYPE_BOOL_I = 4;    // see parser_init
+static const int TYPE_CHAR_I = 5;    // see parser_init
+static const int TYPE_BYTE_I = 6;    // see parser_init
+static const int TYPE_SHORT_I = 7;   // see parser_init
+static const int TYPE_STRING_I = 5;  // see parser_init
 
 typedef struct {
     const char* par_file_name0;
@@ -204,11 +205,7 @@ static int parser_make_type(parser_t* parser,
         case TYPE_LONG:
             return TYPE_LONG_I;
         case TYPE_STRING:
-            buf_push(parser->par_types,
-                     ((type_t){.ty_kind = TYPE_STRING,
-                               .ty_size = 8,
-                               .ty_header = {.rv_tag = RV_TAG_STRING}}));
-            return buf_size(parser->par_types) - 1;
+            return TYPE_STRING_I;
         case TYPE_ANY:
             return TYPE_ANY_I;
         case TYPE_INT:
@@ -399,6 +396,10 @@ static res_t parser_init(const char* file_name0, const char* source,
                                     .ty_kind = TYPE_SHORT,
                                     .ty_size = 2,
                                 }));  // Hence TYPE_SHORT_I = 7
+    buf_push(parser->par_types, ((type_t){
+                                    .ty_kind = TYPE_STRING,
+                                    .ty_size = 8,
+                                }));  // Hence TYPE_STRING_I = 8
 
     parser->par_fn_i = parser->par_node_decls[0];
 
@@ -1280,14 +1281,9 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
             pos_range.pr_end - pos_range.pr_start >= 3 &&
             parser->par_lexer.lex_source[pos_range.pr_end - 3] == '"';
 
-        const int type_i = parser_make_type(parser, TYPE_STRING);
-        parser->par_types[type_i].ty_header.rv_size =
-            multiline ? (pos_range.pr_end - pos_range.pr_start) - 6
-                      : (pos_range.pr_end - pos_range.pr_start);
-
         const node_t node = {
             .node_kind = NODE_STRING,
-            .node_type_i = type_i,
+            .node_type_i = TYPE_STRING_I,
             .node_n = {
                 .node_string = {.st_tok_i = tok_i, .st_multiline = multiline}}};
         buf_push(parser->par_nodes, node);
@@ -2110,7 +2106,7 @@ static res_t parser_parse_property_declaration(parser_t* parser,
     CHECK(parser->par_fn_i, >=, 0, "%d");
     CHECK(parser->par_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
     parser->par_nodes[parser->par_fn_i].node_n.node_fn_decl.fd_stack_size +=
-        (int)sizeof(runtime_val_header) + type_size;
+        type_size;
 
     const int offset =
         parser->par_nodes[parser->par_fn_i].node_n.node_fn_decl.fd_stack_size;
@@ -2164,7 +2160,7 @@ static res_t parser_parse_parameter(parser_t* parser, int** new_nodes_i) {
         CHECK(parser->par_fn_i, >=, 0, "%d");
         CHECK(parser->par_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
         parser->par_nodes[parser->par_fn_i].node_n.node_fn_decl.fd_stack_size +=
-            (int)sizeof(runtime_val_header) + type_size;
+            type_size;
 
         const int offset = parser->par_nodes[parser->par_fn_i]
                                .node_n.node_fn_decl.fd_stack_size;

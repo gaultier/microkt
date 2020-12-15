@@ -33,15 +33,15 @@ void mkt_scan_heap() {
 void mkt_scan_stack(char* stack_bottom, char* stack_top) {
     log_debug("size: %zu", stack_top - stack_bottom);
 
-    while (stack_bottom < stack_top) {
-        runtime_val_header header = *(runtime_val_header*)stack_bottom;
-        log_debug("header: size=%llu color=%u tag=%u", header.rv_size,
-                  header.rv_color, header.rv_tag);
+    // while (stack_bottom < stack_top) {
+    //     runtime_val_header header = *(runtime_val_header*)stack_bottom;
+    //     log_debug("header: size=%llu color=%u tag=%u", header.rv_size,
+    //               header.rv_color, header.rv_tag);
 
-        if (header.rv_tag == 0) return;
+    //     if (header.rv_tag == 0) return;
 
-        stack_bottom += sizeof(runtime_val_header) + header.rv_size;
-    }
+    //     stack_bottom += sizeof(runtime_val_header) + header.rv_size;
+    // }
 }
 
 void* mkt_alloc(size_t size, char* stack_bottom, char* stack_top) {
