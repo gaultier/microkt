@@ -10,7 +10,7 @@
 
 static char* objs = NULL;
 static char* objs_end = NULL;
-static size_t* gray_obj_offsets = NULL;
+static runtime_val_header** gray_objs = NULL;
 
 static const size_t heap_size_initial =
     2 * 1024 * 1024;  // 2 Mib initial heap size
@@ -20,11 +20,11 @@ void mkt_init() {
     objs_end = objs;
 }
 
-void mkt_mark_obj(runtime_val_header* header, size_t obj_offset) {
+void mkt_mark_obj(runtime_val_header* header) {
     header->rv_tag = RV_TAG_MARKED;
-    buf_push(gray_obj_offsets, obj_offset);
+    buf_push(gray_objs, header);
 
-    log_debug("marked: obj_offset=%zu", obj_offset);
+    log_debug("marked: header=%p", (void*)header);
 }
 
 void mkt_scan_heap() {
@@ -35,9 +35,7 @@ void mkt_scan_heap() {
                   header->rv_color, header->rv_tag,
                   (void*)(obj + sizeof(runtime_val_header)));
 
-        const size_t obj_addr =
-            (size_t)obj - (size_t)objs + sizeof(runtime_val_header);
-        mkt_mark_obj(header, obj_addr);
+        mkt_mark_obj(header);
 
         obj += sizeof(runtime_val_header) + header->rv_size;
     }
@@ -58,8 +56,7 @@ void mkt_scan_stack(char* stack_bottom, char* stack_top) {
         log_debug("header: size=%llu color=%u tag=%u ptr=%p", header->rv_size,
                   header->rv_color, header->rv_tag, (void*)addr);
 
-        size_t obj_offset = (size_t)(addr) - (size_t)objs;
-        mkt_mark_obj(header, obj_offset);
+        mkt_mark_obj(header);
 
         stack_bottom += sizeof(runtime_val_header) + header->rv_size;
     }
