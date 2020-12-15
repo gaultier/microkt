@@ -64,6 +64,7 @@ void mkt_scan_stack(char* stack_bottom, char* stack_top) {
 }
 
 void mkt_obj_blacken(runtime_val_header* header) {
+    // TODO: optimize to go from white -> black directly
     if (header->rv_tag & RV_TAG_STRING) return;
 }
 
@@ -72,10 +73,13 @@ void mkt_trace_refs() {
         mkt_obj_blacken(gray_objs[i]);
 }
 
+void mkt_sweep() {}
+
 void mkt_gc(char* stack_bottom, char* stack_top) {
     mkt_scan_stack(stack_bottom, stack_top);
     mkt_scan_heap();
     mkt_trace_refs();
+    mkt_sweep();
 }
 
 void* mkt_alloc(size_t size, char* stack_bottom, char* stack_top) {
