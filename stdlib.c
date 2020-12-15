@@ -21,6 +21,7 @@ void mkt_init() {
 }
 
 void mkt_obj_mark(runtime_val_header* header) {
+    if (header->rv_tag & RV_TAG_MARKED) return;  // Prevent cycles
     header->rv_tag |= RV_TAG_MARKED;
     buf_push(gray_objs, header);
 
