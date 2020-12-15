@@ -164,13 +164,13 @@ static res_t parser_err_assigning_val(const parser_t* parser, int assign_tok_i,
 
     fprintf(stderr,
             "%s%s:%d:%d:%sTrying to assign a variable declared with `val`\n",
-            (parser->par_is_tty ? color_grey : ""), parser->par_file_name0,
+            (parser->par_is_tty ? color_gray : ""), parser->par_file_name0,
             assign_loc_start.loc_line, assign_loc_start.loc_column,
             (parser->par_is_tty ? color_reset : ""));
 
     parser_print_source_on_error(parser, assign_tok_i, assign_tok_i);
     fprintf(stderr, "%s%s:%d:%d:%sDeclared here:\n",
-            (parser->par_is_tty ? color_grey : ""), parser->par_file_name0,
+            (parser->par_is_tty ? color_gray : ""), parser->par_file_name0,
             vd_loc_start.loc_line, vd_loc_start.loc_column,
             (parser->par_is_tty ? color_reset : ""));
     parser_print_source_on_error(parser, var_def->vd_first_tok_i,
@@ -189,7 +189,7 @@ static res_t parser_err_missing_rhs(const parser_t* parser, int first_tok_i,
     const loc_t first_tok_loc = parser->par_lexer.lex_locs[first_tok_i];
 
     fprintf(stderr, "%s%s:%d:%d:%sMissing right hand-side operand\n",
-            (parser->par_is_tty ? color_grey : ""), parser->par_file_name0,
+            (parser->par_is_tty ? color_gray : ""), parser->par_file_name0,
             first_tok_loc.loc_line, first_tok_loc.loc_column,
             (parser->par_is_tty ? color_reset : ""));
 
@@ -926,7 +926,7 @@ static void parser_print_source_on_error(const parser_t* parser,
              first_tok_loc.loc_line, first_tok_loc.loc_column);
     int prefix_len = strlen(prefix);
 
-    fprintf(stderr, "%s%s%s%.*s\n", parser->par_is_tty ? color_grey : "",
+    fprintf(stderr, "%s%s%s%.*s\n", parser->par_is_tty ? color_gray : "",
             prefix, parser->par_is_tty ? color_reset : "", (int)source_len,
             source);
 
@@ -960,7 +960,7 @@ static res_t parser_err_unexpected_token(const parser_t* parser,
     const loc_t loc_start = parser->par_lexer.lex_locs[parser->par_tok_i];
 
     fprintf(stderr, "%s%s:%d:%d:%sUnexpected token. Expected `%s`, got `%s`\n",
-            (parser->par_is_tty ? color_grey : ""), parser->par_file_name0,
+            (parser->par_is_tty ? color_gray : ""), parser->par_file_name0,
             loc_start.loc_line, loc_start.loc_column,
             (parser->par_is_tty ? color_reset : ""), token_id_to_str[expected],
             token_id_to_str[parser_current(parser)]);
@@ -1040,7 +1040,7 @@ static res_t parser_err_non_matching_types(const parser_t* parser,
 
     const res_t res = RES_NON_MATCHING_TYPES;
     fprintf(stderr, "%s%s:%d:%d:%sTypes do not match. Expected %s, got %s\n",
-            (parser->par_is_tty ? color_grey : ""), parser->par_file_name0,
+            (parser->par_is_tty ? color_gray : ""), parser->par_file_name0,
             lhs_first_tok_loc.loc_line, lhs_first_tok_loc.loc_column,
             (parser->par_is_tty ? color_reset : ""), type_to_str[rhs_type_kind],
             type_to_str[lhs_type_kind]);
@@ -1076,7 +1076,7 @@ static res_t parser_err_unexpected_type(const parser_t* parser, int lhs_node_i,
 
     const res_t res = RES_NON_MATCHING_TYPES;
     fprintf(stderr, "%s%s:%d:%d:%sTypes do not match. Expected %s, got %s\n",
-            (parser->par_is_tty ? color_grey : ""), parser->par_file_name0,
+            (parser->par_is_tty ? color_gray : ""), parser->par_file_name0,
             lhs_first_tok_loc.loc_line, lhs_first_tok_loc.loc_column,
             (parser->par_is_tty ? color_reset : ""),
             type_to_str[expected_type_kind], type_to_str[lhs_type_kind]);
@@ -2338,7 +2338,7 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
             stderr,
             "%s%s:%d:%d:%sThe function has declared to "
             "return %s but has no return%s\n",
-            parser->par_is_tty ? color_grey : "", parser->par_file_name0,
+            parser->par_is_tty ? color_gray : "", parser->par_file_name0,
             loc.loc_line, loc.loc_column, parser->par_is_tty ? color_reset : "",
             type_to_str[declared_type], parser->par_is_tty ? color_reset : "");
         parser_print_source_on_error(parser, last_tok_i, last_tok_i);

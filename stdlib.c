@@ -68,6 +68,8 @@ void mkt_scan_stack(char* stack_bottom, char* stack_top) {
 void mkt_gc(char* stack_bottom, char* stack_top) {
     mkt_scan_stack(stack_bottom, stack_top);
     mkt_scan_heap();
+
+    // TODO: trace references (gray -> black)
 }
 
 void* mkt_alloc(size_t size, char* stack_bottom, char* stack_top) {
