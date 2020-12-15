@@ -26,8 +26,6 @@ void mkt_scan_heap() {
                   header.rv_color, header.rv_tag,
                   (void*)(obj + sizeof(header)));
 
-        if (header.rv_tag == 0) return;
-
         obj += sizeof(runtime_val_header) + header.rv_size;
     }
 }
@@ -38,7 +36,6 @@ void mkt_scan_stack(char* stack_bottom, char* stack_top) {
 
     while (stack_bottom < stack_top) {
         uintptr_t addr = *(uintptr_t*)stack_bottom;
-        log_debug("addr=%zu", addr);
         if (addr < (uintptr_t)objs || addr >= (uintptr_t)objs_end) {
             stack_bottom += 1;
             continue;
