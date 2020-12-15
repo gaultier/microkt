@@ -19,10 +19,6 @@ static const char type_to_str[][20] = {
     [TYPE_SHORT] = "Short", [TYPE_LONG] = "Long", [TYPE_STRING] = "String",
 };
 
-static const unsigned char RV_COLOR_WHITE = 0;
-static const unsigned char RV_COLOR_GREY = 1;
-static const unsigned char RV_COLOR_BLACK = 2;
-
 static const unsigned char RV_TAG_MARKED = 0x01;
 static const unsigned char RV_TAG_STRING = 0x02;
 
