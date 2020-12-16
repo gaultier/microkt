@@ -27,16 +27,14 @@ static alloc_atom* objs = NULL;
 
 alloc_atom* mkt_alloc_atom_make(size_t size) {
     alloc_atom* atom = calloc(1, sizeof(alloc_atom) + size);
-
-    if (objs)
-        objs->aa_next = atom;
-    else
-        objs = atom;
+    // Insert at the start
+    atom->aa_next = objs->aa_next;
+    objs->aa_next = atom;
 
     return atom;
 }
 
-void mkt_init() {}
+void mkt_init() { objs = calloc(1, sizeof(alloc_atom)); }
 
 void mkt_obj_mark(runtime_val_header* header) {
     if (header->rv_tag & RV_TAG_MARKED) return;  // Prevent cycles
@@ -51,7 +49,7 @@ void mkt_obj_mark(runtime_val_header* header) {
 
 // TODO: optimize
 alloc_atom* mkt_atom_find_data_by_addr(size_t addr) {
-    alloc_atom* atom = objs;
+    alloc_atom* atom = objs->aa_next;
     while (atom) {
         if (addr == (size_t)atom->aa_data) return atom;
         atom = atom->aa_next;
@@ -90,8 +88,8 @@ void mkt_trace_refs() {
 }
 
 void mkt_sweep() {
-    alloc_atom* atom = objs;
-    alloc_atom* previous = NULL;
+    alloc_atom* atom = objs->aa_next;
+    alloc_atom* previous = objs;
 
     while (atom) {
         log_debug("header: size=%llu color=%u tag=%u ptr=%p",
@@ -104,11 +102,7 @@ void mkt_sweep() {
             previous = atom;
             atom = atom->aa_next;
         } else {  // Remove
-            if (previous)
-                previous->aa_next = atom->aa_next;
-            else
-                objs = NULL;
-
+            previous->aa_next = atom->aa_next;
             alloc_atom* to_free = atom;
             atom = atom->aa_next;
 
