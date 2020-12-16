@@ -18,7 +18,7 @@ typedef struct {
 } runtime_val_header;
 
 struct alloc_atom {
-    struct alloc_atom *aa_next, *aa_previous;
+    struct alloc_atom* aa_next;
     runtime_val_header aa_header;
     char aa_data[];
 };
@@ -28,18 +28,17 @@ static alloc_atom* objs = NULL;
 static alloc_atom* objs_end = NULL;
 static runtime_val_header** gray_objs = NULL;
 
-static const size_t heap_size_initial =
-    2 * 1024 * 1024;  // 2 Mib initial heap size
-
 alloc_atom* mkt_alloc_atom_make(size_t size) {
     alloc_atom* atom = calloc(1, sizeof(alloc_atom) + size);
     objs_end->aa_next = atom;
-    atom->aa_previous = objs_end;
     objs_end = atom;
     return atom;
 }
 
-void mkt_init() { objs = mkt_alloc_atom_make(0); }
+void mkt_init() {
+    alloc_atom* atom = calloc(1, sizeof(alloc_atom));
+    objs_end = atom;
+}
 
 void mkt_obj_mark(runtime_val_header* header) {
     if (header->rv_tag & RV_TAG_MARKED) return;  // Prevent cycles
