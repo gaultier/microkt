@@ -25,7 +25,7 @@ struct alloc_atom {
 typedef struct alloc_atom alloc_atom;
 static alloc_atom* objs = NULL;
 
-alloc_atom* mkt_alloc_atom_make(size_t size) {
+static alloc_atom* mkt_alloc_atom_make(size_t size) {
     alloc_atom* atom = calloc(1, sizeof(alloc_atom) + size);
     // Insert at the start
     atom->aa_next = objs->aa_next;
@@ -36,7 +36,7 @@ alloc_atom* mkt_alloc_atom_make(size_t size) {
 
 void mkt_init() { objs = calloc(1, sizeof(alloc_atom)); }
 
-void mkt_obj_mark(runtime_val_header* header) {
+static void mkt_obj_mark(runtime_val_header* header) {
     CHECK((void*)header, !=, NULL, "%p");
 
     if (header->rv_tag & RV_TAG_MARKED) return;  // Prevent cycles
@@ -50,7 +50,7 @@ void mkt_obj_mark(runtime_val_header* header) {
 }
 
 // TODO: optimize
-alloc_atom* mkt_atom_find_data_by_addr(size_t addr) {
+static alloc_atom* mkt_atom_find_data_by_addr(size_t addr) {
     alloc_atom* atom = objs->aa_next;
     while (atom) {
         if (addr == (size_t)atom->aa_data) return atom;
@@ -59,7 +59,7 @@ alloc_atom* mkt_atom_find_data_by_addr(size_t addr) {
     return NULL;
 }
 
-void mkt_scan_stack(char* stack_bottom, char* stack_top) {
+static void mkt_scan_stack(char* stack_bottom, char* stack_top) {
     CHECK((void*)stack_bottom, !=, NULL, "%p");
     CHECK((void*)stack_top, !=, NULL, "%p");
 
@@ -83,18 +83,18 @@ void mkt_scan_stack(char* stack_bottom, char* stack_top) {
     }
 }
 
-void mkt_obj_blacken(runtime_val_header* header) {
+static void mkt_obj_blacken(runtime_val_header* header) {
     CHECK((void*)header, !=, NULL, "%p");
 
     // TODO: optimize to go from white -> black directly
     if (header->rv_tag & RV_TAG_STRING) return;
 }
 
-void mkt_trace_refs() {
+static void mkt_trace_refs() {
     // TODO
 }
 
-void mkt_sweep() {
+static void mkt_sweep() {
     CHECK((void*)objs, !=, NULL, "%p");
 
     alloc_atom* atom = objs->aa_next;
@@ -123,7 +123,7 @@ void mkt_sweep() {
     }
 }
 
-void mkt_scan_regs(void* rax) {
+static void mkt_scan_regs(void* rax) {
     if (rax==NULL) return; 
 
     alloc_atom* atom = mkt_atom_find_data_by_addr((size_t)rax);
@@ -136,7 +136,7 @@ void mkt_scan_regs(void* rax) {
     mkt_obj_mark(header);
 }
 
-void mkt_gc(char* stack_bottom, char* stack_top, void* rax) {
+static void mkt_gc(char* stack_bottom, char* stack_top, void* rax) {
     CHECK((void*)stack_bottom, !=, NULL, "%p");
     CHECK((void*)stack_top, !=, NULL, "%p");
 
