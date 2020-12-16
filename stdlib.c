@@ -5,7 +5,6 @@
 #include <unistd.h>
 
 #include "ast.h"
-#include "buf.h"
 #include "common.h"
 
 static const unsigned char RV_TAG_MARKED = 0x01;
@@ -25,22 +24,28 @@ struct alloc_atom {
 
 typedef struct alloc_atom alloc_atom;
 static alloc_atom* objs = NULL;
-static runtime_val_header** gray_objs = NULL;
 
 alloc_atom* mkt_alloc_atom_make(size_t size) {
     alloc_atom* atom = calloc(1, sizeof(alloc_atom) + size);
-    objs->aa_next = atom;
+
+    if (objs)
+        objs->aa_next = atom;
+    else
+        objs = atom;
+
     return atom;
 }
 
-void mkt_init() { objs = calloc(1, sizeof(alloc_atom)); }
+void mkt_init() {}
 
 void mkt_obj_mark(runtime_val_header* header) {
     if (header->rv_tag & RV_TAG_MARKED) return;  // Prevent cycles
     header->rv_tag |= RV_TAG_MARKED;
-    buf_push(gray_objs, header);
-
     log_debug("marked: header=%p", (void*)header);
+
+    if (header->rv_tag & RV_TAG_STRING) return;  // No transitive refs possible
+
+    UNIMPLEMENTED();  // TODO: gray worklist
 }
 
 void mkt_scan_heap() {
@@ -93,11 +98,35 @@ void mkt_obj_blacken(runtime_val_header* header) {
 }
 
 void mkt_trace_refs() {
-    for (size_t i = 0; i < buf_size(gray_objs); i++)
-        mkt_obj_blacken(gray_objs[i]);
+    // TODO
 }
 
-void mkt_sweep() {}
+void mkt_sweep() {
+    alloc_atom* atom = objs;
+    alloc_atom* previous = NULL;
+
+    while (atom) {
+        if (atom->aa_header.rv_tag & RV_TAG_MARKED) {  // Skip
+            // Reset the marked bit
+            atom->aa_header.rv_tag = atom->aa_header.rv_tag & ~RV_TAG_MARKED;
+            previous = atom;
+            atom = atom->aa_next;
+        } else {  // Remove
+            if (previous)
+                previous->aa_next = atom->aa_next;
+            else
+                objs = NULL;
+
+            alloc_atom* to_free = atom;
+            atom = atom->aa_next;
+
+            log_debug("header: size=%llu color=%u tag=%u ptr=%p",
+                      to_free->aa_header.rv_size, to_free->aa_header.rv_color,
+                      to_free->aa_header.rv_tag, (void*)to_free);
+            free(to_free);
+        }
+    }
+}
 
 void mkt_gc(char* stack_bottom, char* stack_top) {
     mkt_scan_stack(stack_bottom, stack_top);
