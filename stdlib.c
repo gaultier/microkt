@@ -41,24 +41,12 @@ void mkt_init() {}
 void mkt_obj_mark(runtime_val_header* header) {
     if (header->rv_tag & RV_TAG_MARKED) return;  // Prevent cycles
     header->rv_tag |= RV_TAG_MARKED;
-    log_debug("marked: header=%p", (void*)header);
+    log_debug("header: size=%llu color=%u tag=%u ptr=%p", header->rv_size,
+              header->rv_color, header->rv_tag, (void*)(header + 1));
 
     if (header->rv_tag & RV_TAG_STRING) return;  // No transitive refs possible
 
     UNIMPLEMENTED();  // TODO: gray worklist
-}
-
-void mkt_scan_heap() {
-    alloc_atom* atom = objs;
-    while (atom) {
-        runtime_val_header* header = &atom->aa_header;
-        log_debug("header: size=%llu color=%u tag=%u ptr=%p", header->rv_size,
-                  header->rv_color, header->rv_tag, (void*)atom->aa_data);
-
-        mkt_obj_mark(&atom->aa_header);
-
-        atom = atom->aa_next;
-    }
 }
 
 // TODO: optimize
@@ -106,6 +94,10 @@ void mkt_sweep() {
     alloc_atom* previous = NULL;
 
     while (atom) {
+        log_debug("header: size=%llu color=%u tag=%u ptr=%p",
+                  atom->aa_header.rv_size, atom->aa_header.rv_color,
+                  atom->aa_header.rv_tag, (void*)atom);
+
         if (atom->aa_header.rv_tag & RV_TAG_MARKED) {  // Skip
             // Reset the marked bit
             atom->aa_header.rv_tag = atom->aa_header.rv_tag & ~RV_TAG_MARKED;
@@ -120,7 +112,7 @@ void mkt_sweep() {
             alloc_atom* to_free = atom;
             atom = atom->aa_next;
 
-            log_debug("header: size=%llu color=%u tag=%u ptr=%p",
+            log_debug("Free: header: size=%llu color=%u tag=%u ptr=%p",
                       to_free->aa_header.rv_size, to_free->aa_header.rv_color,
                       to_free->aa_header.rv_tag, (void*)to_free);
             free(to_free);
@@ -128,9 +120,11 @@ void mkt_sweep() {
     }
 }
 
+void mkt_scan_regs() {}
+
 void mkt_gc(char* stack_bottom, char* stack_top) {
     mkt_scan_stack(stack_bottom, stack_top);
-    mkt_scan_heap();
+    mkt_scan_regs();
     mkt_trace_refs();
     mkt_sweep();
 }
