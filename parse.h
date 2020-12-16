@@ -339,6 +339,7 @@ static res_t parser_init(const char* file_name0, const char* source,
 
     const int fn_main_name_tok_i = buf_size(parser->par_lexer.lex_tokens) - 1;
 
+    CHECK((void*)parser->par_nodes, ==, NULL, "%p");
     buf_grow(parser->par_nodes, 100);
 
     // Add initial scope
@@ -359,10 +360,13 @@ static res_t parser_init(const char* file_name0, const char* source,
                                       .fd_body_node_i = 0,
                                       .fd_flags = FN_FLAGS_SYNTHETIC |
                                                   FN_FLAGS_PUBLIC}}}));
+
+    CHECK((void*)parser->par_node_decls, ==, NULL, "%p");
     buf_grow(parser->par_node_decls, 10);
     buf_push(
         parser->par_node_decls,
-        buf_size(parser->par_nodes) - 1);  // Last node is the main function
+        (buf_size(parser->par_nodes) - 1));  // Last node is the main function
+    parser->par_fn_i = parser->par_node_decls[0];
 
     buf_grow(parser->par_types, 100);
     // Pre-allocate common types
@@ -400,8 +404,6 @@ static res_t parser_init(const char* file_name0, const char* source,
                                     .ty_kind = TYPE_STRING,
                                     .ty_size = 8,
                                 }));  // Hence TYPE_STRING_I = 8
-
-    parser->par_fn_i = parser->par_node_decls[0];
 
     return RES_OK;
 }
@@ -2122,8 +2124,9 @@ static res_t parser_parse_property_declaration(parser_t* parser,
                                               .vd_flags = flags}}}));
     *new_node_i = buf_size(parser->par_nodes) - 1;
 
-    log_debug("new var def=%d current_scope_i=%d flags=%d offset=%d",
-              *new_node_i, parser->par_scope_i, flags, offset);
+    log_debug("new var def=%d current_scope_i=%d flags=%d offset=%d fn=%d",
+              *new_node_i, parser->par_scope_i, flags, offset,
+              parser->par_fn_i);
 
     return RES_OK;
 }
@@ -2229,6 +2232,7 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
                                               .fd_body_node_i = -1,
                                               .fd_flags = FN_FLAGS_PRIVATE,
                                               .fd_arg_nodes_i = NULL}}}));
+    const int old_fn_i = parser->par_fn_i;
     parser->par_fn_i = *new_node_i = buf_size(parser->par_nodes) - 1;
     buf_push(parser->par_node_decls, *new_node_i);
 
@@ -2352,6 +2356,8 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
         return parser_err_non_matching_types(
             parser, body_node_i,
             *new_node_i);  // TODO: implement custom error function
+
+    parser->par_fn_i = old_fn_i;
 
     return RES_OK;
 }
