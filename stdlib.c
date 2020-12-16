@@ -123,34 +123,20 @@ static void mkt_sweep() {
     }
 }
 
-static void mkt_scan_regs(void* rax) {
-    if (rax==NULL) return; 
-
-    alloc_atom* atom = mkt_atom_find_data_by_addr((size_t)rax);
-    if (!atom) return;
-
-    runtime_val_header* header = &atom->aa_header;
-    log_debug("rax: header: size=%llu color=%u tag=%u ptr=%p", header->rv_size,
-              header->rv_color, header->rv_tag, rax);
-
-    mkt_obj_mark(header);
-}
-
-static void mkt_gc(char* stack_bottom, char* stack_top, void* rax) {
+static void mkt_gc(char* stack_bottom, char* stack_top) {
     CHECK((void*)stack_bottom, !=, NULL, "%p");
     CHECK((void*)stack_top, !=, NULL, "%p");
 
     mkt_scan_stack(stack_bottom, stack_top);
-    mkt_scan_regs(rax);
     mkt_trace_refs();
     mkt_sweep();
 }
 
-void* mkt_string_make(size_t size, char* stack_bottom, char* stack_top, void* rax) {
+void* mkt_string_make(size_t size, char* stack_bottom, char* stack_top) {
     CHECK((void*)stack_bottom, !=, NULL, "%p");
     CHECK((void*)stack_top, !=, NULL, "%p");
 
-    mkt_gc(stack_bottom, stack_top, rax);
+    mkt_gc(stack_bottom, stack_top);
 
     alloc_atom* atom = mkt_alloc_atom_make(size);
     atom->aa_header =
@@ -205,7 +191,7 @@ void mkt_println_string(char* s) {
 }
 
 char* mkt_string_concat(const char* a, const char* b, char* stack_bottom,
-                        char* stack_top, void* rax) {
+                        char* stack_top) {
     CHECK((void*)a, !=, NULL, "%p");
     CHECK((void*)b, !=, NULL, "%p");
     CHECK((void*)stack_bottom, !=, NULL, "%p");
@@ -214,7 +200,7 @@ char* mkt_string_concat(const char* a, const char* b, char* stack_bottom,
     const size_t a_len = *(a - 8);
     const size_t b_len = *(b - 8);
 
-    char* const ret = mkt_string_make(a_len + b_len, stack_bottom, stack_top, rax);
+    char* const ret = mkt_string_make(a_len + b_len, stack_bottom, stack_top);
     memcpy(ret, a, a_len);
     memcpy(ret + a_len, b, b_len);
     *(ret - 8) = a_len + b_len;
