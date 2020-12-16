@@ -37,6 +37,8 @@ alloc_atom* mkt_alloc_atom_make(size_t size) {
 void mkt_init() { objs = calloc(1, sizeof(alloc_atom)); }
 
 void mkt_obj_mark(runtime_val_header* header) {
+    CHECK((void*)header, !=, NULL, "%p");
+
     if (header->rv_tag & RV_TAG_MARKED) return;  // Prevent cycles
     header->rv_tag |= RV_TAG_MARKED;
     log_debug("header: size=%llu color=%u tag=%u ptr=%p", header->rv_size,
@@ -58,6 +60,9 @@ alloc_atom* mkt_atom_find_data_by_addr(size_t addr) {
 }
 
 void mkt_scan_stack(char* stack_bottom, char* stack_top) {
+    CHECK((void*)stack_bottom, !=, NULL, "%p");
+    CHECK((void*)stack_top, !=, NULL, "%p");
+
     log_debug("size=%zu bottom=%p top=%p", stack_top - stack_bottom,
               (void*)stack_bottom, (void*)stack_top);
 
@@ -79,6 +84,8 @@ void mkt_scan_stack(char* stack_bottom, char* stack_top) {
 }
 
 void mkt_obj_blacken(runtime_val_header* header) {
+    CHECK((void*)header, !=, NULL, "%p");
+
     // TODO: optimize to go from white -> black directly
     if (header->rv_tag & RV_TAG_STRING) return;
 }
@@ -88,6 +95,8 @@ void mkt_trace_refs() {
 }
 
 void mkt_sweep() {
+    CHECK((void*)objs, !=, NULL, "%p");
+
     alloc_atom* atom = objs->aa_next;
     alloc_atom* previous = objs;
 
@@ -119,6 +128,9 @@ void mkt_scan_regs() {
 }
 
 void mkt_gc(char* stack_bottom, char* stack_top) {
+    CHECK((void*)stack_bottom, !=, NULL, "%p");
+    CHECK((void*)stack_top, !=, NULL, "%p");
+
     mkt_scan_stack(stack_bottom, stack_top);
     mkt_scan_regs();
     mkt_trace_refs();
@@ -126,6 +138,9 @@ void mkt_gc(char* stack_bottom, char* stack_top) {
 }
 
 void* mkt_string_make(size_t size, char* stack_bottom, char* stack_top) {
+    CHECK((void*)stack_bottom, !=, NULL, "%p");
+    CHECK((void*)stack_top, !=, NULL, "%p");
+
     mkt_gc(stack_bottom, stack_top);
 
     alloc_atom* atom = mkt_alloc_atom_make(size);
@@ -170,6 +185,8 @@ void mkt_println_int(long long int n) {
 }
 
 void mkt_println_string(char* s) {
+    CHECK((void*)s, !=, NULL, "%p");
+
     runtime_val_header header = *(runtime_val_header*)(s - 8);
     CHECK(header.rv_tag & RV_TAG_STRING, !=, 0, "%u");
 
@@ -180,6 +197,11 @@ void mkt_println_string(char* s) {
 
 char* mkt_string_concat(const char* a, const char* b, char* stack_bottom,
                         char* stack_top) {
+    CHECK((void*)a, !=, NULL, "%p");
+    CHECK((void*)b, !=, NULL, "%p");
+    CHECK((void*)stack_bottom, !=, NULL, "%p");
+    CHECK((void*)stack_top, !=, NULL, "%p");
+
     const size_t a_len = *(a - 8);
     const size_t b_len = *(b - 8);
 
