@@ -120,7 +120,9 @@ void mkt_sweep() {
     }
 }
 
-void mkt_scan_regs() {}
+void mkt_scan_regs() {
+    // TODO?
+}
 
 void mkt_gc(char* stack_bottom, char* stack_top) {
     mkt_scan_stack(stack_bottom, stack_top);
