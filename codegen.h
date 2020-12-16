@@ -57,6 +57,7 @@ static void fn_prolog(const parser_t* parser, const fn_decl_t* fn_decl,
     println(".cfi_def_cfa_offset 16");
     println(".cfi_offset %%rbp, -16");
     println("mov %%rsp, %%rbp");
+    println(".cfi_def_cfa_register %%rbp");
 
     println("sub $%d, %%rsp\n", aligned_stack_size);
 
@@ -572,6 +573,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
         ".cfi_def_cfa_offset 16\n"
         ".cfi_offset %%rbp, -16\n"
         "mov %%rsp, %%rbp\n"
+        ".cfi_def_cfa_register %%rbp\n"
         "sub $0, %%rsp");
 
     println("call %smkt_init", name_prefix);
