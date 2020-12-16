@@ -149,6 +149,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
                     source_len);
             println("mov %%rsp, %s", fn_args[1]);
             println("mov %%rbp, %s", fn_args[2]);
+            println("mov %%rax, %s", fn_args[3]);
             println("call %smkt_string_make", name_prefix);
 
             for (int i = 0; i < source_len; i++)
@@ -233,6 +234,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
                 println("pop %%rsi");
                 println("mov %%rsp, %s", fn_args[2]);
                 println("mov %%rbp, %s", fn_args[3]);
+                println("mov %%rax, %s", fn_args[4]);
                 println("call %smkt_string_concat", name_prefix);
             } else {
                 println("pop %%rdi");
