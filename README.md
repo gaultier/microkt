@@ -1,6 +1,6 @@
 # microkt
 
-A work-in-progress tiny compiler for a subset of the Kotlin language, with zero dependencies. It compiles a (very small) subset of the Kotlin language to a native executable.
+A work-in-progress compiler for a subset of the Kotlin language, with zero dependencies. It compiles a (very small) subset of the Kotlin language to a native executable.
 
 For now it only supports x86_64 (macOS, Linux should also work) although it would not be hard to add more platforms.
 
@@ -96,13 +96,14 @@ Available flags:
 - WITH_LOGS=0|1 : disable/enable logs. Defaults to 0.
 - WITH_ASAN=0|1 : disable/enable AddressSanitizer (clang only). Defaults to 0.
 - DEBUG=0|1 : optimization level. Corresponds to respectively -O0 and -O2
+- CC, AS, LD: standard make variables
 
 ```sh
 # Debug build with logs and asan
 make DEBUG=1 WITH_LOGS=1 WITH_ASAN=1
 
-# Release build without logs with asan using gcc
-make WITH_ASAN=1 CC=gcc
+# Release build without logs with asan using gcc and tell `mktc` to use `lld` as linker
+make WITH_ASAN=1 CC=gcc LD=ld64.lld
 ```
 
 ## License

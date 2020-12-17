@@ -90,7 +90,7 @@ static res_t run(const char* file_name0) {
     base_source_file_name(file_name0, base_file_name0);
     {
         memset(argv0, 0, sizeof(argv0));
-        snprintf(argv0, sizeof(argv0), "as %s -o %s.o", asm_file_name0,
+        snprintf(argv0, sizeof(argv0), AS " %s -o %s.o", asm_file_name0,
                  base_file_name0);
         fflush(stdout);
         fflush(stderr);
@@ -113,7 +113,8 @@ static res_t run(const char* file_name0) {
     {
         memset(argv0, 0, sizeof(argv0));
         snprintf(argv0, sizeof(argv0),
-                 "ld %s.o stdlib.o -o %s.exe -e _start "
+                 LD
+                 " %s.o stdlib.o -o %s.exe -e _start "
 #if WITH_ASAN == 1
                  "-lclang_rt.asan_osx_dynamic -L " ASAN_DIR " -rpath " ASAN_DIR
                  " "
