@@ -101,8 +101,8 @@ Available flags:
 # Debug build with logs and asan
 make DEBUG=1 WITH_LOGS=1 WITH_ASAN=1
 
-# Release build without logs with asan 
-make WITH_ASAN=1
+# Release build without logs with asan using gcc
+make WITH_ASAN=1 CC=gcc
 ```
 
 ## License
