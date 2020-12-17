@@ -111,24 +111,18 @@ static res_t run(const char* file_name0) {
 
     // ld
     {
-#ifdef __APPLE__
-        const char ld_additional_args[] = "-lSystem";
-#else
-        const char ld_additional_args[] = "";
-#endif
         memset(argv0, 0, sizeof(argv0));
-        snprintf(
-            argv0, sizeof(argv0),
-            "ld %s.o %s stdlib.o -o %s.exe -e _start "
+        snprintf(argv0, sizeof(argv0),
+                 "ld %s.o stdlib.o -o %s.exe -e _start "
 #if WITH_ASAN == 1
-            // TODO: make it work on any system
-            "-lclang_rt.asan_osx_dynamic "
-            "-L/Library/Developer/CommandLineTools/usr/lib/clang/11.0.3/lib/"
-            "darwin "
-            "-rpath /Library/Developer/CommandLineTools/usr/lib/clang/11.0.3/"
-            "lib/darwin/",
+                 "-lclang_rt.asan_osx_dynamic -L " ASAN_DIR " -rpath " ASAN_DIR
+                 " "
 #endif
-            base_file_name0, ld_additional_args, base_file_name0);
+#ifdef __APPLE__
+                 " -lSystem "
+#endif
+                 ,
+                 base_file_name0, base_file_name0);
         log_debug("%s", argv0);
 
         fflush(stdout);
