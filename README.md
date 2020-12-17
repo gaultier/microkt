@@ -54,13 +54,13 @@ docker run --rm -it microkt sh -c 'mktc /usr/local/share/mktc/hello_world.kts \
 Hello, world!
 ```
 
-## Present features and goals
+## Features
 
 - Small, fast, and portable: the code is written in C99 with zero dependencies. It compiles under a second to an executable no bigger than 100 Kib
 - Produces small native executables under 10 Kib in a few milliseconds
-- Produces portable executables that don't even depend on the C standard library. Portable here means portable within the same OS and architecture but across OS versions. An executable produced today should work on a 15 year old Linux system just fine because of the stable ABI guarantees Linux offers. On macOS, we link with libSystem as recommended by Apple which guarantees some level compatibility with past and future macOS versions
 - Friendly error messages
 - Tiny memory usage
+- Simple mark and sweep garbage collector
 
 ## On the roadmap
 *Future features that are not yet implemented but are planned. In no particular order:*
@@ -92,12 +92,17 @@ Hello, world!
 
 ## Develop
 
-```sh
-# Debug build and run the tests
-make DEBUG=1 test
+Available flags:
+- WITH_LOGS=0|1 : disable/enable logs. Defaults to 0.
+- WITH_ASAN=0|1 : disable/enable AddressSanitizer (clang only). Defaults to 0.
+- DEBUG=0|1 : optimization level. Corresponds to respectively -O0 and -O2
 
-# Release build and run the tests, this is the default
-make DEBUG=0 test
+```sh
+# Debug build with logs and asan
+make DEBUG=1 WITH_LOGS=1 WITH_ASAN=1
+
+# Release build without logs with asan 
+make WITH_ASAN=1
 ```
 
 ## License
