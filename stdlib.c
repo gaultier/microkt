@@ -7,6 +7,7 @@
 #include "ast.h"
 #include "common.h"
 
+static size_t gc_round = 0;
 static const unsigned char RV_TAG_MARKED = 0x01;
 static const unsigned char RV_TAG_STRING = 0x02;
 
@@ -19,7 +20,7 @@ typedef struct {
 struct alloc_atom {
     struct alloc_atom* aa_next;
     runtime_val_header aa_header;
-    char aa_data[];
+    void* aa_data;
 };
 
 typedef struct alloc_atom alloc_atom;
@@ -41,8 +42,9 @@ static void mkt_obj_mark(runtime_val_header* header) {
 
     if (header->rv_tag & RV_TAG_MARKED) return;  // Prevent cycles
     header->rv_tag |= RV_TAG_MARKED;
-    log_debug("header: size=%llu color=%u tag=%u ptr=%p", header->rv_size,
-              header->rv_color, header->rv_tag, (void*)(header + 1));
+    log_debug("gc_round=%zu header: size=%llu color=%u tag=%u ptr=%p", gc_round,
+              header->rv_size, header->rv_color, header->rv_tag,
+              (void*)(header + 1));
 
     if (header->rv_tag & RV_TAG_STRING) return;  // No transitive refs possible
 
@@ -53,7 +55,7 @@ static void mkt_obj_mark(runtime_val_header* header) {
 static alloc_atom* mkt_atom_find_data_by_addr(size_t addr) {
     alloc_atom* atom = objs->aa_next;
     while (atom) {
-        if (addr == (size_t)atom->aa_data) return atom;
+        if (addr == (size_t)&atom->aa_data) return atom;
         atom = atom->aa_next;
     }
     return NULL;
@@ -62,20 +64,22 @@ static alloc_atom* mkt_atom_find_data_by_addr(size_t addr) {
 static void mkt_scan_stack(char* stack_bottom, char* stack_top) {
     CHECK((void*)stack_bottom, !=, NULL, "%p");
     CHECK((void*)stack_top, !=, NULL, "%p");
+    CHECK((void*)stack_bottom, <=, (void*)stack_top, "%p");
 
-    log_debug("size=%zu bottom=%p top=%p", stack_top - stack_bottom,
-              (void*)stack_bottom, (void*)stack_top);
+    log_debug("gc_round=%zu size=%zu bottom=%p top=%p", gc_round,
+              stack_top - stack_bottom, (void*)stack_bottom, (void*)stack_top);
 
-    while (stack_bottom < stack_top) {
-        uintptr_t addr = *(uintptr_t*)stack_bottom;
+    while (stack_bottom < stack_top - sizeof(size_t)) {
+        size_t addr = *(size_t*)stack_bottom;
         alloc_atom* atom = mkt_atom_find_data_by_addr(addr);
         if (atom == NULL) {
             stack_bottom += 1;
             continue;
         }
         runtime_val_header* header = &atom->aa_header;
-        log_debug("header: size=%llu color=%u tag=%u ptr=%p", header->rv_size,
-                  header->rv_color, header->rv_tag, (void*)addr);
+        log_debug("gc_round=%zu header: size=%llu color=%u tag=%u ptr=%p",
+                  gc_round, header->rv_size, header->rv_color, header->rv_tag,
+                  (void*)addr);
 
         mkt_obj_mark(header);
 
@@ -101,8 +105,8 @@ static void mkt_sweep() {
     alloc_atom* previous = objs;
 
     while (atom) {
-        log_debug("header: size=%llu color=%u tag=%u ptr=%p",
-                  atom->aa_header.rv_size, atom->aa_header.rv_color,
+        log_debug("gc_round=%zu header: size=%llu color=%u tag=%u ptr=%p",
+                  gc_round, atom->aa_header.rv_size, atom->aa_header.rv_color,
                   atom->aa_header.rv_tag, (void*)atom);
 
         if (atom->aa_header.rv_tag & RV_TAG_MARKED) {  // Skip
@@ -115,9 +119,11 @@ static void mkt_sweep() {
             alloc_atom* to_free = atom;
             atom = atom->aa_next;
 
-            log_debug("Free: header: size=%llu color=%u tag=%u ptr=%p",
-                      to_free->aa_header.rv_size, to_free->aa_header.rv_color,
-                      to_free->aa_header.rv_tag, (void*)to_free);
+            log_debug(
+                "Free: gc_round=%zu header: size=%llu color=%u tag=%u ptr=%p",
+                gc_round, to_free->aa_header.rv_size,
+                to_free->aa_header.rv_color, to_free->aa_header.rv_tag,
+                (void*)to_free);
             free(to_free);
         }
     }
@@ -126,6 +132,9 @@ static void mkt_sweep() {
 static void mkt_gc(char* stack_bottom, char* stack_top) {
     CHECK((void*)stack_bottom, !=, NULL, "%p");
     CHECK((void*)stack_top, !=, NULL, "%p");
+    CHECK((void*)stack_bottom, <=, (void*)stack_top, "%p");
+
+    gc_round += 1;
 
     mkt_scan_stack(stack_bottom, stack_top);
     mkt_trace_refs();
@@ -135,14 +144,16 @@ static void mkt_gc(char* stack_bottom, char* stack_top) {
 void* mkt_string_make(size_t size, char* stack_bottom, char* stack_top) {
     CHECK((void*)stack_bottom, !=, NULL, "%p");
     CHECK((void*)stack_top, !=, NULL, "%p");
+    CHECK((void*)stack_bottom, <=, (void*)stack_top, "%p");
 
     mkt_gc(stack_bottom, stack_top);
 
     alloc_atom* atom = mkt_alloc_atom_make(size);
+    CHECK((void*)atom, !=, NULL, "%p");
     atom->aa_header =
         (runtime_val_header){.rv_size = size, .rv_tag = RV_TAG_STRING};
 
-    return atom->aa_data;
+    return &atom->aa_data;
 }
 
 void mkt_println_bool(int b) {
@@ -196,11 +207,16 @@ char* mkt_string_concat(const char* a, const char* b, char* stack_bottom,
     CHECK((void*)b, !=, NULL, "%p");
     CHECK((void*)stack_bottom, !=, NULL, "%p");
     CHECK((void*)stack_top, !=, NULL, "%p");
+    CHECK((void*)stack_bottom, <=, (void*)stack_top, "%p");
 
     const size_t a_len = *(a - 8);
     const size_t b_len = *(b - 8);
 
     char* const ret = mkt_string_make(a_len + b_len, stack_bottom, stack_top);
+    CHECK((void*)ret, !=, NULL, "%p");
+    CHECK((void*)a, !=, NULL, "%p");
+    CHECK((void*)b, !=, NULL, "%p");
+
     memcpy(ret, a, a_len);
     memcpy(ret + a_len, b, b_len);
     *(ret - 8) = a_len + b_len;

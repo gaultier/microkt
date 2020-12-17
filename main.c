@@ -117,9 +117,15 @@ static res_t run(const char* file_name0) {
         const char ld_additional_args[] = "";
 #endif
         memset(argv0, 0, sizeof(argv0));
-        snprintf(argv0, sizeof(argv0),
-                 "ld %s.o %s stdlib.o -o %s.exe -e _start", base_file_name0,
-                 ld_additional_args, base_file_name0);
+        snprintf(
+            argv0, sizeof(argv0),
+            "ld %s.o %s stdlib.o -o %s.exe -e _start "
+            "-lclang_rt.asan_osx_dynamic "
+            "-L/Library/Developer/CommandLineTools/usr/lib/clang/11.0.3/lib/"
+            "darwin "
+            "-rpath /Library/Developer/CommandLineTools/usr/lib/clang/11.0.3/"
+            "lib/darwin/",
+            base_file_name0, ld_additional_args, base_file_name0);
         log_debug("%s", argv0);
 
         fflush(stdout);
