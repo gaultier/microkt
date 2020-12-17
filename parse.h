@@ -459,6 +459,11 @@ static void node_dump(const parser_t* parser, int node_i, int indent) {
     CHECK(node_i, >=, 0, "%d");
     CHECK(node_i, <, (int)buf_size(parser->par_nodes), "%d");
 
+#if WITH_LOGS == 0
+    IGNORE(parser);
+    IGNORE(node_i);
+    IGNORE(indent);
+#else
     const node_t* const node = &parser->par_nodes[node_i];
     switch (node->node_kind) {
         case NODE_BUILTIN_PRINTLN: {
@@ -539,7 +544,6 @@ static void node_dump(const parser_t* parser, int node_i, int indent) {
             break;
         }
         case NODE_VAR_DEF: {
-#ifdef WITH_LOGS
             const var_def_t var_def = node->node_n.node_var_def;
             const pos_range_t pos_range =
                 parser->par_lexer.lex_tok_pos_ranges[var_def.vd_name_tok_i];
@@ -556,11 +560,9 @@ static void node_dump(const parser_t* parser, int node_i, int indent) {
             if (var_def.vd_init_node_i >= 0)
                 node_dump(parser, var_def.vd_init_node_i, indent + 2);
 
-#endif
             break;
         }
         case NODE_VAR: {
-#if WITH_LOGS
             const var_t var = node->node_n.node_var;
             const node_t* const node_var_def =
                 &parser->par_nodes[var.va_var_node_i];
@@ -571,7 +573,6 @@ static void node_dump(const parser_t* parser, int node_i, int indent) {
             const char* const name =
                 &parser->par_lexer.lex_source[pos_range.pr_start];
             const int name_len = pos_range.pr_end - pos_range.pr_start;
-#endif
 
             log_debug_with_indent(
                 indent, "node #%d %s type=%s name=%.*s offset=%d", node_i,
@@ -592,7 +593,6 @@ static void node_dump(const parser_t* parser, int node_i, int indent) {
             return;
         }
         case NODE_FN_DECL: {
-#ifdef WITH_LOGS
             const fn_decl_t fn_decl = node->node_n.node_fn_decl;
             const int arity = buf_size(fn_decl.fd_arg_nodes_i);
             const pos_range_t pos_range =
@@ -600,7 +600,6 @@ static void node_dump(const parser_t* parser, int node_i, int indent) {
             const char* const name =
                 &parser->par_lexer.lex_source[pos_range.pr_start];
             const int name_len = pos_range.pr_end - pos_range.pr_start;
-#endif
             log_debug_with_indent(
                 indent, "node #%d %s `%.*s` type=%s arity=%d body_i=%d", node_i,
                 node_kind_to_str[node->node_kind], name_len, name,
@@ -609,7 +608,6 @@ static void node_dump(const parser_t* parser, int node_i, int indent) {
             return;
         }
         case NODE_CALL: {
-#ifdef WITH_LOGS
             const call_t call = node->node_n.node_call;
             log_debug_with_indent(
                 indent, "node #%d %s type=%s arity=%d", node_i,
@@ -618,10 +616,10 @@ static void node_dump(const parser_t* parser, int node_i, int indent) {
                 (int)buf_size(call.ca_arg_nodes_i));
 
             node_dump(parser, call.ca_lhs_node_i, indent + 2);
-#endif
             return;
         }
     }
+#endif
 }
 
 static int node_first_token(const parser_t* parser, const node_t* node) {

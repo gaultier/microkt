@@ -65,7 +65,7 @@ static const char res_to_str[][100] = {
         (void)(x); \
     } while (0)
 
-#ifndef WITH_LOGS
+#if WITH_LOGS == 0
 #define log_debug(fmt, ...) \
     do {                    \
         IGNORE(fmt);        \

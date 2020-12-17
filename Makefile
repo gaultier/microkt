@@ -3,10 +3,13 @@
 SRC = main.c
 HEADERS := $(wildcard *.h)
 
+WITH_ASAN = 0
 DEBUG = 0
-CFLAGS_COMMON =-Wall -Wextra -pedantic -g -std=c99 -march=native -fno-omit-frame-pointer -fno-stack-protector
+WITH_LOGS=0
+
+CFLAGS_COMMON =-Wall -Wextra -pedantic -g -std=c99 -march=native -fno-omit-frame-pointer -fstrict-aliasing  -DWITH_LOGS=$(WITH_LOGS)
 # Debug: build with `make DEBUG=1`
-CFLAGS_1 = -O0 -fsanitize=address -DWITH_LOGS
+CFLAGS_1 = -O0 -fsanitize=address
 # Release: default
 CFLAGS_0 = -O2
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_$(DEBUG))

@@ -579,7 +579,7 @@ static void token_dump(const token_t* t, int i, const lexer_t* lexer) {
     CHECK((void*)lexer, !=, NULL, "%p");
 
     loc_t loc = lexer->lex_locs[i];
-#ifndef WITH_LOGS
+#if WITH_LOGS == 0
     IGNORE(i);
     IGNORE(loc);
 #endif
