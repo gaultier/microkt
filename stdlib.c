@@ -29,7 +29,8 @@ static alloc_atom* objs = NULL;       // In use
 static alloc_atom* objs_free = NULL;  // Free list, re-usable
 
 static alloc_atom* mkt_alloc_atom_make(size_t size) {
-    const size_t bytes = sizeof(runtime_val_header) + sizeof(size_t) + size;
+    const size_t bytes =
+        sizeof(runtime_val_header) + sizeof(alloc_atom*) + size;
     alloc_atom* atom = calloc(1, bytes);
     CHECK((void*)atom, !=, NULL, "%p");
 
@@ -91,7 +92,7 @@ static void mkt_gc_scan_stack(char* stack_bottom, char* stack_top) {
               gc_round, gc_allocated_bytes, stack_top - stack_bottom,
               (void*)stack_bottom, (void*)stack_top);
 
-    while (stack_bottom < stack_top - sizeof(size_t)) {
+    while (stack_bottom < stack_top - sizeof(void*)) {
         size_t addr = *(size_t*)stack_bottom;
         alloc_atom* atom = mkt_gc_atom_find_data_by_addr(addr);
         if (atom == NULL) {
@@ -107,7 +108,7 @@ static void mkt_gc_scan_stack(char* stack_bottom, char* stack_top) {
 
         mkt_gc_obj_mark(header);
 
-        stack_bottom += sizeof(runtime_val_header) + header->rv_size;
+        stack_bottom += sizeof(void*);
     }
 }
 
@@ -141,7 +142,8 @@ static void mkt_gc_sweep() {
                 to_free->aa_header.rv_color, to_free->aa_header.rv_tag,
                 (void*)to_free);
 
-            const size_t bytes = sizeof(runtime_val_header) + sizeof(size_t) +
+            const size_t bytes = sizeof(runtime_val_header) +
+                                 sizeof(alloc_atom*) +
                                  to_free->aa_header.rv_size;
             CHECK(gc_allocated_bytes, >=, (size_t)bytes, "%zu");
             gc_allocated_bytes -= bytes;
