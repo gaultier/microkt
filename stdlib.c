@@ -37,7 +37,7 @@ static alloc_atom* mkt_alloc_atom_make(size_t size) {
 
 void mkt_init() { objs = calloc(1, sizeof(alloc_atom)); }
 
-static void mkt_obj_mark(runtime_val_header* header) {
+static void mkt_gc_obj_mark(runtime_val_header* header) {
     CHECK((void*)header, !=, NULL, "%p");
 
     if (header->rv_tag & RV_TAG_MARKED) return;  // Prevent cycles
@@ -52,7 +52,7 @@ static void mkt_obj_mark(runtime_val_header* header) {
 }
 
 // TODO: optimize
-static alloc_atom* mkt_atom_find_data_by_addr(size_t addr) {
+static alloc_atom* mkt_gc_atom_find_data_by_addr(size_t addr) {
     alloc_atom* atom = objs->aa_next;
     while (atom) {
         if (addr == (size_t)&atom->aa_data) return atom;
@@ -61,7 +61,7 @@ static alloc_atom* mkt_atom_find_data_by_addr(size_t addr) {
     return NULL;
 }
 
-static void mkt_scan_stack(char* stack_bottom, char* stack_top) {
+static void mkt_gc_scan_stack(char* stack_bottom, char* stack_top) {
     CHECK((void*)stack_bottom, !=, NULL, "%p");
     CHECK((void*)stack_top, !=, NULL, "%p");
     CHECK((void*)stack_bottom, <=, (void*)stack_top, "%p");
@@ -71,7 +71,7 @@ static void mkt_scan_stack(char* stack_bottom, char* stack_top) {
 
     while (stack_bottom < stack_top - sizeof(size_t)) {
         size_t addr = *(size_t*)stack_bottom;
-        alloc_atom* atom = mkt_atom_find_data_by_addr(addr);
+        alloc_atom* atom = mkt_gc_atom_find_data_by_addr(addr);
         if (atom == NULL) {
             stack_bottom += 1;
             continue;
@@ -81,24 +81,24 @@ static void mkt_scan_stack(char* stack_bottom, char* stack_top) {
                   gc_round, header->rv_size, header->rv_color, header->rv_tag,
                   (void*)addr);
 
-        mkt_obj_mark(header);
+        mkt_gc_obj_mark(header);
 
         stack_bottom += sizeof(runtime_val_header) + header->rv_size;
     }
 }
 
-static void mkt_obj_blacken(runtime_val_header* header) {
+static void mkt_gc_obj_blacken(runtime_val_header* header) {
     CHECK((void*)header, !=, NULL, "%p");
 
     // TODO: optimize to go from white -> black directly
     if (header->rv_tag & RV_TAG_STRING) return;
 }
 
-static void mkt_trace_refs() {
+static void mkt_gc_trace_refs() {
     // TODO
 }
 
-static void mkt_sweep() {
+static void mkt_gc_sweep() {
     CHECK((void*)objs, !=, NULL, "%p");
 
     alloc_atom* atom = objs->aa_next;
@@ -136,9 +136,9 @@ static void mkt_gc(char* stack_bottom, char* stack_top) {
 
     gc_round += 1;
 
-    mkt_scan_stack(stack_bottom, stack_top);
-    mkt_trace_refs();
-    mkt_sweep();
+    mkt_gc_scan_stack(stack_bottom, stack_top);
+    mkt_gc_trace_refs();
+    mkt_gc_sweep();
 }
 
 void* mkt_string_make(size_t size, char* stack_bottom, char* stack_top) {
