@@ -8,6 +8,7 @@
 #include "common.h"
 
 static size_t gc_round = 0;
+static size_t gc_allocated_bytes = 0;
 static const unsigned char RV_TAG_MARKED = 0x01;
 static const unsigned char RV_TAG_STRING = 0x02;
 
@@ -27,10 +28,15 @@ typedef struct alloc_atom alloc_atom;
 static alloc_atom* objs = NULL;
 
 static alloc_atom* mkt_alloc_atom_make(size_t size) {
-    alloc_atom* atom = calloc(1, sizeof(alloc_atom) + size);
+    const size_t bytes = sizeof(alloc_atom) + size;
+    alloc_atom* atom = calloc(1, bytes);
+    CHECK((void*)atom, !=, NULL, "%p");
+
     // Insert at the start
     atom->aa_next = objs->aa_next;
     objs->aa_next = atom;
+
+    gc_allocated_bytes += bytes;
 
     return atom;
 }
@@ -124,6 +130,9 @@ static void mkt_gc_sweep() {
                 gc_round, to_free->aa_header.rv_size,
                 to_free->aa_header.rv_color, to_free->aa_header.rv_tag,
                 (void*)to_free);
+
+            gc_allocated_bytes -=
+                sizeof(alloc_atom) + to_free->aa_header.rv_size;
             free(to_free);
         }
     }
@@ -136,9 +145,13 @@ static void mkt_gc(char* stack_bottom, char* stack_top) {
 
     gc_round += 1;
 
+    log_debug("stats before: round=%zu gc_allocated_bytes=%zu", gc_round,
+              gc_allocated_bytes);
     mkt_gc_scan_stack(stack_bottom, stack_top);
     mkt_gc_trace_refs();
     mkt_gc_sweep();
+    log_debug("stats after: round=%zu gc_allocated_bytes=%zu", gc_round,
+              gc_allocated_bytes);
 }
 
 void* mkt_string_make(size_t size, char* stack_bottom, char* stack_top) {
