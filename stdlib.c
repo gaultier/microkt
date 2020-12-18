@@ -25,32 +25,47 @@ struct alloc_atom {
 };
 
 typedef struct alloc_atom alloc_atom;
-static alloc_atom* objs = NULL;
+static alloc_atom* objs = NULL;       // In use
+static alloc_atom* objs_free = NULL;  // Free list, re-usable
 
 static alloc_atom* mkt_alloc_atom_make(size_t size) {
-    const size_t bytes = sizeof(alloc_atom) + size;
+    const size_t bytes = sizeof(runtime_val_header) + sizeof(size_t) + size;
     alloc_atom* atom = calloc(1, bytes);
     CHECK((void*)atom, !=, NULL, "%p");
 
     // Insert at the start
-    atom->aa_next = objs->aa_next;
-    objs->aa_next = atom;
+    if (objs) {
+        atom->aa_next = objs->aa_next;
+        objs->aa_next = atom;
+    } else
+        objs = atom;
+
+    CHECK((void*)objs, !=, NULL, "%p");
 
     gc_allocated_bytes += bytes;
 
     return atom;
 }
 
-void mkt_init() { objs = calloc(1, sizeof(alloc_atom)); }
+void mkt_init() {
+    // Dummy unused atom to avoid dealing with NULL
+    // Not managed by the GC and alive for the whole program duration
+    /* objs_free = objs = calloc(1, sizeof(alloc_atom)); */
+
+    /* CHECK((void*)objs, !=, NULL, "%p"); */
+    /* CHECK((void*)objs_free, !=, NULL, "%p"); */
+}
 
 static void mkt_gc_obj_mark(runtime_val_header* header) {
     CHECK((void*)header, !=, NULL, "%p");
 
     if (header->rv_tag & RV_TAG_MARKED) return;  // Prevent cycles
     header->rv_tag |= RV_TAG_MARKED;
-    log_debug("gc_round=%zu header: size=%llu color=%u tag=%u ptr=%p", gc_round,
-              header->rv_size, header->rv_color, header->rv_tag,
-              (void*)(header + 1));
+    log_debug(
+        "gc_round=%zu gc_allocated_bytes=%zu header: size=%llu color=%u tag=%u "
+        "ptr=%p",
+        gc_round, gc_allocated_bytes, header->rv_size, header->rv_color,
+        header->rv_tag, (void*)(header + 1));
 
     if (header->rv_tag & RV_TAG_STRING) return;  // No transitive refs possible
 
@@ -59,7 +74,7 @@ static void mkt_gc_obj_mark(runtime_val_header* header) {
 
 // TODO: optimize
 static alloc_atom* mkt_gc_atom_find_data_by_addr(size_t addr) {
-    alloc_atom* atom = objs->aa_next;
+    alloc_atom* atom = objs;
     while (atom) {
         if (addr == (size_t)&atom->aa_data) return atom;
         atom = atom->aa_next;
@@ -72,8 +87,9 @@ static void mkt_gc_scan_stack(char* stack_bottom, char* stack_top) {
     CHECK((void*)stack_top, !=, NULL, "%p");
     CHECK((void*)stack_bottom, <=, (void*)stack_top, "%p");
 
-    log_debug("gc_round=%zu size=%zu bottom=%p top=%p", gc_round,
-              stack_top - stack_bottom, (void*)stack_bottom, (void*)stack_top);
+    log_debug("gc_round=%zu gc_allocated_bytes=%zu size=%zu bottom=%p top=%p",
+              gc_round, gc_allocated_bytes, stack_top - stack_bottom,
+              (void*)stack_bottom, (void*)stack_top);
 
     while (stack_bottom < stack_top - sizeof(size_t)) {
         size_t addr = *(size_t*)stack_bottom;
@@ -83,9 +99,11 @@ static void mkt_gc_scan_stack(char* stack_bottom, char* stack_top) {
             continue;
         }
         runtime_val_header* header = &atom->aa_header;
-        log_debug("gc_round=%zu header: size=%llu color=%u tag=%u ptr=%p",
-                  gc_round, header->rv_size, header->rv_color, header->rv_tag,
-                  (void*)addr);
+        log_debug(
+            "gc_round=%zu gc_allocated_bytes=%zu header: size=%llu color=%u "
+            "tag=%u ptr=%p",
+            gc_round, gc_allocated_bytes, header->rv_size, header->rv_color,
+            header->rv_tag, (void*)addr);
 
         mkt_gc_obj_mark(header);
 
@@ -105,35 +123,40 @@ static void mkt_gc_trace_refs() {
 }
 
 static void mkt_gc_sweep() {
-    CHECK((void*)objs, !=, NULL, "%p");
+    alloc_atom** atom = &objs;
 
-    alloc_atom* atom = objs->aa_next;
-    alloc_atom* previous = objs;
-
-    while (atom) {
-        log_debug("gc_round=%zu header: size=%llu color=%u tag=%u ptr=%p",
-                  gc_round, atom->aa_header.rv_size, atom->aa_header.rv_color,
-                  atom->aa_header.rv_tag, (void*)atom);
-
-        if (atom->aa_header.rv_tag & RV_TAG_MARKED) {  // Skip
+    while (*atom) {
+        if ((*atom)->aa_header.rv_tag & RV_TAG_MARKED) {  // Skip
             // Reset the marked bit
-            atom->aa_header.rv_tag = atom->aa_header.rv_tag & ~RV_TAG_MARKED;
-            previous = atom;
-            atom = atom->aa_next;
+            (*atom)->aa_header.rv_tag =
+                (*atom)->aa_header.rv_tag & ~RV_TAG_MARKED;
+            atom = &(*atom)->aa_next;
         } else {  // Remove
-            previous->aa_next = atom->aa_next;
-            alloc_atom* to_free = atom;
-            atom = atom->aa_next;
+            alloc_atom* to_free = *atom;
 
             log_debug(
-                "Free: gc_round=%zu header: size=%llu color=%u tag=%u ptr=%p",
-                gc_round, to_free->aa_header.rv_size,
+                "Free: gc_round=%zu gc_allocated_bytes=%zu header: size=%llu "
+                "color=%u tag=%u ptr=%p",
+                gc_round, gc_allocated_bytes, to_free->aa_header.rv_size,
                 to_free->aa_header.rv_color, to_free->aa_header.rv_tag,
                 (void*)to_free);
 
-            gc_allocated_bytes -=
-                sizeof(alloc_atom) + to_free->aa_header.rv_size;
-            free(to_free);
+            const size_t bytes = sizeof(runtime_val_header) + sizeof(size_t) +
+                                 to_free->aa_header.rv_size;
+            CHECK(gc_allocated_bytes, >=, (size_t)bytes, "%zu");
+            gc_allocated_bytes -= bytes;
+
+            // No actual freeing to be able to re-use the memory, just add the
+            // atom to the free list
+            if (objs_free) {
+                to_free->aa_next = objs_free->aa_next;
+                objs_free->aa_next = to_free;
+            } else
+                objs_free = to_free;
+
+            CHECK((void*)objs_free, !=, NULL, "%p");
+
+            *atom = (*atom)->aa_next;
         }
     }
 }
@@ -150,8 +173,6 @@ static void mkt_gc(char* stack_bottom, char* stack_top) {
     mkt_gc_scan_stack(stack_bottom, stack_top);
     mkt_gc_trace_refs();
     mkt_gc_sweep();
-    log_debug("stats after: round=%zu gc_allocated_bytes=%zu", gc_round,
-              gc_allocated_bytes);
 }
 
 void* mkt_string_make(size_t size, char* stack_bottom, char* stack_top) {
@@ -166,6 +187,9 @@ void* mkt_string_make(size_t size, char* stack_bottom, char* stack_top) {
     atom->aa_header =
         (runtime_val_header){.rv_size = size, .rv_tag = RV_TAG_STRING};
 
+    log_debug(
+        "stats after: round=%zu string_make_size=%zu gc_allocated_bytes=%zu",
+        gc_round, size, gc_allocated_bytes);
     return &atom->aa_data;
 }
 
