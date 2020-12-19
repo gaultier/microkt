@@ -111,19 +111,23 @@ static res_t run(const char* file_name0) {
 
     // ld
     {
+        const char asan_opts[] =
+            " "
+#if WITH_ASAN == 1
+            "-lclang_rt.asan_osx_dynamic -L " ASAN_DIR " -rpath " ASAN_DIR " "
+#endif
+            ;
+        const char link_opts[] =
+            " "
+#ifdef __APPLE__
+            " -lSystem "
+#endif
+            ;
+
         memset(argv0, 0, sizeof(argv0));
         snprintf(argv0, sizeof(argv0),
-                 LD
-                 " %s.o stdlib.o -o %s.exe -e _start "
-#if WITH_ASAN == 1
-                 "-lclang_rt.asan_osx_dynamic -L " ASAN_DIR " -rpath " ASAN_DIR
-                 " "
-#endif
-#ifdef __APPLE__
-                 " -lSystem "
-#endif
-                 ,
-                 base_file_name0, base_file_name0);
+                 LD " %s.o stdlib.o -o %s.exe -e _start %s %s", base_file_name0,
+                 base_file_name0, asan_opts, link_opts);
         log_debug("%s", argv0);
 
         fflush(stdout);
