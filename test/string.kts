@@ -12,6 +12,7 @@ lazy
 // expect: lazy 
 // expect:   dog
 
+println("Luke I am your fathe" + "r") // expect: Luke I am your father
 
 val a: String = "May the "
 val b: String = "Force be with you"
