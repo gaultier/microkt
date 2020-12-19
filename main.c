@@ -117,6 +117,7 @@ static res_t run(const char* file_name0) {
             "-lclang_rt.asan_osx_dynamic -L " ASAN_DIR " -rpath " ASAN_DIR " "
 #endif
             ;
+
         const char link_opts[] =
             " "
 #ifdef __APPLE__
