@@ -42,6 +42,7 @@ void atom_cons(alloc_atom* item, alloc_atom** head) {
     CHECK((void*)*head, !=, NULL, "%p");
 }
 
+// TODO: reuse atoms from the free list
 static alloc_atom* mkt_alloc_atom_make(size_t size) {
     const size_t bytes =
         sizeof(runtime_val_header) + sizeof(alloc_atom*) + size;
