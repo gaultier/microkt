@@ -28,34 +28,34 @@ typedef struct alloc_atom alloc_atom;
 static alloc_atom* objs = NULL;       // In use
 static alloc_atom* objs_free = NULL;  // Free list, re-usable
 
+void atom_cons(alloc_atom* item, alloc_atom** head) {
+    CHECK((void*)item, !=, NULL, "%p");
+    CHECK((void*)head, !=, NULL, "%p");
+    CHECK((void*)item, !=, (void*)head, "%p");  // Prevent cycles
+
+    if (head) {
+        item->aa_next = *head;
+        *head = item;
+    } else {
+        *head = item;
+    }
+    CHECK((void*)*head, !=, NULL, "%p");
+}
+
 static alloc_atom* mkt_alloc_atom_make(size_t size) {
     const size_t bytes =
         sizeof(runtime_val_header) + sizeof(alloc_atom*) + size;
     alloc_atom* atom = calloc(1, bytes);
     CHECK((void*)atom, !=, NULL, "%p");
 
-    // Insert at the start
-    if (objs) {
-        atom->aa_next = objs->aa_next;
-        objs->aa_next = atom;
-    } else
-        objs = atom;
-
-    CHECK((void*)objs, !=, NULL, "%p");
+    atom_cons(atom, &objs);
 
     gc_allocated_bytes += bytes;
 
     return atom;
 }
 
-void mkt_init() {
-    // Dummy unused atom to avoid dealing with NULL
-    // Not managed by the GC and alive for the whole program duration
-    /* objs_free = objs = calloc(1, sizeof(alloc_atom)); */
-
-    /* CHECK((void*)objs, !=, NULL, "%p"); */
-    /* CHECK((void*)objs_free, !=, NULL, "%p"); */
-}
+void mkt_init() {}
 
 static void mkt_gc_obj_mark(runtime_val_header* header) {
     CHECK((void*)header, !=, NULL, "%p");
@@ -124,42 +124,41 @@ static void mkt_gc_trace_refs() {
 }
 
 static void mkt_gc_sweep() {
-    alloc_atom** atom = &objs;
+    alloc_atom* atom = objs;
+    alloc_atom* previous = NULL;
 
-    while (*atom) {
-        if ((*atom)->aa_header.rv_tag & RV_TAG_MARKED) {  // Skip
+    while (atom) {
+        if (atom->aa_header.rv_tag & RV_TAG_MARKED) {  // Skip
             // Reset the marked bit
-            (*atom)->aa_header.rv_tag =
-                (*atom)->aa_header.rv_tag & ~RV_TAG_MARKED;
-            atom = &(*atom)->aa_next;
-        } else {  // Remove
-            alloc_atom* to_free = *atom;
-
-            log_debug(
-                "Free: gc_round=%zu gc_allocated_bytes=%zu header: size=%llu "
-                "color=%u tag=%u ptr=%p",
-                gc_round, gc_allocated_bytes, to_free->aa_header.rv_size,
-                to_free->aa_header.rv_color, to_free->aa_header.rv_tag,
-                (void*)to_free);
-
-            const size_t bytes = sizeof(runtime_val_header) +
-                                 sizeof(alloc_atom*) +
-                                 to_free->aa_header.rv_size;
-            CHECK(gc_allocated_bytes, >=, (size_t)bytes, "%zu");
-            gc_allocated_bytes -= bytes;
-
-            // No actual freeing to be able to re-use the memory, just add the
-            // atom to the free list
-            if (objs_free) {
-                to_free->aa_next = objs_free->aa_next;
-                objs_free->aa_next = to_free;
-            } else
-                objs_free = to_free;
-
-            CHECK((void*)objs_free, !=, NULL, "%p");
-
-            *atom = (*atom)->aa_next;
+            atom->aa_header.rv_tag &= ~RV_TAG_MARKED;
+            previous = atom;
+            atom = atom->aa_next;
+            continue;
         }
+
+        // Remove
+
+        log_debug(
+            "Free: gc_round=%zu gc_allocated_bytes=%zu header: size=%llu "
+            "color=%u tag=%u ptr=%p",
+            gc_round, gc_allocated_bytes, atom->aa_header.rv_size,
+            atom->aa_header.rv_color, atom->aa_header.rv_tag, (void*)atom);
+
+        const size_t bytes = sizeof(runtime_val_header) + sizeof(alloc_atom*) +
+                             atom->aa_header.rv_size;
+        CHECK(gc_allocated_bytes, >=, (size_t)bytes, "%zu");
+        gc_allocated_bytes -= bytes;
+
+        alloc_atom* const to_free = atom;
+        atom = atom->aa_next;
+        if (previous)
+            previous->aa_next = atom;
+        else
+            objs = atom;
+
+        // No actual freeing to be able to re-use the memory, just add the
+        // atom to the free list
+        atom_cons(to_free, &objs_free);
     }
 }
 
