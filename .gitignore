@@ -7,9 +7,6 @@ tests/*
 META-INF
 **/.class
 **/.jar
-**/*.actual
-**/*.expected
-**/*.diff
 **/*.o
 **/*.asm
 **/*.exe

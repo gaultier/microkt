@@ -21,9 +21,6 @@ TESTS_SRC := $(wildcard tests/*.kts)
 TESTS_O := $(TESTS_SRC:.kts=.o)
 TESTS_ASM := $(TESTS_SRC:.kts=.asm)
 TESTS_EXE := $(TESTS_SRC:.kts=.exe)
-TESTS_ACTUAL := $(TESTS_SRC:.kts=.actual)
-TESTS_EXPECTED := $(TESTS_SRC:.kts=.expected)
-TESTS_DIFF := $(TESTS_SRC:.kts=.diff)
 
 .DEFAULT:
 mktc: $(SRC) $(HEADERS) stdlib.o
@@ -38,21 +35,14 @@ stdlib.o: stdlib.c
 test: test.c
 	$(CC) $(CFLAGS) $< -o test
 
-.SUFFIXES: .kts .exe .actual .expected
+.SUFFIXES: .kts .exe
 
 .kts.exe: mktc $(TESTS_SRC)
 	./mktc $<
 
-.exe.actual: mktc $(TESTS_SRC) $(TESTS_EXE) $(TESTS_ACTUAL)
-	./$< 2>&1 | grep -v -F '[debug]' > $@
-
-.kts.expected: mktc $(TESTS_SRC) $(TESTS_EXPECTED)
-	@awk -F '// expect: ' '/expect: / {print $$2} ' $< > $@
-
-check: mktc $(TESTS_SRC) $(TESTS_ACTUAL) $(TESTS_EXPECTED) test.sh test
+check: mktc $(TESTS_SRC) $(TESTS_EXE) test
 	@./test
-	@./test.sh
 
 clean:
-	rm -f mktc $(TESTS_EXE) $(TESTS_ASM) $(TESTS_O) $(TESTS_ACTUAL) $(TESTS_EXPECTED) $(TESTS_DIFF) stdlib.o stdlib.asm
+	rm -f mktc $(TESTS_EXE) $(TESTS_ASM) $(TESTS_O) stdlib.o stdlib.asm
 	rm -rf ./*.dSYM

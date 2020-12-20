@@ -48,6 +48,8 @@ bool test_run(const char* source_file_name) {
     const char* src = source_file_content;
     while (src < source_file_content + len - needle_len) {
         src = strchr(src, '/');
+        if (!src) break;
+
         if (memcmp(src, needle, needle_len) == 0) {
             src += needle_len;
             char* end = strchr(src, '\n');
@@ -124,11 +126,28 @@ int main() {
         "tests/negation.kts",    "tests/string.kts",
         "tests/var.kts",         "tests/while.kts",
     };
+    const char* err_tests[] = {
+        "err/err_fn_missing_return.kts",
+        "err/err_multiplication_type.kts",
+        "err/err_non_matching_types.kts",
+        "err/err_unexpected_token.kts",
+        "err/err_unexpected_token_on_first_line.kts",
+        "err/error_empty.kts",
+        "err/error_unexpected_token.kts",
+        "err/fn_mismatched_types.kts",
+        "err/invalid_token.kts",
+        "err/missing_param_println.kts",
+        "err/val_assign.kts",
+    };
 
     bool failed = false;
     for (size_t i = 0; i < sizeof(simple_tests) / sizeof(simple_tests[0]);
          i++) {
-        failed = !test_run(simple_tests[i]);
+        if (!test_run(simple_tests[i])) failed = true;
+    }
+
+    for (size_t i = 0; i < sizeof(err_tests) / sizeof(err_tests[0]); i++) {
+        if (test_run(err_tests[i])) failed = true;
     }
     return failed;
 }
