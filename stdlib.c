@@ -27,8 +27,7 @@ struct alloc_atom {
 };
 
 typedef struct alloc_atom alloc_atom;
-static alloc_atom* objs = NULL;       // In use
-static alloc_atom* objs_free = NULL;  // Free list, re-usable
+static alloc_atom* objs = NULL;  // In use
 
 void atom_cons(alloc_atom* item, alloc_atom** head) {
     CHECK((void*)item, !=, NULL, "%p");
@@ -44,50 +43,10 @@ void atom_cons(alloc_atom* item, alloc_atom** head) {
     CHECK((void*)*head, !=, NULL, "%p");
 }
 
-// TODO: keep free list sorted & use bisection to find free atom?
-static alloc_atom* mkt_alloc_find_free(size_t size) {
-    alloc_atom* atom = objs_free;
-    alloc_atom* previous = NULL;
-
-    while (atom) {
-        if (atom->aa_header.rv_size >= size) {
-            if (previous)
-                previous->aa_next = atom->aa_next;
-            else
-                objs_free = atom->aa_next;
-
-            atom->aa_next = NULL;
-
-            log_debug(
-                "reuse: gc_round=%zu gc_allocated_bytes=%zu gc_free_bytes=%zu "
-                "ptr=%p "
-                "old_size=%zu new_size=%zu",
-                gc_round, gc_allocated_bytes, gc_free_bytes,
-                (void*)&atom->aa_data, atom->aa_header.rv_size, size);
-
-            gc_free_bytes -= atom->aa_header.rv_size;
-            atom->aa_header.rv_size = size;
-            return atom;
-        }
-
-        if (previous)
-            previous = atom;
-        else
-            objs_free = atom;
-
-        atom = atom->aa_next;
-    }
-    return NULL;
-}
-
-// TODO: reuse atoms from the free list
 static alloc_atom* mkt_alloc_atom_make(size_t size) {
-    alloc_atom* atom = mkt_alloc_find_free(size);
-    if (atom) return atom;
-
     const size_t bytes =
         sizeof(runtime_val_header) + sizeof(alloc_atom*) + size;
-    atom = calloc(1, bytes);
+    alloc_atom* atom = calloc(1, bytes);
     CHECK((void*)atom, !=, NULL, "%p");
 
     atom_cons(atom, &objs);
@@ -198,12 +157,8 @@ static void mkt_gc_sweep() {
         else
             objs = atom;
 
-        // No actual freeing to be able to re-use the memory, just add the
-        // atom to the free list
-        memset_s(&to_free->aa_data, to_free->aa_header.rv_size, 0,
-                 to_free->aa_header.rv_size);
-        atom_cons(to_free, &objs_free);
         gc_free_bytes += to_free->aa_header.rv_size;
+        free(to_free);
     }
 }
 
