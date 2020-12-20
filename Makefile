@@ -17,7 +17,7 @@ CFLAGS_DEBUG_1 = -O0
 CFLAGS_DEBUG_0 = -O2
 CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_DEBUG_$(DEBUG))
 
-TESTS_SRC := $(wildcard test/*.kts)
+TESTS_SRC := $(wildcard tests/*.kts)
 TESTS_O := $(TESTS_SRC:.kts=.o)
 TESTS_ASM := $(TESTS_SRC:.kts=.asm)
 TESTS_EXE := $(TESTS_SRC:.kts=.exe)
@@ -49,7 +49,8 @@ test: test.c
 .kts.expected: mktc $(TESTS_SRC) $(TESTS_EXPECTED)
 	@awk -F '// expect: ' '/expect: / {print $$2} ' $< > $@
 
-check: mktc $(TESTS_SRC) $(TESTS_ACTUAL) $(TESTS_EXPECTED) test.sh
+check: mktc $(TESTS_SRC) $(TESTS_ACTUAL) $(TESTS_EXPECTED) test.sh test
+	@./test
 	@./test.sh
 
 clean:

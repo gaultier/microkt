@@ -6,21 +6,6 @@ RESET="\x1b[0m"
 
 ret=0
 
-for f in tests/*.actual; do
-    EXPECTED=$(echo "$f" | sed 's/actual$/expected/')
-    DIFF=$(echo "$f" | sed 's/actual$/diff/')
-    KTS=$(echo "$f" | sed 's/actual$/kts/')
-
-    diff "$EXPECTED" "$f" > "$DIFF"
-    exit_code=$?
-    if [ $exit_code = 0 ]; then
-        echo "$GREEN" "✔ " "$KTS" "$RESET"
-    else 
-        echo "$RED" "✘ " "$KTS" "$RESET"
-        ret=1
-    fi
-done
-
 # Files with errors
 for f in err/*.kts; do
     ./mktc "$f"
