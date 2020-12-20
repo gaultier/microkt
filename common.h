@@ -92,6 +92,7 @@ static const char res_to_str[][100] = {
 static const char color_red[] = "\x1b[31m";
 static const char color_reset[] = "\x1b[0m";
 static const char color_gray[] = "\x1b[37m";
+static const char color_green[] = "\x1b[32m";
 
 static bool is_space(char c) {
     return c == ' ' || c == '\n' || c == '\t' || c == '\r';
