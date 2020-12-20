@@ -44,6 +44,7 @@ void atom_cons(alloc_atom* item, alloc_atom** head) {
     CHECK((void*)*head, !=, NULL, "%p");
 }
 
+// TODO: keep free list sorted & use bisection to find free atom?
 static alloc_atom* mkt_alloc_find_free(size_t size) {
     alloc_atom* atom = objs_free;
     alloc_atom* previous = NULL;
