@@ -1,4 +1,4 @@
-.PHONY: clean test
+.PHONY: clean check
 
 SRC = main.c
 HEADERS := $(wildcard *.h)
@@ -35,6 +35,9 @@ CFLAGS_STDLIB_ASAN_1 = -shared-libasan
 stdlib.o: stdlib.c
 	$(CC) $(CFLAGS) -DWITH_LOGS=$(WITH_LOGS) $(CFLAGS_ASAN_$(WITH_ASAN)) $< -c
 
+test: test.c
+	$(CC) $(CFLAGS) $< -o test
+
 .SUFFIXES: .kts .exe .actual .expected
 
 .kts.exe: mktc $(TESTS_SRC)
@@ -46,7 +49,7 @@ stdlib.o: stdlib.c
 .kts.expected: mktc $(TESTS_SRC) $(TESTS_EXPECTED)
 	@awk -F '// expect: ' '/expect: / {print $$2} ' $< > $@
 
-test: mktc $(TESTS_SRC) $(TESTS_ACTUAL) $(TESTS_EXPECTED) test.sh
+check: mktc $(TESTS_SRC) $(TESTS_ACTUAL) $(TESTS_EXPECTED) test.sh
 	@./test.sh
 
 clean:

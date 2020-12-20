@@ -6,7 +6,7 @@ RESET="\x1b[0m"
 
 ret=0
 
-for f in test/*.actual; do
+for f in tests/*.actual; do
     EXPECTED=$(echo "$f" | sed 's/actual$/expected/')
     DIFF=$(echo "$f" | sed 's/actual$/diff/')
     KTS=$(echo "$f" | sed 's/actual$/kts/')
