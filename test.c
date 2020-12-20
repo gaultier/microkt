@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/param.h>
 #include <unistd.h>
 
 #include "buf.h"
@@ -9,8 +10,21 @@
 
 bool is_tty = true;
 
-bool test() {
-    const char* source_file_name = "./tests/string.kts";
+bool test_run(const char* source_file_name) {
+    const size_t source_file_name_len = strlen(source_file_name);
+    CHECK(source_file_name_len, >, 1L + 3, "%zu");
+    CHECK(source_file_name_len, <, (size_t)MAXPATHLEN, "%zu");
+    CHECK(source_file_name[source_file_name_len - 1], ==, 's', "%c");
+    CHECK(source_file_name[source_file_name_len - 2], ==, 't', "%c");
+    CHECK(source_file_name[source_file_name_len - 3], ==, 'k', "%c");
+    CHECK(source_file_name[source_file_name_len - 4], ==, '.', "%c");
+
+    char argv[MAXPATHLEN] = "";
+    memcpy(argv, source_file_name, source_file_name_len);
+    argv[source_file_name_len - 1] = 'e';
+    argv[source_file_name_len - 2] = 'x';
+    argv[source_file_name_len - 3] = 'e';
+
     FILE* source_file = fopen(source_file_name, "r");
     if (!source_file) {
         fprintf(stderr, "Error reading file `%s`: err=%d errno=%s\n",
@@ -44,8 +58,8 @@ bool test() {
         } else
             src += 1;
     }
+    const size_t expects_count = buf_size(expects);
 
-    const char argv[] = "./tests/string.exe";
     FILE* exe_process = popen(argv, "r");
     if (exe_process == NULL) {
         fprintf(stderr, "Error launching `%s`: errno=%d err=%s\n", argv, errno,
@@ -74,13 +88,14 @@ bool test() {
         if (!end) end = output + read_bytes;
         *end = '\0';
 
-        if (strcmp(expects[line], out) != 0) {
+        const char* expect_line = (line >= expects_count) ? "" : expects[line];
+        if (strcmp(expect_line, out) != 0) {
             fprintf(stderr,
                     "%s"
                     "✘ %s #%lu: [expected] %s%s%s\n"
                     "✘ %s #%lu: [actual  ] %s%s\n",
                     is_tty ? color_red : "", source_file_name, line + 1,
-                    is_tty ? color_reset : "", expects[line],
+                    is_tty ? color_reset : "", expect_line,
                     is_tty ? color_red : "", source_file_name, line + 1,
                     is_tty ? color_reset : "", out);
             differed = true;
@@ -98,6 +113,23 @@ bool test() {
 
 int main() {
     is_tty = isatty(2);
-    if (!test()) return 1;
+
+    const char* simple_tests[] = {
+        "tests/assign.kts",      "tests/bool.kts",
+        "tests/char.kts",        "tests/comparison.kts",
+        "tests/fibo_iter.kts",   "tests/fibonacci_rec.kts",
+        "tests/fn.kts",          "tests/grouping.kts",
+        "tests/hello_world.kts", "tests/if.kts",
+        "tests/integers.kts",    "tests/math_integers.kts",
+        "tests/negation.kts",    "tests/string.kts",
+        "tests/var.kts",         "tests/while.kts",
+    };
+
+    bool failed = false;
+    for (size_t i = 0; i < sizeof(simple_tests) / sizeof(simple_tests[0]);
+         i++) {
+        failed = !test_run(simple_tests[i]);
+    }
+    return failed;
 }
 
