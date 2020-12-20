@@ -214,7 +214,7 @@ static void mkt_gc(char* stack_bottom, char* stack_top) {
 
     gc_round += 1;
 
-    log_debug("stats before: round=%zu gc_allocated_bytes=%zu", gc_round,
+    log_debug("stats before: gc_round=%zu gc_allocated_bytes=%zu", gc_round,
               gc_allocated_bytes);
     mkt_gc_scan_stack(stack_bottom, stack_top);
     mkt_gc_trace_refs();
@@ -234,7 +234,7 @@ void* mkt_string_make(size_t size, char* stack_bottom, char* stack_top) {
         (runtime_val_header){.rv_size = size, .rv_tag = RV_TAG_STRING};
 
     log_debug(
-        "stats after: round=%zu string_make_size=%zu gc_allocated_bytes=%zu",
+        "stats after: gc_round=%zu string_make_size=%zu gc_allocated_bytes=%zu",
         gc_round, size, gc_allocated_bytes);
     return &atom->aa_data;
 }
