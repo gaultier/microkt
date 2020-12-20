@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#define __STDC_WANT_LIB_EXT1__ 1
 #include <string.h>
 #include <unistd.h>
 
@@ -9,11 +10,12 @@
 
 static size_t gc_round = 0;
 static size_t gc_allocated_bytes = 0;
+static size_t gc_free_bytes = 0;
 static const unsigned char RV_TAG_MARKED = 0x01;
 static const unsigned char RV_TAG_STRING = 0x02;
 
 typedef struct {
-    unsigned long long int rv_size : 54;
+    size_t rv_size : 54;
     unsigned int rv_color : 2;
     unsigned int rv_tag : 8;
 } runtime_val_header;
@@ -42,11 +44,49 @@ void atom_cons(alloc_atom* item, alloc_atom** head) {
     CHECK((void*)*head, !=, NULL, "%p");
 }
 
+static alloc_atom* mkt_alloc_find_free(size_t size) {
+    alloc_atom* atom = objs_free;
+    alloc_atom* previous = NULL;
+
+    while (atom) {
+        if (atom->aa_header.rv_size >= size) {
+            if (previous)
+                previous->aa_next = atom->aa_next;
+            else
+                objs_free = atom->aa_next;
+
+            atom->aa_next = NULL;
+
+            log_debug(
+                "reuse: gc_round=%zu gc_allocated_bytes=%zu gc_free_bytes=%zu "
+                "ptr=%p "
+                "old_size=%zu new_size=%zu",
+                gc_round, gc_allocated_bytes, gc_free_bytes,
+                (void*)&atom->aa_data, atom->aa_header.rv_size, size);
+
+            gc_free_bytes -= atom->aa_header.rv_size;
+            atom->aa_header.rv_size = size;
+            return atom;
+        }
+
+        if (previous)
+            previous = atom;
+        else
+            objs_free = atom;
+
+        atom = atom->aa_next;
+    }
+    return NULL;
+}
+
 // TODO: reuse atoms from the free list
 static alloc_atom* mkt_alloc_atom_make(size_t size) {
+    alloc_atom* atom = mkt_alloc_find_free(size);
+    if (atom) return atom;
+
     const size_t bytes =
         sizeof(runtime_val_header) + sizeof(alloc_atom*) + size;
-    alloc_atom* atom = calloc(1, bytes);
+    atom = calloc(1, bytes);
     CHECK((void*)atom, !=, NULL, "%p");
 
     atom_cons(atom, &objs);
@@ -64,7 +104,7 @@ static void mkt_gc_obj_mark(runtime_val_header* header) {
     if (header->rv_tag & RV_TAG_MARKED) return;  // Prevent cycles
     header->rv_tag |= RV_TAG_MARKED;
     log_debug(
-        "gc_round=%zu gc_allocated_bytes=%zu header: size=%llu color=%u tag=%u "
+        "gc_round=%zu gc_allocated_bytes=%zu header: size=%zu color=%u tag=%u "
         "ptr=%p",
         gc_round, gc_allocated_bytes, header->rv_size, header->rv_color,
         header->rv_tag, (void*)(header + 1));
@@ -102,7 +142,7 @@ static void mkt_gc_scan_stack(char* stack_bottom, char* stack_top) {
         }
         runtime_val_header* header = &atom->aa_header;
         log_debug(
-            "gc_round=%zu gc_allocated_bytes=%zu header: size=%llu color=%u "
+            "gc_round=%zu gc_allocated_bytes=%zu header: size=%zu color=%u "
             "tag=%u ptr=%p",
             gc_round, gc_allocated_bytes, header->rv_size, header->rv_color,
             header->rv_tag, (void*)addr);
@@ -140,7 +180,7 @@ static void mkt_gc_sweep() {
         // Remove
 
         log_debug(
-            "Free: gc_round=%zu gc_allocated_bytes=%zu header: size=%llu "
+            "Free: gc_round=%zu gc_allocated_bytes=%zu header: size=%zu "
             "color=%u tag=%u ptr=%p",
             gc_round, gc_allocated_bytes, atom->aa_header.rv_size,
             atom->aa_header.rv_color, atom->aa_header.rv_tag, (void*)atom);
@@ -159,7 +199,10 @@ static void mkt_gc_sweep() {
 
         // No actual freeing to be able to re-use the memory, just add the
         // atom to the free list
+        memset_s(&to_free->aa_data, to_free->aa_header.rv_size, 0,
+                 to_free->aa_header.rv_size);
         atom_cons(to_free, &objs_free);
+        gc_free_bytes += to_free->aa_header.rv_size;
     }
 }
 
