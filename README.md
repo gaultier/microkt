@@ -4,7 +4,7 @@ A work-in-progress compiler for a subset of the Kotlin language, with zero depen
 
 For now it only supports x86_64 (macOS, Linux should also work) although it would not be hard to add more platforms.
 
-Have a look at the `test` directory to get a feeling of what's supported. Here's a sample (see the `Quickstart` section to see how to run it):
+Have a look at the `tests` directory to get a feeling of what's supported. Here's a sample (see the `Quickstart` section to see how to run it):
 
 ```kotlin
 // Compute the 35th fibonacci number iteratively
@@ -37,13 +37,13 @@ println(fibonacci(35)) // expect: 9227465
 make
 
 # Run the tests
-make test
+make check
 
 # Compile a source file (requires `as` and `ld` in the PATH)
-./mktc test/hello_world.kts
+./mktc tests/hello_world.kts
 
 # And then run the executable
-./test/hello_world.exe
+./tests/hello_world.exe
 Hello, world!
 
 # Also works in Docker
