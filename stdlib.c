@@ -81,7 +81,8 @@ static alloc_atom* mkt_gc_atom_find_data_by_addr(size_t addr) {
     return NULL;
 }
 
-static void mkt_gc_scan_stack(char* stack_bottom, char* stack_top) {
+static void mkt_gc_scan_stack(const uintptr_t* stack_bottom,
+                              const uintptr_t* stack_top) {
     CHECK((void*)stack_bottom, !=, NULL, "%p");
     CHECK((void*)stack_top, !=, NULL, "%p");
     CHECK((void*)stack_bottom, <=, (void*)stack_top, "%p");
@@ -90,11 +91,13 @@ static void mkt_gc_scan_stack(char* stack_bottom, char* stack_top) {
               gc_round, gc_allocated_bytes, stack_top - stack_bottom,
               (void*)stack_bottom, (void*)stack_top);
 
-    while (stack_bottom < stack_top - sizeof(void*)) {
-        size_t addr = *(size_t*)stack_bottom;
+    const char* s_bottom = (char*)stack_bottom;
+    const char* s_top = (char*)stack_top;
+    while (s_bottom < s_top - sizeof(uintptr_t)) {
+        size_t addr = *(uintptr_t*)s_bottom;
         alloc_atom* atom = mkt_gc_atom_find_data_by_addr(addr);
         if (atom == NULL) {
-            stack_bottom += 1;
+            s_bottom += 1;
             continue;
         }
         runtime_val_header* header = &atom->aa_header;
@@ -106,7 +109,7 @@ static void mkt_gc_scan_stack(char* stack_bottom, char* stack_top) {
 
         mkt_gc_obj_mark(header);
 
-        stack_bottom += sizeof(void*);
+        s_bottom += sizeof(uintptr_t);
     }
 }
 
@@ -159,7 +162,7 @@ static void mkt_gc_sweep() {
     }
 }
 
-static void mkt_gc(char* stack_bottom, char* stack_top) {
+static void mkt_gc(const uintptr_t* stack_bottom, const uintptr_t* stack_top) {
     CHECK((void*)stack_bottom, !=, NULL, "%p");
     CHECK((void*)stack_top, !=, NULL, "%p");
     CHECK((void*)stack_bottom, <=, (void*)stack_top, "%p");
@@ -173,7 +176,8 @@ static void mkt_gc(char* stack_bottom, char* stack_top) {
     mkt_gc_sweep();
 }
 
-void* mkt_string_make(size_t size, char* stack_bottom, char* stack_top) {
+void* mkt_string_make(size_t size, const uintptr_t* stack_bottom,
+                      const uintptr_t* stack_top) {
     CHECK((void*)stack_bottom, !=, NULL, "%p");
     CHECK((void*)stack_top, !=, NULL, "%p");
     CHECK((void*)stack_bottom, <=, (void*)stack_top, "%p");
@@ -238,7 +242,8 @@ void mkt_println_string(char* s, const runtime_val_header* s_header) {
 
 char* mkt_string_concat(const char* a, const runtime_val_header* a_header,
                         const char* b, const runtime_val_header* b_header,
-                        char* stack_bottom, char* stack_top) {
+                        const uintptr_t* stack_bottom,
+                        const uintptr_t* stack_top) {
     CHECK((void*)a, !=, NULL, "%p");
     CHECK((void*)a_header, !=, NULL, "%p");
     CHECK((void*)b, !=, NULL, "%p");
