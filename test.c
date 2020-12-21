@@ -9,8 +9,43 @@
 #include "common.h"
 
 bool is_tty = true;
+#define LENGTH (1L << 11)
 
-bool test_run(const char* source_file_name) {
+static res_t proc_run(const char* exe_name, char output[LENGTH],
+                      size_t* read_bytes) {
+    CHECK((void*)exe_name, !=, NULL, "%p");
+    CHECK((void*)read_bytes, !=, NULL, "%p");
+
+    FILE* exe_process = popen(exe_name, "r");
+    if (exe_process == NULL) {
+        fprintf(stderr, "Error launching `%s`: errno=%d err=%s\n", exe_name,
+                errno, strerror(errno));
+        return RES_ERR;
+    }
+
+    *read_bytes = fread(output, 1, LENGTH, exe_process);
+    const int err = ferror(exe_process);
+    if (err && err != EINTR) {
+        fprintf(stderr, "Error reading output of `%s`: errno=%d err=%s\n",
+                exe_name, errno, strerror(errno));
+        return RES_ERR;
+    }
+    CHECK(*read_bytes, <=, LENGTH, "%zu");
+
+    if (pclose(exe_process) != 0) {
+        fprintf(stderr, "Error closing process %s: errno=%d error=%s\n",
+                exe_name, errno, strerror(errno));
+        return RES_ERR;
+    }
+    return RES_OK;
+}
+
+typedef struct {
+    size_t str_len;
+    const char* str_s;
+} str;
+
+static bool test_run(const char* source_file_name) {
     const size_t source_file_name_len = strlen(source_file_name);
     CHECK(source_file_name_len, >, 1L + 3, "%zu");
     CHECK(source_file_name_len, <, (size_t)MAXPATHLEN, "%zu");
@@ -31,20 +66,20 @@ bool test_run(const char* source_file_name) {
                 source_file_name, errno, strerror(errno));
         return false;
     }
-    char source_file_content[1 << 11];
-    size_t read_bytes =
-        fread(source_file_content, 1, sizeof(source_file_content), source_file);
+    char source_file_content[LENGTH];
+    size_t read_bytes = fread(source_file_content, 1, LENGTH, source_file);
     if (ferror(source_file)) {
         fprintf(stderr, "Error reading content of `%s`: errno=%d err=%s\n",
                 source_file_name, errno, strerror(errno));
         return false;
     }
-    CHECK(read_bytes, <=, sizeof(source_file_content), "%zu");
+    CHECK(read_bytes, <=, LENGTH, "%zu");
 
     const size_t len = read_bytes;
     const char needle[] = "// expect: ";
     const size_t needle_len = sizeof(needle) - 1;
-    const char** expects = NULL;
+    str* expects = NULL;
+    buf_grow(expects, 100);
     const char* src = source_file_content;
     while (src < source_file_content + len - needle_len) {
         src = strchr(src, '/');
@@ -54,35 +89,17 @@ bool test_run(const char* source_file_name) {
             src += needle_len;
             char* end = strchr(src, '\n');
             if (!end) end = source_file_content + read_bytes;
-            *end = '\0';
-            buf_push(expects, src);
+            CHECK((void*)src, <, (void*)end, "%p");
+
+            buf_push(expects, ((str){.str_s = src, .str_len = end - src}));
             src = end + 1;
         } else
             src += 1;
     }
     const size_t expects_count = buf_size(expects);
 
-    FILE* exe_process = popen(argv, "r");
-    if (exe_process == NULL) {
-        fprintf(stderr, "Error launching `%s`: errno=%d err=%s\n", argv, errno,
-                strerror(errno));
-        return false;
-    }
-
-    char output[1 << 11];
-    read_bytes = fread(output, 1, sizeof(output), exe_process);
-    if (ferror(exe_process)) {
-        fprintf(stderr, "Error reading output of `%s`: errno=%d err=%s\n", argv,
-                errno, strerror(errno));
-        return false;
-    }
-    CHECK(read_bytes, <=, sizeof(output), "%zu");
-
-    if (pclose(exe_process) != 0) {
-        fprintf(stderr, "Error closing process %s: errno=%d error=%s\n", argv,
-                errno, strerror(errno));
-        return false;
-    }
+    char output[LENGTH] = "";
+    if (proc_run(argv, output, &read_bytes) != RES_OK) return false;
 
     char* out = output;
     size_t line = 0;
@@ -90,18 +107,24 @@ bool test_run(const char* source_file_name) {
     while (out < output + read_bytes) {
         char* end = strchr(out, '\n');
         if (!end) end = output + read_bytes;
-        *end = '\0';
 
-        const char* expect_line = (line >= expects_count) ? "" : expects[line];
-        if (strcmp(expect_line, out) != 0) {
+        CHECK((void*)out, <, (void*)end, "%p");
+        const size_t out_len = end - out;
+        const str expect_line = (line >= expects_count)
+                                    ? ((str){.str_len = 0, .str_s = ""})
+                                    : expects[line];
+
+        if (expect_line.str_len != out_len ||
+            memcmp(expect_line.str_s, out, out_len) != 0) {
             fprintf(stderr,
                     "%s"
-                    "✘ %s #%lu: [expected] %s%s%s\n"
-                    "✘ %s #%lu: [actual  ] %s%s\n",
+                    "✘ %s #%lu: [expected]%s len=%zu str=%.*s%s\n"
+                    "✘ %s #%lu: [actual  ]%s len=%zu str=%.*s\n",
                     is_tty ? color_red : "", source_file_name, line + 1,
-                    is_tty ? color_reset : "", expect_line,
+                    is_tty ? color_reset : "", expect_line.str_len,
+                    (int)expect_line.str_len, expect_line.str_s,
                     is_tty ? color_red : "", source_file_name, line + 1,
-                    is_tty ? color_reset : "", out);
+                    is_tty ? color_reset : "", out_len, (int)out_len, out);
             differed = true;
         }
         out = end + 1;
