@@ -30,13 +30,14 @@ static res_t proc_run(const char* exe_name, char output[LENGTH],
 
     *read_bytes = fread(output, 1, LENGTH, exe_process);
     const int err = ferror(exe_process);
-    if (err && err != EINTR) {
+    if (err) {
         fprintf(stderr, "Error reading output of `%s`: errno=%d err=%s\n",
                 exe_name, errno, strerror(errno));
         return RES_ERR;
     }
     CHECK(*read_bytes, <=, LENGTH, "%zu");
 
+    fflush(exe_process);
     if (pclose(exe_process) != 0) {
         fprintf(stderr, "Error closing process %s: errno=%d error=%s\n",
                 exe_name, errno, strerror(errno));
@@ -94,7 +95,7 @@ static bool test_run(const char* source_file_name) {
                 source_file_name, errno, strerror(errno));
         return false;
     }
-    char source_file_content[LENGTH];
+    char source_file_content[LENGTH] = "";
     size_t read_bytes = fread(source_file_content, 1, LENGTH, source_file);
     if (ferror(source_file)) {
         fprintf(stderr, "Error reading content of `%s`: errno=%d err=%s\n",
