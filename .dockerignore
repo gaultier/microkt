@@ -1,5 +1,6 @@
 *
 !*.h
 !*.c
-!test/*.kts
+!tests/*.kts
+!err/*.kts
 !Makefile
