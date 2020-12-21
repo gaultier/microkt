@@ -1,7 +1,4 @@
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#define __STDC_WANT_LIB_EXT1__ 1
 #include <string.h>
 #include <unistd.h>
 
