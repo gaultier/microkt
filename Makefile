@@ -1,3 +1,4 @@
+.POSIX:
 .PHONY: clean check
 
 SRC = main.c
