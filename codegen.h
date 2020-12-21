@@ -180,7 +180,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             println("pop %%r15");
 
             for (int i = 0; i < source_len; i++)
-                println("movb $%d, +%d(%%rax) # string[%d]", source[i], i, i);
+                println("movb $%d, %d(%%rax) # string[%d]", source[i], i, i);
 
             return;
         }
