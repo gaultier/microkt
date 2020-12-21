@@ -185,27 +185,27 @@ int main() {
     is_tty = isatty(2);
 
     const char simple_tests[][MAXPATHLEN] = {
-        "tests/assign.kts",      "tests/bool.kts",
-        "tests/char.kts",        "tests/comparison.kts",
-        "tests/fibo_iter.kts",   "tests/fibonacci_rec.kts",
-        "tests/fn.kts",          "tests/grouping.kts",
-        "tests/hello_world.kts", "tests/if.kts",
-        "tests/integers.kts",    "tests/math_integers.kts",
-        "tests/negation.kts",    "tests/string.kts",
-        "tests/var.kts",         "tests/while.kts",
+        "./tests/assign.kts",      "./tests/bool.kts",
+        "./tests/char.kts",        "./tests/comparison.kts",
+        "./tests/fibo_iter.kts",   "./tests/fibonacci_rec.kts",
+        "./tests/fn.kts",          "./tests/grouping.kts",
+        "./tests/hello_world.kts", "./tests/if.kts",
+        "./tests/integers.kts",    "./tests/math_integers.kts",
+        "./tests/negation.kts",    "./tests/string.kts",
+        "./tests/var.kts",         "./tests/while.kts",
     };
     const char err_tests[][MAXPATHLEN] = {
-        "err/err_fn_missing_return.kts",
-        "err/err_multiplication_type.kts",
-        "err/err_non_matching_types.kts",
-        "err/err_unexpected_token.kts",
-        "err/err_unexpected_token_on_first_line.kts",
-        "err/error_empty.kts",
-        "err/error_unexpected_token.kts",
-        "err/fn_mismatched_types.kts",
-        "err/invalid_token.kts",
-        "err/missing_param_println.kts",
-        "err/val_assign.kts",
+        "./err/err_fn_missing_return.kts",
+        "./err/err_multiplication_type.kts",
+        "./err/err_non_matching_types.kts",
+        "./err/err_unexpected_token.kts",
+        "./err/err_unexpected_token_on_first_line.kts",
+        "./err/error_empty.kts",
+        "./err/error_unexpected_token.kts",
+        "./err/fn_mismatched_types.kts",
+        "./err/invalid_token.kts",
+        "./err/missing_param_println.kts",
+        "./err/val_assign.kts",
     };
 
     bool failed = false;
