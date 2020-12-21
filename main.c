@@ -152,6 +152,14 @@ static res_t run(const char* file_name0) {
     }
     log_debug("created executable `%s.exe`", base_file_name0);
 
+cleanup:
+    buf_free(parser.par_lexer.lex_locs);
+    buf_free(parser.par_lexer.lex_tok_pos_ranges);
+    buf_free(parser.par_lexer.lex_tokens);
+    buf_free(parser.par_nodes);
+    buf_free(parser.par_node_decls);
+    buf_free(parser.par_types);
+
     return RES_OK;
 }
 
