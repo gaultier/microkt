@@ -398,6 +398,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
                 log_debug("Type %s unimplemented", type_to_str[type]);
                 UNIMPLEMENTED();
             }
+            println("movq $0, %%rax");  // Return value 0
 
             return;
         }
@@ -640,7 +641,9 @@ static void emit(const parser_t* parser, FILE* asm_file) {
         ".cfi_def_cfa_register %%rbp\n");
 
     println("call %smkt_init", name_prefix);
+    println("movq $0, %%rax");  // Return value 0
     println("call %smain", name_prefix);
+    println("movq $0, %%rax");  // Return value 0
     println("popq %%rbp");
     println(".cfi_endproc");
     println("ret\n");
