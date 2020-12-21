@@ -225,14 +225,14 @@ void mkt_println_int(long long int n) {
     write(1, s + 23 - len, len);
 }
 
-void mkt_println_string(char* s) {
+void mkt_println_string(char* s, const runtime_val_header* s_header) {
     CHECK((void*)s, !=, NULL, "%p");
+    CHECK((void*)s_header, !=, NULL, "%p");
 
-    runtime_val_header header = *(runtime_val_header*)(s - 8);
-    CHECK(header.rv_tag & RV_TAG_STRING, !=, 0, "%u");
+    CHECK(s_header->rv_tag & RV_TAG_STRING, !=, 0, "%u");
 
     const char newline = '\n';
-    write(1, s, header.rv_size);
+    write(1, s, s_header->rv_size);
     write(1, &newline, 1);
 }
 

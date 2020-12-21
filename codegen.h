@@ -282,7 +282,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
                 println("mov %%rbp, %s", fn_args[5]);
                 println("call %smkt_string_concat", name_prefix);
                 println(
-                    "pop %%rbx");  // intended to not override the return value
+                    "pop %%rbx # intended to not override the return value");
                 println("pop %%rbx");
                 println("pop %%rcx");
                 println("pop %%rdx");
@@ -390,7 +390,9 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             else if (type == TYPE_BOOL)
                 println("call %smkt_println_bool", name_prefix);
             else if (type == TYPE_STRING) {
-                println("mov %%rax, %%rdi");
+                println("mov %%rax, %s", fn_args[0]);
+                println("mov %%rax, %s", fn_args[1]);
+                println("sub $8, %s", fn_args[1]);
                 println("call %smkt_println_string", name_prefix);
             } else {
                 log_debug("Type %s unimplemented", type_to_str[type]);
