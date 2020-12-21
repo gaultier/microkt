@@ -184,7 +184,7 @@ static res_t err_test_run(const char* source_file_name) {
 int main() {
     is_tty = isatty(2);
 
-    const char* simple_tests[] = {
+    const char simple_tests[][MAXPATHLEN] = {
         "tests/assign.kts",      "tests/bool.kts",
         "tests/char.kts",        "tests/comparison.kts",
         "tests/fibo_iter.kts",   "tests/fibonacci_rec.kts",
@@ -194,7 +194,7 @@ int main() {
         "tests/negation.kts",    "tests/string.kts",
         "tests/var.kts",         "tests/while.kts",
     };
-    const char* err_tests[] = {
+    const char err_tests[][MAXPATHLEN] = {
         "err/err_fn_missing_return.kts",
         "err/err_multiplication_type.kts",
         "err/err_non_matching_types.kts",
