@@ -72,7 +72,7 @@ static str* expects_from_string(const char* string, size_t string_len) {
     return expects;
 }
 
-static bool simple_test_run(const char* source_file_name) {
+static res_t simple_test_run(const char* source_file_name) {
     const size_t source_file_name_len = strlen(source_file_name);
     CHECK(source_file_name_len, >, 1L + 3, "%zu");
     CHECK(source_file_name_len, <, (size_t)MAXPATHLEN, "%zu");
@@ -91,14 +91,14 @@ static bool simple_test_run(const char* source_file_name) {
     if (!source_file) {
         fprintf(stderr, "Error reading file `%s`: err=%d errno=%s\n",
                 source_file_name, errno, strerror(errno));
-        return false;
+        return RES_ERR;
     }
     char source_file_content[LENGTH] = "";
     size_t read_bytes = fread(source_file_content, 1, LENGTH, source_file);
     if (ferror(source_file)) {
         fprintf(stderr, "Error reading content of `%s`: errno=%d err=%s\n",
                 source_file_name, errno, strerror(errno));
-        return false;
+        return RES_ERR;
     }
     CHECK(read_bytes, <=, LENGTH, "%zu");
 
@@ -108,11 +108,12 @@ static bool simple_test_run(const char* source_file_name) {
 
     char output[LENGTH] = "";
     int ret_code = 0;
-    if (proc_run(argv, output, &read_bytes, &ret_code) != RES_OK) return false;
+    if (proc_run(argv, output, &read_bytes, &ret_code) != RES_OK)
+        return RES_ERR;
     if (ret_code != 0) {
         fprintf(stderr, "%s✘ %s:%s ret_code=%d\n", is_tty ? color_red : "",
                 source_file_name, is_tty ? color_reset : "", ret_code);
-        return false;
+        return RES_ERR;
     }
 
     const char* out = output;
@@ -149,10 +150,10 @@ static bool simple_test_run(const char* source_file_name) {
         printf("%s✔ %s%s\n", is_tty ? color_green : "", source_file_name,
                is_tty ? color_reset : "");
 
-    return !differed;
+    return differed ? RES_ERR : RES_OK;
 }
 
-static bool err_test_run(const char* source_file_name) {
+static res_t err_test_run(const char* source_file_name) {
     const size_t source_file_name_len = strlen(source_file_name);
     CHECK(source_file_name_len, >, 1L + 3, "%zu");
     CHECK(source_file_name_len, <, (size_t)MAXPATHLEN, "%zu");
@@ -167,16 +168,17 @@ static bool err_test_run(const char* source_file_name) {
     char output[LENGTH] = "";
     size_t read_bytes = 0;
     int ret_code = 0;
-    if (proc_run(argv, output, &read_bytes, &ret_code) != RES_OK) return false;
+    if (proc_run(argv, output, &read_bytes, &ret_code) != RES_OK)
+        return RES_ERR;
     if (ret_code == 0) {
         fprintf(stderr, "%s✘ %s:%s ret_code=%d\n", is_tty ? color_red : "",
                 source_file_name, is_tty ? color_reset : "", ret_code);
-        return false;
+        return RES_ERR;
     } else
         printf("%s✔ %s%s\n", is_tty ? color_green : "", source_file_name,
                is_tty ? color_reset : "");
 
-    return true;
+    return RES_OK;
 }
 
 int main() {
@@ -209,11 +211,11 @@ int main() {
     bool failed = false;
     for (size_t i = 0; i < sizeof(simple_tests) / sizeof(simple_tests[0]);
          i++) {
-        if (!simple_test_run(simple_tests[i])) failed = true;
+        if (simple_test_run(simple_tests[i]) != RES_OK) failed = true;
     }
 
     for (size_t i = 0; i < sizeof(err_tests) / sizeof(err_tests[0]); i++) {
-        if (!err_test_run(err_tests[i])) failed = true;
+        if (err_test_run(err_tests[i]) != RES_OK) failed = true;
     }
     return failed;
 }
