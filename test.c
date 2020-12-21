@@ -11,6 +11,11 @@
 bool is_tty = true;
 #define LENGTH (1L << 11)
 
+typedef struct {
+    size_t str_len;
+    const char* str_s;
+} str;
+
 static res_t proc_run(const char* exe_name, char output[LENGTH],
                       size_t* read_bytes) {
     CHECK((void*)exe_name, !=, NULL, "%p");
@@ -40,10 +45,33 @@ static res_t proc_run(const char* exe_name, char output[LENGTH],
     return RES_OK;
 }
 
-typedef struct {
-    size_t str_len;
-    const char* str_s;
-} str;
+static str* expects_from_string(const char* string, size_t string_len) {
+    CHECK((void*)string, !=, NULL, "%p");
+    CHECK(string_len, >, 0UL, "%lu");
+
+    const char needle[] = "// expect: ";
+    const size_t needle_len = sizeof(needle) - 1;
+    str* expects = NULL;
+    buf_grow(expects, 100);
+    const char* src = string;
+    while (src < string + string_len - needle_len) {
+        src = strchr(src, '/');
+        if (!src) break;
+
+        if (memcmp(src, needle, needle_len) == 0) {
+            src += needle_len;
+            const char* end = strchr(src, '\n');
+            if (!end) end = string + string_len;
+            CHECK((void*)src, <, (void*)end, "%p");
+
+            buf_push(expects, ((str){.str_s = src, .str_len = end - src}));
+            src = end + 1;
+        } else
+            src += 1;
+    }
+
+    return expects;
+}
 
 static bool test_run(const char* source_file_name) {
     const size_t source_file_name_len = strlen(source_file_name);
@@ -75,37 +103,18 @@ static bool test_run(const char* source_file_name) {
     }
     CHECK(read_bytes, <=, LENGTH, "%zu");
 
-    const size_t len = read_bytes;
-    const char needle[] = "// expect: ";
-    const size_t needle_len = sizeof(needle) - 1;
-    str* expects = NULL;
-    buf_grow(expects, 100);
-    const char* src = source_file_content;
-    while (src < source_file_content + len - needle_len) {
-        src = strchr(src, '/');
-        if (!src) break;
-
-        if (memcmp(src, needle, needle_len) == 0) {
-            src += needle_len;
-            char* end = strchr(src, '\n');
-            if (!end) end = source_file_content + read_bytes;
-            CHECK((void*)src, <, (void*)end, "%p");
-
-            buf_push(expects, ((str){.str_s = src, .str_len = end - src}));
-            src = end + 1;
-        } else
-            src += 1;
-    }
+    const str* const expects =
+        expects_from_string(source_file_content, read_bytes);
     const size_t expects_count = buf_size(expects);
 
     char output[LENGTH] = "";
     if (proc_run(argv, output, &read_bytes) != RES_OK) return false;
 
-    char* out = output;
+    const char* out = output;
     size_t line = 0;
     bool differed = false;
     while (out < output + read_bytes) {
-        char* end = strchr(out, '\n');
+        const char* end = strchr(out, '\n');
         if (!end) end = output + read_bytes;
 
         CHECK((void*)out, <, (void*)end, "%p");
