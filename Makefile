@@ -7,7 +7,12 @@ HEADERS := $(wildcard *.h)
 WITH_ASAN = 0
 WITH_LOGS=0
 DEBUG = 0
-ASAN_DIR=$(shell $(CC) -print-search-dirs | awk -F '=' '/libraries/{print $$2}')/lib/darwin/
+OS = $(shell uname)
+ifeq ($(OS), "Darwin")
+	ASAN_DIR=$(shell $(CC) -print-search-dirs | awk -F '=' '/libraries/{print $$2}')/lib/darwin/
+else
+	ASAN_DIR=$(shell $(CC) -print-search-dirs | awk -F '=' '/libraries/{print $$2}')/lib/linux/
+endif
 
 CFLAGS_ASAN_0 = 
 CFLAGS_ASAN_1 = -fsanitize=address -DASAN_DIR='"$(ASAN_DIR)"'
