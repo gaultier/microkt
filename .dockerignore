@@ -1,6 +1,5 @@
 *
 !*.h
 !*.c
-!*.sh
 !test/*.kts
 !Makefile
