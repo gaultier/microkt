@@ -623,8 +623,8 @@ static void emit(const parser_t* parser, FILE* asm_file) {
 
     println(".file 1 \"%s\"", parser->par_file_name0);
 
-    println(".globl _start");
-    println("_start:");
+    println(".globl %sstart", name_prefix);
+    println("%sstart:", name_prefix);
     println(".cfi_startproc");
     println(
         "push %%rbp\n"

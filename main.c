@@ -127,8 +127,9 @@ static res_t run(const char* file_name0) {
 
         memset(argv0, 0, sizeof(argv0));
         snprintf(argv0, sizeof(argv0),
-                 LD " %s.o stdlib.o -o %s.exe -e _start %s %s", base_file_name0,
-                 base_file_name0, asan_opts, link_opts);
+                 LD " %s.o stdlib.o -o %s.exe -e %sstart %s %s",
+                 base_file_name0, base_file_name0, name_prefix, asan_opts,
+                 link_opts);
         log_debug("%s", argv0);
 
         fflush(stdout);
