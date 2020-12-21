@@ -382,10 +382,13 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             emit_loc(parser, expr);
             println("mov %%rax, %%rdi");
 
-            if (type == TYPE_LONG || type == TYPE_INT || type == TYPE_SHORT ||
-                type == TYPE_BYTE)
+            if (type == TYPE_LONG)
                 println("call %smkt_println_int", name_prefix);
-            else if (type == TYPE_CHAR)
+            else if (type == TYPE_INT || type == TYPE_SHORT ||
+                     type == TYPE_BYTE) {
+                println("movsxd %%eax, %%rax");
+                println("call %smkt_println_int", name_prefix);
+            } else if (type == TYPE_CHAR)
                 println("call %smkt_println_char", name_prefix);
             else if (type == TYPE_BOOL)
                 println("call %smkt_println_bool", name_prefix);
