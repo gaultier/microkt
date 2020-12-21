@@ -119,7 +119,7 @@ static res_t run(const char* file_name0) {
             ;
 
         const char link_opts[] =
-            "-lc "
+            " "
 #ifdef __APPLE__
             " -lSystem "
 #endif
