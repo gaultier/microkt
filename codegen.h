@@ -257,8 +257,12 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             const type_kind_t type_kind =
                 parser->par_types[expr->node_type_i].ty_kind;
             if (type_kind == TYPE_STRING) {
-                println("mov %%rax, %%rdi");
-                println("pop %%rsi");
+                println("movq %%rax, %s", fn_args[0]);
+                println("movq %%rax, %s", fn_args[1]);
+                println("subq $8, %s", fn_args[1]);
+                println("popq %s", fn_args[2]);
+                println("movq %s, %s", fn_args[2], fn_args[3]);
+                println("subq $8, %s", fn_args[3]);
                 println("push %%rax");
                 println("push %%rbx");
                 println("push %%rcx");
@@ -274,8 +278,8 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
                 println("push %%r14");
                 println("push %%r15");
 
-                println("mov %%rsp, %s", fn_args[2]);
-                println("mov %%rbp, %s", fn_args[3]);
+                println("mov %%rsp, %s", fn_args[4]);
+                println("mov %%rbp, %s", fn_args[5]);
                 println("call %smkt_string_concat", name_prefix);
                 println(
                     "pop %%rbx");  // intended to not override the return value

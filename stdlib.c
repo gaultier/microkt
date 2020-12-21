@@ -236,25 +236,26 @@ void mkt_println_string(char* s) {
     write(1, &newline, 1);
 }
 
-char* mkt_string_concat(const char* a, const char* b, char* stack_bottom,
-                        char* stack_top) {
+char* mkt_string_concat(const char* a, const runtime_val_header* a_header,
+                        const char* b, const runtime_val_header* b_header,
+                        char* stack_bottom, char* stack_top) {
     CHECK((void*)a, !=, NULL, "%p");
+    CHECK((void*)a_header, !=, NULL, "%p");
     CHECK((void*)b, !=, NULL, "%p");
+    CHECK((void*)b_header, !=, NULL, "%p");
     CHECK((void*)stack_bottom, !=, NULL, "%p");
     CHECK((void*)stack_top, !=, NULL, "%p");
     CHECK((void*)stack_bottom, <=, (void*)stack_top, "%p");
 
-    const size_t a_len = *(a - 8);
-    const size_t b_len = *(b - 8);
-
-    char* const ret = mkt_string_make(a_len + b_len, stack_bottom, stack_top);
+    char* const ret = mkt_string_make(a_header->rv_size + b_header->rv_size,
+                                      stack_bottom, stack_top);
     CHECK((void*)ret, !=, NULL, "%p");
     CHECK((void*)a, !=, NULL, "%p");
     CHECK((void*)b, !=, NULL, "%p");
 
-    memcpy(ret, a, a_len);
-    memcpy(ret + a_len, b, b_len);
-    *(ret - 8) = a_len + b_len;
+    memcpy(ret, a, a_header->rv_size);
+    memcpy(ret + a_header->rv_size, b, b_header->rv_size);
+    *(ret - 8) = a_header->rv_size + b_header->rv_size;
 
     return ret;
 }
