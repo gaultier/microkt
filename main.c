@@ -113,8 +113,10 @@ static res_t run(const char* file_name0) {
     {
         const char asan_opts[] =
             " "
-#if WITH_ASAN == 1
+#if WITH_ASAN == 1 && defined(__APPLE__)
             "-lclang_rt.asan_osx_dynamic -L " ASAN_DIR " -rpath " ASAN_DIR " "
+#elif WITH_ASAN == 1
+            "-lclang_rt.asan-x86_64 -L " ASAN_DIR " -rpath " ASAN_DIR " "
 #endif
             ;
 
