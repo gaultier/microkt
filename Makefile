@@ -8,7 +8,7 @@ WITH_ASAN = 0
 WITH_LOGS=0
 DEBUG = 0
 OS = $(shell uname)
-ifeq ($(OS), "Darwin")
+ifeq "$(strip $(OS))" "Darwin"
 	ASAN_DIR=$(shell $(CC) -print-search-dirs | awk -F '=' '/libraries/{print $$2}')/lib/darwin/
 else
 	ASAN_DIR=$(shell $(CC) -print-search-dirs | awk -F '=' '/libraries/{split($$2, libs, ":"); printf("%s/lib/linux", libs[1])}')
