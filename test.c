@@ -17,9 +17,10 @@ typedef struct {
 } str;
 
 static res_t proc_run(const char* exe_name, char output[LENGTH],
-                      size_t* read_bytes) {
+                      size_t* read_bytes, int* ret_code) {
     CHECK((void*)exe_name, !=, NULL, "%p");
     CHECK((void*)read_bytes, !=, NULL, "%p");
+    CHECK((void*)ret_code, !=, NULL, "%p");
 
     FILE* exe_process = popen(exe_name, "r");
     if (exe_process == NULL) {
@@ -38,11 +39,8 @@ static res_t proc_run(const char* exe_name, char output[LENGTH],
     CHECK(*read_bytes, <=, LENGTH, "%zu");
 
     fflush(exe_process);
-    if (pclose(exe_process) != 0) {
-        fprintf(stderr, "Error closing process %s: errno=%d error=%s\n",
-                exe_name, errno, strerror(errno));
-        return RES_ERR;
-    }
+    *ret_code = pclose(exe_process);
+
     return RES_OK;
 }
 
@@ -74,7 +72,7 @@ static str* expects_from_string(const char* string, size_t string_len) {
     return expects;
 }
 
-static bool test_run(const char* source_file_name) {
+static bool simple_test_run(const char* source_file_name) {
     const size_t source_file_name_len = strlen(source_file_name);
     CHECK(source_file_name_len, >, 1L + 3, "%zu");
     CHECK(source_file_name_len, <, (size_t)MAXPATHLEN, "%zu");
@@ -109,7 +107,13 @@ static bool test_run(const char* source_file_name) {
     const size_t expects_count = buf_size(expects);
 
     char output[LENGTH] = "";
-    if (proc_run(argv, output, &read_bytes) != RES_OK) return false;
+    int ret_code = 0;
+    if (proc_run(argv, output, &read_bytes, &ret_code) != RES_OK) return false;
+    if (ret_code != 0) {
+        fprintf(stderr, "%s✘ %s:%s ret_code=%d\n", is_tty ? color_red : "",
+                source_file_name, is_tty ? color_reset : "", ret_code);
+        return false;
+    }
 
     const char* out = output;
     size_t line = 0;
@@ -148,6 +152,33 @@ static bool test_run(const char* source_file_name) {
     return !differed;
 }
 
+static bool err_test_run(const char* source_file_name) {
+    const size_t source_file_name_len = strlen(source_file_name);
+    CHECK(source_file_name_len, >, 1L + 3, "%zu");
+    CHECK(source_file_name_len, <, (size_t)MAXPATHLEN, "%zu");
+    CHECK(source_file_name[source_file_name_len - 1], ==, 's', "%c");
+    CHECK(source_file_name[source_file_name_len - 2], ==, 't', "%c");
+    CHECK(source_file_name[source_file_name_len - 3], ==, 'k', "%c");
+    CHECK(source_file_name[source_file_name_len - 4], ==, '.', "%c");
+
+    char argv[MAXPATHLEN] = "";
+    snprintf(argv, MAXPATHLEN, "./mktc %s", source_file_name);
+
+    char output[LENGTH] = "";
+    size_t read_bytes = 0;
+    int ret_code = 0;
+    if (proc_run(argv, output, &read_bytes, &ret_code) != RES_OK) return false;
+    if (ret_code == 0) {
+        fprintf(stderr, "%s✘ %s:%s ret_code=%d\n", is_tty ? color_red : "",
+                source_file_name, is_tty ? color_reset : "", ret_code);
+        return false;
+    } else
+        printf("%s✔ %s%s\n", is_tty ? color_green : "", source_file_name,
+               is_tty ? color_reset : "");
+
+    return true;
+}
+
 int main() {
     is_tty = isatty(2);
 
@@ -178,11 +209,11 @@ int main() {
     bool failed = false;
     for (size_t i = 0; i < sizeof(simple_tests) / sizeof(simple_tests[0]);
          i++) {
-        if (!test_run(simple_tests[i])) failed = true;
+        if (!simple_test_run(simple_tests[i])) failed = true;
     }
 
     for (size_t i = 0; i < sizeof(err_tests) / sizeof(err_tests[0]); i++) {
-        if (test_run(err_tests[i])) failed = true;
+        if (!err_test_run(err_tests[i])) failed = true;
     }
     return failed;
 }
