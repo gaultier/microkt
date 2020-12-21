@@ -664,13 +664,16 @@ static void emit(const parser_t* parser, FILE* asm_file) {
         CHECK(name_len, >=, 0, "%d");
         CHECK(name_len, <, parser->par_lexer.lex_source_len, "%d");
 
-        if (fn_decl.fd_flags & FN_FLAGS_PUBLIC)
-            println(".global %.*s",
-                    name_len == 0 ? (int)sizeof("_main") : name_len,
-                    name_len == 0 ? "_main" : name);
+        char fn_main_name[6] = "";
+        snprintf(fn_main_name, sizeof(fn_main_name), "%smain", name_prefix);
+        const int fn_main_name_len = strlen(fn_main_name);
 
-        println("%.*s:", name_len == 0 ? (int)sizeof("_main") : name_len,
-                name_len == 0 ? "_main" : name);
+        if (fn_decl.fd_flags & FN_FLAGS_PUBLIC)
+            println(".global %.*s", name_len == 0 ? fn_main_name_len : name_len,
+                    name_len == 0 ? fn_main_name : name);
+
+        println("%.*s:", name_len == 0 ? fn_main_name_len : name_len,
+                name_len == 0 ? fn_main_name : name);
 
         const int caller_current_fn_i = current_fn_i;
         CHECK(current_fn_i, >=, 0, "%d");
