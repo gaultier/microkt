@@ -164,7 +164,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             println("mov %%rsp, %s", fn_args[1]);
             println("mov %%rbp, %s", fn_args[2]);
             println("call %smkt_string_make", name_prefix);
-            println("pop %%rbx");  // intended to not override the return value
+            println("pop %%rbx # intended to not override the return value");
             println("pop %%rbx");
             println("pop %%rcx");
             println("pop %%rdx");
