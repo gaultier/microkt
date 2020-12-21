@@ -79,6 +79,8 @@ bool test_run(const char* source_file_name) {
     CHECK(read_bytes, <=, sizeof(output), "%zu");
 
     if (pclose(exe_process) != 0) {
+        fprintf(stderr, "Error closing process %s: errno=%d error=%s\n", argv,
+                errno, strerror(errno));
         return false;
     }
 
