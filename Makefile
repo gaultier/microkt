@@ -41,9 +41,8 @@ stdlib.o: stdlib.c
 test: test.c
 	$(CC) $(CFLAGS) $< -o test
 
-.SUFFIXES: .kts .exe
 
-.kts.exe: mktc $(TESTS_SRC)
+%.exe: %.kts mktc $(TESTS_SRC)
 	./mktc $<
 
 check: mktc $(TESTS_SRC) $(TESTS_EXE) test
