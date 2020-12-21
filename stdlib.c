@@ -20,7 +20,7 @@ typedef struct {
 struct alloc_atom {
     struct alloc_atom* aa_next;
     runtime_val_header aa_header;
-    void* aa_data;
+    char aa_data[];
 };
 
 typedef struct alloc_atom alloc_atom;
