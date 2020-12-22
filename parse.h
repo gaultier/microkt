@@ -483,7 +483,7 @@ static void node_dump(const parser_t* parser, int node_i, int indent) {
                 type_to_str[parser->par_types[node->node_type_i].ty_kind]);
 
             const syscall_t syscall = node->node_n.node_syscall;
-            for (int i = 0; i < buf_size(syscall.sy_arg_nodes_i); i++)
+            for (int i = 0; i < (int)buf_size(syscall.sy_arg_nodes_i); i++)
                 node_dump(parser, syscall.sy_arg_nodes_i[i], indent + 2);
 
             break;

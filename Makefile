@@ -14,14 +14,33 @@ else
 	ASAN_DIR=$(shell $(CC) -print-search-dirs | awk -F '=' '/libraries/{split($$2, libs, ":"); printf("%s/lib/linux", libs[1])}')
 endif
 
-CFLAGS_ASAN_0 = 
-CFLAGS_ASAN_1 = -fsanitize=address -DASAN_DIR='"$(ASAN_DIR)"'
-CFLAGS_COMMON =-Wall -Wextra -pedantic -g -std=c99 -march=native -fno-omit-frame-pointer -fstrict-aliasing -fPIC -DWITH_LOGS=$(WITH_LOGS) -DWITH_ASAN=$(WITH_ASAN) $(CFLAGS_ASAN_$(WITH_ASAN)) -DLD='"$(CC)"' -DAS='"$(AS)"' -D_POSIX_C_SOURCE=200112L
-# Debug: build with `make DEBUG=1`
-CFLAGS_DEBUG_1 = -O0 
-# Release: default
-CFLAGS_DEBUG_0 = -O2
-CFLAGS = $(CFLAGS_COMMON) $(CFLAGS_DEBUG_$(DEBUG))
+CFLAGS_COMMON = -Wall -Wextra -pedantic -g -std=c99 -march=native -fno-omit-frame-pointer -fstrict-aliasing -fPIC -D_POSIX_C_SOURCE=200112L
+CFLAGS = $(CFLAGS_COMMON) -DLD='"$(CC)"' -DAS='"$(AS)"'
+CFLAGS_STDLIB = $(CFLAGS_COMMON)
+
+ifeq "$(WITH_ASAN)"  "1"
+	CFLAGS += -fsanitize=address -DASAN_DIR='"$(ASAN_DIR)"' -DWITH_ASAN=1
+	CFLAGS_STDLIB += -shared-libasan
+else 
+	CFLAGS += -DWITH_ASAN=0
+	CFLAGS_STDLIB += -DWITH_ASAN=0
+endif
+	
+ifeq "$(WITH_LOGS)" "1"
+	CFLAGS += -DWITH_LOGS=1
+	CFLAGS_STDLIB += -DWITH_LOGS=1
+else
+	CFLAGS += -DWITH_LOGS=0
+	CFLAGS_STDLIB += -DWITH_LOGS=0
+endif
+
+ifeq "$(DEBUG)" "1"
+	CFLAGS += -O0
+	CFLAGS_STDLIB += -O0
+else
+	CFLAGS += -O2
+	CFLAGS_STDLIB += -O2
+endif
 
 TESTS_SRC := $(wildcard tests/*.kts)
 TESTS_O := $(TESTS_SRC:.kts=.o)
@@ -33,13 +52,11 @@ mktc: $(SRC) $(HEADERS) stdlib.o
 	$(CC) $(CFLAGS) $(SRC) -o $@
 
 
-CFLAGS_STDLIB_ASAN_0 = 
-CFLAGS_STDLIB_ASAN_1 = -shared-libasan
 stdlib.o: stdlib.c
-	$(CC) $(CFLAGS) -DWITH_LOGS=$(WITH_LOGS) $(CFLAGS_ASAN_$(WITH_ASAN)) $< -c
+	$(CC) $(CFLAGS_STDLIB) $< -c
 
 test: test.c
-	$(CC) $(CFLAGS) $< -o test
+	$(CC) $(CFLAGS) $< -o $@
 
 
 %.exe: %.kts mktc $(TESTS_SRC)
