@@ -144,6 +144,7 @@ typedef struct {
 } unary_t;
 
 typedef struct {
+    int sy_first_tok_i, sy_last_tok_i;
     int* sy_arg_nodes_i;
 } syscall_t;
 

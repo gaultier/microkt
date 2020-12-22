@@ -643,7 +643,7 @@ static int node_first_token(const parser_t* parser, const node_t* node) {
         case NODE_BUILTIN_PRINTLN:
             return node->node_n.node_builtin_println.bp_keyword_print_i;
         case NODE_SYSCALL:
-            UNIMPLEMENTED();
+            return node->node_n.node_syscall.sy_first_tok_i;
         case NODE_STRING:
             return node->node_n.node_string.st_tok_i;
         case NODE_KEYWORD_BOOL:
@@ -695,7 +695,7 @@ static int node_last_token(const parser_t* parser, const node_t* node) {
         case NODE_BUILTIN_PRINTLN:
             return node->node_n.node_builtin_println.bp_rparen_i;
         case NODE_SYSCALL:
-            UNIMPLEMENTED();
+            return node->node_n.node_syscall.sy_last_tok_i;
         case NODE_STRING:
             return node->node_n.node_string.st_tok_i;
         case NODE_KEYWORD_BOOL:
@@ -1608,9 +1608,11 @@ static res_t parser_parse_value_arg(parser_t* parser, int* new_node_i) {
     return parser_parse_expr(parser, new_node_i);
 }
 
-static res_t parser_parse_value_args(parser_t* parser, int** arg_nodes_i) {
+static res_t parser_parse_value_args(parser_t* parser, int* last_tok_i,
+                                     int** arg_nodes_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)arg_nodes_i, !=, NULL, "%p");
+    CHECK((void*)last_tok_i, !=, NULL, "%p");
 
     if (parser_peek(parser) != TOK_ID_LPAREN) return RES_NONE;
 
@@ -1630,7 +1632,7 @@ static res_t parser_parse_value_args(parser_t* parser, int** arg_nodes_i) {
             return res;
     } while (parser_match(parser, &dummy, 1, TOK_ID_COMMA));
 
-    if (!parser_match(parser, &dummy, 1, TOK_ID_RPAREN))
+    if (!parser_match(parser, last_tok_i, 1, TOK_ID_RPAREN))
         return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
 
     return RES_OK;
@@ -1641,7 +1643,8 @@ static res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i) {
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
     int* arg_nodes_i = NULL;
-    res_t res = parser_parse_value_args(parser, &arg_nodes_i);
+    int dummy = 0;
+    res_t res = parser_parse_value_args(parser, &dummy, &arg_nodes_i);
     if (res != RES_OK) return res;
 
     CHECK(*new_node_i, >=, 0, "%d");
@@ -1959,11 +1962,12 @@ static res_t parser_parse_syscall(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
-    int keyword_print_i = -1;
+    int keyword_i = -1;
     res_t res = RES_NONE;
-    if (parser_match(parser, &keyword_print_i, 1, TOK_ID_SYSCALL)) {
+    if (parser_match(parser, &keyword_i, 1, TOK_ID_SYSCALL)) {
         int* arg_nodes_i = NULL;
-        res = parser_parse_value_args(parser, &arg_nodes_i);
+        int last_tok_i = 0;
+        res = parser_parse_value_args(parser, &last_tok_i, &arg_nodes_i);
         if (res == RES_NONE) {
             fprintf(stderr, "Missing syscall arguments");
             return RES_MISSING_PARAM;
@@ -1978,8 +1982,10 @@ static res_t parser_parse_syscall(parser_t* parser, int* new_node_i) {
         buf_push(parser->par_nodes,
                  ((node_t){.node_kind = NODE_SYSCALL,
                            .node_type_i = TYPE_UNIT_I,  // FIXME
-                           .node_n = {.node_syscall = {.sy_arg_nodes_i =
-                                                           arg_nodes_i}}}));
+                           .node_n = {.node_syscall = {
+                                          .sy_first_tok_i = keyword_i,
+                                          .sy_last_tok_i = last_tok_i,
+                                          .sy_arg_nodes_i = arg_nodes_i}}}));
         *new_node_i = (int)buf_size(parser->par_nodes) - 1;
 
         return RES_OK;

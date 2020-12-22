@@ -404,11 +404,12 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
         }
         case NODE_SYSCALL: {
             const syscall_t syscall = expr->node_n.node_syscall;
-            CHECK(buf_size(syscall.sy_arg_nodes_i), >, 0L, "%zu");
+            const int len = (int)buf_size(syscall.sy_arg_nodes_i);
+            CHECK(len, >, 0, "%d");
 
-            for (int i = buf_size(syscall.sy_arg_nodes_i) - 1; i > 0; i--) {
+            for (int i = len - 1; i > 0; i--) {
                 emit_expr(parser, syscall.sy_arg_nodes_i[i]);
-                println("mov %%rax, %s", fn_args[i]);
+                println("mov %%rax, %s", fn_args[i - 1]);
             }
             emit_expr(parser, syscall.sy_arg_nodes_i[0]);
             println("syscall");
