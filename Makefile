@@ -58,6 +58,8 @@ stdlib.o: stdlib.c
 test: test.c
 	$(CC) $(CFLAGS) $< -o $@
 
+probes.h: probes.d
+	dtrace -o $@ -h -s $<
 
 %.exe: %.kts mktc $(TESTS_SRC)
 	./mktc $<
