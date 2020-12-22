@@ -415,7 +415,6 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 
             emit_expr(parser, syscall.sy_arg_nodes_i[0]);
             println("syscall");
-            println("mov $0, %%rax");  // HACK: Reset return value for now
 
             return;
         }
