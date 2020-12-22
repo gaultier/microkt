@@ -38,6 +38,7 @@ static void parser_tok_source(const parser_t* parser, int tok_i,
 static void parser_print_source_on_error(const parser_t* parser,
                                          int first_tok_i, int last_tok_i);
 static res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i);
+static res_t parser_parse_syscall(parser_t* parser, int* new_node_i);
 
 static node_t* parser_current_block(parser_t* parser) {
     CHECK((void*)parser, !=, NULL, "%p");
@@ -475,6 +476,18 @@ static void node_dump(const parser_t* parser, int node_i, int indent) {
                       indent + 2);
             break;
         }
+        case NODE_SYSCALL: {
+            log_debug_with_indent(
+                indent, "node #%d %s type=%s", node_i,
+                node_kind_to_str[node->node_kind],
+                type_to_str[parser->par_types[node->node_type_i].ty_kind]);
+
+            const syscall_t syscall = node->node_n.node_syscall;
+            for (int i = 0; i < buf_size(syscall.sy_arg_nodes_i); i++)
+                node_dump(parser, syscall.sy_arg_nodes_i[i], indent + 2);
+
+            break;
+        }
         case NODE_LT:
         case NODE_LE:
         case NODE_EQ:
@@ -629,6 +642,8 @@ static int node_first_token(const parser_t* parser, const node_t* node) {
     switch (node->node_kind) {
         case NODE_BUILTIN_PRINTLN:
             return node->node_n.node_builtin_println.bp_keyword_print_i;
+        case NODE_SYSCALL:
+            UNIMPLEMENTED();
         case NODE_STRING:
             return node->node_n.node_string.st_tok_i;
         case NODE_KEYWORD_BOOL:
@@ -679,6 +694,8 @@ static int node_last_token(const parser_t* parser, const node_t* node) {
     switch (node->node_kind) {
         case NODE_BUILTIN_PRINTLN:
             return node->node_n.node_builtin_println.bp_rparen_i;
+        case NODE_SYSCALL:
+            UNIMPLEMENTED();
         case NODE_STRING:
             return node->node_n.node_string.st_tok_i;
         case NODE_KEYWORD_BOOL:
@@ -1235,6 +1252,9 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
     // FIXME: hack
     if (parser_peek(parser) == TOK_ID_BUILTIN_PRINTLN)
         return parser_parse_builtin_println(parser, new_node_i);
+
+    if (parser_peek(parser) == TOK_ID_SYSCALL)
+        return parser_parse_syscall(parser, new_node_i);
 
     int lparen_tok_i = -1, rparen_tok_i = -1;
     if (parser_match(parser, &lparen_tok_i, 1, TOK_ID_LPAREN)) {
@@ -1933,6 +1953,38 @@ static res_t parser_parse_control_structure_body(parser_t* parser,
         return parser_parse_block(parser, new_node_i);
 
     return parser_parse_stmt(parser, new_node_i);
+}
+
+static res_t parser_parse_syscall(parser_t* parser, int* new_node_i) {
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
+
+    int keyword_print_i = -1;
+    res_t res = RES_NONE;
+    if (parser_match(parser, &keyword_print_i, 1, TOK_ID_SYSCALL)) {
+        int* arg_nodes_i = NULL;
+        res = parser_parse_value_args(parser, &arg_nodes_i);
+        if (res == RES_NONE) {
+            fprintf(stderr, "Missing syscall arguments");
+            return RES_MISSING_PARAM;
+        } else if (res != RES_OK)
+            return res;
+
+        if (buf_size(arg_nodes_i) == 0) {
+            fprintf(stderr, "Syscall without arguments invalid");
+            return RES_MISSING_PARAM;
+        }
+
+        buf_push(parser->par_nodes,
+                 ((node_t){.node_kind = NODE_SYSCALL,
+                           .node_type_i = TYPE_UNIT_I,  // FIXME
+                           .node_n = {.node_syscall = {.sy_arg_nodes_i =
+                                                           arg_nodes_i}}}));
+        *new_node_i = (int)buf_size(parser->par_nodes) - 1;
+
+        return RES_OK;
+    }
+    return RES_NONE;
 }
 
 static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i) {

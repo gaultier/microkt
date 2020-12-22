@@ -402,6 +402,20 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 
             return;
         }
+        case NODE_SYSCALL: {
+            const syscall_t syscall = expr->node_n.node_syscall;
+            CHECK(buf_size(syscall.sy_arg_nodes_i), >, 0L, "%zu");
+
+            for (int i = buf_size(syscall.sy_arg_nodes_i) - 1; i > 0; i--) {
+                emit_expr(parser, syscall.sy_arg_nodes_i[i]);
+                println("mov %%rax, %s", fn_args[i]);
+            }
+            emit_expr(parser, syscall.sy_arg_nodes_i[0]);
+            println("syscall");
+            println("mov $0, %%rax");  // Reset return value for now
+
+            return;
+        }
         case NODE_BLOCK: {
             const block_t block = expr->node_n.node_block;
 
@@ -509,6 +523,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
 
     switch (stmt->node_kind) {
         case NODE_BUILTIN_PRINTLN:
+        case NODE_SYSCALL:
         case NODE_BLOCK:
         case NODE_LONG:
         case NODE_CHAR:

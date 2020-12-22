@@ -62,6 +62,7 @@ typedef enum {
     NODE_FN_DECL,
     NODE_CALL,
     NODE_RETURN,
+    NODE_SYSCALL,
 } node_kind_t;
 
 const char node_kind_to_str[][30] = {
@@ -89,6 +90,7 @@ const char node_kind_to_str[][30] = {
     [NODE_FN_DECL] = "FnDecl",
     [NODE_RETURN] = "Return",
     [NODE_CALL] = "Call",
+    [NODE_SYSCALL] = "Syscall",
 };
 
 typedef struct {
@@ -142,6 +144,10 @@ typedef struct {
 } unary_t;
 
 typedef struct {
+    int* sy_arg_nodes_i;
+} syscall_t;
+
+typedef struct {
     node_kind_t node_kind;
     int node_type_i;
     union {
@@ -158,6 +164,7 @@ typedef struct {
         while_t node_while;      // NODE_WHILE
         fn_decl_t node_fn_decl;  // NODE_FN_DECL
         call_t node_call;        // NODE_CALL
+        syscall_t node_syscall;  // NODE_SYSCALL
     } node_n;
 } node_t;
 
