@@ -147,37 +147,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             emit_loc(parser, expr);
             println("mov $%d, %s # string len=%d", source_len, fn_args[0],
                     source_len);
-            println("push %%rax");
-            println("push %%rbx");
-            println("push %%rcx");
-            println("push %%rdx");
-            println("push %%rdi");
-            println("push %%rsi");
-            println("push %%r8");
-            println("push %%r9");
-            println("push %%r10");
-            println("push %%r11");
-            println("push %%r12");
-            println("push %%r13");
-            println("push %%r14");
-            println("push %%r15");
-            println("mov %%rsp, %s", fn_args[1]);
-            println("mov %%rbp, %s", fn_args[2]);
             println("call %smkt_string_make", name_prefix);
-            println("pop %%rbx # intended to not override the return value");
-            println("pop %%rbx");
-            println("pop %%rcx");
-            println("pop %%rdx");
-            println("pop %%rdi");
-            println("pop %%rsi");
-            println("pop %%r8");
-            println("pop %%r9");
-            println("pop %%r10");
-            println("pop %%r11");
-            println("pop %%r12");
-            println("pop %%r13");
-            println("pop %%r14");
-            println("pop %%r15");
 
             for (int i = 0; i < source_len; i++)
                 println("movb $%d, %d(%%rax) # string[%d]", source[i], i, i);
@@ -263,40 +233,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
                 println("popq %s", fn_args[2]);
                 println("movq %s, %s", fn_args[2], fn_args[3]);
                 println("subq $8, %s", fn_args[3]);
-                println("push %%rax");
-                println("push %%rbx");
-                println("push %%rcx");
-                println("push %%rdx");
-                println("push %%rdi");
-                println("push %%rsi");
-                println("push %%r8");
-                println("push %%r9");
-                println("push %%r10");
-                println("push %%r11");
-                println("push %%r12");
-                println("push %%r13");
-                println("push %%r14");
-                println("push %%r15");
-
-                println("mov %%rsp, %s", fn_args[4]);
-                println("mov %%rbp, %s", fn_args[5]);
                 println("call %smkt_string_concat", name_prefix);
-                println(
-                    "pop %%rbx # intended to not override the return value");
-                println("pop %%rbx");
-                println("pop %%rcx");
-                println("pop %%rdx");
-                println("pop %%rdi");
-                println("pop %%rsi");
-                println("pop %%r8");
-                println("pop %%r9");
-                println("pop %%r10");
-                println("pop %%r11");
-                println("pop %%r12");
-                println("pop %%r13");
-                println("pop %%r14");
-                println("pop %%r15");
-
             } else {
                 println("pop %%rdi");
                 println("add %s, %s", di, ax);

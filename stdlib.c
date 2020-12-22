@@ -1,3 +1,4 @@
+#include <setjmp.h>
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h>
@@ -10,6 +11,12 @@ static size_t gc_allocated_bytes = 0;
 static size_t gc_free_bytes = 0;
 static const unsigned char RV_TAG_MARKED = 0x01;
 static const unsigned char RV_TAG_STRING = 0x02;
+static intptr_t* mkt_rbp;
+static intptr_t* mkt_rsp;
+static intptr_t* stack_top;
+
+#define READ_RBP() __asm__ volatile("movq %%rbp, %0" : "=r"(mkt_rbp))
+#define READ_RSP() __asm__ volatile("movq %%rsp, %0" : "=r"(mkt_rsp))
 
 typedef struct {
     size_t rv_size : 54;
@@ -53,7 +60,10 @@ static alloc_atom* mkt_alloc_atom_make(size_t size) {
     return atom;
 }
 
-void mkt_init() {}
+void mkt_init() {
+    READ_RBP();
+    stack_top = (intptr_t*)*mkt_rbp;
+}
 
 static void mkt_gc_obj_mark(runtime_val_header* header) {
     CHECK((void*)header, !=, NULL, "%p");
@@ -81,20 +91,20 @@ static alloc_atom* mkt_gc_atom_find_data_by_addr(size_t addr) {
     return NULL;
 }
 
-static void mkt_gc_scan_stack(const uintptr_t* stack_bottom,
-                              const uintptr_t* stack_top) {
+static void mkt_gc_scan_stack(const intptr_t* stack_bottom) {
     CHECK((void*)stack_bottom, !=, NULL, "%p");
-    CHECK((void*)stack_top, !=, NULL, "%p");
-    CHECK((void*)stack_bottom, <=, (void*)stack_top, "%p");
 
-    log_debug("gc_round=%zu gc_allocated_bytes=%zu size=%zu bottom=%p top=%p",
-              gc_round, gc_allocated_bytes, stack_top - stack_bottom,
-              (void*)stack_bottom, (void*)stack_top);
+    /* log_debug("gc_round=%zu gc_allocated_bytes=%zu size=%zu bottom=%p
+     * top=%p", */
+    /*           gc_round, gc_allocated_bytes, stack_top - stack_bottom, */
+    /*           (void*)stack_bottom, (void*)stack_top); */
 
     const char* s_bottom = (char*)stack_bottom;
+    CHECK((void*)stack_bottom, <=, (void*)stack_top, "%p");
+
     const char* s_top = (char*)stack_top;
-    while (s_bottom < s_top - sizeof(uintptr_t)) {
-        size_t addr = *(uintptr_t*)s_bottom;
+    while (s_bottom < s_top - sizeof(intptr_t)) {
+        uintptr_t addr = *(uintptr_t*)s_bottom;
         alloc_atom* atom = mkt_gc_atom_find_data_by_addr(addr);
         if (atom == NULL) {
             s_bottom += 1;
@@ -109,7 +119,7 @@ static void mkt_gc_scan_stack(const uintptr_t* stack_bottom,
 
         mkt_gc_obj_mark(header);
 
-        s_bottom += sizeof(uintptr_t);
+        s_bottom += sizeof(intptr_t);
     }
 }
 
@@ -162,27 +172,27 @@ static void mkt_gc_sweep() {
     }
 }
 
-static void mkt_gc(const uintptr_t* stack_bottom, const uintptr_t* stack_top) {
-    CHECK((void*)stack_bottom, !=, NULL, "%p");
-    CHECK((void*)stack_top, !=, NULL, "%p");
-    CHECK((void*)stack_bottom, <=, (void*)stack_top, "%p");
+static void mkt_gc() {
+    /* CHECK((void*)stack_bottom, !=, NULL, "%p"); */
+    /* CHECK((void*)stack_top, !=, NULL, "%p"); */
+    /* CHECK((void*)stack_bottom, <=, (void*)stack_top, "%p"); */
+
+    jmp_buf jb;
+    setjmp(jb);
+
+    READ_RSP();
 
     gc_round += 1;
 
     log_debug("stats before: gc_round=%zu gc_allocated_bytes=%zu", gc_round,
               gc_allocated_bytes);
-    mkt_gc_scan_stack(stack_bottom, stack_top);
+    mkt_gc_scan_stack(mkt_rsp);
     mkt_gc_trace_refs();
     mkt_gc_sweep();
 }
 
-void* mkt_string_make(size_t size, const uintptr_t* stack_bottom,
-                      const uintptr_t* stack_top) {
-    CHECK((void*)stack_bottom, !=, NULL, "%p");
-    CHECK((void*)stack_top, !=, NULL, "%p");
-    CHECK((void*)stack_bottom, <=, (void*)stack_top, "%p");
-
-    mkt_gc(stack_bottom, stack_top);
+void* mkt_string_make(size_t size) {
+    mkt_gc();
 
     alloc_atom* atom = mkt_alloc_atom_make(size);
     CHECK((void*)atom, !=, NULL, "%p");
@@ -241,19 +251,16 @@ void mkt_println_string(char* s, const runtime_val_header* s_header) {
 }
 
 char* mkt_string_concat(const char* a, const runtime_val_header* a_header,
-                        const char* b, const runtime_val_header* b_header,
-                        const uintptr_t* stack_bottom,
-                        const uintptr_t* stack_top) {
-    CHECK((void*)a, !=, NULL, "%p");
-    CHECK((void*)a_header, !=, NULL, "%p");
-    CHECK((void*)b, !=, NULL, "%p");
-    CHECK((void*)b_header, !=, NULL, "%p");
-    CHECK((void*)stack_bottom, !=, NULL, "%p");
-    CHECK((void*)stack_top, !=, NULL, "%p");
-    CHECK((void*)stack_bottom, <=, (void*)stack_top, "%p");
+                        const char* b, const runtime_val_header* b_header) {
+    /* CHECK((void*)a, !=, NULL, "%p"); */
+    /* CHECK((void*)a_header, !=, NULL, "%p"); */
+    /* CHECK((void*)b, !=, NULL, "%p"); */
+    /* CHECK((void*)b_header, !=, NULL, "%p"); */
+    /* CHECK((void*)stack_bottom, !=, NULL, "%p"); */
+    /* CHECK((void*)stack_top, !=, NULL, "%p"); */
+    /* CHECK((void*)stack_bottom, <=, (void*)stack_top, "%p"); */
 
-    char* const ret = mkt_string_make(a_header->rv_size + b_header->rv_size,
-                                      stack_bottom, stack_top);
+    char* const ret = mkt_string_make(a_header->rv_size + b_header->rv_size);
     CHECK((void*)ret, !=, NULL, "%p");
     CHECK((void*)a, !=, NULL, "%p");
     CHECK((void*)b, !=, NULL, "%p");
