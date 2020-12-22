@@ -5,10 +5,10 @@
 
 #include "ast.h"
 #include "common.h"
+#include "probes.h"
 
 static size_t gc_round = 0;
 static size_t gc_allocated_bytes = 0;
-static size_t gc_free_bytes = 0;
 static const unsigned char RV_TAG_MARKED = 0x01;
 static const unsigned char RV_TAG_STRING = 0x02;
 static intptr_t* mkt_rbp;
@@ -135,6 +135,7 @@ static void mkt_gc_trace_refs() {
 }
 
 static void mkt_gc_sweep() {
+    MKT_GC_SWEEP_START(gc_allocated_bytes);
     alloc_atom* atom = objs;
     alloc_atom* previous = NULL;
 
@@ -167,9 +168,12 @@ static void mkt_gc_sweep() {
         else
             objs = atom;
 
-        gc_free_bytes += to_free->aa_header.rv_size;
+        MKT_GC_SWEEP_FREE(gc_allocated_bytes, to_free,
+                          to_free->aa_header.rv_size,
+                          (void*)&(to_free->aa_data));
         free(to_free);
     }
+    MKT_GC_SWEEP_DONE(gc_allocated_bytes);
 }
 
 static void mkt_gc() {
