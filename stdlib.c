@@ -71,15 +71,9 @@ static void mkt_gc_obj_mark(runtime_val_header* header) {
     if (header->rv_tag & RV_TAG_MARKED) return;  // Prevent cycles
     header->rv_tag |= RV_TAG_MARKED;
 
-    log_debug(
-        "gc_round=%zu gc_allocated_bytes=%zu header: size=%zu color=%u tag=%u "
-        "ptr=%p",
-        gc_round, gc_allocated_bytes, header->rv_size, header->rv_color,
-        header->rv_tag, (void*)(header + 1));
-
     if (header->rv_tag & RV_TAG_STRING) return;  // No transitive refs possible
 
-    UNIMPLEMENTED();  // TODO: gray worklist
+    UNIMPLEMENTED();  // TODO: gray worklist for objects
 }
 
 // TODO: optimize
@@ -95,11 +89,6 @@ static alloc_atom* mkt_gc_atom_find_data_by_addr(size_t addr) {
 static void mkt_gc_scan_stack(const intptr_t* stack_bottom) {
     CHECK((void*)stack_bottom, !=, NULL, "%p");
 
-    /* log_debug("gc_round=%zu gc_allocated_bytes=%zu size=%zu bottom=%p
-     * top=%p", */
-    /*           gc_round, gc_allocated_bytes, stack_top - stack_bottom, */
-    /*           (void*)stack_bottom, (void*)stack_top); */
-
     const char* s_bottom = (char*)stack_bottom;
     CHECK((void*)stack_bottom, <=, (void*)stack_top, "%p");
 
@@ -112,12 +101,6 @@ static void mkt_gc_scan_stack(const intptr_t* stack_bottom) {
             continue;
         }
         runtime_val_header* header = &atom->aa_header;
-        log_debug(
-            "gc_round=%zu gc_allocated_bytes=%zu header: size=%zu color=%u "
-            "tag=%u ptr=%p",
-            gc_round, gc_allocated_bytes, header->rv_size, header->rv_color,
-            header->rv_tag, (void*)addr);
-
         mkt_gc_obj_mark(header);
 
         s_bottom += sizeof(intptr_t);
@@ -170,19 +153,14 @@ static void mkt_gc_sweep() {
 }
 
 static void mkt_gc() {
-    /* CHECK((void*)stack_bottom, !=, NULL, "%p"); */
-    /* CHECK((void*)stack_top, !=, NULL, "%p"); */
-    /* CHECK((void*)stack_bottom, <=, (void*)stack_top, "%p"); */
-
+    // Spill registers
     jmp_buf jb;
-    setjmp(jb);
+    IGNORE(setjmp(jb));
 
     READ_RSP();
 
     gc_round += 1;
 
-    log_debug("stats before: gc_round=%zu gc_allocated_bytes=%zu", gc_round,
-              gc_allocated_bytes);
     mkt_gc_scan_stack(mkt_rsp);
     mkt_gc_trace_refs();
     mkt_gc_sweep();
@@ -196,9 +174,6 @@ void* mkt_string_make(size_t size) {
     atom->aa_header =
         (runtime_val_header){.rv_size = size, .rv_tag = RV_TAG_STRING};
 
-    log_debug(
-        "stats after: gc_round=%zu string_make_size=%zu gc_allocated_bytes=%zu",
-        gc_round, size, gc_allocated_bytes);
     return &atom->aa_data;
 }
 
@@ -249,14 +224,6 @@ void mkt_println_string(char* s, const runtime_val_header* s_header) {
 
 char* mkt_string_concat(const char* a, const runtime_val_header* a_header,
                         const char* b, const runtime_val_header* b_header) {
-    /* CHECK((void*)a, !=, NULL, "%p"); */
-    /* CHECK((void*)a_header, !=, NULL, "%p"); */
-    /* CHECK((void*)b, !=, NULL, "%p"); */
-    /* CHECK((void*)b_header, !=, NULL, "%p"); */
-    /* CHECK((void*)stack_bottom, !=, NULL, "%p"); */
-    /* CHECK((void*)stack_top, !=, NULL, "%p"); */
-    /* CHECK((void*)stack_bottom, <=, (void*)stack_top, "%p"); */
-
     char* const ret = mkt_string_make(a_header->rv_size + b_header->rv_size);
     CHECK((void*)ret, !=, NULL, "%p");
     CHECK((void*)a, !=, NULL, "%p");
@@ -268,4 +235,3 @@ char* mkt_string_concat(const char* a, const runtime_val_header* a_header,
 
     return ret;
 }
-

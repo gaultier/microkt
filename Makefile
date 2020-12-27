@@ -28,10 +28,8 @@ endif
 	
 ifeq "$(WITH_LOGS)" "1"
 	CFLAGS += -DWITH_LOGS=1
-	CFLAGS_STDLIB += -DWITH_LOGS=1
 else
 	CFLAGS += -DWITH_LOGS=0
-	CFLAGS_STDLIB += -DWITH_LOGS=0
 endif
 
 ifeq "$(DEBUG)" "1"
