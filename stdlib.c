@@ -145,8 +145,7 @@ static void mkt_gc_sweep() {
         else
             objs = atom;
 
-        MKT_GC_SWEEP_FREE(gc_round, gc_allocated_bytes, to_free,
-                          to_free->aa_data);
+        MKT_GC_SWEEP_FREE(gc_round, gc_allocated_bytes, (void*)to_free);
         free(to_free);
     }
     MKT_GC_SWEEP_DONE(gc_round, gc_allocated_bytes);

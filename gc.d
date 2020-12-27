@@ -14,7 +14,7 @@ struct alloc_atom {
 mkt*:::gc_sweep-free {
     this->atom = (struct alloc_atom*) copyin(arg2, sizeof(struct alloc_atom));
     this->header = (struct runtime_val_header) this->atom->aa_header;
-    this->data = stringof(copyin(arg3, this->header.rv_size));
+    this->data = stringof(copyin(arg2+16, this->header.rv_size));
 
     printf("round=%lld allocated_bytes=%lld size=%lu data=`%.*s`", arg0, arg1,(unsigned long ) this->header.rv_size, (int) this->header.rv_size, this->data);
 }
