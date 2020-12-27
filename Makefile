@@ -52,7 +52,7 @@ mktc: $(SRC) $(HEADERS) stdlib.o
 	$(CC) $(CFLAGS) $(SRC) -o $@
 
 
-stdlib.o: stdlib.c
+stdlib.o: stdlib.c probes.h
 	$(CC) $(CFLAGS_STDLIB) $< -c
 
 test: test.c
@@ -68,5 +68,5 @@ check: mktc $(TESTS_SRC) $(TESTS_EXE) test
 	@./test
 
 clean:
-	rm -f mktc $(TESTS_EXE) $(TESTS_ASM) $(TESTS_O) stdlib.o stdlib.asm
+	rm -f mktc $(TESTS_EXE) $(TESTS_ASM) $(TESTS_O) stdlib.o stdlib.asm probes.h
 	rm -rf ./*.dSYM

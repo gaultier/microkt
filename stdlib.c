@@ -70,6 +70,7 @@ static void mkt_gc_obj_mark(runtime_val_header* header) {
 
     if (header->rv_tag & RV_TAG_MARKED) return;  // Prevent cycles
     header->rv_tag |= RV_TAG_MARKED;
+
     log_debug(
         "gc_round=%zu gc_allocated_bytes=%zu header: size=%zu color=%u tag=%u "
         "ptr=%p",
@@ -135,7 +136,7 @@ static void mkt_gc_trace_refs() {
 }
 
 static void mkt_gc_sweep() {
-    MKT_GC_SWEEP_START(gc_allocated_bytes);
+    MKT_GC_SWEEP_START(gc_round, gc_allocated_bytes);
     alloc_atom* atom = objs;
     alloc_atom* previous = NULL;
 
@@ -149,31 +150,23 @@ static void mkt_gc_sweep() {
         }
 
         // Remove
-
-        log_debug(
-            "Free: gc_round=%zu gc_allocated_bytes=%zu header: size=%zu "
-            "color=%u tag=%u ptr=%p",
-            gc_round, gc_allocated_bytes, atom->aa_header.rv_size,
-            atom->aa_header.rv_color, atom->aa_header.rv_tag, (void*)atom);
-
         const size_t bytes = sizeof(runtime_val_header) + sizeof(alloc_atom*) +
                              atom->aa_header.rv_size;
         CHECK(gc_allocated_bytes, >=, (size_t)bytes, "%zu");
         gc_allocated_bytes -= bytes;
 
-        alloc_atom* const to_free = atom;
+        alloc_atom* to_free = atom;
         atom = atom->aa_next;
         if (previous)
             previous->aa_next = atom;
         else
             objs = atom;
 
-        MKT_GC_SWEEP_FREE(gc_allocated_bytes, to_free,
-                          to_free->aa_header.rv_size,
-                          (void*)&(to_free->aa_data));
+        MKT_GC_SWEEP_FREE(gc_round, gc_allocated_bytes, to_free,
+                          to_free->aa_data);
         free(to_free);
     }
-    MKT_GC_SWEEP_DONE(gc_allocated_bytes);
+    MKT_GC_SWEEP_DONE(gc_round, gc_allocated_bytes);
 }
 
 static void mkt_gc() {

@@ -20,10 +20,20 @@ extern "C" {
 
 #if !defined(DTRACE_PROBES_DISABLED) || !DTRACE_PROBES_DISABLED
 
-#define	MKT_GC_SWEEP_DONE(arg0) \
+#define	MKT_GC_OBJ_MARK(arg0, arg1) \
 do { \
 	__asm__ volatile(".reference " MKT_TYPEDEFS); \
-	__dtrace_probe$mkt$gc_sweep__done$v1$6c6f6e67206c6f6e67(arg0); \
+	__dtrace_probe$mkt$gc_obj__mark$v1$6c6f6e67206c6f6e67$6c6f6e67206c6f6e67(arg0, arg1); \
+	__asm__ volatile(".reference " MKT_STABILITY); \
+} while (0)
+#define	MKT_GC_OBJ_MARK_ENABLED() \
+	({ int _r = __dtrace_isenabled$mkt$gc_obj__mark$v1(); \
+		__asm__ volatile(""); \
+		_r; })
+#define	MKT_GC_SWEEP_DONE(arg0, arg1) \
+do { \
+	__asm__ volatile(".reference " MKT_TYPEDEFS); \
+	__dtrace_probe$mkt$gc_sweep__done$v1$6c6f6e67206c6f6e67$6c6f6e67206c6f6e67(arg0, arg1); \
 	__asm__ volatile(".reference " MKT_STABILITY); \
 } while (0)
 #define	MKT_GC_SWEEP_DONE_ENABLED() \
@@ -33,17 +43,17 @@ do { \
 #define	MKT_GC_SWEEP_FREE(arg0, arg1, arg2, arg3) \
 do { \
 	__asm__ volatile(".reference " MKT_TYPEDEFS); \
-	__dtrace_probe$mkt$gc_sweep__free$v1$6c6f6e67206c6f6e67$766f6964202a$6c6f6e67206c6f6e67$766f6964202a(arg0, arg1, arg2, arg3); \
+	__dtrace_probe$mkt$gc_sweep__free$v1$6c6f6e67206c6f6e67$6c6f6e67206c6f6e67$73747275637420616c6c6f635f61746f6d202a$766f6964202a(arg0, arg1, arg2, arg3); \
 	__asm__ volatile(".reference " MKT_STABILITY); \
 } while (0)
 #define	MKT_GC_SWEEP_FREE_ENABLED() \
 	({ int _r = __dtrace_isenabled$mkt$gc_sweep__free$v1(); \
 		__asm__ volatile(""); \
 		_r; })
-#define	MKT_GC_SWEEP_START(arg0) \
+#define	MKT_GC_SWEEP_START(arg0, arg1) \
 do { \
 	__asm__ volatile(".reference " MKT_TYPEDEFS); \
-	__dtrace_probe$mkt$gc_sweep__start$v1$6c6f6e67206c6f6e67(arg0); \
+	__dtrace_probe$mkt$gc_sweep__start$v1$6c6f6e67206c6f6e67$6c6f6e67206c6f6e67(arg0, arg1); \
 	__asm__ volatile(".reference " MKT_STABILITY); \
 } while (0)
 #define	MKT_GC_SWEEP_START_ENABLED() \
@@ -52,16 +62,22 @@ do { \
 		_r; })
 
 
-extern void __dtrace_probe$mkt$gc_sweep__done$v1$6c6f6e67206c6f6e67(long long);
+extern void __dtrace_probe$mkt$gc_obj__mark$v1$6c6f6e67206c6f6e67$6c6f6e67206c6f6e67(long long, long long);
+extern int __dtrace_isenabled$mkt$gc_obj__mark$v1(void);
+extern void __dtrace_probe$mkt$gc_sweep__done$v1$6c6f6e67206c6f6e67$6c6f6e67206c6f6e67(long long, long long);
 extern int __dtrace_isenabled$mkt$gc_sweep__done$v1(void);
-extern void __dtrace_probe$mkt$gc_sweep__free$v1$6c6f6e67206c6f6e67$766f6964202a$6c6f6e67206c6f6e67$766f6964202a(long long, const void *, long long, const void *);
+extern void __dtrace_probe$mkt$gc_sweep__free$v1$6c6f6e67206c6f6e67$6c6f6e67206c6f6e67$73747275637420616c6c6f635f61746f6d202a$766f6964202a(long long, long long, const struct alloc_atom *, const void *);
 extern int __dtrace_isenabled$mkt$gc_sweep__free$v1(void);
-extern void __dtrace_probe$mkt$gc_sweep__start$v1$6c6f6e67206c6f6e67(long long);
+extern void __dtrace_probe$mkt$gc_sweep__start$v1$6c6f6e67206c6f6e67$6c6f6e67206c6f6e67(long long, long long);
 extern int __dtrace_isenabled$mkt$gc_sweep__start$v1(void);
 
 #else
 
-#define	MKT_GC_SWEEP_DONE(arg0) \
+#define	MKT_GC_OBJ_MARK(arg0, arg1) \
+do { \
+	} while (0)
+#define	MKT_GC_OBJ_MARK_ENABLED() (0)
+#define	MKT_GC_SWEEP_DONE(arg0, arg1) \
 do { \
 	} while (0)
 #define	MKT_GC_SWEEP_DONE_ENABLED() (0)
@@ -69,7 +85,7 @@ do { \
 do { \
 	} while (0)
 #define	MKT_GC_SWEEP_FREE_ENABLED() (0)
-#define	MKT_GC_SWEEP_START(arg0) \
+#define	MKT_GC_SWEEP_START(arg0, arg1) \
 do { \
 	} while (0)
 #define	MKT_GC_SWEEP_START_ENABLED() (0)
