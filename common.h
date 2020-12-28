@@ -89,7 +89,7 @@ static const char mkt_res_to_str[][100] = {
 #endif
 
 typedef enum {
-    COL_RESET = 0,
+    COL_RESET,
     COL_GRAY,
     COL_RED,
     COL_GREEN,
