@@ -9,6 +9,11 @@ WITH_LOGS=0
 WITH_OPTIMIZE = 0
 WITH_DTRACE=1
 OS = $(shell uname)
+ARCH = $(shell uname -m)
+ifneq "$(ARCH)" "x86_64"
+	$(error Unsupported architecture, see README)
+endif
+
 ifeq "$(strip $(OS))" "Darwin"
 	ASAN_DIR=$(shell $(CC) -print-search-dirs | awk -F '=' '/libraries/{print $$2}')/lib/darwin/
 else "$(strip $(OS))" "Linux"
@@ -40,7 +45,7 @@ else
 	CFLAGS += -DWITH_LOGS=0
 endif
 
-ifeq "$(WITH_OPTIMIZE)" "1"
+ifeq "$(WITH_OPTIMIZE)" "0"
 	CFLAGS += -O0
 	CFLAGS_STDLIB += -O0
 else
