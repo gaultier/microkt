@@ -10,6 +10,7 @@ WITH_OPTIMIZE = 0
 WITH_DTRACE=1
 OS = $(shell uname)
 ARCH = $(shell uname -m)
+
 ifneq "$(ARCH)" "x86_64"
 	$(error Unsupported architecture, see README)
 endif
