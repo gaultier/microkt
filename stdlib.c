@@ -1,4 +1,3 @@
-#include <setjmp.h>
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h>
@@ -78,6 +77,8 @@ static void mkt_gc_obj_mark(runtime_val_header* header) {
 
 // TODO: optimize
 static alloc_atom* mkt_gc_atom_find_data_by_addr(size_t addr) {
+    if (addr == 0) return NULL;
+
     alloc_atom* atom = objs;
     while (atom) {
         if (addr == (size_t)&atom->aa_data) return atom;
@@ -152,10 +153,6 @@ static void mkt_gc_sweep() {
 }
 
 static void mkt_gc() {
-    // Spill registers
-    jmp_buf jb;
-    IGNORE(setjmp(jb));
-
     READ_RSP();
 
     gc_round += 1;
