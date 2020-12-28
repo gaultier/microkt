@@ -70,7 +70,9 @@ test: test.c
 	$(CC) $(CFLAGS) $< -o $@
 
 probes.h: probes.d
-	dtrace -o $@ -h -s $<
+ifeq "$(WITH_DTRACE)" "1"
+		dtrace -o $@ -h -s $<
+endif
 
 %.exe: %.kts mktc $(TESTS_SRC)
 	./mktc $<
