@@ -88,10 +88,26 @@ static const char mkt_res_to_str[][100] = {
     } while (0)
 #endif
 
-static const char mkt_color_red[] = "\x1b[31m";
-static const char mkt_color_reset[] = "\x1b[0m";
-static const char mkt_color_gray[] = "\x1b[37m";
-static const char mkt_color_green[] = "\x1b[32m";
+typedef enum {
+    COL_RESET,
+    COL_GRAY,
+    COL_RED,
+    COL_GREEN,
+    COL_COUNT,
+} mkt_color_t;
+
+static const char mkt_colors[2][COL_COUNT][10] = {
+    [false] =
+        {
+            [COL_RESET] = "",
+            [COL_GRAY] = "",
+            [COL_RED] = "",
+            [COL_GREEN] = "",
+        },
+    [true] = {[COL_RESET] = "\x1b[0m",
+              [COL_GRAY] = "\x1b[37m",
+              [COL_RED] = "\x1b[31m",
+              [COL_GREEN] = "\x1b[32m"}};
 
 static bool is_space(char c) {
     return c == ' ' || c == '\n' || c == '\t' || c == '\r';

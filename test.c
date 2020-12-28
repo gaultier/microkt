@@ -111,8 +111,8 @@ static mkt_res_t simple_test_run(const char* source_file_name) {
     if (proc_run(argv, output, &read_bytes, &ret_code) != RES_OK)
         return RES_ERR;
     if (ret_code != 0) {
-        fprintf(stderr, "%s✘ %s:%s ret_code=%d\n", is_tty ? mkt_color_red : "",
-                source_file_name, is_tty ? mkt_color_reset : "", ret_code);
+        fprintf(stderr, "%s✘ %s:%s ret_code=%d\n", mkt_colors[is_tty][COL_RED],
+                source_file_name, mkt_colors[is_tty][COL_RESET], ret_code);
         return RES_ERR;
     }
 
@@ -135,11 +135,11 @@ static mkt_res_t simple_test_run(const char* source_file_name) {
                     "%s"
                     "✘ %s #%lu: [expected]%s len=%zu str=%.*s%s\n"
                     "✘ %s #%lu: [actual  ]%s len=%zu str=%.*s\n",
-                    is_tty ? mkt_color_red : "", source_file_name, line + 1,
-                    is_tty ? mkt_color_reset : "", expect_line.str_len,
+                    mkt_colors[is_tty][COL_RED], source_file_name, line + 1,
+                    mkt_colors[is_tty][COL_RESET], expect_line.str_len,
                     (int)expect_line.str_len, expect_line.str_s,
-                    is_tty ? mkt_color_red : "", source_file_name, line + 1,
-                    is_tty ? mkt_color_reset : "", out_len, (int)out_len, out);
+                    mkt_colors[is_tty][COL_RED], source_file_name, line + 1,
+                    mkt_colors[is_tty][COL_RESET], out_len, (int)out_len, out);
             differed = true;
         }
         out = end + 1;
@@ -147,8 +147,8 @@ static mkt_res_t simple_test_run(const char* source_file_name) {
     }
 
     if (!differed)
-        printf("%s✔ %s%s\n", is_tty ? mkt_color_green : "", source_file_name,
-               is_tty ? mkt_color_reset : "");
+        printf("%s✔ %s%s\n", mkt_colors[is_tty][COL_GREEN], source_file_name,
+               mkt_colors[is_tty][COL_RESET]);
 
     return differed ? RES_ERR : RES_OK;
 }
@@ -171,12 +171,12 @@ static mkt_res_t err_test_run(const char* source_file_name) {
     if (proc_run(argv, output, &read_bytes, &ret_code) != RES_OK)
         return RES_ERR;
     if (ret_code == 0) {
-        fprintf(stderr, "%s✘ %s:%s ret_code=%d\n", is_tty ? mkt_color_red : "",
-                source_file_name, is_tty ? mkt_color_reset : "", ret_code);
+        fprintf(stderr, "%s✘ %s:%s ret_code=%d\n", mkt_colors[is_tty][COL_RED],
+                source_file_name, mkt_colors[is_tty][COL_RESET], ret_code);
         return RES_ERR;
     } else
-        printf("%s✔ %s%s\n", is_tty ? mkt_color_green : "", source_file_name,
-               is_tty ? mkt_color_reset : "");
+        printf("%s✔ %s%s\n", mkt_colors[is_tty][COL_GREEN], source_file_name,
+               mkt_colors[is_tty][COL_RESET]);
 
     return RES_OK;
 }

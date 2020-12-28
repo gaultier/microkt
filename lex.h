@@ -614,11 +614,10 @@ static mkt_res_t lex_init(const char* file_name0, const char* source,
         int start_col = col;
         const mkt_token_t token = lex_next(lexer, &line, &start_col, &col);
         if (token.tok_id == TOK_ID_INVALID) {
-            fprintf(stderr, "%s%s:%d:%d:Invalid token: %s%c%s\n",
-                    is_tty ? mkt_color_gray : "", file_name0, line, start_col,
-                    is_tty ? mkt_color_reset : "",
-                    source[token.tok_pos_range.pr_start],
-                    is_tty ? mkt_color_reset : "");
+            fprintf(stderr, "%s%s:%d:%d:Invalid token: %s%c\n",
+                    mkt_colors[is_tty][COL_GRAY], file_name0, line, start_col,
+                    mkt_colors[is_tty][COL_RESET],
+                    source[token.tok_pos_range.pr_start]);
             err = true;
         }
 
@@ -634,10 +633,9 @@ static mkt_res_t lex_init(const char* file_name0, const char* source,
     }
     if (err) return RES_ERR;
 
-    CHECK((int)buf_size(lexer->lex_tokens), ==,
-          (int)buf_size(lexer->lex_tok_pos_ranges), "%d");
-    CHECK((int)buf_size(lexer->lex_tokens), ==, (int)buf_size(lexer->lex_locs),
-          "%d");
+    CHECK(buf_size(lexer->lex_tokens), ==, buf_size(lexer->lex_tok_pos_ranges),
+          "%zu");
+    CHECK(buf_size(lexer->lex_tokens), ==, buf_size(lexer->lex_locs), "%zu");
 
     return RES_OK;
 }
