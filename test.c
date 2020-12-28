@@ -5,6 +5,7 @@
 #include <string.h>
 #include <sys/param.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include "buf.h"
 #include "common.h"
