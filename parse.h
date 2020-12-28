@@ -101,7 +101,7 @@ static res_t parser_resolve_var(const parser_t* parser, int tok_i,
         CHECK(current_scope_i, <, (int)buf_size(parser->par_nodes), "%d");
 
         const mkt_node_t* block = &parser->par_nodes[current_scope_i];
-        const block_t b = block->node_n.node_block;
+        const mkt_block_t b = block->node_n.node_block;
 
         log_debug("resolving var %.*s in scope %d", var_source_len, var_source,
                   current_scope_i);
@@ -153,7 +153,7 @@ static res_t parser_resolve_var(const parser_t* parser, int tok_i,
 }
 
 static res_t parser_err_assigning_val(const parser_t* parser, int assign_tok_i,
-                                      const var_def_t* var_def) {
+                                      const mkt_var_def_t* var_def) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)var_def, !=, NULL, "%p");
     CHECK(assign_tok_i, >=, 0, "%d");
@@ -545,7 +545,7 @@ static void node_dump(const parser_t* parser, int node_i, int indent) {
             break;
         }
         case NODE_BLOCK: {
-            const block_t block = node->node_n.node_block;
+            const mkt_block_t block = node->node_n.node_block;
             log_debug_with_indent(
                 indent, "node #%d %s type=%s parent_scope=%d", node_i,
                 node_kind_to_str[node->node_kind],
@@ -558,7 +558,7 @@ static void node_dump(const parser_t* parser, int node_i, int indent) {
             break;
         }
         case NODE_VAR_DEF: {
-            const var_def_t var_def = node->node_n.node_var_def;
+            const mkt_var_def_t var_def = node->node_n.node_var_def;
             const pos_range_t pos_range =
                 parser->par_lexer.lex_tok_pos_ranges[var_def.vd_name_tok_i];
 
@@ -577,10 +577,10 @@ static void node_dump(const parser_t* parser, int node_i, int indent) {
             break;
         }
         case NODE_VAR: {
-            const var_t var = node->node_n.node_var;
+            const mkt_var_t var = node->node_n.node_var;
             const mkt_node_t* const node_var_def =
                 &parser->par_nodes[var.va_var_node_i];
-            const var_def_t var_def = node_var_def->node_n.node_var_def;
+            const mkt_var_def_t var_def = node_var_def->node_n.node_var_def;
             const pos_range_t pos_range =
                 parser->par_lexer.lex_tok_pos_ranges[var_def.vd_name_tok_i];
 
@@ -1185,12 +1185,11 @@ static res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
         }
     }
 
-    buf_push(
-        parser->par_nodes,
-        ((mkt_node_t){
-            .node_kind = NODE_IF,
-            .node_type_i = then_type_i,
-            .node_n = {.node_if = ((if_t){.if_first_tok_i = first_tok_i,
+    buf_push(parser->par_nodes,
+             ((mkt_node_t){.node_kind = NODE_IF,
+                           .node_type_i = then_type_i,
+                           .node_n = {.node_if = ((mkt_if_t){
+                                          .if_first_tok_i = first_tok_i,
                                           .if_last_tok_i = last_tok_i,
                                           .if_node_cond_i = node_cond_i,
                                           .if_node_then_i = node_then_i,
@@ -2060,7 +2059,7 @@ static res_t parser_parse_assignment(parser_t* parser, int* new_node_i) {
         }
         CHECK((void*)node_def, !=, NULL, "%p");
 
-        const var_def_t var_def = node_def->node_n.node_var_def;
+        const mkt_var_def_t var_def = node_def->node_n.node_var_def;
         if (var_def.vd_flags & VAR_FLAGS_VAL)
             return parser_err_assigning_val(parser, lhs_tok_i, &var_def);
 

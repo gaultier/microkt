@@ -288,7 +288,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             return;
         }
         case NODE_IF: {
-            const if_t node = expr->node_n.node_if;
+            const mkt_if_t node = expr->node_n.node_if;
 
             emit_expr(parser, node.if_node_cond_i);
             emit_loc(parser, expr);
@@ -357,7 +357,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             return;
         }
         case NODE_BLOCK: {
-            const block_t block = expr->node_n.node_block;
+            const mkt_block_t block = expr->node_n.node_block;
 
             for (int i = 0; i < (int)buf_size(block.bl_nodes_i); i++) {
                 const int stmt_node_i = block.bl_nodes_i[i];
@@ -367,7 +367,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             return;
         }
         case NODE_VAR: {
-            const var_t var = expr->node_n.node_var;
+            const mkt_var_t var = expr->node_n.node_var;
             const mkt_node_t* const node_def =
                 &parser->par_nodes[var.va_var_node_i];
 
@@ -380,7 +380,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 
             emit_loc(parser, expr);
             if (node_def->node_kind == NODE_VAR_DEF) {
-                const var_def_t var_def = node_def->node_n.node_var_def;
+                const mkt_var_def_t var_def = node_def->node_n.node_var_def;
                 const int offset = var_def.vd_stack_offset;
 
                 if (type_size == 1)
@@ -490,14 +490,14 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
 
             emit_expr(parser, binary.bi_rhs_i);
 
-            const var_t var = lhs->node_n.node_var;
+            const mkt_var_t var = lhs->node_n.node_var;
 
             CHECK(var.va_var_node_i, >=, 0, "%d");
             CHECK(var.va_var_node_i, <, (int)buf_size(parser->par_nodes), "%d");
             const mkt_node_t* const node_def =
                 &parser->par_nodes[var.va_var_node_i];
 
-            const var_def_t var_def = node_def->node_n.node_var_def;
+            const mkt_var_def_t var_def = node_def->node_n.node_var_def;
             const int offset = var_def.vd_stack_offset;
             CHECK(offset, >=, 0, "%d");
 
@@ -519,7 +519,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
             return;
         }
         case NODE_VAR_DEF: {
-            const var_def_t var_def = stmt->node_n.node_var_def;
+            const mkt_var_def_t var_def = stmt->node_n.node_var_def;
             if (var_def.vd_init_node_i < 0) return;
 
             emit_expr(parser, var_def.vd_init_node_i);
@@ -548,7 +548,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
             return;
         }
         case NODE_WHILE: {
-            const while_t w = stmt->node_n.node_while;
+            const mkt_while_t w = stmt->node_n.node_while;
             emit_loc(parser, stmt);
             println(".Lwhile_loop_start%d:", stmt_i);
             emit_expr(parser, w.wh_cond_i);
