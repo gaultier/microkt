@@ -65,7 +65,7 @@ static void fn_prolog(const parser_t* parser, const fn_decl_t* fn_decl,
         CHECK(arg_i, >=, 0, "%d");
         CHECK(arg_i, <, (int)buf_size(parser->par_nodes), "%d");
 
-        const node_t* const arg = &parser->par_nodes[arg_i];
+        const mkt_node_t* const arg = &parser->par_nodes[arg_i];
         const int stack_offset = arg->node_n.node_var_def.vd_stack_offset;
         CHECK(stack_offset, >=, 0, "%d");
 
@@ -97,7 +97,7 @@ static void emit_program_epilog() {
 
 static void emit_push() { println("push %%rax"); }
 
-static void emit_loc(const parser_t* parser, const node_t* const node) {
+static void emit_loc(const parser_t* parser, const mkt_node_t* const node) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)node, !=, NULL, "%p");
 
@@ -112,7 +112,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
     CHECK(expr_i, >=, 0, "%d");
     CHECK(expr_i, <, (int)buf_size(parser->par_nodes), "%d");
 
-    const node_t* const expr = &parser->par_nodes[expr_i];
+    const mkt_node_t* const expr = &parser->par_nodes[expr_i];
 
     CHECK(expr->node_type_i, >=, 0, "%d");
     CHECK(expr->node_type_i, <, (int)buf_size(parser->par_types), "%d");
@@ -312,7 +312,8 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
                 expr->node_n.node_builtin_println;
             emit_expr(parser, builtin_println.bp_arg_i);
 
-            const node_t* arg = &parser->par_nodes[builtin_println.bp_arg_i];
+            const mkt_node_t* arg =
+                &parser->par_nodes[builtin_println.bp_arg_i];
             const type_kind_t type =
                 parser->par_types[arg->node_type_i].ty_kind;
 
@@ -367,7 +368,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
         }
         case NODE_VAR: {
             const var_t var = expr->node_n.node_var;
-            const node_t* const node_def =
+            const mkt_node_t* const node_def =
                 &parser->par_nodes[var.va_var_node_i];
 
             CHECK(node_def->node_type_i, >=, 0, "%d");
@@ -454,7 +455,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
     CHECK(stmt_i, >=, 0, "%d");
     CHECK(stmt_i, <, (int)buf_size(parser->par_nodes), "%d");
 
-    const node_t* const stmt = &parser->par_nodes[stmt_i];
+    const mkt_node_t* const stmt = &parser->par_nodes[stmt_i];
     const loc_t loc =
         parser->par_lexer.lex_locs[node_first_token(parser, stmt)];
     println(".loc 1 %d %d\t## %s:%d:%d", loc.loc_line, loc.loc_column,
@@ -485,7 +486,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
         }
         case NODE_ASSIGN: {
             const binary_t binary = stmt->node_n.node_binary;
-            const node_t* const lhs = &parser->par_nodes[binary.bi_lhs_i];
+            const mkt_node_t* const lhs = &parser->par_nodes[binary.bi_lhs_i];
 
             emit_expr(parser, binary.bi_rhs_i);
 
@@ -493,7 +494,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
 
             CHECK(var.va_var_node_i, >=, 0, "%d");
             CHECK(var.va_var_node_i, <, (int)buf_size(parser->par_nodes), "%d");
-            const node_t* const node_def =
+            const mkt_node_t* const node_def =
                 &parser->par_nodes[var.va_var_node_i];
 
             const var_def_t var_def = node_def->node_n.node_var_def;
@@ -607,7 +608,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
         CHECK(node_i, >=, 0, "%d");
         CHECK(node_i, <, (int)buf_size(parser->par_nodes), "%d");
 
-        const node_t* const node = &parser->par_nodes[node_i];
+        const mkt_node_t* const node = &parser->par_nodes[node_i];
         if (node->node_kind != NODE_FN_DECL) continue;
 
         const fn_decl_t fn_decl = node->node_n.node_fn_decl;

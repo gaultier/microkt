@@ -167,5 +167,5 @@ typedef struct {
         call_t node_call;        // NODE_CALL
         syscall_t node_syscall;  // NODE_SYSCALL
     } node_n;
-} node_t;
+} mkt_node_t;
 
