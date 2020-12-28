@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <fcntl.h>
+#include <string.h>
 #include <sys/param.h>
 #include <sys/stat.h>
 
@@ -22,7 +23,7 @@ static void base_source_file_name(const char* file_name0,
     base_file_name0[len - 1] = 0;
 }
 
-static mkt_res_t run(const char* file_name0) {
+static int run(const char* file_name0) {
     CHECK((void*)file_name0, !=, NULL, "%p");
 
     static char base_file_name0[MAXPATHLEN + 1] = "";
@@ -53,12 +54,20 @@ static mkt_res_t run(const char* file_name0) {
         res = RES_SOURCE_FILE_READ_FAILED;
         fprintf(stderr, "Failed to `open(2)` the source file %s: %s\n",
                 file_name0, strerror(errno));
-        return res;
+        return errno;
     }
-    if (read(file, source, file_size) != file_size) {
+    const int read_bytes = read(file, source, file_size);
+    if (read_bytes == -1) {
         fprintf(stderr, "Failed to `read(2)` the source file %s: %s\n",
                 file_name0, strerror(errno));
-        return res;
+        return errno;
+    }
+    if (read_bytes != file_size) {
+        fprintf(stderr,
+                "Failed to fully `read(2)` the source file %s: bytes to "
+                "read=%d, bytes read=%d errno=%d err=%s\n",
+                file_name0, file_size, read_bytes, errno, strerror(errno));
+        return errno ? errno : EIO;
     }
     close(file);
 
@@ -165,5 +174,6 @@ int main(int argc, char* argv[]) {
         return 0;
     };
 
-    if (run(argv[1]) != RES_OK) return 1;
+    int err = 0;
+    if ((err = run(argv[1])) != RES_OK) return err;
 }
