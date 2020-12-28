@@ -89,24 +89,24 @@ const char token_id_to_str[][30] = {
 // Position of a token in the file in term of file offsets. Start at 0.
 typedef struct {
     int pr_start, pr_end;
-} pos_range_t;
+} mkt_pos_range_t;
 
 // Human readable line and column, computed from a file offset. Start at 1.
 typedef struct {
     int loc_line, loc_column;
-} loc_t;
+} mkt_loc_t;
 
 typedef struct {
     token_id_t tok_id;
-    pos_range_t tok_pos_range;
-} token_t;
+    mkt_pos_range_t tok_pos_range;
+} mkt_token_t;
 
 typedef struct {
     token_id_t key_id;
     const char key_str[20];
-} keyword_t;
+} mkt_keyword_t;
 
-static const keyword_t keywords[] = {
+static const mkt_keyword_t keywords[] = {
     {.key_id = TOK_ID_TRUE, .key_str = "true"},
     {.key_id = TOK_ID_FALSE, .key_str = "false"},
     {.key_id = TOK_ID_BUILTIN_PRINTLN, .key_str = "println"},
@@ -123,16 +123,16 @@ static const keyword_t keywords[] = {
 typedef struct {
     const char* lex_source;
     int lex_source_len, lex_index;
-    loc_t* lex_locs;
-    token_t* lex_tokens;
-    pos_range_t* lex_tok_pos_ranges;
+    mkt_loc_t* lex_locs;
+    mkt_token_t* lex_tokens;
+    mkt_pos_range_t* lex_tok_pos_ranges;
 } lexer_t;
 
 // TODO: trie?
 static const token_id_t* token_get_keyword(const char* source_start, int len) {
     const int keywords_len = sizeof(keywords) / sizeof(keywords[0]);
     for (int i = 0; i < keywords_len; i++) {
-        const keyword_t* k = &keywords[i];
+        const mkt_keyword_t* k = &keywords[i];
         const int keyword_len = strlen(k->key_str);
 
         if (len == keyword_len && memcmp(source_start, k->key_str, len) == 0)
@@ -225,7 +225,7 @@ static void lex_advance_until_newline_or_eof(lexer_t* lexer, int* col) {
     }
 }
 
-static void lex_identifier(lexer_t* lexer, token_t* result, int* col) {
+static void lex_identifier(lexer_t* lexer, mkt_token_t* result, int* col) {
     CHECK((void*)lexer, !=, NULL, "%p");
     CHECK((void*)lexer->lex_source, !=, NULL, "%p");
     CHECK((void*)result, !=, NULL, "%p");
@@ -256,7 +256,7 @@ static void lex_identifier(lexer_t* lexer, token_t* result, int* col) {
     }
 }
 
-static res_t lex_number(lexer_t* lexer, token_t* result, int* col) {
+static res_t lex_number(lexer_t* lexer, mkt_token_t* result, int* col) {
     CHECK((void*)lexer, !=, NULL, "%p");
     CHECK((void*)lexer->lex_source, !=, NULL, "%p");
     CHECK((void*)result, !=, NULL, "%p");
@@ -278,7 +278,8 @@ static res_t lex_number(lexer_t* lexer, token_t* result, int* col) {
 
 // TODO: escape sequences
 // TODO: multiline
-static void lex_string(lexer_t* lexer, token_t* result, int* line, int* col) {
+static void lex_string(lexer_t* lexer, mkt_token_t* result, int* line,
+                       int* col) {
     CHECK((void*)lexer, !=, NULL, "%p");
     CHECK((void*)lexer->lex_source, !=, NULL, "%p");
     CHECK((void*)result, !=, NULL, "%p");
@@ -327,7 +328,7 @@ static void lex_string(lexer_t* lexer, token_t* result, int* line, int* col) {
 
 // TODO: escape sequences
 // TODO: unicode literals
-static void lex_char(lexer_t* lexer, token_t* result, int* col) {
+static void lex_char(lexer_t* lexer, mkt_token_t* result, int* col) {
     CHECK((void*)lexer, !=, NULL, "%p");
     CHECK((void*)lexer->lex_source, !=, NULL, "%p");
     CHECK((void*)result, !=, NULL, "%p");
@@ -363,15 +364,16 @@ static void lex_char(lexer_t* lexer, token_t* result, int* col) {
     }
 }
 
-static token_t lex_next(lexer_t* lexer, int* line, int* start_col, int* col) {
+static mkt_token_t lex_next(lexer_t* lexer, int* line, int* start_col,
+                            int* col) {
     CHECK((void*)lexer, !=, NULL, "%p");
     CHECK((void*)lexer->lex_source, !=, NULL, "%p");
     CHECK((void*)line, !=, NULL, "%p");
     CHECK((void*)start_col, !=, NULL, "%p");
     CHECK((void*)col, !=, NULL, "%p");
 
-    token_t result = {.tok_id = TOK_ID_EOF,
-                      .tok_pos_range = {.pr_start = lexer->lex_index}};
+    mkt_token_t result = {.tok_id = TOK_ID_EOF,
+                          .tok_pos_range = {.pr_start = lexer->lex_index}};
 
     while (lexer->lex_index < lexer->lex_source_len) {
         const char c = lexer->lex_source[lexer->lex_index];
@@ -577,11 +579,11 @@ outer:
     return result;
 }
 
-static void token_dump(const token_t* t, int i, const lexer_t* lexer) {
+static void token_dump(const mkt_token_t* t, int i, const lexer_t* lexer) {
     CHECK((void*)t, !=, NULL, "%p");
     CHECK((void*)lexer, !=, NULL, "%p");
 
-    loc_t loc = lexer->lex_locs[i];
+    mkt_loc_t loc = lexer->lex_locs[i];
 #if WITH_LOGS == 0
     IGNORE(i);
     IGNORE(loc);
@@ -609,7 +611,7 @@ static res_t lex_init(const char* file_name0, const char* source,
     int i = 0, col = 1, line = 1;
     while (true) {
         int start_col = col;
-        const token_t token = lex_next(lexer, &line, &start_col, &col);
+        const mkt_token_t token = lex_next(lexer, &line, &start_col, &col);
         if (token.tok_id == TOK_ID_INVALID) {
             fprintf(stderr, "%s%s:%d:%d:Invalid token: %s%c%s\n",
                     is_tty ? color_gray : "", file_name0, line, start_col,
@@ -622,7 +624,7 @@ static res_t lex_init(const char* file_name0, const char* source,
         buf_push(lexer->lex_tokens, token);
         buf_push(lexer->lex_tok_pos_ranges, token.tok_pos_range);
         buf_push(lexer->lex_locs,
-                 ((loc_t){.loc_line = line, .loc_column = start_col}));
+                 ((mkt_loc_t){.loc_line = line, .loc_column = start_col}));
 
         token_dump(&token, i, lexer);
 

@@ -101,7 +101,7 @@ static void emit_loc(const parser_t* parser, const mkt_node_t* const node) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)node, !=, NULL, "%p");
 
-    const loc_t loc =
+    const mkt_loc_t loc =
         parser->par_lexer.lex_locs[node_first_token(parser, node)];
     println(".loc 1 %d %d\t## %s:%d:%d", loc.loc_line, loc.loc_column,
             parser->par_file_name0, loc.loc_line, loc.loc_column);
@@ -456,7 +456,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
     CHECK(stmt_i, <, (int)buf_size(parser->par_nodes), "%d");
 
     const mkt_node_t* const stmt = &parser->par_nodes[stmt_i];
-    const loc_t loc =
+    const mkt_loc_t loc =
         parser->par_lexer.lex_locs[node_first_token(parser, stmt)];
     println(".loc 1 %d %d\t## %s:%d:%d", loc.loc_line, loc.loc_column,
             parser->par_file_name0, loc.loc_line, loc.loc_column);
@@ -615,11 +615,11 @@ static void emit(const parser_t* parser, FILE* asm_file) {
         CHECK(fn_decl.fd_name_tok_i, >=, 0, "%d");
         CHECK(fn_decl.fd_name_tok_i, <, parser->par_lexer.lex_source_len, "%d");
 
-        const loc_t loc = parser->par_lexer.lex_locs[fn_decl.fd_name_tok_i];
+        const mkt_loc_t loc = parser->par_lexer.lex_locs[fn_decl.fd_name_tok_i];
         println(".loc 1 %d %d\t## %s:%d:%d", loc.loc_line, loc.loc_column,
                 parser->par_file_name0, loc.loc_line, loc.loc_column);
 
-        const pos_range_t pos_range =
+        const mkt_pos_range_t pos_range =
             parser->par_lexer.lex_tok_pos_ranges[fn_decl.fd_name_tok_i];
         const char* const name =
             &parser->par_lexer.lex_source[pos_range.pr_start];

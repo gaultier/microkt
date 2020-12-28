@@ -160,9 +160,9 @@ static res_t parser_err_assigning_val(const parser_t* parser, int assign_tok_i,
     CHECK(assign_tok_i, >=, 0, "%d");
     CHECK(assign_tok_i, <, parser->par_lexer.lex_source_len, "%d");
 
-    const loc_t vd_loc_start =
+    const mkt_loc_t vd_loc_start =
         parser->par_lexer.lex_locs[var_def->vd_first_tok_i];
-    const loc_t assign_loc_start = parser->par_lexer.lex_locs[assign_tok_i];
+    const mkt_loc_t assign_loc_start = parser->par_lexer.lex_locs[assign_tok_i];
 
     fprintf(stderr,
             "%s%s:%d:%d:%sTrying to assign a variable declared with `val`\n",
@@ -188,7 +188,7 @@ static res_t parser_err_missing_rhs(const parser_t* parser, int first_tok_i,
     CHECK(last_tok_i, >=, first_tok_i, "%d");
     CHECK(last_tok_i, <, parser->par_lexer.lex_source_len, "%d");
 
-    const loc_t first_tok_loc = parser->par_lexer.lex_locs[first_tok_i];
+    const mkt_loc_t first_tok_loc = parser->par_lexer.lex_locs[first_tok_i];
 
     fprintf(stderr, "%s%s:%d:%d:%sMissing right hand-side operand\n",
             (parser->par_is_tty ? color_gray : ""), parser->par_file_name0,
@@ -332,12 +332,12 @@ static res_t parser_init(const char* file_name0, const char* source,
 
     // Add root main function
     buf_push(parser->par_lexer.lex_tokens,
-             ((token_t){.tok_id = TOK_ID_IDENTIFIER,
-                        .tok_pos_range = {.pr_start = 0, .pr_end = 0}}));
+             ((mkt_token_t){.tok_id = TOK_ID_IDENTIFIER,
+                            .tok_pos_range = {.pr_start = 0, .pr_end = 0}}));
     buf_push(parser->par_lexer.lex_tok_pos_ranges,
-             ((pos_range_t){.pr_start = 0, .pr_end = 0}));
+             ((mkt_pos_range_t){.pr_start = 0, .pr_end = 0}));
     buf_push(parser->par_lexer.lex_locs,
-             ((loc_t){.loc_line = 1, .loc_column = 1}));
+             ((mkt_loc_t){.loc_line = 1, .loc_column = 1}));
 
     const int fn_main_name_tok_i = buf_size(parser->par_lexer.lex_tokens) - 1;
 
@@ -422,7 +422,8 @@ static long long int parse_tok_to_long(const parser_t* parser, int tok_i,
     static char string0[25];
     memset(string0, 0, sizeof(string0));
 
-    const pos_range_t pos_range = parser->par_lexer.lex_tok_pos_ranges[tok_i];
+    const mkt_pos_range_t pos_range =
+        parser->par_lexer.lex_tok_pos_ranges[tok_i];
     const char* const string =
         &parser->par_lexer.lex_source[pos_range.pr_start];
     CHECK((void*)string, !=, NULL, "%p");
@@ -444,7 +445,8 @@ static long long int parse_tok_to_char(const parser_t* parser, int tok_i) {
     CHECK(tok_i, >=, 0, "%d");
     CHECK(tok_i, <, parser->par_lexer.lex_source_len, "%d");
 
-    const pos_range_t pos_range = parser->par_lexer.lex_tok_pos_ranges[tok_i];
+    const mkt_pos_range_t pos_range =
+        parser->par_lexer.lex_tok_pos_ranges[tok_i];
     const char* const string =
         &parser->par_lexer.lex_source[pos_range.pr_start + 1];
     CHECK((void*)string, !=, NULL, "%p");
@@ -560,7 +562,7 @@ static void node_dump(const parser_t* parser, int node_i, int indent) {
         }
         case NODE_VAR_DEF: {
             const mkt_var_def_t var_def = node->node_n.node_var_def;
-            const pos_range_t pos_range =
+            const mkt_pos_range_t pos_range =
                 parser->par_lexer.lex_tok_pos_ranges[var_def.vd_name_tok_i];
 
             const char* const name =
@@ -582,7 +584,7 @@ static void node_dump(const parser_t* parser, int node_i, int indent) {
             const mkt_node_t* const node_var_def =
                 &parser->par_nodes[var.va_var_node_i];
             const mkt_var_def_t var_def = node_var_def->node_n.node_var_def;
-            const pos_range_t pos_range =
+            const mkt_pos_range_t pos_range =
                 parser->par_lexer.lex_tok_pos_ranges[var_def.vd_name_tok_i];
 
             const char* const name =
@@ -610,7 +612,7 @@ static void node_dump(const parser_t* parser, int node_i, int indent) {
         case NODE_FN_DECL: {
             const mkt_fn_decl_t fn_decl = node->node_n.node_fn_decl;
             const int arity = buf_size(fn_decl.fd_arg_nodes_i);
-            const pos_range_t pos_range =
+            const mkt_pos_range_t pos_range =
                 parser->par_lexer.lex_tok_pos_ranges[fn_decl.fd_name_tok_i];
             const char* const name =
                 &parser->par_lexer.lex_source[pos_range.pr_start];
@@ -750,7 +752,8 @@ static void parser_tok_source(const parser_t* parser, int tok_i,
     CHECK(tok_i, <, parser->par_lexer.lex_source_len, "%d");
 
     const token_id_t tok = parser->par_lexer.lex_tokens[tok_i].tok_id;
-    const pos_range_t pos_range = parser->par_lexer.lex_tok_pos_ranges[tok_i];
+    const mkt_pos_range_t pos_range =
+        parser->par_lexer.lex_tok_pos_ranges[tok_i];
 
     // Without quotes for char/string
     if (tok == TOK_ID_CHAR) {
@@ -760,7 +763,7 @@ static void parser_tok_source(const parser_t* parser, int tok_i,
                                        : pos_range.pr_start];
         *source_len = pos_range.pr_end - pos_range.pr_start - 2;
     } else if (tok == TOK_ID_STRING) {
-        const pos_range_t pos_range =
+        const mkt_pos_range_t pos_range =
             parser->par_lexer.lex_tok_pos_ranges[tok_i];
         const bool multiline =
             parser->par_lexer.lex_source[pos_range.pr_end - 1] == '"' &&
@@ -875,12 +878,12 @@ static void parser_print_source_on_error(const parser_t* parser,
     CHECK(last_tok_i, >=, first_tok_i, "%d");
     CHECK(last_tok_i, <, parser->par_lexer.lex_source_len, "%d");
 
-    const pos_range_t first_tok_pos_range =
+    const mkt_pos_range_t first_tok_pos_range =
         parser->par_lexer.lex_tok_pos_ranges[first_tok_i];
-    const loc_t first_tok_loc = parser->par_lexer.lex_locs[first_tok_i];
-    const pos_range_t last_tok_pos_range =
+    const mkt_loc_t first_tok_loc = parser->par_lexer.lex_locs[first_tok_i];
+    const mkt_pos_range_t last_tok_pos_range =
         parser->par_lexer.lex_tok_pos_ranges[last_tok_i];
-    const loc_t last_tok_loc = parser->par_lexer.lex_locs[last_tok_i];
+    const mkt_loc_t last_tok_loc = parser->par_lexer.lex_locs[last_tok_i];
 
     const int first_line = first_tok_loc.loc_line;
     const int last_line = last_tok_loc.loc_line;
@@ -903,7 +906,7 @@ static void parser_print_source_on_error(const parser_t* parser,
         }
     }
 
-    pos_range_t first_line_start_tok_pos =
+    mkt_pos_range_t first_line_start_tok_pos =
         parser->par_lexer.lex_tok_pos_ranges[first_line_start_tok_i];
 
     int last_line_start_tok_i = last_tok_i;
@@ -926,7 +929,7 @@ static void parser_print_source_on_error(const parser_t* parser,
     }
     CHECK(last_line_start_tok_i, >=, first_line_start_tok_i, "%d");
 
-    pos_range_t last_line_start_tok_pos =
+    mkt_pos_range_t last_line_start_tok_pos =
         parser->par_lexer.lex_tok_pos_ranges[last_line_start_tok_i];
 
     const char* source =
@@ -976,7 +979,7 @@ static res_t parser_err_unexpected_token(const parser_t* parser,
 
     const res_t res = RES_UNEXPECTED_TOKEN;
 
-    const loc_t loc_start = parser->par_lexer.lex_locs[parser->par_tok_i];
+    const mkt_loc_t loc_start = parser->par_lexer.lex_locs[parser->par_tok_i];
 
     fprintf(stderr, "%s%s:%d:%d:%sUnexpected token. Expected `%s`, got `%s`\n",
             (parser->par_is_tty ? color_gray : ""), parser->par_file_name0,
@@ -1055,7 +1058,8 @@ static res_t parser_err_non_matching_types(const parser_t* parser,
     CHECK(rhs_last_tok_i, >=, 0, "%d");
     CHECK(rhs_last_tok_i, <, parser->par_lexer.lex_source_len, "%d");
 
-    const loc_t lhs_first_tok_loc = parser->par_lexer.lex_locs[lhs_first_tok_i];
+    const mkt_loc_t lhs_first_tok_loc =
+        parser->par_lexer.lex_locs[lhs_first_tok_i];
 
     const res_t res = RES_NON_MATCHING_TYPES;
     fprintf(stderr, "%s%s:%d:%d:%sTypes do not match. Expected %s, got %s\n",
@@ -1091,7 +1095,8 @@ static res_t parser_err_unexpected_type(const parser_t* parser, int lhs_node_i,
     CHECK(lhs_last_tok_i, >=, 0, "%d");
     CHECK(lhs_last_tok_i, <, parser->par_lexer.lex_source_len, "%d");
 
-    const loc_t lhs_first_tok_loc = parser->par_lexer.lex_locs[lhs_first_tok_i];
+    const mkt_loc_t lhs_first_tok_loc =
+        parser->par_lexer.lex_locs[lhs_first_tok_i];
 
     const res_t res = RES_NON_MATCHING_TYPES;
     fprintf(stderr, "%s%s:%d:%d:%sTypes do not match. Expected %s, got %s\n",
@@ -1277,7 +1282,7 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
     if (parser_match(parser, &tok_i, 2, TOK_ID_TRUE, TOK_ID_FALSE)) {
         CHECK(tok_i, >=, 0, "%d");
         CHECK(tok_i, <, parser->par_lexer.lex_source_len, "%d");
-        const pos_range_t pos_range =
+        const mkt_pos_range_t pos_range =
             parser->par_lexer.lex_tok_pos_ranges[tok_i];
 
         CHECK(pos_range.pr_start, >=, 0, "%d");
@@ -1298,7 +1303,7 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         return RES_OK;
     }
     if (parser_match(parser, &tok_i, 1, TOK_ID_STRING)) {
-        const pos_range_t pos_range =
+        const mkt_pos_range_t pos_range =
             parser->par_lexer.lex_tok_pos_ranges[tok_i];
         const bool multiline =
             parser->par_lexer.lex_source[pos_range.pr_end - 1] == '"' &&
@@ -2413,7 +2418,7 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
 
     const bool seen_return = fn_decl->fd_flags & FN_FLAGS_SEEN_RETURN;
     if (declared_type != TYPE_UNIT && !seen_return) {
-        const loc_t loc = parser->par_lexer.lex_locs[last_tok_i];
+        const mkt_loc_t loc = parser->par_lexer.lex_locs[last_tok_i];
 
         fprintf(stderr,
                 "%s%s:%d:%d:%sThe function has declared to "
