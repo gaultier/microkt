@@ -26,7 +26,7 @@ typedef struct {
 
 typedef struct {
     int bp_arg_i, bp_keyword_print_i, bp_rparen_i;
-} builtin_println_t;
+} mkt_builtin_println_t;
 
 typedef struct {
     int bi_lhs_i, bi_rhs_i;
@@ -63,7 +63,7 @@ typedef enum {
     NODE_CALL,
     NODE_RETURN,
     NODE_SYSCALL,
-} node_kind_t;
+} mkt_node_kind_t;
 
 const char node_kind_to_str[][30] = {
     [NODE_BUILTIN_PRINTLN] = "Print",
@@ -149,12 +149,12 @@ typedef struct {
 } mkt_syscall_t;
 
 typedef struct {
-    node_kind_t node_kind;
+    mkt_node_kind_t node_kind;
     int node_type_i;
     union {
-        builtin_println_t node_builtin_println;  // NODE_BUILTIN_PRINTLN
-        mkt_string_t node_string;                // NODE_STRING
-        number_t node_num;                       // NODE_LONG, NODE_CHAR
+        mkt_builtin_println_t node_builtin_println;  // NODE_BUILTIN_PRINTLN
+        mkt_string_t node_string;                    // NODE_STRING
+        number_t node_num;                           // NODE_LONG, NODE_CHAR
         mkt_binary_t node_binary;  // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
         // NODE_DIVIDE, NODE_MODULO
         unary_t node_unary;          // NODE_NOT, NODE_RETURN

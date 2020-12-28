@@ -308,7 +308,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             return;
         }
         case NODE_BUILTIN_PRINTLN: {
-            const builtin_println_t builtin_println =
+            const mkt_builtin_println_t builtin_println =
                 expr->node_n.node_builtin_println;
             emit_expr(parser, builtin_println.bp_arg_i);
 
