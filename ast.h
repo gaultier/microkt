@@ -133,11 +133,11 @@ typedef struct {
     int fd_first_tok_i, fd_last_tok_i, fd_name_tok_i, fd_body_node_i,
         fd_stack_size, *fd_arg_nodes_i;
     unsigned short fd_flags;
-} fn_decl_t;
+} mkt_fn_decl_t;
 
 typedef struct {
     int ca_first_tok_i, ca_last_tok_i, ca_lhs_node_i, *ca_arg_nodes_i;
-} call_t;
+} mkt_call_t;
 
 typedef struct {
     int un_first_tok_i, un_last_tok_i, un_node_i;
@@ -146,7 +146,7 @@ typedef struct {
 typedef struct {
     int sy_first_tok_i, sy_last_tok_i;
     int* sy_arg_nodes_i;
-} syscall_t;
+} mkt_syscall_t;
 
 typedef struct {
     node_kind_t node_kind;
@@ -157,15 +157,15 @@ typedef struct {
         number_t node_num;                       // NODE_LONG, NODE_CHAR
         binary_t node_binary;  // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
         // NODE_DIVIDE, NODE_MODULO
-        unary_t node_unary;      // NODE_NOT, NODE_RETURN
-        if_t node_if;            // NODE_IF
-        block_t node_block;      // NODE_BLOCK
-        var_def_t node_var_def;  // NODE_VAR_DEF
-        var_t node_var;          // NODE_VAR
-        while_t node_while;      // NODE_WHILE
-        fn_decl_t node_fn_decl;  // NODE_FN_DECL
-        call_t node_call;        // NODE_CALL
-        syscall_t node_syscall;  // NODE_SYSCALL
+        unary_t node_unary;          // NODE_NOT, NODE_RETURN
+        if_t node_if;                // NODE_IF
+        block_t node_block;          // NODE_BLOCK
+        var_def_t node_var_def;      // NODE_VAR_DEF
+        var_t node_var;              // NODE_VAR
+        while_t node_while;          // NODE_WHILE
+        mkt_fn_decl_t node_fn_decl;  // NODE_FN_DECL
+        mkt_call_t node_call;        // NODE_CALL
+        mkt_syscall_t node_syscall;  // NODE_SYSCALL
     } node_n;
 } mkt_node_t;
 

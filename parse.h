@@ -483,7 +483,7 @@ static void node_dump(const parser_t* parser, int node_i, int indent) {
                 node_kind_to_str[node->node_kind],
                 type_to_str[parser->par_types[node->node_type_i].ty_kind]);
 
-            const syscall_t syscall = node->node_n.node_syscall;
+            const mkt_syscall_t syscall = node->node_n.node_syscall;
             for (int i = 0; i < (int)buf_size(syscall.sy_arg_nodes_i); i++)
                 node_dump(parser, syscall.sy_arg_nodes_i[i], indent + 2);
 
@@ -607,7 +607,7 @@ static void node_dump(const parser_t* parser, int node_i, int indent) {
             return;
         }
         case NODE_FN_DECL: {
-            const fn_decl_t fn_decl = node->node_n.node_fn_decl;
+            const mkt_fn_decl_t fn_decl = node->node_n.node_fn_decl;
             const int arity = buf_size(fn_decl.fd_arg_nodes_i);
             const pos_range_t pos_range =
                 parser->par_lexer.lex_tok_pos_ranges[fn_decl.fd_name_tok_i];
@@ -622,7 +622,7 @@ static void node_dump(const parser_t* parser, int node_i, int indent) {
             return;
         }
         case NODE_CALL: {
-            const call_t call = node->node_n.node_call;
+            const mkt_call_t call = node->node_n.node_call;
             log_debug_with_indent(
                 indent, "node #%d %s type=%s arity=%d", node_i,
                 node_kind_to_str[node->node_kind],
@@ -1665,7 +1665,7 @@ static res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i) {
     const mkt_node_t* const fn_decl_node = &parser->par_nodes[fn_decl_node_i];
     CHECK((void*)fn_decl_node, !=, NULL, "%p");
 
-    const fn_decl_t fn_decl = fn_decl_node->node_n.node_fn_decl;
+    const mkt_fn_decl_t fn_decl = fn_decl_node->node_n.node_fn_decl;
     const int declared_arity = buf_size(fn_decl.fd_arg_nodes_i);
     const int found_arity = buf_size(arg_nodes_i);
     if (declared_arity != found_arity) UNIMPLEMENTED();  // TODO: err
@@ -2386,7 +2386,7 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     const type_kind_t declared_type =
         parser->par_types[declared_type_i].ty_kind;
 
-    fn_decl_t* const fn_decl =
+    mkt_fn_decl_t* const fn_decl =
         &parser->par_nodes[*new_node_i].node_n.node_fn_decl;
     const int last_tok_i =
         parser->par_nodes[body_node_i].node_n.node_block.bl_last_tok_i;

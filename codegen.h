@@ -44,7 +44,7 @@ static int emit_align_to_16(int stack_size) {
     return (stack_size + 16 - 1) / 16 * 16;
 }
 
-static void fn_prolog(const parser_t* parser, const fn_decl_t* fn_decl,
+static void fn_prolog(const parser_t* parser, const mkt_fn_decl_t* fn_decl,
                       int aligned_stack_size) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)fn_decl, !=, NULL, "%p");
@@ -341,7 +341,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             return;
         }
         case NODE_SYSCALL: {
-            const syscall_t syscall = expr->node_n.node_syscall;
+            const mkt_syscall_t syscall = expr->node_n.node_syscall;
             const int len = (int)buf_size(syscall.sy_arg_nodes_i);
             CHECK(len, >, 0, "%d");
 
@@ -402,7 +402,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
                 CHECK(current_fn_i, >=, 0, "%d");
                 CHECK(current_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
 
-                const fn_decl_t fn_decl = node_def->node_n.node_fn_decl;
+                const mkt_fn_decl_t fn_decl = node_def->node_n.node_fn_decl;
                 const char* name = NULL;
                 int name_len = 0;
                 parser_tok_source(parser, fn_decl.fd_name_tok_i, &name,
@@ -426,7 +426,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             return;
         }
         case NODE_CALL: {
-            const call_t call = expr->node_n.node_call;
+            const mkt_call_t call = expr->node_n.node_call;
             for (int i = 0; i < (int)buf_size(call.ca_arg_nodes_i); i++) {
                 emit_expr(parser, call.ca_arg_nodes_i[i]);
                 emit_loc(parser, expr);
@@ -611,7 +611,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
         const mkt_node_t* const node = &parser->par_nodes[node_i];
         if (node->node_kind != NODE_FN_DECL) continue;
 
-        const fn_decl_t fn_decl = node->node_n.node_fn_decl;
+        const mkt_fn_decl_t fn_decl = node->node_n.node_fn_decl;
         CHECK(fn_decl.fd_name_tok_i, >=, 0, "%d");
         CHECK(fn_decl.fd_name_tok_i, <, parser->par_lexer.lex_source_len, "%d");
 
