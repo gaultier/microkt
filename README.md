@@ -2,7 +2,7 @@
 
 A work-in-progress compiler for a subset of the Kotlin language, with zero dependencies. It compiles a (very small) subset of the Kotlin language to a native executable.
 
-For now it only supports x86_64 (macOS, Linux should also work) although it would not be hard to add more platforms.
+For now it only supports x86_64 (macOS & Linux) although it would not be hard to add more platforms.
 
 Have a look at the `tests` directory to get a feeling of what's supported. Here's a sample (see the `Quickstart` section to see how to run it):
 
@@ -92,7 +92,7 @@ Hello, world!
 
 ## Develop
 
-Available flags:
+Available Makefile flags:
 - WITH_LOGS=0|1 : disable/enable logs. Defaults to 0.
 - WITH_ASAN=0|1 : disable/enable AddressSanitizer (clang only). Defaults to 0.
 - WITH_OPTIMIZE=0|1 : optimization level. Corresponds to respectively -O0 and -O2
@@ -101,7 +101,7 @@ Available flags:
 
 ```sh
 # Debug build with logs and asan
-make DEBUG=1 WITH_LOGS=1 WITH_ASAN=1
+make WITH_OPTIMIZE=0 WITH_LOGS=1 WITH_ASAN=1
 
 # Release build without logs with asan using gcc and tell `mktc` to use `lld` as linker
 make WITH_ASAN=1 CC=gcc LD=ld64.lld
