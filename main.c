@@ -55,7 +55,7 @@ static int run(const char* file_name0) {
                 file_name0, strerror(errno));
         return errno;
     }
-    const size_t read_bytes = read(file, source, file_size);
+    const ssize_t read_bytes = read(file, source, file_size);
     if (read_bytes == -1) {
         fprintf(stderr, "Failed to `read(2)` the source file %s: %s\n",
                 file_name0, strerror(errno));
@@ -64,7 +64,7 @@ static int run(const char* file_name0) {
     if (read_bytes != file_size) {
         fprintf(stderr,
                 "Failed to fully `read(2)` the source file %s: bytes to "
-                "read=%d, bytes read=%d errno=%d err=%s\n",
+                "read=%d, bytes read=%zd errno=%d err=%s\n",
                 file_name0, file_size, read_bytes, errno, strerror(errno));
         return errno ? errno : EIO;
     }
