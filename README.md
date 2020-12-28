@@ -33,7 +33,7 @@ println(fibonacci(35)) // expect: 9227465
 ## Quickstart
 
 ```sh
-# Only requires a C99 compiler toolchain and a POSIX environment (make, awk).
+# Only requires a C99 compiler toolchain and GNU make
 make
 
 # Run the tests
