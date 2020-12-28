@@ -1,8 +1,7 @@
-
 #include <errno.h>
 #include <fcntl.h>
-#include <sys/mman.h>
 #include <sys/param.h>
+#include <sys/stat.h>
 
 #include "codegen.h"
 
@@ -37,30 +36,31 @@ static mkt_res_t run(const char* file_name0) {
         return res;
     }
 
-    FILE* file = NULL;
-    if ((file = fopen(file_name0, "r")) == NULL) {
-        res = RES_SOURCE_FILE_READ_FAILED;
-        fprintf(stderr, "Failed to read source file %s: %s\n", file_name0,
-                strerror(errno));
-        return res;
+    struct stat st = {0};
+    if (stat(file_name0, &st) != 0) {
+        fprintf(stderr, "Failed to `stat(2)` the source file %s: %s\n",
+                file_name0, strerror(errno));
+        return errno;
     }
 
-    if (fseek(file, 0, SEEK_END) != 0) {
-        res = RES_SOURCE_FILE_READ_FAILED;
-        fprintf(stderr, "Failed to read source file %s: %s\n", file_name0,
-                strerror(errno));
-        return res;
-    }
-    const int file_size = ftell(file);
+    const int file_size = st.st_size;
 
-    const char* source =
-        mmap(NULL, (size_t)file_size, PROT_READ, MAP_SHARED, fileno(file), 0);
-    if (source == MAP_FAILED) {
+    char* const source = malloc(file_size);
+    if (source == NULL) return ENOMEM;
+
+    int file = open(file_name0, O_RDONLY);
+    if (file == -1) {
         res = RES_SOURCE_FILE_READ_FAILED;
-        fprintf(stderr, "Failed to read source file %s: %s\n", file_name0,
-                strerror(errno));
+        fprintf(stderr, "Failed to `open(2)` the source file %s: %s\n",
+                file_name0, strerror(errno));
         return res;
     }
+    if (read(file, source, file_size) != file_size) {
+        fprintf(stderr, "Failed to `read(2)` the source file %s: %s\n",
+                file_name0, strerror(errno));
+        return res;
+    }
+    close(file);
 
     parser_t parser = {0};
     if ((res = parser_init(file_name0, source, file_size, &parser)) != RES_OK)
@@ -87,7 +87,6 @@ static mkt_res_t run(const char* file_name0) {
     emit(&parser, asm_file);
     // Make sure everything has been written to the file and not simply buffered
     fflush(asm_file);
-    fclose(file);
 
     // as
     memset(base_file_name0, 0, sizeof(base_file_name0));
