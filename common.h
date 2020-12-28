@@ -36,15 +36,16 @@ static const char mkt_res_to_str[][100] = {
 
 #define STR(s) #s
 
-#define CHECK(a, cond, b, fmt)                                    \
-    do {                                                          \
-        if (!((a)cond(b))) {                                      \
-            fprintf(stderr,                                       \
-                    __FILE__ ":%d:CHECK failed: " fmt             \
-                             " " STR(cond) " " fmt " is false\n", \
-                    __LINE__, a, b);                              \
-            assert(0);                                            \
-        }                                                         \
+#define CHECK(a, cond, b, fmt)                                              \
+    do {                                                                    \
+        if (!((a)cond(b))) {                                                \
+            fprintf(stderr,                                                 \
+                    __FILE__ ":%d:CHECK failed: %s " STR(                   \
+                        cond) " %s i.e.: " fmt " " STR(cond) " " fmt        \
+                                                             " is false\n", \
+                    __LINE__, STR(a), STR(b), a, b);                        \
+            assert(0);                                                      \
+        }                                                                   \
     } while (0)
 
 #define UNIMPLEMENTED()                                            \
