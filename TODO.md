@@ -6,4 +6,7 @@
   - Custom allocator based on mmap pages
 
 * Floats
+* Hex numbers
+* Binary numbers
+* Octal numbers
 * Class
