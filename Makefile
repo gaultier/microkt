@@ -6,19 +6,27 @@ HEADERS := $(wildcard *.h)
 
 WITH_ASAN = 0
 WITH_LOGS=0
-DEBUG = 0
+WITH_OPTIMIZE = 0
+WITH_DTRACE=1
 OS = $(shell uname)
 ifeq "$(strip $(OS))" "Darwin"
 	ASAN_DIR=$(shell $(CC) -print-search-dirs | awk -F '=' '/libraries/{print $$2}')/lib/darwin/
-else
+else "$(strip $(OS))" "Linux"
 	ASAN_DIR=$(shell $(CC) -print-search-dirs | awk -F '=' '/libraries/{split($$2, libs, ":"); printf("%s/lib/linux", libs[1])}')
+	WITH_DTRACE ?= 0
+else
+	$(error Unsupported OS, see README)
 endif
 
 CFLAGS_COMMON = -Wall -Wextra -pedantic -Wno-dollar-in-identifier-extension -g -std=c99 -march=native -fno-omit-frame-pointer -fstrict-aliasing -fPIC -D_POSIX_C_SOURCE=200112L
 CFLAGS = $(CFLAGS_COMMON) -DLD='"$(CC)"' -DAS='"$(AS)"'
 CFLAGS_STDLIB = $(CFLAGS_COMMON)
 
-ifeq "$(WITH_ASAN)"  "1"
+ifeq "$(WITH_DTRACE)" "0"
+	CFLAGS_STDLIB += -DDTRACE_PROBES_DISABLED
+endif
+
+ifeq "$(WITH_ASAN)" "1"
 	CFLAGS += -fsanitize=address -DASAN_DIR='"$(ASAN_DIR)"' -DWITH_ASAN=1
 	CFLAGS_STDLIB += -shared-libasan
 else 
@@ -32,7 +40,7 @@ else
 	CFLAGS += -DWITH_LOGS=0
 endif
 
-ifeq "$(DEBUG)" "1"
+ifeq "$(WITH_OPTIMIZE)" "1"
 	CFLAGS += -O0
 	CFLAGS_STDLIB += -O0
 else
