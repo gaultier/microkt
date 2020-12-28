@@ -44,9 +44,9 @@ typedef enum {
     TOK_ID_SYSCALL,
     TOK_ID_EOF,
     TOK_ID_INVALID,
-} token_id_t;
+} mkt_token_id_t;
 
-const char token_id_to_str[][30] = {
+const char mkt_token_id_to_str[][30] = {
     [TOK_ID_BUILTIN_PRINTLN] = "Println",
     [TOK_ID_LPAREN] = "(",
     [TOK_ID_RPAREN] = ")",
@@ -97,12 +97,12 @@ typedef struct {
 } mkt_loc_t;
 
 typedef struct {
-    token_id_t tok_id;
+    mkt_token_id_t tok_id;
     mkt_pos_range_t tok_pos_range;
 } mkt_token_t;
 
 typedef struct {
-    token_id_t key_id;
+    mkt_token_id_t key_id;
     const char key_str[20];
 } mkt_keyword_t;
 
@@ -129,7 +129,8 @@ typedef struct {
 } lexer_t;
 
 // TODO: trie?
-static const token_id_t* token_get_keyword(const char* source_start, int len) {
+static const mkt_token_id_t* token_get_keyword(const char* source_start,
+                                               int len) {
     const int keywords_len = sizeof(keywords) / sizeof(keywords[0]);
     for (int i = 0; i < keywords_len; i++) {
         const mkt_keyword_t* k = &keywords[i];
@@ -245,7 +246,7 @@ static void lex_identifier(lexer_t* lexer, mkt_token_t* result, int* col) {
     CHECK(lexer->lex_index, <, lexer->lex_source_len, "%d");
     CHECK(lexer->lex_index, >=, result->tok_pos_range.pr_start, "%d");
 
-    const token_id_t* id = NULL;
+    const mkt_token_id_t* id = NULL;
 
     if ((id = token_get_keyword(
              lexer->lex_source + result->tok_pos_range.pr_start,
@@ -589,7 +590,7 @@ static void token_dump(const mkt_token_t* t, int i, const lexer_t* lexer) {
     IGNORE(loc);
 #endif
     log_debug("%d:%d:id=%s #%d %d..%d `%.*s`", loc.loc_line, loc.loc_column,
-              token_id_to_str[t->tok_id], i, t->tok_pos_range.pr_start,
+              mkt_token_id_to_str[t->tok_id], i, t->tok_pos_range.pr_start,
               t->tok_pos_range.pr_end,
               t->tok_pos_range.pr_end - t->tok_pos_range.pr_start,
               &lexer->lex_source[t->tok_pos_range.pr_start]);

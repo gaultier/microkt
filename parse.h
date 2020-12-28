@@ -751,7 +751,7 @@ static void parser_tok_source(const parser_t* parser, int tok_i,
     CHECK(tok_i, >=, 0, "%d");
     CHECK(tok_i, <, parser->par_lexer.lex_source_len, "%d");
 
-    const token_id_t tok = parser->par_lexer.lex_tokens[tok_i].tok_id;
+    const mkt_token_id_t tok = parser->par_lexer.lex_tokens[tok_i].tok_id;
     const mkt_pos_range_t pos_range =
         parser->par_lexer.lex_tok_pos_ranges[tok_i];
 
@@ -794,7 +794,7 @@ static bool parser_is_at_end(const parser_t* parser) {
     return parser->par_tok_i >= (int)buf_size(parser->par_lexer.lex_tokens);
 }
 
-static token_id_t parser_current(const parser_t* parser) {
+static mkt_token_id_t parser_current(const parser_t* parser) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK(parser->par_tok_i, >=, 0, "%d");
     CHECK(parser->par_tok_i, <, parser->par_lexer.lex_source_len, "%d");
@@ -802,7 +802,7 @@ static token_id_t parser_current(const parser_t* parser) {
     return parser->par_lexer.lex_tokens[parser->par_tok_i].tok_id;
 }
 
-static token_id_t parser_previous(const parser_t* parser) {
+static mkt_token_id_t parser_previous(const parser_t* parser) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK(parser->par_tok_i, >, 1, "%d");
     CHECK(parser->par_tok_i, <, (int)buf_size(parser->par_lexer.lex_tokens),
@@ -810,7 +810,7 @@ static token_id_t parser_previous(const parser_t* parser) {
 
     return parser->par_lexer.lex_tokens[parser->par_tok_i - 1].tok_id;
 }
-static void parser_advance_until_after(parser_t* parser, token_id_t id) {
+static void parser_advance_until_after(parser_t* parser, mkt_token_id_t id) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK(parser->par_tok_i, >=, 0, "%d");
     CHECK((void*)parser->par_lexer.lex_tokens, !=, NULL, "%p");
@@ -829,7 +829,7 @@ static void parser_advance_until_after(parser_t* parser, token_id_t id) {
     parser->par_tok_i += 1;
 }
 
-static token_id_t parser_peek(parser_t* parser) {
+static mkt_token_id_t parser_peek(parser_t* parser) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)parser->par_lexer.lex_tokens, !=, NULL, "%p");
     CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, 0, "%d");
@@ -837,7 +837,7 @@ static token_id_t parser_peek(parser_t* parser) {
           "%d");
 
     while (parser->par_tok_i < (int)buf_size(parser->par_lexer.lex_tokens)) {
-        const token_id_t id =
+        const mkt_token_id_t id =
             parser->par_lexer.lex_tokens[parser->par_tok_i].tok_id;
         if (id == TOK_ID_COMMENT) {
             parser->par_tok_i += 1;
@@ -849,7 +849,7 @@ static token_id_t parser_peek(parser_t* parser) {
     UNREACHABLE();
 }
 
-static token_id_t parser_peek_next(parser_t* parser) {
+static mkt_token_id_t parser_peek_next(parser_t* parser) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)parser->par_lexer.lex_tokens, !=, NULL, "%p");
     CHECK(parser->par_tok_i, >=, 0, "%d");
@@ -859,7 +859,7 @@ static token_id_t parser_peek_next(parser_t* parser) {
 
     int i = parser->par_tok_i;
     while (i < (int)buf_size(parser->par_lexer.lex_tokens) - 1) {
-        const token_id_t id = parser->par_lexer.lex_tokens[i + 1].tok_id;
+        const mkt_token_id_t id = parser->par_lexer.lex_tokens[i + 1].tok_id;
         if (id == TOK_ID_COMMENT) {
             i++;
             continue;
@@ -974,7 +974,7 @@ static void parser_print_source_on_error(const parser_t* parser,
 }
 
 static res_t parser_err_unexpected_token(const parser_t* parser,
-                                         token_id_t expected) {
+                                         mkt_token_id_t expected) {
     CHECK((void*)parser, !=, NULL, "%p");
 
     const res_t res = RES_UNEXPECTED_TOKEN;
@@ -984,8 +984,9 @@ static res_t parser_err_unexpected_token(const parser_t* parser,
     fprintf(stderr, "%s%s:%d:%d:%sUnexpected token. Expected `%s`, got `%s`\n",
             (parser->par_is_tty ? color_gray : ""), parser->par_file_name0,
             loc_start.loc_line, loc_start.loc_column,
-            (parser->par_is_tty ? color_reset : ""), token_id_to_str[expected],
-            token_id_to_str[parser_current(parser)]);
+            (parser->par_is_tty ? color_reset : ""),
+            mkt_token_id_to_str[expected],
+            mkt_token_id_to_str[parser_current(parser)]);
 
     parser_print_source_on_error(parser, parser->par_tok_i, parser->par_tok_i);
 
@@ -1002,13 +1003,13 @@ static bool parser_match(parser_t* parser, int* return_token_index,
           "%d");
     CHECK(id_count, >=, 0, "%d");
 
-    const token_id_t current_id = parser_peek(parser);
+    const mkt_token_id_t current_id = parser_peek(parser);
 
     va_list ap;
     va_start(ap, id_count);
 
     for (; id_count; id_count--) {
-        token_id_t id = va_arg(ap, token_id_t);
+        mkt_token_id_t id = va_arg(ap, mkt_token_id_t);
 
         if (parser_is_at_end(parser)) return false;
 
@@ -2571,7 +2572,7 @@ static res_t parser_parse(parser_t* parser) {
         } else if (res == RES_NONE)
             return RES_OK;
 
-        const token_id_t current = parser_current(parser);
+        const mkt_token_id_t current = parser_current(parser);
         if (current == TOK_ID_COMMENT) {
             parser->par_tok_i += 1;
             continue;
