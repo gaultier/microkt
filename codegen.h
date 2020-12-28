@@ -224,7 +224,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             emit_expr(parser, bin.bi_lhs_i);
             emit_loc(parser, expr);
 
-            const type_kind_t type_kind =
+            const mkt_type_kind_t type_kind =
                 parser->par_types[expr->node_type_i].ty_kind;
             if (type_kind == TYPE_STRING) {
                 println("movq %%rax, %s", fn_args[0]);
@@ -314,7 +314,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 
             const mkt_node_t* arg =
                 &parser->par_nodes[builtin_println.bp_arg_i];
-            const type_kind_t type =
+            const mkt_type_kind_t type =
                 parser->par_types[arg->node_type_i].ty_kind;
 
             emit_loc(parser, expr);
@@ -333,7 +333,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
                 println("sub $8, %s", fn_args[1]);
                 println("call %smkt_println_string", name_prefix);
             } else {
-                log_debug("Type %s unimplemented", type_to_str[type]);
+                log_debug("Type %s unimplemented", mkt_type_to_str[type]);
                 UNIMPLEMENTED();
             }
             println("movq $0, %%rax");  // Return value 0
@@ -446,7 +446,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
         case NODE_FN_DECL:
             UNREACHABLE();
     }
-    log_debug("node_kind=%s", node_kind_to_str[expr->node_kind]);
+    log_debug("node_kind=%s", mkt_node_kind_to_str[expr->node_kind]);
     UNREACHABLE();
 }
 
@@ -569,7 +569,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
             return;
         }
     }
-    log_debug("node_kind=%s", node_kind_to_str[stmt->node_kind]);
+    log_debug("node_kind=%s", mkt_node_kind_to_str[stmt->node_kind]);
     UNREACHABLE();
 }
 

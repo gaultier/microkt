@@ -11,16 +11,16 @@ typedef enum {
     TYPE_SHORT,
     TYPE_LONG,
     TYPE_STRING,
-} type_kind_t;
+} mkt_type_kind_t;
 
-static const char type_to_str[][20] = {
+static const char mkt_type_to_str[][20] = {
     [TYPE_ANY] = "Any",     [TYPE_UNIT] = "Unit", [TYPE_BOOL] = "Bool",
     [TYPE_CHAR] = "Char",   [TYPE_BYTE] = "Byte", [TYPE_INT] = "Int",
     [TYPE_SHORT] = "Short", [TYPE_LONG] = "Long", [TYPE_STRING] = "String",
 };
 
 typedef struct {
-    type_kind_t ty_kind;
+    mkt_type_kind_t ty_kind;
     int ty_size;
 } mkt_type_t;
 
@@ -65,7 +65,7 @@ typedef enum {
     NODE_SYSCALL,
 } mkt_node_kind_t;
 
-const char node_kind_to_str[][30] = {
+const char mkt_node_kind_to_str[][30] = {
     [NODE_BUILTIN_PRINTLN] = "Print",
     [NODE_KEYWORD_BOOL] = "Bool",
     [NODE_STRING] = "String",
@@ -113,8 +113,8 @@ typedef struct {
     unsigned short vd_flags;
 } mkt_var_def_t;
 
-static const unsigned short VAR_FLAGS_VAL = 0x1;
-static const unsigned short VAR_FLAGS_VAR = 0x2;
+static const unsigned short MKT_VAR_FLAGS_VAL = 0x1;
+static const unsigned short MKT_VAR_FLAGS_VAR = 0x2;
 
 typedef struct {
     int va_tok_i, va_var_node_i;  // Node the variable refers to
