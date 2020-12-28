@@ -1,9 +1,9 @@
+#include <errno.h>
 #include <stdint.h>
 #include <string.h>
+#include <sys/mman.h>
 #include <unistd.h>
 
-#include "ast.h"
-#include "common.h"
 #include "probes.h"
 
 static size_t gc_round = 0;
@@ -16,6 +16,46 @@ static intptr_t* stack_top;
 
 #define READ_RBP() __asm__ volatile("movq %%rbp, %0" : "=r"(mkt_rbp))
 #define READ_RSP() __asm__ volatile("movq %%rsp, %0" : "=r"(mkt_rsp))
+
+#define MKT_PROT_READ 0x01
+#define MKT_PROT_WRITE 0x02
+#define MKT_MAP_PRIVATE 0x02
+#define MKT_MAP_ANON 0x1000
+
+#ifdef __APPLE__
+#define MKT_SYSCALL_MMAP 0x2000197
+#define MKT_SYSCALL_MUNMAP 0x2000073
+#else
+#define MKT_SYSCALL_MMAP 9
+#define MKT_SYSCALL_MUNMAP 11
+#endif
+
+static void* mkt_mmap(void* addr, size_t len, int prot, int flags, int fd,
+                      off_t offset) {
+    __asm__ volatile("mov %0, %%eax" : : "r"(MKT_SYSCALL_MMAP));
+    __asm__ volatile("mov %0, %%rdi" : : "r"(addr));
+    __asm__ volatile("mov %0, %%rsi" : : "r"(len));
+    __asm__ volatile("mov %0, %%edx" : : "r"(prot));
+    __asm__ volatile("mov %0, %%ecx" : : "r"(flags));
+    __asm__ volatile("mov %0, %%r8d" : : "r"(fd));
+    __asm__ volatile("mov %0, %%r9" : : "r"(offset));
+    __asm__ volatile("syscall");
+
+    void* ret;
+    __asm__ volatile("mov %%rax, %0" : "=r"(ret));
+    return ret;
+}
+
+static int mkt_munmap(void* addr, size_t len) {
+    __asm__ volatile("mov %0, %%eax" : : "r"(MKT_SYSCALL_MUNMAP));
+    __asm__ volatile("mov %0, %%rdi" : : "r"(addr));
+    __asm__ volatile("mov %0, %%rsi" : : "r"(len));
+    __asm__ volatile("syscall");
+
+    int ret;
+    __asm__ volatile("mov %%eax, %0" : "=r"(ret));
+    return ret;
+}
 
 typedef struct {
     size_t rv_size : 54;
@@ -33,9 +73,9 @@ typedef struct alloc_atom alloc_atom;
 static alloc_atom* objs = NULL;  // In use
 
 void atom_cons(alloc_atom* item, alloc_atom** head) {
-    CHECK((void*)item, !=, NULL, "%p");
-    CHECK((void*)head, !=, NULL, "%p");
-    CHECK((void*)item, !=, (void*)head, "%p");  // Prevent cycles
+    // CHECK((void*)item, !=, NULL, "%p");
+    // CHECK((void*)head, !=, NULL, "%p");
+    // CHECK((void*)item, !=, (void*)head, "%p");  // Prevent cycles
 
     if (head) {
         item->aa_next = *head;
@@ -43,14 +83,18 @@ void atom_cons(alloc_atom* item, alloc_atom** head) {
     } else {
         *head = item;
     }
-    CHECK((void*)*head, !=, NULL, "%p");
+    // CHECK((void*)*head, !=, NULL, "%p");
 }
 
 static alloc_atom* mkt_alloc_atom_make(size_t size) {
     const size_t bytes =
         sizeof(runtime_val_header) + sizeof(alloc_atom*) + size;
-    alloc_atom* atom = calloc(1, bytes);
-    CHECK((void*)atom, !=, NULL, "%p");
+    alloc_atom* atom = mkt_mmap(NULL, bytes, MKT_PROT_READ | MKT_PROT_WRITE,
+                                MKT_MAP_PRIVATE | MKT_MAP_ANON, 0, 0);
+    // if (!atom) fprintf(stderr, "mkt_mmap error: errno=%d\n", errno);
+    // CHECK((void*)atom, !=, NULL, "%p");
+    atom->aa_header = (runtime_val_header){0};
+    atom->aa_next = NULL;
 
     atom_cons(atom, &objs);
 
@@ -65,14 +109,14 @@ void mkt_init() {
 }
 
 static void mkt_gc_obj_mark(runtime_val_header* header) {
-    CHECK((void*)header, !=, NULL, "%p");
+    // CHECK((void*)header, !=, NULL, "%p");
 
     if (header->rv_tag & RV_TAG_MARKED) return;  // Prevent cycles
     header->rv_tag |= RV_TAG_MARKED;
 
     if (header->rv_tag & RV_TAG_STRING) return;  // No transitive refs possible
 
-    UNIMPLEMENTED();  // TODO: gray worklist for objects
+    // UNIMPLEMENTED();  // TODO: gray worklist for objects
 }
 
 // TODO: optimize
@@ -88,10 +132,10 @@ static alloc_atom* mkt_gc_atom_find_data_by_addr(size_t addr) {
 }
 
 static void mkt_gc_scan_stack(const intptr_t* stack_bottom) {
-    CHECK((void*)stack_bottom, !=, NULL, "%p");
+    // CHECK((void*)stack_bottom, !=, NULL, "%p");
 
     const char* s_bottom = (char*)stack_bottom;
-    CHECK((void*)stack_bottom, <=, (void*)stack_top, "%p");
+    // CHECK((void*)stack_bottom, <=, (void*)stack_top, "%p");
 
     const char* s_top = (char*)stack_top;
     while (s_bottom < s_top - sizeof(intptr_t)) {
@@ -109,7 +153,7 @@ static void mkt_gc_scan_stack(const intptr_t* stack_bottom) {
 }
 
 static void mkt_gc_obj_blacken(runtime_val_header* header) {
-    CHECK((void*)header, !=, NULL, "%p");
+    // CHECK((void*)header, !=, NULL, "%p");
 
     // TODO: optimize to go from white -> black directly
     if (header->rv_tag & RV_TAG_STRING) return;
@@ -136,7 +180,7 @@ static void mkt_gc_sweep() {
         // Remove
         const size_t bytes = sizeof(runtime_val_header) + sizeof(alloc_atom*) +
                              atom->aa_header.rv_size;
-        CHECK(gc_allocated_bytes, >=, (size_t)bytes, "%zu");
+        // CHECK(gc_allocated_bytes, >=, (size_t)bytes, "%zu");
         gc_allocated_bytes -= bytes;
 
         alloc_atom* to_free = atom;
@@ -147,7 +191,7 @@ static void mkt_gc_sweep() {
             objs = atom;
 
         MKT_GC_SWEEP_FREE(gc_round, gc_allocated_bytes, (void*)to_free);
-        free(to_free);
+        mkt_munmap(to_free, bytes);
     }
     MKT_GC_SWEEP_DONE(gc_round, gc_allocated_bytes);
 }
@@ -166,7 +210,7 @@ void* mkt_string_make(size_t size) {
     mkt_gc();
 
     alloc_atom* atom = mkt_alloc_atom_make(size);
-    CHECK((void*)atom, !=, NULL, "%p");
+    // CHECK((void*)atom, !=, NULL, "%p");
     atom->aa_header =
         (runtime_val_header){.rv_size = size, .rv_tag = RV_TAG_STRING};
 
@@ -208,10 +252,10 @@ void mkt_println_int(long long int n) {
 }
 
 void mkt_println_string(char* s, const runtime_val_header* s_header) {
-    CHECK((void*)s, !=, NULL, "%p");
-    CHECK((void*)s_header, !=, NULL, "%p");
+    // CHECK((void*)s, !=, NULL, "%p");
+    // CHECK((void*)s_header, !=, NULL, "%p");
 
-    CHECK(s_header->rv_tag & RV_TAG_STRING, !=, 0, "%u");
+    // CHECK(s_header->rv_tag & RV_TAG_STRING, !=, 0, "%u");
 
     const char newline = '\n';
     write(1, s, s_header->rv_size);
@@ -221,9 +265,9 @@ void mkt_println_string(char* s, const runtime_val_header* s_header) {
 char* mkt_string_concat(const char* a, const runtime_val_header* a_header,
                         const char* b, const runtime_val_header* b_header) {
     char* const ret = mkt_string_make(a_header->rv_size + b_header->rv_size);
-    CHECK((void*)ret, !=, NULL, "%p");
-    CHECK((void*)a, !=, NULL, "%p");
-    CHECK((void*)b, !=, NULL, "%p");
+    // CHECK((void*)ret, !=, NULL, "%p");
+    // CHECK((void*)a, !=, NULL, "%p");
+    // CHECK((void*)b, !=, NULL, "%p");
 
     memcpy(ret, a, a_header->rv_size);
     memcpy(ret + a_header->rv_size, b, b_header->rv_size);
