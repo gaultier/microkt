@@ -22,7 +22,7 @@ static const char type_to_str[][20] = {
 typedef struct {
     type_kind_t ty_kind;
     int ty_size;
-} type_t;
+} mkt_type_t;
 
 typedef struct {
     int bp_arg_i, bp_keyword_print_i, bp_rparen_i;
@@ -30,12 +30,12 @@ typedef struct {
 
 typedef struct {
     int bi_lhs_i, bi_rhs_i;
-} binary_t;
+} mkt_binary_t;
 
 typedef struct {
     int st_tok_i;
     bool st_multiline;
-} string_t;
+} mkt_string_t;
 
 typedef enum {
     NODE_BUILTIN_PRINTLN,
@@ -153,9 +153,9 @@ typedef struct {
     int node_type_i;
     union {
         builtin_println_t node_builtin_println;  // NODE_BUILTIN_PRINTLN
-        string_t node_string;                    // NODE_STRING
+        mkt_string_t node_string;                // NODE_STRING
         number_t node_num;                       // NODE_LONG, NODE_CHAR
-        binary_t node_binary;  // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
+        mkt_binary_t node_binary;  // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
         // NODE_DIVIDE, NODE_MODULO
         unary_t node_unary;          // NODE_NOT, NODE_RETURN
         mkt_if_t node_if;            // NODE_IF

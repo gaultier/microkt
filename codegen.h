@@ -116,7 +116,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 
     CHECK(expr->node_type_i, >=, 0, "%d");
     CHECK(expr->node_type_i, <, (int)buf_size(parser->par_types), "%d");
-    const type_t* const type = &parser->par_types[expr->node_type_i];
+    const mkt_type_t* const type = &parser->par_types[expr->node_type_i];
 
     const char *ax, *di, *dx;
     if (type->ty_size == 8) {
@@ -165,7 +165,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             return;
         }
         case NODE_MODULO: {
-            const binary_t bin = expr->node_n.node_binary;
+            const mkt_binary_t bin = expr->node_n.node_binary;
 
             emit_expr(parser, bin.bi_rhs_i);
             emit_push();
@@ -180,7 +180,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             return;
         }
         case NODE_DIVIDE: {
-            const binary_t bin = expr->node_n.node_binary;
+            const mkt_binary_t bin = expr->node_n.node_binary;
 
             emit_expr(parser, bin.bi_rhs_i);
             emit_push();
@@ -193,7 +193,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             return;
         }
         case NODE_MULTIPLY: {
-            const binary_t bin = expr->node_n.node_binary;
+            const mkt_binary_t bin = expr->node_n.node_binary;
 
             emit_expr(parser, bin.bi_rhs_i);
             emit_push();
@@ -205,7 +205,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             return;
         }
         case NODE_SUBTRACT: {
-            const binary_t bin = expr->node_n.node_binary;
+            const mkt_binary_t bin = expr->node_n.node_binary;
 
             emit_expr(parser, bin.bi_rhs_i);
             emit_push();
@@ -217,7 +217,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             return;
         }
         case NODE_ADD: {
-            const binary_t bin = expr->node_n.node_binary;
+            const mkt_binary_t bin = expr->node_n.node_binary;
 
             emit_expr(parser, bin.bi_rhs_i);
             emit_push();
@@ -247,7 +247,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
         case NODE_EQ:
         case NODE_NEQ:
         case NODE_LE: {
-            const binary_t bin = expr->node_n.node_binary;
+            const mkt_binary_t bin = expr->node_n.node_binary;
 
             emit_expr(parser, bin.bi_rhs_i);
             emit_push();
@@ -485,7 +485,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
             return;
         }
         case NODE_ASSIGN: {
-            const binary_t binary = stmt->node_n.node_binary;
+            const mkt_binary_t binary = stmt->node_n.node_binary;
             const mkt_node_t* const lhs = &parser->par_nodes[binary.bi_lhs_i];
 
             emit_expr(parser, binary.bi_rhs_i);
