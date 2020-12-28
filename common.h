@@ -24,16 +24,6 @@ typedef enum {
     RES_ERR,
 } mkt_res_t;
 
-static const char mkt_res_to_str[][100] = {
-    [RES_OK] = "ok\n",
-    [RES_NONE] = "none\n",
-    [RES_INVALID_SOURCE_FILE_NAME] = "Invalid source file name %s\n",
-    [RES_SOURCE_FILE_READ_FAILED] = "Failed to read source file %s: %s\n",
-    [RES_ASM_FILE_READ_FAILED] = "Failed to read asm file %s: %s\n",
-    [RES_FAILED_AS] = "Failed to run `%s`: %s\n",
-    [RES_FAILED_LD] = "Failed to run `%s`: %s\n",
-};
-
 #define STR(s) #s
 
 #define CHECK(a, cond, b, fmt)                                              \
