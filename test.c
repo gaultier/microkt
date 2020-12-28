@@ -1,9 +1,10 @@
 #include <errno.h>
+#include <fcntl.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/param.h>
-#include <unistd.h>
+#include <sys/stat.h>
 
 #include "buf.h"
 #include "common.h"
@@ -87,23 +88,41 @@ static mkt_res_t simple_test_run(const char* source_file_name) {
     argv[source_file_name_len - 2] = 'x';
     argv[source_file_name_len - 3] = 'e';
 
-    FILE* source_file = fopen(source_file_name, "r");
-    if (!source_file) {
-        fprintf(stderr, "Error reading file `%s`: err=%d errno=%s\n",
-                source_file_name, errno, strerror(errno));
-        return RES_ERR;
+    struct stat st = {0};
+    if (stat(source_file_name, &st) != 0) {
+        fprintf(stderr, "Failed to `stat(2)` the source file %s: %s\n",
+                source_file_name, strerror(errno));
+        return errno;
     }
-    char source_file_content[LENGTH] = "";
-    size_t read_bytes = fread(source_file_content, 1, LENGTH, source_file);
-    if (ferror(source_file)) {
-        fprintf(stderr, "Error reading content of `%s`: errno=%d err=%s\n",
-                source_file_name, errno, strerror(errno));
-        return RES_ERR;
-    }
-    CHECK(read_bytes, <=, LENGTH, "%zu");
 
-    const str* const expects =
-        expects_from_string(source_file_content, read_bytes);
+    const int file_size = st.st_size;
+
+    char* const source = malloc(file_size);
+    if (source == NULL) return ENOMEM;
+
+    int file = open(source_file_name, O_RDONLY);
+    if (file == -1) {
+        fprintf(stderr, "Failed to `open(2)` the source file %s: %s\n",
+                source_file_name, strerror(errno));
+        return errno;
+    }
+    const ssize_t read_bytes = read(file, source, file_size);
+    if (read_bytes == -1) {
+        fprintf(stderr, "Failed to `read(2)` the source file %s: %s\n",
+                source_file_name, strerror(errno));
+        return errno;
+    }
+    if (read_bytes != file_size) {
+        fprintf(stderr,
+                "Failed to fully `read(2)` the source file %s: bytes to "
+                "read=%d, bytes read=%d errno=%d err=%s\n",
+                source_file_name, file_size, read_bytes, errno,
+                strerror(errno));
+        return errno ? errno : EIO;
+    }
+    close(file);
+
+    const str* const expects = expects_from_string(source, read_bytes);
     const size_t expects_count = buf_size(expects);
 
     char output[LENGTH] = "";

@@ -51,12 +51,11 @@ static int run(const char* file_name0) {
 
     int file = open(file_name0, O_RDONLY);
     if (file == -1) {
-        res = RES_SOURCE_FILE_READ_FAILED;
         fprintf(stderr, "Failed to `open(2)` the source file %s: %s\n",
                 file_name0, strerror(errno));
         return errno;
     }
-    const int read_bytes = read(file, source, file_size);
+    const size_t read_bytes = read(file, source, file_size);
     if (read_bytes == -1) {
         fprintf(stderr, "Failed to `read(2)` the source file %s: %s\n",
                 file_name0, strerror(errno));
