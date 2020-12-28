@@ -16,8 +16,8 @@ typedef struct {
     const char* str_s;
 } str;
 
-static res_t proc_run(const char* exe_name, char output[LENGTH],
-                      size_t* read_bytes, int* ret_code) {
+static mkt_res_t proc_run(const char* exe_name, char output[LENGTH],
+                          size_t* read_bytes, int* ret_code) {
     CHECK((void*)exe_name, !=, NULL, "%p");
     CHECK((void*)read_bytes, !=, NULL, "%p");
     CHECK((void*)ret_code, !=, NULL, "%p");
@@ -72,7 +72,7 @@ static str* expects_from_string(const char* string, size_t string_len) {
     return expects;
 }
 
-static res_t simple_test_run(const char* source_file_name) {
+static mkt_res_t simple_test_run(const char* source_file_name) {
     const size_t source_file_name_len = strlen(source_file_name);
     CHECK(source_file_name_len, >, 1L + 3, "%zu");
     CHECK(source_file_name_len, <, (size_t)MAXPATHLEN, "%zu");
@@ -111,8 +111,8 @@ static res_t simple_test_run(const char* source_file_name) {
     if (proc_run(argv, output, &read_bytes, &ret_code) != RES_OK)
         return RES_ERR;
     if (ret_code != 0) {
-        fprintf(stderr, "%s✘ %s:%s ret_code=%d\n", is_tty ? color_red : "",
-                source_file_name, is_tty ? color_reset : "", ret_code);
+        fprintf(stderr, "%s✘ %s:%s ret_code=%d\n", is_tty ? mkt_color_red : "",
+                source_file_name, is_tty ? mkt_color_reset : "", ret_code);
         return RES_ERR;
     }
 
@@ -135,11 +135,11 @@ static res_t simple_test_run(const char* source_file_name) {
                     "%s"
                     "✘ %s #%lu: [expected]%s len=%zu str=%.*s%s\n"
                     "✘ %s #%lu: [actual  ]%s len=%zu str=%.*s\n",
-                    is_tty ? color_red : "", source_file_name, line + 1,
-                    is_tty ? color_reset : "", expect_line.str_len,
+                    is_tty ? mkt_color_red : "", source_file_name, line + 1,
+                    is_tty ? mkt_color_reset : "", expect_line.str_len,
                     (int)expect_line.str_len, expect_line.str_s,
-                    is_tty ? color_red : "", source_file_name, line + 1,
-                    is_tty ? color_reset : "", out_len, (int)out_len, out);
+                    is_tty ? mkt_color_red : "", source_file_name, line + 1,
+                    is_tty ? mkt_color_reset : "", out_len, (int)out_len, out);
             differed = true;
         }
         out = end + 1;
@@ -147,13 +147,13 @@ static res_t simple_test_run(const char* source_file_name) {
     }
 
     if (!differed)
-        printf("%s✔ %s%s\n", is_tty ? color_green : "", source_file_name,
-               is_tty ? color_reset : "");
+        printf("%s✔ %s%s\n", is_tty ? mkt_color_green : "", source_file_name,
+               is_tty ? mkt_color_reset : "");
 
     return differed ? RES_ERR : RES_OK;
 }
 
-static res_t err_test_run(const char* source_file_name) {
+static mkt_res_t err_test_run(const char* source_file_name) {
     const size_t source_file_name_len = strlen(source_file_name);
     CHECK(source_file_name_len, >, 1L + 3, "%zu");
     CHECK(source_file_name_len, <, (size_t)MAXPATHLEN, "%zu");
@@ -171,12 +171,12 @@ static res_t err_test_run(const char* source_file_name) {
     if (proc_run(argv, output, &read_bytes, &ret_code) != RES_OK)
         return RES_ERR;
     if (ret_code == 0) {
-        fprintf(stderr, "%s✘ %s:%s ret_code=%d\n", is_tty ? color_red : "",
-                source_file_name, is_tty ? color_reset : "", ret_code);
+        fprintf(stderr, "%s✘ %s:%s ret_code=%d\n", is_tty ? mkt_color_red : "",
+                source_file_name, is_tty ? mkt_color_reset : "", ret_code);
         return RES_ERR;
     } else
-        printf("%s✔ %s%s\n", is_tty ? color_green : "", source_file_name,
-               is_tty ? color_reset : "");
+        printf("%s✔ %s%s\n", is_tty ? mkt_color_green : "", source_file_name,
+               is_tty ? mkt_color_reset : "");
 
     return RES_OK;
 }

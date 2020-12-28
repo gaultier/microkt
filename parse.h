@@ -27,18 +27,19 @@ typedef struct {
     bool par_is_tty;
 } parser_t;
 
-static res_t parser_parse_expr(parser_t* parser, int* new_node_i);
-static res_t parser_parse_stmt(parser_t* parser, int* new_node_i);
-static res_t parser_parse_control_structure_body(parser_t* parser,
-                                                 int* new_node_i);
-static res_t parser_parse_block(parser_t* parser, int* new_node_i);
-static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i);
+static mkt_res_t parser_parse_expr(parser_t* parser, int* new_node_i);
+static mkt_res_t parser_parse_stmt(parser_t* parser, int* new_node_i);
+static mkt_res_t parser_parse_control_structure_body(parser_t* parser,
+                                                     int* new_node_i);
+static mkt_res_t parser_parse_block(parser_t* parser, int* new_node_i);
+static mkt_res_t parser_parse_builtin_println(parser_t* parser,
+                                              int* new_node_i);
 static void parser_tok_source(const parser_t* parser, int tok_i,
                               const char** source, int* source_len);
 static void parser_print_source_on_error(const parser_t* parser,
                                          int first_tok_i, int last_tok_i);
-static res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i);
-static res_t parser_parse_syscall(parser_t* parser, int* new_node_i);
+static mkt_res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i);
+static mkt_res_t parser_parse_syscall(parser_t* parser, int* new_node_i);
 
 static mkt_node_t* parser_current_block(parser_t* parser) {
     CHECK((void*)parser, !=, NULL, "%p");
@@ -84,8 +85,8 @@ static int parser_node_find_fn_decl_for_call(const parser_t* parser,
 
 // TODO: optimize, currently it is O(n*m) where n= # of stmt and m = # of var
 // def per scope
-static res_t parser_resolve_var(const parser_t* parser, int tok_i,
-                                int* def_node_i) {
+static mkt_res_t parser_resolve_var(const parser_t* parser, int tok_i,
+                                    int* def_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)def_node_i, !=, NULL, "%p");
     CHECK(tok_i, >=, 0, "%d");
@@ -153,8 +154,9 @@ static res_t parser_resolve_var(const parser_t* parser, int tok_i,
     return RES_NONE;
 }
 
-static res_t parser_err_assigning_val(const parser_t* parser, int assign_tok_i,
-                                      const mkt_var_def_t* var_def) {
+static mkt_res_t parser_err_assigning_val(const parser_t* parser,
+                                          int assign_tok_i,
+                                          const mkt_var_def_t* var_def) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)var_def, !=, NULL, "%p");
     CHECK(assign_tok_i, >=, 0, "%d");
@@ -166,22 +168,22 @@ static res_t parser_err_assigning_val(const parser_t* parser, int assign_tok_i,
 
     fprintf(stderr,
             "%s%s:%d:%d:%sTrying to assign a variable declared with `val`\n",
-            (parser->par_is_tty ? color_gray : ""), parser->par_file_name0,
+            (parser->par_is_tty ? mkt_color_gray : ""), parser->par_file_name0,
             assign_loc_start.loc_line, assign_loc_start.loc_column,
-            (parser->par_is_tty ? color_reset : ""));
+            (parser->par_is_tty ? mkt_color_reset : ""));
 
     parser_print_source_on_error(parser, assign_tok_i, assign_tok_i);
     fprintf(stderr, "%s%s:%d:%d:%sDeclared here:\n",
-            (parser->par_is_tty ? color_gray : ""), parser->par_file_name0,
+            (parser->par_is_tty ? mkt_color_gray : ""), parser->par_file_name0,
             vd_loc_start.loc_line, vd_loc_start.loc_column,
-            (parser->par_is_tty ? color_reset : ""));
+            (parser->par_is_tty ? mkt_color_reset : ""));
     parser_print_source_on_error(parser, var_def->vd_first_tok_i,
                                  var_def->vd_first_tok_i);
     return RES_ASSIGNING_VAL;
 }
 
-static res_t parser_err_missing_rhs(const parser_t* parser, int first_tok_i,
-                                    int last_tok_i) {
+static mkt_res_t parser_err_missing_rhs(const parser_t* parser, int first_tok_i,
+                                        int last_tok_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK(first_tok_i, >=, 0, "%d");
     CHECK(first_tok_i, <, parser->par_lexer.lex_source_len, "%d");
@@ -191,9 +193,9 @@ static res_t parser_err_missing_rhs(const parser_t* parser, int first_tok_i,
     const mkt_loc_t first_tok_loc = parser->par_lexer.lex_locs[first_tok_i];
 
     fprintf(stderr, "%s%s:%d:%d:%sMissing right hand-side operand\n",
-            (parser->par_is_tty ? color_gray : ""), parser->par_file_name0,
+            (parser->par_is_tty ? mkt_color_gray : ""), parser->par_file_name0,
             first_tok_loc.loc_line, first_tok_loc.loc_column,
-            (parser->par_is_tty ? color_reset : ""));
+            (parser->par_is_tty ? mkt_color_reset : ""));
 
     parser_print_source_on_error(parser, first_tok_i, last_tok_i);
     return RES_ERR;  // FIXME?
@@ -316,8 +318,8 @@ static bool parser_parse_identifier_to_type_kind(const parser_t* parser,
     }
 }
 
-static res_t parser_init(const char* file_name0, const char* source,
-                         int source_len, parser_t* parser) {
+static mkt_res_t parser_init(const char* file_name0, const char* source,
+                             int source_len, parser_t* parser) {
     CHECK((void*)file_name0, !=, NULL, "%p");
     CHECK((void*)source, !=, NULL, "%p");
     CHECK((void*)parser, !=, NULL, "%p");
@@ -325,7 +327,7 @@ static res_t parser_init(const char* file_name0, const char* source,
     parser->par_file_name0 = file_name0;
     parser->par_is_tty = isatty(2);
 
-    res_t res = RES_NONE;
+    mkt_res_t res = RES_NONE;
     if ((res = lex_init(file_name0, source, source_len, &parser->par_lexer)) !=
         RES_OK)
         return res;
@@ -948,8 +950,8 @@ static void parser_print_source_on_error(const parser_t* parser,
              first_tok_loc.loc_line, first_tok_loc.loc_column);
     int prefix_len = strlen(prefix);
 
-    fprintf(stderr, "%s%s%s%.*s\n", parser->par_is_tty ? color_gray : "",
-            prefix, parser->par_is_tty ? color_reset : "", (int)source_len,
+    fprintf(stderr, "%s%s%s%.*s\n", parser->par_is_tty ? mkt_color_gray : "",
+            prefix, parser->par_is_tty ? mkt_color_reset : "", (int)source_len,
             source);
 
     const int source_before_without_squiggly_len =
@@ -960,7 +962,7 @@ static void parser_print_source_on_error(const parser_t* parser,
     for (int i = 0; i < prefix_len + source_before_without_squiggly_len; i++)
         fprintf(stderr, " ");
 
-    if (parser->par_is_tty) fprintf(stderr, "%s", color_red);
+    if (parser->par_is_tty) fprintf(stderr, "%s", mkt_color_red);
 
     const int squiggly_len =
         last_tok_pos_range.pr_end - first_tok_pos_range.pr_start;
@@ -968,23 +970,23 @@ static void parser_print_source_on_error(const parser_t* parser,
 
     for (int i = 0; i < squiggly_len; i++) fprintf(stderr, "^");
 
-    if (parser->par_is_tty) fprintf(stderr, "%s", color_reset);
+    if (parser->par_is_tty) fprintf(stderr, "%s", mkt_color_reset);
 
     fprintf(stderr, "\n");
 }
 
-static res_t parser_err_unexpected_token(const parser_t* parser,
-                                         mkt_token_id_t expected) {
+static mkt_res_t parser_err_unexpected_token(const parser_t* parser,
+                                             mkt_token_id_t expected) {
     CHECK((void*)parser, !=, NULL, "%p");
 
-    const res_t res = RES_UNEXPECTED_TOKEN;
+    const mkt_res_t res = RES_UNEXPECTED_TOKEN;
 
     const mkt_loc_t loc_start = parser->par_lexer.lex_locs[parser->par_tok_i];
 
     fprintf(stderr, "%s%s:%d:%d:%sUnexpected token. Expected `%s`, got `%s`\n",
-            (parser->par_is_tty ? color_gray : ""), parser->par_file_name0,
+            (parser->par_is_tty ? mkt_color_gray : ""), parser->par_file_name0,
             loc_start.loc_line, loc_start.loc_column,
-            (parser->par_is_tty ? color_reset : ""),
+            (parser->par_is_tty ? mkt_color_reset : ""),
             mkt_token_id_to_str[expected],
             mkt_token_id_to_str[parser_current(parser)]);
 
@@ -1028,8 +1030,8 @@ static bool parser_match(parser_t* parser, int* return_token_index,
     return false;
 }
 
-static res_t parser_err_non_matching_types(const parser_t* parser,
-                                           int lhs_node_i, int rhs_node_i) {
+static mkt_res_t parser_err_non_matching_types(const parser_t* parser,
+                                               int lhs_node_i, int rhs_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK(lhs_node_i, >=, 0, "%d");
     CHECK(lhs_node_i, <, (int)buf_size(parser->par_nodes), "%d");
@@ -1062,11 +1064,11 @@ static res_t parser_err_non_matching_types(const parser_t* parser,
     const mkt_loc_t lhs_first_tok_loc =
         parser->par_lexer.lex_locs[lhs_first_tok_i];
 
-    const res_t res = RES_NON_MATCHING_TYPES;
+    const mkt_res_t res = RES_NON_MATCHING_TYPES;
     fprintf(stderr, "%s%s:%d:%d:%sTypes do not match. Expected %s, got %s\n",
-            (parser->par_is_tty ? color_gray : ""), parser->par_file_name0,
+            (parser->par_is_tty ? mkt_color_gray : ""), parser->par_file_name0,
             lhs_first_tok_loc.loc_line, lhs_first_tok_loc.loc_column,
-            (parser->par_is_tty ? color_reset : ""),
+            (parser->par_is_tty ? mkt_color_reset : ""),
             mkt_type_to_str[rhs_type_kind], mkt_type_to_str[lhs_type_kind]);
 
     parser_print_source_on_error(parser, lhs_first_tok_i, rhs_last_tok_i);
@@ -1074,8 +1076,9 @@ static res_t parser_err_non_matching_types(const parser_t* parser,
     return res;
 }
 
-static res_t parser_err_unexpected_type(const parser_t* parser, int lhs_node_i,
-                                        mkt_type_kind_t expected_type_kind) {
+static mkt_res_t parser_err_unexpected_type(
+    const parser_t* parser, int lhs_node_i,
+    mkt_type_kind_t expected_type_kind) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK(lhs_node_i, >=, 0, "%d");
     CHECK(lhs_node_i, <, (int)buf_size(parser->par_nodes), "%d");
@@ -1099,11 +1102,11 @@ static res_t parser_err_unexpected_type(const parser_t* parser, int lhs_node_i,
     const mkt_loc_t lhs_first_tok_loc =
         parser->par_lexer.lex_locs[lhs_first_tok_i];
 
-    const res_t res = RES_NON_MATCHING_TYPES;
+    const mkt_res_t res = RES_NON_MATCHING_TYPES;
     fprintf(stderr, "%s%s:%d:%d:%sTypes do not match. Expected %s, got %s\n",
-            (parser->par_is_tty ? color_gray : ""), parser->par_file_name0,
+            (parser->par_is_tty ? mkt_color_gray : ""), parser->par_file_name0,
             lhs_first_tok_loc.loc_line, lhs_first_tok_loc.loc_column,
-            (parser->par_is_tty ? color_reset : ""),
+            (parser->par_is_tty ? mkt_color_reset : ""),
             mkt_type_to_str[expected_type_kind],
             mkt_type_to_str[lhs_type_kind]);
 
@@ -1112,7 +1115,7 @@ static res_t parser_err_unexpected_type(const parser_t* parser, int lhs_node_i,
     return res;
 }
 
-static res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
+static mkt_res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
@@ -1120,7 +1123,7 @@ static res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
     if (!parser_match(parser, &first_tok_i, 1, TOK_ID_IF))
         return parser_err_unexpected_token(parser, TOK_ID_IF);
 
-    res_t res = RES_NONE;
+    mkt_res_t res = RES_NONE;
 
     if (!parser_match(parser, &dummy, 1, TOK_ID_LPAREN))
         return parser_err_unexpected_token(parser, TOK_ID_LPAREN);
@@ -1212,12 +1215,12 @@ static res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
     return RES_OK;
 }
 
-static res_t parser_parse_jump_expr(parser_t* parser, int* new_node_i) {
+static mkt_res_t parser_parse_jump_expr(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
     int tok_i = -1;
-    res_t res = RES_NONE;
+    mkt_res_t res = RES_NONE;
     if (parser_match(parser, &tok_i, 1, TOK_ID_RETURN)) {
         int expr_node_i = -1;
         res = parser_parse_expr(parser, &expr_node_i);
@@ -1252,12 +1255,12 @@ static res_t parser_parse_jump_expr(parser_t* parser, int* new_node_i) {
     return RES_NONE;
 }
 
-static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
+static mkt_res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
     int tok_i = -1;
-    res_t res = RES_NONE;
+    mkt_res_t res = RES_NONE;
 
     // FIXME: hack
     if (parser_peek(parser) == TOK_ID_BUILTIN_PRINTLN)
@@ -1383,12 +1386,12 @@ static res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
     return RES_NONE;  // TODO
 }
 
-static res_t parser_parse_postfix_unary_expr(parser_t* parser,
-                                             int* new_node_i) {
+static mkt_res_t parser_parse_postfix_unary_expr(parser_t* parser,
+                                                 int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
-    res_t res = parser_parse_primary_expr(parser, new_node_i);
+    mkt_res_t res = parser_parse_primary_expr(parser, new_node_i);
     if (res != RES_OK) return res;
 
     // Optional
@@ -1400,11 +1403,12 @@ static res_t parser_parse_postfix_unary_expr(parser_t* parser,
     return RES_OK;
 }
 
-static res_t parser_parse_prefix_unary_expr(parser_t* parser, int* new_node_i) {
+static mkt_res_t parser_parse_prefix_unary_expr(parser_t* parser,
+                                                int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
-    res_t res = RES_NONE;
+    mkt_res_t res = RES_NONE;
 
     int tok_i = -1;
     if (parser_match(parser, &tok_i, 1, TOK_ID_NOT)) {
@@ -1443,7 +1447,7 @@ static res_t parser_parse_prefix_unary_expr(parser_t* parser, int* new_node_i) {
     return parser_parse_postfix_unary_expr(parser, new_node_i);
 }
 
-static res_t parser_parse_as_expr(parser_t* parser, int* new_node_i) {
+static mkt_res_t parser_parse_as_expr(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
@@ -1452,9 +1456,9 @@ static res_t parser_parse_as_expr(parser_t* parser, int* new_node_i) {
     return parser_parse_prefix_unary_expr(parser, new_node_i);
 }
 
-static res_t parser_parse_multiplicative_expr(parser_t* parser,
-                                              int* new_node_i) {
-    res_t res = RES_NONE;
+static mkt_res_t parser_parse_multiplicative_expr(parser_t* parser,
+                                                  int* new_node_i) {
+    mkt_res_t res = RES_NONE;
 
     int lhs_i = -1;
     if ((res = parser_parse_as_expr(parser, &lhs_i)) != RES_OK) return res;
@@ -1527,8 +1531,8 @@ static res_t parser_parse_multiplicative_expr(parser_t* parser,
     return res;
 }
 
-static res_t parser_parse_additive_expr(parser_t* parser, int* new_node_i) {
-    res_t res = RES_NONE;
+static mkt_res_t parser_parse_additive_expr(parser_t* parser, int* new_node_i) {
+    mkt_res_t res = RES_NONE;
 
     int lhs_i = -1;
     if ((res = parser_parse_multiplicative_expr(parser, &lhs_i)) != RES_OK)
@@ -1581,7 +1585,7 @@ static res_t parser_parse_additive_expr(parser_t* parser, int* new_node_i) {
     return res;
 }
 
-static res_t parser_parse_range_expr(parser_t* parser, int* new_node_i) {
+static mkt_res_t parser_parse_range_expr(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
@@ -1590,7 +1594,7 @@ static res_t parser_parse_range_expr(parser_t* parser, int* new_node_i) {
     return parser_parse_additive_expr(parser, new_node_i);
 }
 
-static res_t parser_parse_infix_fn_call(parser_t* parser, int* new_node_i) {
+static mkt_res_t parser_parse_infix_fn_call(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
@@ -1599,7 +1603,7 @@ static res_t parser_parse_infix_fn_call(parser_t* parser, int* new_node_i) {
     return parser_parse_range_expr(parser, new_node_i);
 }
 
-static res_t parser_parse_elvis_expr(parser_t* parser, int* new_node_i) {
+static mkt_res_t parser_parse_elvis_expr(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
@@ -1608,7 +1612,7 @@ static res_t parser_parse_elvis_expr(parser_t* parser, int* new_node_i) {
     return parser_parse_infix_fn_call(parser, new_node_i);
 }
 
-static res_t parser_parse_infix_op(parser_t* parser, int* new_node_i) {
+static mkt_res_t parser_parse_infix_op(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
@@ -1617,15 +1621,15 @@ static res_t parser_parse_infix_op(parser_t* parser, int* new_node_i) {
     return parser_parse_elvis_expr(parser, new_node_i);
 }
 
-static res_t parser_parse_value_arg(parser_t* parser, int* new_node_i) {
+static mkt_res_t parser_parse_value_arg(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
     return parser_parse_expr(parser, new_node_i);
 }
 
-static res_t parser_parse_value_args(parser_t* parser, int* last_tok_i,
-                                     int** arg_nodes_i) {
+static mkt_res_t parser_parse_value_args(parser_t* parser, int* last_tok_i,
+                                         int** arg_nodes_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)arg_nodes_i, !=, NULL, "%p");
     CHECK((void*)last_tok_i, !=, NULL, "%p");
@@ -1639,7 +1643,7 @@ static res_t parser_parse_value_args(parser_t* parser, int* last_tok_i,
 
     do {
         int new_node_i = -1;
-        res_t res = parser_parse_value_arg(parser, &new_node_i);
+        mkt_res_t res = parser_parse_value_arg(parser, &new_node_i);
         if (res == RES_OK) {
             buf_push(*arg_nodes_i, new_node_i);
         } else if (res == RES_NONE)
@@ -1654,13 +1658,13 @@ static res_t parser_parse_value_args(parser_t* parser, int* last_tok_i,
     return RES_OK;
 }
 
-static res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i) {
+static mkt_res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
     int* arg_nodes_i = NULL;
     int dummy = 0;
-    res_t res = parser_parse_value_args(parser, &dummy, &arg_nodes_i);
+    mkt_res_t res = parser_parse_value_args(parser, &dummy, &arg_nodes_i);
     if (res != RES_OK) return res;
 
     CHECK(*new_node_i, >=, 0, "%d");
@@ -1719,19 +1723,19 @@ static res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i) {
     return RES_OK;
 }
 
-static res_t parser_parse_generical_call_like_comparison(parser_t* parser,
-                                                         int* new_node_i) {
+static mkt_res_t parser_parse_generical_call_like_comparison(parser_t* parser,
+                                                             int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
     return parser_parse_infix_op(parser, new_node_i);
 }
 
-static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
+static mkt_res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
-    res_t res = RES_NONE;
+    mkt_res_t res = RES_NONE;
 
     int lhs_i = -1;
     if ((res = parser_parse_generical_call_like_comparison(parser, &lhs_i)) !=
@@ -1811,11 +1815,11 @@ static res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
     return res;
 }
 
-static res_t parser_parse_equality(parser_t* parser, int* new_node_i) {
+static mkt_res_t parser_parse_equality(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
-    res_t res = RES_NONE;
+    mkt_res_t res = RES_NONE;
 
     int lhs_i = -1;
     if ((res = parser_parse_comparison(parser, &lhs_i)) != RES_OK) return res;
@@ -1862,7 +1866,7 @@ static res_t parser_parse_equality(parser_t* parser, int* new_node_i) {
     return res;
 }
 
-static res_t parser_parse_conjunction(parser_t* parser, int* new_node_i) {
+static mkt_res_t parser_parse_conjunction(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
@@ -1871,7 +1875,7 @@ static res_t parser_parse_conjunction(parser_t* parser, int* new_node_i) {
     return parser_parse_equality(parser, new_node_i);
 }
 
-static res_t parser_parse_disjunction(parser_t* parser, int* new_node_i) {
+static mkt_res_t parser_parse_disjunction(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
@@ -1880,17 +1884,17 @@ static res_t parser_parse_disjunction(parser_t* parser, int* new_node_i) {
     return parser_parse_conjunction(parser, new_node_i);
 }
 
-static res_t parser_parse_expr(parser_t* parser, int* new_node_i) {
+static mkt_res_t parser_parse_expr(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
     return parser_parse_disjunction(parser, new_node_i);
 }
 
-static res_t parser_parse_stmts(parser_t* parser) {
+static mkt_res_t parser_parse_stmts(parser_t* parser) {
     CHECK((void*)parser, !=, NULL, "%p");
 
-    res_t res = RES_NONE;
+    mkt_res_t res = RES_NONE;
     while (1) {
         int new_node_i = -1;
         res = parser_parse_stmt(parser, &new_node_i);
@@ -1908,7 +1912,7 @@ static res_t parser_parse_stmts(parser_t* parser) {
     }
 }
 
-static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
+static mkt_res_t parser_parse_block(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
@@ -1930,7 +1934,7 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
             TOK_ID_LCURLY))
         return parser_err_unexpected_token(parser, TOK_ID_LCURLY);
 
-    res_t res = RES_NONE;
+    mkt_res_t res = RES_NONE;
     if ((res = parser_parse_stmts(parser)) != RES_OK) {
         log_debug("failed to parse expr in optional curlies %d", res);
         return res;
@@ -1966,8 +1970,8 @@ static res_t parser_parse_block(parser_t* parser, int* new_node_i) {
     return res;
 }
 
-static res_t parser_parse_control_structure_body(parser_t* parser,
-                                                 int* new_node_i) {
+static mkt_res_t parser_parse_control_structure_body(parser_t* parser,
+                                                     int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
@@ -1977,12 +1981,12 @@ static res_t parser_parse_control_structure_body(parser_t* parser,
     return parser_parse_stmt(parser, new_node_i);
 }
 
-static res_t parser_parse_syscall(parser_t* parser, int* new_node_i) {
+static mkt_res_t parser_parse_syscall(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
     int keyword_i = -1;
-    res_t res = RES_NONE;
+    mkt_res_t res = RES_NONE;
     if (parser_match(parser, &keyword_i, 1, TOK_ID_SYSCALL)) {
         int* arg_nodes_i = NULL;
         int last_tok_i = 0;
@@ -2013,12 +2017,13 @@ static res_t parser_parse_syscall(parser_t* parser, int* new_node_i) {
     return RES_NONE;
 }
 
-static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i) {
+static mkt_res_t parser_parse_builtin_println(parser_t* parser,
+                                              int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
     int keyword_print_i = -1;
-    res_t res = RES_NONE;
+    mkt_res_t res = RES_NONE;
     // Temporary
     if (parser_match(parser, &keyword_print_i, 1, TOK_ID_BUILTIN_PRINTLN)) {
         int lparen = 0;
@@ -2051,11 +2056,11 @@ static res_t parser_parse_builtin_println(parser_t* parser, int* new_node_i) {
     return RES_NONE;
 }
 
-static res_t parser_parse_assignment(parser_t* parser, int* new_node_i) {
+static mkt_res_t parser_parse_assignment(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
-    res_t res = RES_NONE;
+    mkt_res_t res = RES_NONE;
     int dummy = -1, expr_node_i = -1, lhs_tok_i = -1;
     if (parser_peek(parser) == TOK_ID_IDENTIFIER &&
         parser_peek_next(parser) == TOK_ID_EQ) {
@@ -2131,8 +2136,8 @@ static res_t parser_parse_assignment(parser_t* parser, int* new_node_i) {
     return RES_NONE;
 }
 
-static res_t parser_parse_property_declaration(parser_t* parser,
-                                               int* new_node_i) {
+static mkt_res_t parser_parse_property_declaration(parser_t* parser,
+                                                   int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
@@ -2164,7 +2169,7 @@ static res_t parser_parse_property_declaration(parser_t* parser,
     if (!parser_match(parser, &dummy, 1, TOK_ID_EQ))
         return parser_err_unexpected_token(parser, TOK_ID_EQ);
 
-    res_t res = RES_NONE;
+    mkt_res_t res = RES_NONE;
     res = parser_parse_expr(parser, &init_node_i);
     if (res == RES_NONE) {
         log_debug("var def without initial value%s", "");
@@ -2210,7 +2215,7 @@ static res_t parser_parse_property_declaration(parser_t* parser,
     return RES_OK;
 }
 
-static res_t parser_parse_parameter(parser_t* parser, int** new_nodes_i) {
+static mkt_res_t parser_parse_parameter(parser_t* parser, int** new_nodes_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_nodes_i, !=, NULL, "%p");
 
@@ -2278,7 +2283,8 @@ static res_t parser_parse_parameter(parser_t* parser, int** new_nodes_i) {
     return RES_OK;
 }
 
-static res_t parser_parse_fn_value_params(parser_t* parser, int** new_nodes_i) {
+static mkt_res_t parser_parse_fn_value_params(parser_t* parser,
+                                              int** new_nodes_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_nodes_i, !=, NULL, "%p");
 
@@ -2286,14 +2292,15 @@ static res_t parser_parse_fn_value_params(parser_t* parser, int** new_nodes_i) {
     if (!parser_match(parser, &dummy, 1, TOK_ID_LPAREN))
         return parser_err_unexpected_token(parser, TOK_ID_LPAREN);
 
-    res_t res = RES_NONE;
+    mkt_res_t res = RES_NONE;
     if ((res = parser_parse_parameter(parser, new_nodes_i)) != RES_OK)
         return res;
 
     return RES_OK;
 }
 
-static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
+static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
+                                             int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
@@ -2343,7 +2350,7 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
             buf_size(parser->par_nodes) - 1;
     const int parent_scope_i = parser_enter_scope(parser, body_node_i);
 
-    res_t res = RES_NONE;
+    mkt_res_t res = RES_NONE;
     if ((res = parser_parse_fn_value_params(parser, &arg_nodes_i)) != RES_OK)
         return res;
 
@@ -2424,11 +2431,11 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
         fprintf(stderr,
                 "%s%s:%d:%d:%sThe function has declared to "
                 "return %s but has no return%s\n",
-                parser->par_is_tty ? color_gray : "", parser->par_file_name0,
-                loc.loc_line, loc.loc_column,
-                parser->par_is_tty ? color_reset : "",
+                parser->par_is_tty ? mkt_color_gray : "",
+                parser->par_file_name0, loc.loc_line, loc.loc_column,
+                parser->par_is_tty ? mkt_color_reset : "",
                 mkt_type_to_str[declared_type],
-                parser->par_is_tty ? color_reset : "");
+                parser->par_is_tty ? mkt_color_reset : "");
         parser_print_source_on_error(parser, last_tok_i, last_tok_i);
 
         return RES_ERR;
@@ -2446,11 +2453,11 @@ static res_t parser_parse_fn_declaration(parser_t* parser, int* new_node_i) {
     return RES_OK;
 }
 
-static res_t parser_parse_declaration(parser_t* parser, int* new_node_i) {
+static mkt_res_t parser_parse_declaration(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
-    res_t res = RES_NONE;
+    mkt_res_t res = RES_NONE;
 
     if ((res = parser_parse_fn_declaration(parser, new_node_i)) != RES_NONE)
         return res;
@@ -2458,7 +2465,7 @@ static res_t parser_parse_declaration(parser_t* parser, int* new_node_i) {
     return parser_parse_property_declaration(parser, new_node_i);
 }
 
-static res_t parser_parse_while_stmt(parser_t* parser, int* new_node_i) {
+static mkt_res_t parser_parse_while_stmt(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
@@ -2469,7 +2476,7 @@ static res_t parser_parse_while_stmt(parser_t* parser, int* new_node_i) {
     if (!parser_match(parser, &dummy, 1, TOK_ID_LPAREN))
         return parser_err_unexpected_token(parser, TOK_ID_LPAREN);
 
-    res_t res = parser_parse_expr(parser, &cond_i);
+    mkt_res_t res = parser_parse_expr(parser, &cond_i);
     if (res == RES_NONE) {
         log_debug("Missing while condition%s", "\n");
         return RES_ERR;
@@ -2515,7 +2522,7 @@ static res_t parser_parse_while_stmt(parser_t* parser, int* new_node_i) {
     return RES_OK;
 }
 
-static res_t parser_parse_loop(parser_t* parser, int* new_node_i) {
+static mkt_res_t parser_parse_loop(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
@@ -2524,13 +2531,13 @@ static res_t parser_parse_loop(parser_t* parser, int* new_node_i) {
     return parser_parse_while_stmt(parser, new_node_i);
 }
 
-static res_t parser_parse_stmt(parser_t* parser, int* new_node_i) {
+static mkt_res_t parser_parse_stmt(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
     if (parser_peek(parser) == TOK_ID_EOF) return RES_NONE;
 
-    res_t res = RES_NONE;
+    mkt_res_t res = RES_NONE;
     if ((res = parser_parse_declaration(parser, new_node_i)) != RES_NONE)
         return res;
 
@@ -2542,7 +2549,7 @@ static res_t parser_parse_stmt(parser_t* parser, int* new_node_i) {
     return parser_parse_expr(parser, new_node_i);
 }
 
-static res_t parser_parse(parser_t* parser) {
+static mkt_res_t parser_parse(parser_t* parser) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)parser->par_lexer.lex_tokens, !=, NULL, "%p");
     CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, 0, "%d");
@@ -2550,7 +2557,7 @@ static res_t parser_parse(parser_t* parser) {
           "%d");
 
     int new_node_i = -1;
-    res_t res = RES_NONE;
+    mkt_res_t res = RES_NONE;
 
     if ((res = parser_parse_stmt(parser, &new_node_i)) == RES_OK) {
         node_dump(parser, new_node_i, 0);

@@ -23,29 +23,29 @@ static void base_source_file_name(const char* file_name0,
     base_file_name0[len - 1] = 0;
 }
 
-static res_t run(const char* file_name0) {
+static mkt_res_t run(const char* file_name0) {
     CHECK((void*)file_name0, !=, NULL, "%p");
 
     static char base_file_name0[MAXPATHLEN + 1] = "";
     static char argv0[3 * MAXPATHLEN] = "";
 
-    res_t res = RES_NONE;
+    mkt_res_t res = RES_NONE;
     if (!is_file_name_valid(file_name0)) {
         res = RES_INVALID_SOURCE_FILE_NAME;
-        fprintf(stderr, res_to_str[res], file_name0);
+        fprintf(stderr, mkt_res_to_str[res], file_name0);
         return res;
     }
 
     FILE* file = NULL;
     if ((file = fopen(file_name0, "r")) == NULL) {
         res = RES_SOURCE_FILE_READ_FAILED;
-        fprintf(stderr, res_to_str[res], file_name0, strerror(errno));
+        fprintf(stderr, mkt_res_to_str[res], file_name0, strerror(errno));
         return res;
     }
 
     if (fseek(file, 0, SEEK_END) != 0) {
         res = RES_SOURCE_FILE_READ_FAILED;
-        fprintf(stderr, res_to_str[res], file_name0, strerror(errno));
+        fprintf(stderr, mkt_res_to_str[res], file_name0, strerror(errno));
         return res;
     }
     const int file_size = ftell(file);
@@ -54,7 +54,7 @@ static res_t run(const char* file_name0) {
         mmap(NULL, (size_t)file_size, PROT_READ, MAP_SHARED, fileno(file), 0);
     if (source == MAP_FAILED) {
         res = RES_SOURCE_FILE_READ_FAILED;
-        fprintf(stderr, res_to_str[res], file_name0, strerror(errno));
+        fprintf(stderr, mkt_res_to_str[res], file_name0, strerror(errno));
         return res;
     }
 
@@ -73,7 +73,7 @@ static res_t run(const char* file_name0) {
     FILE* asm_file = fopen(asm_file_name0, "w");
     if (asm_file == NULL) {
         res = RES_ASM_FILE_READ_FAILED;
-        fprintf(stderr, res_to_str[res], asm_file_name0, strerror(errno));
+        fprintf(stderr, mkt_res_to_str[res], asm_file_name0, strerror(errno));
         return res;
     }
 
@@ -97,12 +97,12 @@ static res_t run(const char* file_name0) {
         FILE* as_process = popen(argv0, "r");
         if (as_process == NULL) {
             res = RES_FAILED_AS;
-            fprintf(stderr, res_to_str[res], argv0, strerror(errno));
+            fprintf(stderr, mkt_res_to_str[res], argv0, strerror(errno));
             return res;
         }
         if (pclose(as_process) != 0) {
             res = RES_FAILED_AS;
-            fprintf(stderr, res_to_str[res], argv0, strerror(errno));
+            fprintf(stderr, mkt_res_to_str[res], argv0, strerror(errno));
             return res;
         }
         fflush(stdout);
@@ -139,12 +139,12 @@ static res_t run(const char* file_name0) {
         FILE* ld_process = popen(argv0, "r");
         if (ld_process == NULL) {
             res = RES_FAILED_LD;
-            fprintf(stderr, res_to_str[res], argv0, strerror(errno));
+            fprintf(stderr, mkt_res_to_str[res], argv0, strerror(errno));
             return res;
         }
         if (pclose(ld_process) != 0) {
             res = RES_FAILED_LD;
-            fprintf(stderr, res_to_str[res], argv0, strerror(errno));
+            fprintf(stderr, mkt_res_to_str[res], argv0, strerror(errno));
             return res;
         }
         fflush(stdout);

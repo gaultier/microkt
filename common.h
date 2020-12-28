@@ -22,9 +22,9 @@ typedef enum {
     RES_NEED_AT_LEAST_ONE_STMT,
     RES_MISSING_PARAM,
     RES_ERR,
-} res_t;
+} mkt_res_t;
 
-static const char res_to_str[][100] = {
+static const char mkt_res_to_str[][100] = {
     [RES_OK] = "ok\n",
     [RES_NONE] = "none\n",
     [RES_INVALID_SOURCE_FILE_NAME] = "Invalid source file name %s\n",
@@ -88,10 +88,10 @@ static const char res_to_str[][100] = {
     } while (0)
 #endif
 
-static const char color_red[] = "\x1b[31m";
-static const char color_reset[] = "\x1b[0m";
-static const char color_gray[] = "\x1b[37m";
-static const char color_green[] = "\x1b[32m";
+static const char mkt_color_red[] = "\x1b[31m";
+static const char mkt_color_reset[] = "\x1b[0m";
+static const char mkt_color_gray[] = "\x1b[37m";
+static const char mkt_color_green[] = "\x1b[32m";
 
 static bool is_space(char c) {
     return c == ' ' || c == '\n' || c == '\t' || c == '\r';

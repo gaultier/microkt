@@ -257,7 +257,7 @@ static void lex_identifier(lexer_t* lexer, mkt_token_t* result, int* col) {
     }
 }
 
-static res_t lex_number(lexer_t* lexer, mkt_token_t* result, int* col) {
+static mkt_res_t lex_number(lexer_t* lexer, mkt_token_t* result, int* col) {
     CHECK((void*)lexer, !=, NULL, "%p");
     CHECK((void*)lexer->lex_source, !=, NULL, "%p");
     CHECK((void*)result, !=, NULL, "%p");
@@ -560,7 +560,7 @@ static mkt_token_t lex_next(lexer_t* lexer, int* line, int* start_col,
             case '7':
             case '8':
             case '9': {
-                const res_t res = lex_number(lexer, &result, col);
+                const mkt_res_t res = lex_number(lexer, &result, col);
                 IGNORE(res);  // TODO: correct?
                 goto outer;
             }
@@ -596,8 +596,8 @@ static void token_dump(const mkt_token_t* t, int i, const lexer_t* lexer) {
               &lexer->lex_source[t->tok_pos_range.pr_start]);
 }
 
-static res_t lex_init(const char* file_name0, const char* source,
-                      const int source_len, lexer_t* lexer) {
+static mkt_res_t lex_init(const char* file_name0, const char* source,
+                          const int source_len, lexer_t* lexer) {
     CHECK((void*)file_name0, !=, NULL, "%p");
     CHECK((void*)source, !=, NULL, "%p");
     CHECK((void*)lexer, !=, NULL, "%p");
@@ -615,10 +615,10 @@ static res_t lex_init(const char* file_name0, const char* source,
         const mkt_token_t token = lex_next(lexer, &line, &start_col, &col);
         if (token.tok_id == TOK_ID_INVALID) {
             fprintf(stderr, "%s%s:%d:%d:Invalid token: %s%c%s\n",
-                    is_tty ? color_gray : "", file_name0, line, start_col,
-                    is_tty ? color_reset : "",
+                    is_tty ? mkt_color_gray : "", file_name0, line, start_col,
+                    is_tty ? mkt_color_reset : "",
                     source[token.tok_pos_range.pr_start],
-                    is_tty ? color_reset : "");
+                    is_tty ? mkt_color_reset : "");
             err = true;
         }
 
