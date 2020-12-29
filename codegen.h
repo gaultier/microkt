@@ -15,7 +15,7 @@ static const long long int syscall_exit = 60;
 
 #ifdef __APPLE__
 #define MKT_SYSCALL_MMAP 0x20000c5
-#define MKT_SYSCALL_MUNMAP 0x2000073
+#define MKT_SYSCALL_MUNMAP 0x2000049
 #define MKT_SYSCALL_WRITE 0x2000004
 #else
 #define MKT_SYSCALL_MMAP 9
