@@ -23,22 +23,21 @@ static intptr_t* stack_top;
 
 void* mkt_mmap(void* addr, size_t len, int prot, int flags, int fd,
                off_t offset);
-
 int mkt_munmap(void* addr, size_t len);
 ssize_t mkt_write(int fildes, const void* buf, size_t nbyte);
 int mkt_kill(pid_t pid, int sig);
 void mkt_abort(void) { mkt_kill(0, MKT_SIGABRT); }
 
-#define CHECK_NO_STDLIB(a, cond, b, fmt)                                  \
-    do {                                                                  \
-        if (!((a)cond(b))) {                                              \
-            const char s[] =                                              \
-                __FILE__ "CHECK failed: " STR(a) " " STR(cond) " " STR(   \
-                    b) " i.e.: " fmt " " STR(cond) " " fmt " is false\n"; \
-            mkt_write(stderr, s, sizeof(s));                              \
-            mkt_abort();                                                  \
-        }                                                                 \
+#define CHECK_NO_STDLIB(a, cond, b, fmt)                               \
+    do {                                                               \
+        if (!((a)cond(b))) {                                           \
+            const char s[] = __FILE__ "CHECK failed: " STR(a) " " STR( \
+                cond) " " STR(b) " is false\n";                        \
+            mkt_write(stderr, s, sizeof(s));                           \
+            mkt_abort();                                               \
+        }                                                              \
     } while (0)
+
 // TODO: optimize
 static void* mkt_alloc(size_t len) {
     return mkt_mmap(NULL, len, MKT_PROT_READ | MKT_PROT_WRITE,
@@ -61,9 +60,9 @@ typedef struct alloc_atom alloc_atom;
 static alloc_atom* objs = NULL;  // In use
 
 void atom_cons(alloc_atom* item, alloc_atom** head) {
-    // CHECK((void*)item, !=, NULL, "%p");
-    // CHECK((void*)head, !=, NULL, "%p");
-    // CHECK((void*)item, !=, (void*)head, "%p");  // Prevent cycles
+    CHECK_NO_STDLIB((void*)item, !=, NULL, "%p");
+    CHECK_NO_STDLIB((void*)head, !=, NULL, "%p");
+    CHECK_NO_STDLIB((void*)item, !=, (void*)head, "%p");  // Prevent cycles
 
     if (head) {
         item->aa_next = *head;
@@ -71,7 +70,7 @@ void atom_cons(alloc_atom* item, alloc_atom** head) {
     } else {
         *head = item;
     }
-    // CHECK((void*)*head, !=, NULL, "%p");
+    CHECK_NO_STDLIB((void*)*head, !=, NULL, "%p");
 }
 
 static alloc_atom* mkt_alloc_atom_make(size_t size) {
@@ -80,7 +79,7 @@ static alloc_atom* mkt_alloc_atom_make(size_t size) {
     alloc_atom* atom = mkt_mmap(NULL, bytes, MKT_PROT_READ | MKT_PROT_WRITE,
                                 MKT_MAP_PRIVATE | MKT_MAP_ANON, 0, 0);
     // if (!atom) fprintf(stderr, "mkt_mmap error: errno=%d\n", errno);
-    // CHECK((void*)atom, !=, NULL, "%p");
+    CHECK_NO_STDLIB((void*)atom, !=, NULL, "%p");
     atom->aa_header = (runtime_val_header){0};
     atom->aa_next = NULL;
 
@@ -97,7 +96,7 @@ void mkt_init() {
 }
 
 static void mkt_gc_obj_mark(runtime_val_header* header) {
-    // CHECK((void*)header, !=, NULL, "%p");
+    CHECK_NO_STDLIB((void*)header, !=, NULL, "%p");
 
     if (header->rv_tag & RV_TAG_MARKED) return;  // Prevent cycles
     header->rv_tag |= RV_TAG_MARKED;
@@ -120,10 +119,10 @@ static alloc_atom* mkt_gc_atom_find_data_by_addr(size_t addr) {
 }
 
 static void mkt_gc_scan_stack(const intptr_t* stack_bottom) {
-    // CHECK((void*)stack_bottom, !=, NULL, "%p");
+    CHECK_NO_STDLIB((void*)stack_bottom, !=, NULL, "%p");
 
     const char* s_bottom = (char*)stack_bottom;
-    // CHECK((void*)stack_bottom, <=, (void*)stack_top, "%p");
+    CHECK_NO_STDLIB((void*)stack_bottom, <=, (void*)stack_top, "%p");
 
     const char* s_top = (char*)stack_top;
     while (s_bottom < s_top - sizeof(intptr_t)) {
@@ -141,7 +140,7 @@ static void mkt_gc_scan_stack(const intptr_t* stack_bottom) {
 }
 
 static void mkt_gc_obj_blacken(runtime_val_header* header) {
-    // CHECK((void*)header, !=, NULL, "%p");
+    CHECK_NO_STDLIB((void*)header, !=, NULL, "%p");
 
     // TODO: optimize to go from white -> black directly
     if (header->rv_tag & RV_TAG_STRING) return;
@@ -168,7 +167,7 @@ static void mkt_gc_sweep() {
         // Remove
         const size_t bytes = sizeof(runtime_val_header) + sizeof(alloc_atom*) +
                              atom->aa_header.rv_size;
-        // CHECK(gc_allocated_bytes, >=, (size_t)bytes, "%zu");
+        CHECK_NO_STDLIB(gc_allocated_bytes, >=, (size_t)bytes, "%zu");
         gc_allocated_bytes -= bytes;
 
         alloc_atom* to_free = atom;
@@ -198,7 +197,7 @@ void* mkt_string_make(size_t size) {
     mkt_gc();
 
     alloc_atom* atom = mkt_alloc_atom_make(size);
-    // CHECK((void*)atom, !=, NULL, "%p");
+    CHECK_NO_STDLIB((void*)atom, !=, NULL, "%p");
     atom->aa_header =
         (runtime_val_header){.rv_size = size, .rv_tag = RV_TAG_STRING};
 
@@ -240,10 +239,10 @@ void mkt_println_int(long long int n) {
 }
 
 void mkt_println_string(char* s, const runtime_val_header* s_header) {
-    // CHECK((void*)s, !=, NULL, "%p");
-    // CHECK((void*)s_header, !=, NULL, "%p");
+    CHECK_NO_STDLIB((void*)s, !=, NULL, "%p");
+    CHECK_NO_STDLIB((void*)s_header, !=, NULL, "%p");
 
-    // CHECK(s_header->rv_tag & RV_TAG_STRING, !=, 0, "%u");
+    CHECK_NO_STDLIB(s_header->rv_tag & RV_TAG_STRING, !=, 0, "%u");
 
     const char newline = '\n';
     mkt_write(1, s, s_header->rv_size);
@@ -253,9 +252,9 @@ void mkt_println_string(char* s, const runtime_val_header* s_header) {
 char* mkt_string_concat(const char* a, const runtime_val_header* a_header,
                         const char* b, const runtime_val_header* b_header) {
     char* const ret = mkt_string_make(a_header->rv_size + b_header->rv_size);
-    // CHECK((void*)ret, !=, NULL, "%p");
-    // CHECK((void*)a, !=, NULL, "%p");
-    // CHECK((void*)b, !=, NULL, "%p");
+    CHECK_NO_STDLIB((void*)ret, !=, NULL, "%p");
+    CHECK_NO_STDLIB((void*)a, !=, NULL, "%p");
+    CHECK_NO_STDLIB((void*)b, !=, NULL, "%p");
 
     for (size_t i = 0; i < a_header->rv_size; i++) ret[i] = a[i];
     for (size_t i = 0; i < b_header->rv_size; i++)
