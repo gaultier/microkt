@@ -246,8 +246,8 @@ char* mkt_string_concat(const char* a, const runtime_val_header* a_header,
     // CHECK((void*)b, !=, NULL, "%p");
 
     for (size_t i = 0; i < a_header->rv_size; i++) ret[i] = a[i];
-    for (size_t i = a_header->rv_size; i < b_header->rv_size; i++)
-        ret[i] = b[i];
+    for (size_t i = 0; i < b_header->rv_size; i++)
+        ret[a_header->rv_size + i] = b[i];
     *(ret - 8) = a_header->rv_size + b_header->rv_size;
 
     return ret;
