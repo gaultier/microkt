@@ -61,6 +61,7 @@ Hello, world!
 - Friendly error messages
 - Tiny memory usage
 - Simple mark and sweep garbage collector
+- The native executables produced by `mktc` do not use the libc and are statically linked on Linux
 
 ## On the roadmap
 *Future features that are not yet implemented but are planned. In no particular order:*
