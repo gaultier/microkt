@@ -11,6 +11,15 @@ static bool is_file_name_valid(const char* file_name0) {
     return (len > (3 + 1) && memcmp(&file_name0[len - 4], ".kts", 3UL) == 0);
 }
 
+static char* stdlib_obj_path() {
+    struct stat st = {0};
+    if (stat("mkt_stdlib.o", &st) == 0) return "mkt_stdlib.o";
+    if (stat("/usr/local/lib/mkt_stdlib.o", &st) == 0)
+        return "/usr/local/lib/mkt_stdlib.o";
+
+    return NULL;
+}
+
 static void base_source_file_name(const char* file_name0,
                                   char* base_file_name0) {
     CHECK(is_file_name_valid(file_name0), ==, true, "%d");
@@ -139,11 +148,13 @@ static int run(const char* file_name0) {
 #endif
             ;
 
+        const char* const stdlib = stdlib_obj_path();
+        CHECK((void*)stdlib, !=, NULL, "%p");
+
         memset(argv0, 0, sizeof(argv0));
-        snprintf(argv0, sizeof(argv0),
-                 LD " %s.o mkt_stdlib.o -o %s.exe -e %sstart %s %s",
-                 base_file_name0, base_file_name0, name_prefix, asan_opts,
-                 link_opts);
+        snprintf(argv0, sizeof(argv0), LD " %s.o %s -o %s.exe -e %sstart %s %s",
+                 base_file_name0, stdlib, base_file_name0, name_prefix,
+                 asan_opts, link_opts);
         log_debug("%s", argv0);
 
         fflush(stdout);
