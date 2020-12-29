@@ -23,7 +23,7 @@ static mkt_res_t proc_run(const char* exe_name, char output[LENGTH],
     CHECK((void*)exe_name, !=, NULL, "%p");
     CHECK((void*)read_bytes, !=, NULL, "%p");
     CHECK((void*)ret_code, !=, NULL, "%p");
-    CHECK(*read_bytes, >, 0L, "%zd");
+    CHECK(*read_bytes, >=, 0L, "%zd");
 
     FILE* exe_process = popen(exe_name, "r");
     if (exe_process == NULL) {
@@ -56,13 +56,15 @@ static str* expects_from_string(const char* string, size_t string_len) {
     str* expects = NULL;
     buf_grow(expects, 100);
     const char* src = string;
+    const char* const string_end = string + string_len;
+
     while (src < string + string_len - needle_len) {
-        src = strchr(src, '/');
+        src = memchr(src, '/', string_end - src);
         if (!src) break;
 
         if (memcmp(src, needle, needle_len) == 0) {
             src += needle_len;
-            const char* end = strchr(src, '\n');
+            const char* end = memchr(src, '\n', string_end - src);
             if (!end) end = string + string_len;
             CHECK((void*)src, <, (void*)end, "%p");
 
