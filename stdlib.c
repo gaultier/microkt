@@ -18,7 +18,11 @@ static intptr_t* stack_top;
 #define MKT_PROT_READ 0x01
 #define MKT_PROT_WRITE 0x02
 #define MKT_MAP_PRIVATE 0x02
+#ifdef __APPLE__
 #define MKT_MAP_ANON 0x1000
+#else
+#define MKT_MAP_ANON 0x20
+#endif
 #define MKT_SIGABRT 6
 #define stderr 2
 
