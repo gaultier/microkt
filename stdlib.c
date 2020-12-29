@@ -1,4 +1,7 @@
+#include <inttypes.h>
+#include <stddef.h>
 #include <stdint.h>
+#include <sys/types.h>
 
 #include "probes.h"
 
@@ -22,6 +25,7 @@ void* mkt_mmap(void* addr, size_t len, int prot, int flags, int fd,
                off_t offset);
 
 int mkt_munmap(void* addr, size_t len);
+ssize_t mkt_write(int fildes, const void* buf, size_t nbyte);
 
 // TODO: optimize
 static void* mkt_alloc(size_t len) {
@@ -192,16 +196,16 @@ void* mkt_string_make(size_t size) {
 void mkt_println_bool(int b) {
     if (b) {
         const char s[] = "true\n";
-        write(1, s, sizeof(s) - 1);
+        mkt_write(1, s, sizeof(s) - 1);
     } else {
         const char s[] = "false\n";
-        write(1, s, sizeof(s) - 1);
+        mkt_write(1, s, sizeof(s) - 1);
     }
 }
 
 void mkt_println_char(char c) {
     char s[2] = {c, '\n'};
-    write(1, s, 2);
+    mkt_write(1, s, 2);
 }
 
 void mkt_println_int(long long int n) {
@@ -220,7 +224,7 @@ void mkt_println_int(long long int n) {
 
     if (neg) s[23 - 1 - len++] = '-';
 
-    write(1, s + 23 - len, len);
+    mkt_write(1, s + 23 - len, len);
 }
 
 void mkt_println_string(char* s, const runtime_val_header* s_header) {
@@ -230,8 +234,8 @@ void mkt_println_string(char* s, const runtime_val_header* s_header) {
     // CHECK(s_header->rv_tag & RV_TAG_STRING, !=, 0, "%u");
 
     const char newline = '\n';
-    write(1, s, s_header->rv_size);
-    write(1, &newline, 1);
+    mkt_write(1, s, s_header->rv_size);
+    mkt_write(1, &newline, 1);
 }
 
 char* mkt_string_concat(const char* a, const runtime_val_header* a_header,
@@ -241,8 +245,9 @@ char* mkt_string_concat(const char* a, const runtime_val_header* a_header,
     // CHECK((void*)a, !=, NULL, "%p");
     // CHECK((void*)b, !=, NULL, "%p");
 
-    __builtin_memcpy(ret, a, a_header->rv_size);
-    __builtin_memcpy(ret + a_header->rv_size, b, b_header->rv_size);
+    for (size_t i = 0; i < a_header->rv_size; i++) ret[i] = a[i];
+    for (size_t i = a_header->rv_size; i < b_header->rv_size; i++)
+        ret[i] = b[i];
     *(ret - 8) = a_header->rv_size + b_header->rv_size;
 
     return ret;
