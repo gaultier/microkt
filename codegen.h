@@ -645,6 +645,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
         ".cfi_startproc\n"
         "push %%rbp\n"
         "mov $%d, %%eax\n"
+        "mov %%ecx, %%r10d\n"
         "syscall\n"
         "pop %%rbp\n"
         ".cfi_endproc\n"

@@ -30,7 +30,7 @@ ssize_t mkt_write(int fildes, const void* buf, size_t nbyte);
 // TODO: optimize
 static void* mkt_alloc(size_t len) {
     return mkt_mmap(NULL, len, MKT_PROT_READ | MKT_PROT_WRITE,
-                    MKT_MAP_ANON | MKT_MAP_PRIVATE, 0xffffffff, 0);
+                    MKT_MAP_ANON | MKT_MAP_PRIVATE, -1, 0);
 }
 
 typedef struct {
