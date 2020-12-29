@@ -100,8 +100,8 @@ Available Makefile flags:
 - CC, AS, LD: standard make variables
 
 ```sh
-# Debug build with logs and asan
-make WITH_OPTIMIZE=0 WITH_LOGS=1 WITH_ASAN=1
+# Debug build with logs and asan, using clang
+make WITH_OPTIMIZE=0 WITH_LOGS=1 WITH_ASAN=1 CC=clang
 
 # Release build without logs with asan using gcc and tell `mktc` to use `lld` as linker
 make WITH_ASAN=1 CC=gcc LD=ld64.lld
