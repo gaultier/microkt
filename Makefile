@@ -1,8 +1,10 @@
 .POSIX:
-.PHONY: clean check
+.PHONY: clean check install
 
 SRC = main.c
 HEADERS := $(wildcard *.h)
+
+DESTDIR ?= /usr/local/
 
 WITH_ASAN = 0
 WITH_LOGS=0
@@ -82,5 +84,11 @@ check: mktc $(TESTS_SRC) $(TESTS_EXE) test
 	@./test
 
 clean:
-	rm -f mktc $(TESTS_EXE) $(TESTS_ASM) $(TESTS_O) mkt_stdlib.o
-	rm -rf ./*.dSYM
+	$(RM) mktc $(TESTS_EXE) $(TESTS_ASM) $(TESTS_O) mkt_stdlib.o
+	$(RM) -r ./*.dSYM
+
+install: mktc
+	mkdir -p $(DESTDIR)/lib/
+	mkdir -p $(DESTDIR)/bin/
+	cp mkt_stdlib.o $(DESTDIR)/lib/mkt_stdlib.o
+	cp mktc $(DESTDIR)/bin/mktc
