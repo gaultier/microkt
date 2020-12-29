@@ -94,7 +94,7 @@ Hello, world!
 
 Available Makefile flags:
 - WITH_LOGS=0|1 : disable/enable logs. Defaults to 0.
-- WITH_ASAN=0|1 : disable/enable AddressSanitizer (clang only). Defaults to 0.
+- WITH_ASAN=0|1 : disable/enable AddressSanitizer (`clang` only). Defaults to 0.
 - WITH_OPTIMIZE=0|1 : optimization level. Corresponds to respectively -O0 and -O2
 - WITH_DTRACE=0|1 : disable/enable dtrace in generated executables. Defaults to 0 on Linux and 1 on other platforms.
 - CC, AS, LD: standard make variables
