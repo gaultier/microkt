@@ -6,7 +6,7 @@ WORKDIR /mktc
 
 COPY . .
 
-RUN make check CC=cc AS=as LD=ld
+RUN make check
 
 FROM alpine:3.12
 RUN apk add --no-cache binutils
