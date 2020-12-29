@@ -15,6 +15,4 @@ COPY --from=builder /mktc/mkt_stdlib.o /usr/local/lib/
 RUN mkdir -p  /usr/local/share/mktc/ && echo 'println("Hello, world!")' > /usr/local/share/mktc/hello_world.kts
 
 # Sanity check
-RUN mktc /usr/local/share/mktc/hello_world.kts && /usr/local/share/mktc/hello_world.exe > /dev/null
-
-CMD ["mktc"]
+RUN mktc /usr/local/share/mktc/hello_world.kts && /usr/local/share/mktc/hello_world.exe | grep "Hello, world!"

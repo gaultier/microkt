@@ -144,7 +144,9 @@ static int run(const char* file_name0) {
         const char link_opts[] =
             " "
 #ifdef __APPLE__
-            " -lSystem "
+            "-lSystem "
+#else
+            "-static "
 #endif
             ;
 
