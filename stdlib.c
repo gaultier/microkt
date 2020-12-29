@@ -20,6 +20,7 @@ static intptr_t* stack_top;
 #define MKT_MAP_PRIVATE 0x02
 #define MKT_MAP_ANON 0x1000
 #define MKT_SIGABRT 6
+#define stderr 2
 
 void* mkt_mmap(void* addr, size_t len, int prot, int flags, int fd,
                off_t offset);
@@ -28,14 +29,16 @@ ssize_t mkt_write(int fildes, const void* buf, size_t nbyte);
 int mkt_kill(pid_t pid, int sig);
 void mkt_abort(void) { mkt_kill(0, MKT_SIGABRT); }
 
-#define CHECK_NO_STDLIB(a, cond, b, fmt)                               \
-    do {                                                               \
-        if (!((a)cond(b))) {                                           \
-            const char s[] = __FILE__ "CHECK failed: " STR(a) " " STR( \
-                cond) " " STR(b) " is false\n";                        \
-            mkt_write(stderr, s, sizeof(s));                           \
-            mkt_abort();                                               \
-        }                                                              \
+#define STR(s) #s
+
+#define CHECK_NO_STDLIB(a, cond, b, fmt)                                \
+    do {                                                                \
+        if (!((a)cond(b))) {                                            \
+            const char s[] = __FILE__ ":CHECK failed: " STR(a) " " STR( \
+                cond) " " STR(b) " is false\n";                         \
+            mkt_write(stderr, s, sizeof(s));                            \
+            mkt_abort();                                                \
+        }                                                               \
     } while (0)
 
 // TODO: optimize
