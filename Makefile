@@ -82,5 +82,5 @@ check: mktc $(TESTS_SRC) $(TESTS_EXE) test
 	@./test
 
 clean:
-	rm -f mktc $(TESTS_EXE) $(TESTS_ASM) $(TESTS_O) stdlib.o stdlib.asm probes.h
+	rm -f mktc $(TESTS_EXE) $(TESTS_ASM) $(TESTS_O) stdlib.o stdlib.asm
 	rm -rf ./*.dSYM
