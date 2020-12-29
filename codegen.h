@@ -13,6 +13,14 @@ static const char name_prefix[] = "";
 static const long long int syscall_exit = 60;
 #endif
 
+#ifdef __APPLE__
+#define MKT_SYSCALL_MMAP 0x20000c5
+#define MKT_SYSCALL_MUNMAP 0x2000073
+#else
+#define MKT_SYSCALL_MMAP 9
+#define MKT_SYSCALL_MUNMAP 11
+#endif
+
 static FILE* output_file = NULL;
 
 static int current_fn_i = 0;
@@ -628,6 +636,30 @@ static void emit(const parser_t* parser, FILE* asm_file) {
     println("\n.text");
 
     println(".file 1 \"%s\"", parser->par_file_name0);
+
+    println(
+        ".globl %smkt_mmap\n"
+        "%smkt_mmap:\n"
+        ".cfi_startproc\n"
+        "push %%rbp\n"
+        "mov $%d, %%eax\n"
+        "syscall\n"
+        "pop %%rbp\n"
+        ".cfi_endproc\n"
+        "ret\n",
+        name_prefix, name_prefix, MKT_SYSCALL_MMAP);
+
+    println(
+        ".globl %smkt_munmap\n"
+        "%smkt_munmap:\n"
+        ".cfi_startproc\n"
+        "push %%rbp\n"
+        "mov $%d, %%eax\n"
+        "syscall\n"
+        "pop %%rbp\n"
+        ".cfi_endproc\n"
+        "ret\n",
+        name_prefix, name_prefix, MKT_SYSCALL_MUNMAP);
 
     println(".globl %sstart", name_prefix);
     println("%sstart:", name_prefix);

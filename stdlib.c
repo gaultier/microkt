@@ -1,8 +1,4 @@
-#include <errno.h>
 #include <stdint.h>
-#include <string.h>
-#include <sys/mman.h>
-#include <unistd.h>
 
 #include "probes.h"
 
@@ -22,39 +18,15 @@ static intptr_t* stack_top;
 #define MKT_MAP_PRIVATE 0x02
 #define MKT_MAP_ANON 0x1000
 
-#ifdef __APPLE__
-#define MKT_SYSCALL_MMAP 0x2000197
-#define MKT_SYSCALL_MUNMAP 0x2000073
-#else
-#define MKT_SYSCALL_MMAP 9
-#define MKT_SYSCALL_MUNMAP 11
-#endif
+void* mkt_mmap(void* addr, size_t len, int prot, int flags, int fd,
+               off_t offset);
 
-static void* mkt_mmap(void* addr, size_t len, int prot, int flags, int fd,
-                      off_t offset) {
-    __asm__ volatile("mov %0, %%eax" : : "r"(MKT_SYSCALL_MMAP));
-    __asm__ volatile("mov %0, %%rdi" : : "r"(addr));
-    __asm__ volatile("mov %0, %%rsi" : : "r"(len));
-    __asm__ volatile("mov %0, %%edx" : : "r"(prot));
-    __asm__ volatile("mov %0, %%ecx" : : "r"(flags));
-    __asm__ volatile("mov %0, %%r8d" : : "r"(fd));
-    __asm__ volatile("mov %0, %%r9" : : "r"(offset));
-    __asm__ volatile("syscall");
+int mkt_munmap(void* addr, size_t len);
 
-    void* ret;
-    __asm__ volatile("mov %%rax, %0" : "=r"(ret));
-    return ret;
-}
-
-static int mkt_munmap(void* addr, size_t len) {
-    __asm__ volatile("mov %0, %%eax" : : "r"(MKT_SYSCALL_MUNMAP));
-    __asm__ volatile("mov %0, %%rdi" : : "r"(addr));
-    __asm__ volatile("mov %0, %%rsi" : : "r"(len));
-    __asm__ volatile("syscall");
-
-    int ret;
-    __asm__ volatile("mov %%eax, %0" : "=r"(ret));
-    return ret;
+// TODO: optimize
+static void* mkt_alloc(size_t len) {
+    return mkt_mmap(NULL, len, MKT_PROT_READ | MKT_PROT_WRITE,
+                    MKT_MAP_ANON | MKT_MAP_PRIVATE, 0xffffffff, 0);
 }
 
 typedef struct {
@@ -269,8 +241,8 @@ char* mkt_string_concat(const char* a, const runtime_val_header* a_header,
     // CHECK((void*)a, !=, NULL, "%p");
     // CHECK((void*)b, !=, NULL, "%p");
 
-    memcpy(ret, a, a_header->rv_size);
-    memcpy(ret + a_header->rv_size, b, b_header->rv_size);
+    __builtin_memcpy(ret, a, a_header->rv_size);
+    __builtin_memcpy(ret + a_header->rv_size, b, b_header->rv_size);
     *(ret - 8) = a_header->rv_size + b_header->rv_size;
 
     return ret;

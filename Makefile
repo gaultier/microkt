@@ -17,7 +17,7 @@ endif
 
 ifeq "$(strip $(OS))" "Darwin"
 	ASAN_DIR=$(shell $(CC) -print-search-dirs | awk -F '=' '/libraries/{print $$2}')/lib/darwin/
-else "$(strip $(OS))" "Linux"
+else ifeq "$(strip $(OS))" "Linux"
 	ASAN_DIR=$(shell $(CC) -print-search-dirs | awk -F '=' '/libraries/{split($$2, libs, ":"); printf("%s/lib/linux", libs[1])}')
 	WITH_DTRACE = 0
 else

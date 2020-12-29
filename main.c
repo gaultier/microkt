@@ -133,7 +133,7 @@ static int run(const char* file_name0) {
             ;
 
         const char link_opts[] =
-            "-fPIC "
+            "-fPIC -nostdlib "
 #ifdef __APPLE__
             " -lSystem "
 #endif
