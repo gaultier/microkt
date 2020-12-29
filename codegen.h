@@ -17,10 +17,12 @@ static const long long int syscall_exit = 60;
 #define MKT_SYSCALL_MMAP 0x20000c5
 #define MKT_SYSCALL_MUNMAP 0x2000049
 #define MKT_SYSCALL_WRITE 0x2000004
+#define MKT_SYSCALL_KILL 0x2000025
 #else
 #define MKT_SYSCALL_MMAP 9
 #define MKT_SYSCALL_MUNMAP 11
 #define MKT_SYSCALL_WRITE 1
+#define MKT_SYSCALL_KILL 62
 #endif
 
 static FILE* output_file = NULL;
@@ -676,6 +678,18 @@ static void emit(const parser_t* parser, FILE* asm_file) {
         ".cfi_endproc\n"
         "ret\n",
         name_prefix, name_prefix, MKT_SYSCALL_WRITE);
+
+    println(
+        ".globl %smkt_kill\n"
+        "%smkt_kill:\n"
+        ".cfi_startproc\n"
+        "push %%rbp\n"
+        "mov $%d, %%eax\n"
+        "syscall\n"
+        "pop %%rbp\n"
+        ".cfi_endproc\n"
+        "ret\n",
+        name_prefix, name_prefix, MKT_SYSCALL_KILL);
 
     println(".globl %sstart", name_prefix);
     println("%sstart:", name_prefix);
