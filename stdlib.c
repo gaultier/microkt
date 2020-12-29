@@ -43,8 +43,10 @@ void mkt_abort(void) { mkt_kill(0, MKT_SIGABRT); }
 
 // TODO: optimize
 static void* mkt_alloc(size_t len) {
-    return mkt_mmap(NULL, len, MKT_PROT_READ | MKT_PROT_WRITE,
-                    MKT_MAP_ANON | MKT_MAP_PRIVATE, -1, 0);
+    void* p = mkt_mmap(NULL, len, MKT_PROT_READ | MKT_PROT_WRITE,
+                       MKT_MAP_ANON | MKT_MAP_PRIVATE, -1, 0);
+    CHECK_NO_STDLIB(p, !=, 0, "%p");
+    return p;
 }
 
 typedef struct {
@@ -79,9 +81,7 @@ void atom_cons(alloc_atom* item, alloc_atom** head) {
 static alloc_atom* mkt_alloc_atom_make(size_t size) {
     const size_t bytes =
         sizeof(runtime_val_header) + sizeof(alloc_atom*) + size;
-    alloc_atom* atom = mkt_mmap(NULL, bytes, MKT_PROT_READ | MKT_PROT_WRITE,
-                                MKT_MAP_PRIVATE | MKT_MAP_ANON, 0, 0);
-    // if (!atom) fprintf(stderr, "mkt_mmap error: errno=%d\n", errno);
+    alloc_atom* atom = mkt_alloc(bytes);
     CHECK_NO_STDLIB((void*)atom, !=, NULL, "%p");
     atom->aa_header = (runtime_val_header){0};
     atom->aa_next = NULL;
@@ -181,7 +181,7 @@ static void mkt_gc_sweep() {
             objs = atom;
 
         MKT_GC_SWEEP_FREE(gc_round, gc_allocated_bytes, (void*)to_free);
-        mkt_munmap(to_free, bytes);
+        CHECK_NO_STDLIB(mkt_munmap(to_free, bytes), ==, 0, "%d");
     }
     MKT_GC_SWEEP_DONE(gc_round, gc_allocated_bytes);
 }
