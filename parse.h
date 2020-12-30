@@ -18,8 +18,9 @@ static const int TYPE_STRING_I = 8;  // see parser_init
 
 typedef struct {
     const char* par_file_name0;
-    int par_tok_i, par_scope_i, par_fn_i;  // Current token/scope/function
-    mkt_node_t* par_nodes;                 // Arena of all nodes
+    int par_tok_i, par_scope_i, par_fn_i,
+        par_class_i;        // Current token/scope/function/class
+    mkt_node_t* par_nodes;  // Arena of all nodes
     lexer_t par_lexer;
     int* par_node_decls;  // Declarations that need to be generated first e.g.
                           // functions
@@ -638,6 +639,8 @@ static void node_dump(const parser_t* parser, int node_i, int indent) {
             node_dump(parser, call.ca_lhs_node_i, indent + 2);
             return;
         }
+        case NODE_CLASS_DECL:
+            UNIMPLEMENTED();
     }
 #endif
 }
@@ -687,6 +690,8 @@ static int node_first_token(const parser_t* parser, const mkt_node_t* node) {
             return node->node_n.node_while.wh_first_tok_i;
         case NODE_FN_DECL:
             return node->node_n.node_fn_decl.fd_first_tok_i;
+        case NODE_CLASS_DECL:
+            return node->node_n.node_class_decl.cl_first_tok_i;
         case NODE_CALL:
             return node->node_n.node_call.ca_first_tok_i;
     }
@@ -739,6 +744,8 @@ static int node_last_token(const parser_t* parser, const mkt_node_t* node) {
             return node->node_n.node_while.wh_last_tok_i;
         case NODE_FN_DECL:
             return node->node_n.node_fn_decl.fd_last_tok_i;
+        case NODE_CLASS_DECL:
+            return node->node_n.node_class_decl.cl_last_tok_i;
         case NODE_CALL:
             return node->node_n.node_call.ca_last_tok_i;
     }
@@ -2309,7 +2316,7 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
 
     int first_tok_i = -1, dummy = -1, *arg_nodes_i = NULL;
 
-    parser_match(parser, &first_tok_i, 1, TOK_ID_FUN);
+    CHECK(parser_match(parser, &first_tok_i, 1, TOK_ID_FUN), ==, RES_OK, "%d");
 
     buf_push(
         parser->par_nodes,
@@ -2453,6 +2460,82 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
     return RES_OK;
 }
 
+static mkt_res_t parser_parse_class_declaration(parser_t* parser,
+                                                int* new_node_i) {
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
+
+    // TODO: modifiers
+
+    if (parser_peek(parser) != TOK_ID_FUN) return RES_NONE;
+
+    int first_tok_i = -1;
+    CHECK(parser_match(parser, &first_tok_i, 1, TOK_ID_CLASS), ==, RES_OK,
+          "%d");
+
+    buf_push(parser->par_nodes,
+             ((mkt_node_t){.node_type_i = TYPE_UNIT_I,
+                           .node_kind = NODE_CLASS_DECL,
+                           .node_n = {.node_class_decl = {
+                                          .cl_first_tok_i = first_tok_i,
+                                          .cl_name_tok_i = -1,
+                                          .cl_last_tok_i = -1,
+                                          .cl_flags = CLASS_FLAGS_PUBLIC,
+                                      }}}));
+
+    const int old_class_i = parser->par_class_i;
+    parser->par_class_i = *new_node_i = buf_size(parser->par_nodes) - 1;
+    buf_push(parser->par_node_decls, *new_node_i);
+
+    CHECK(parser->par_scope_i, >=, 0, "%d");
+    CHECK(parser->par_scope_i, <, (int)buf_size(parser->par_nodes), "%d");
+    buf_push(
+        parser->par_nodes[parser->par_scope_i].node_n.node_block.bl_nodes_i,
+        *new_node_i);
+
+    if (!parser_match(parser,
+                      &parser->par_nodes[*new_node_i]
+                           .node_n.node_class_decl.cl_name_tok_i,
+                      1, TOK_ID_IDENTIFIER))
+        return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
+
+    buf_push(
+        parser->par_nodes,
+        ((mkt_node_t){.node_kind = NODE_BLOCK,
+                      .node_type_i = TYPE_UNIT_I,
+                      .node_n = {.node_block = {.bl_first_tok_i = -1,
+                                                .bl_last_tok_i = -1,
+                                                .bl_nodes_i = NULL,
+                                                .bl_parent_scope_i =
+                                                    parser->par_scope_i}}}));
+    const int body_node_i =
+        parser->par_nodes[*new_node_i].node_n.node_class_decl.cl_body_node_i =
+            buf_size(parser->par_nodes) - 1;
+    const int parent_scope_i = parser_enter_scope(parser, body_node_i);
+
+    if (!parser_match(
+            parser,
+            &parser->par_nodes[body_node_i].node_n.node_block.bl_first_tok_i, 1,
+            TOK_ID_LCURLY))
+        return parser_err_unexpected_token(parser, TOK_ID_LCURLY);
+
+    if (!parser_match(
+            parser,
+            &parser->par_nodes[body_node_i].node_n.node_block.bl_last_tok_i, 1,
+            TOK_ID_RCURLY))
+        return parser_err_unexpected_token(parser, TOK_ID_RCURLY);
+
+    mkt_class_decl_t* const class_decl =
+        &parser->par_nodes[*new_node_i].node_n.node_class_decl;
+    const int last_tok_i =
+        parser->par_nodes[body_node_i].node_n.node_block.bl_last_tok_i;
+    class_decl->cl_last_tok_i = last_tok_i;
+    parser_leave_scope(parser, parent_scope_i);
+    parser->par_class_i = old_class_i;
+
+    return RES_OK;
+}
+
 static mkt_res_t parser_parse_declaration(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
@@ -2460,6 +2543,8 @@ static mkt_res_t parser_parse_declaration(parser_t* parser, int* new_node_i) {
     mkt_res_t res = RES_NONE;
 
     if ((res = parser_parse_fn_declaration(parser, new_node_i)) != RES_NONE)
+        return res;
+    if ((res = parser_parse_class_declaration(parser, new_node_i)) != RES_NONE)
         return res;
 
     return parser_parse_property_declaration(parser, new_node_i);

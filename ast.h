@@ -63,6 +63,7 @@ typedef enum {
     NODE_CALL,
     NODE_RETURN,
     NODE_SYSCALL,
+    NODE_CLASS_DECL,
 } mkt_node_kind_t;
 
 #if WITH_LOGS == 1
@@ -90,8 +91,9 @@ const char mkt_node_kind_to_str[][30] = {
     [NODE_WHILE] = "While",
     [NODE_FN_DECL] = "FnDecl",
     [NODE_RETURN] = "Return",
-    [NODE_CALL] = "Call",
+    [NODE_CALL_DECL] = "Call",
     [NODE_SYSCALL] = "Syscall",
+    [NODE_CLASS] = "Class",
 };
 #endif
 
@@ -150,6 +152,13 @@ typedef struct {
     int* sy_arg_nodes_i;
 } mkt_syscall_t;
 
+static const unsigned char CLASS_FLAGS_PUBLIC = 1;
+
+typedef struct {
+    int cl_first_tok_i, cl_last_tok_i, cl_name_tok_i, cl_body_node_i;
+    unsigned char cl_flags;
+} mkt_class_decl_t;
+
 typedef struct {
     mkt_node_kind_t node_kind;
     int node_type_i;
@@ -159,15 +168,16 @@ typedef struct {
         number_t node_num;                           // NODE_LONG, NODE_CHAR
         mkt_binary_t node_binary;  // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
         // NODE_DIVIDE, NODE_MODULO
-        unary_t node_unary;          // NODE_NOT, NODE_RETURN
-        mkt_if_t node_if;            // NODE_IF
-        mkt_block_t node_block;      // NODE_BLOCK
-        mkt_var_def_t node_var_def;  // NODE_VAR_DEF
-        mkt_var_t node_var;          // NODE_VAR
-        mkt_while_t node_while;      // NODE_WHILE
-        mkt_fn_decl_t node_fn_decl;  // NODE_FN_DECL
-        mkt_call_t node_call;        // NODE_CALL
-        mkt_syscall_t node_syscall;  // NODE_SYSCALL
+        unary_t node_unary;                // NODE_NOT, NODE_RETURN
+        mkt_if_t node_if;                  // NODE_IF
+        mkt_block_t node_block;            // NODE_BLOCK
+        mkt_var_def_t node_var_def;        // NODE_VAR_DEF
+        mkt_var_t node_var;                // NODE_VAR
+        mkt_while_t node_while;            // NODE_WHILE
+        mkt_fn_decl_t node_fn_decl;        // NODE_FN_DECL
+        mkt_call_t node_call;              // NODE_CALL
+        mkt_syscall_t node_syscall;        // NODE_SYSCALL
+        mkt_class_decl_t node_class_decl;  // NODE_CLASS_DECL
     } node_n;
 } mkt_node_t;
 
