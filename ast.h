@@ -65,6 +65,7 @@ typedef enum {
     NODE_SYSCALL,
 } mkt_node_kind_t;
 
+#if WITH_LOGS == 1
 const char mkt_node_kind_to_str[][30] = {
     [NODE_BUILTIN_PRINTLN] = "Print",
     [NODE_KEYWORD_BOOL] = "Bool",
@@ -92,6 +93,7 @@ const char mkt_node_kind_to_str[][30] = {
     [NODE_CALL] = "Call",
     [NODE_SYSCALL] = "Syscall",
 };
+#endif
 
 typedef struct {
     long long int nu_val;
