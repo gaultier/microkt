@@ -620,13 +620,12 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
             return;
         }
         case NODE_FN_DECL:
+        case NODE_CLASS_DECL:
             return;
         case NODE_CALL: {
             emit_expr(parser, stmt_i);
             return;
         }
-        case NODE_CLASS_DECL:
-            UNREACHABLE();
     }
     log_debug("node_kind=%s", mkt_node_kind_to_str[stmt->node_kind]);
     UNREACHABLE();

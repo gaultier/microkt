@@ -2316,7 +2316,7 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
 
     int first_tok_i = -1, dummy = -1, *arg_nodes_i = NULL;
 
-    CHECK(parser_match(parser, &first_tok_i, 1, TOK_ID_FUN), ==, RES_OK, "%d");
+    CHECK(parser_match(parser, &first_tok_i, 1, TOK_ID_FUN), ==, true, "%d");
 
     buf_push(
         parser->par_nodes,
@@ -2467,11 +2467,10 @@ static mkt_res_t parser_parse_class_declaration(parser_t* parser,
 
     // TODO: modifiers
 
-    if (parser_peek(parser) != TOK_ID_FUN) return RES_NONE;
+    if (parser_peek(parser) != TOK_ID_CLASS) return RES_NONE;
 
     int first_tok_i = -1;
-    CHECK(parser_match(parser, &first_tok_i, 1, TOK_ID_CLASS), ==, RES_OK,
-          "%d");
+    CHECK(parser_match(parser, &first_tok_i, 1, TOK_ID_CLASS), ==, true, "%d");
 
     buf_push(parser->par_nodes,
              ((mkt_node_t){.node_type_i = TYPE_UNIT_I,
