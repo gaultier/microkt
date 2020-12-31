@@ -2334,6 +2334,22 @@ static int parser_fn_begin(parser_t* parser, int first_tok_i, int* new_node_i) {
     return old_fn_i;
 }
 
+static int parser_block_enter(parser_t* parser, int current_fn_i) {
+    buf_push(
+        parser->par_nodes,
+        ((mkt_node_t){.node_kind = NODE_BLOCK,
+                      .node_type_i = TYPE_UNIT_I,
+                      .node_n = {.node_block = {.bl_first_tok_i = -1,
+                                                .bl_last_tok_i = -1,
+                                                .bl_nodes_i = NULL,
+                                                .bl_parent_scope_i =
+                                                    parser->par_scope_i}}}));
+    const int body_node_i =
+        parser->par_nodes[current_fn_i].node_n.node_fn_decl.fd_body_node_i =
+            buf_size(parser->par_nodes) - 1;
+    return body_node_i;
+}
+
 static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
                                              int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
@@ -2353,18 +2369,7 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
             1, TOK_ID_IDENTIFIER))
         return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
 
-    buf_push(
-        parser->par_nodes,
-        ((mkt_node_t){.node_kind = NODE_BLOCK,
-                      .node_type_i = TYPE_UNIT_I,
-                      .node_n = {.node_block = {.bl_first_tok_i = -1,
-                                                .bl_last_tok_i = -1,
-                                                .bl_nodes_i = NULL,
-                                                .bl_parent_scope_i =
-                                                    parser->par_scope_i}}}));
-    const int body_node_i =
-        parser->par_nodes[*new_node_i].node_n.node_fn_decl.fd_body_node_i =
-            buf_size(parser->par_nodes) - 1;
+    const int body_node_i = parser_block_enter(parser, *new_node_i);
     const int parent_scope_i = parser_scope_begin(parser, body_node_i);
 
     mkt_res_t res = RES_NONE;
