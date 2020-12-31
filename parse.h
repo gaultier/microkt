@@ -48,7 +48,7 @@ static mkt_node_t* parser_current_block(parser_t* parser) {
     return &parser->par_nodes[parser->par_scope_i];
 }
 
-static int parser_enter_scope(parser_t* parser, int block_node_i) {
+static int parser_scope_begin(parser_t* parser, int block_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
 
     const int parent_scope_i = parser->par_scope_i;
@@ -58,7 +58,7 @@ static int parser_enter_scope(parser_t* parser, int block_node_i) {
     return parent_scope_i;
 }
 
-static void parser_leave_scope(parser_t* parser, int parent_node_i) {
+static void parser_scope_end(parser_t* parser, int parent_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK(parent_node_i, >=, 0, "%d");
 
@@ -1695,7 +1695,7 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i) {
     if (declared_arity != found_arity) UNIMPLEMENTED();  // TODO: err
 
     const int current_scope_i =
-        parser_enter_scope(parser, fn_decl.fd_body_node_i);
+        parser_scope_begin(parser, fn_decl.fd_body_node_i);
 
     for (int i = 0; i < (int)buf_size(fn_decl.fd_arg_nodes_i); i++) {
         const int decl_arg_i = fn_decl.fd_arg_nodes_i[i];
@@ -1718,7 +1718,7 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i) {
                      .node_n = {.node_binary = {.bi_lhs_i = decl_arg_i,
                                                 .bi_rhs_i = arg_nodes_i[i]}}}));
     }
-    parser_leave_scope(parser, current_scope_i);
+    parser_scope_end(parser, current_scope_i);
 
     buf_push(parser->par_nodes,
              ((mkt_node_t){
@@ -1934,7 +1934,7 @@ static mkt_res_t parser_parse_block(parser_t* parser, int* new_node_i) {
                                                 .bl_parent_scope_i =
                                                     parser->par_scope_i}}}));
     *new_node_i = buf_size(parser->par_nodes) - 1;
-    const int parent_scope_i = parser_enter_scope(parser, *new_node_i);
+    const int parent_scope_i = parser_scope_begin(parser, *new_node_i);
 
     if (!parser_match(
             parser,
@@ -1968,7 +1968,7 @@ static mkt_res_t parser_parse_block(parser_t* parser, int* new_node_i) {
 
     parser->par_nodes[*new_node_i].node_type_i = type_i;
 
-    parser_leave_scope(parser, parent_scope_i);
+    parser_scope_end(parser, parent_scope_i);
 
     log_debug("block=%d parent=%d last_node_i=%d type=%s last_tok_i=%d",
               *new_node_i, parent_scope_i, last_node_i,
@@ -2365,7 +2365,7 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
     const int body_node_i =
         parser->par_nodes[*new_node_i].node_n.node_fn_decl.fd_body_node_i =
             buf_size(parser->par_nodes) - 1;
-    const int parent_scope_i = parser_enter_scope(parser, body_node_i);
+    const int parent_scope_i = parser_scope_begin(parser, body_node_i);
 
     mkt_res_t res = RES_NONE;
     if ((res = parser_parse_fn_value_params(parser, &arg_nodes_i)) != RES_OK)
@@ -2439,7 +2439,7 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
               mkt_type_to_str[declared_type],
               (int)buf_size(fn_decl->fd_arg_nodes_i));
 
-    parser_leave_scope(parser, parent_scope_i);
+    parser_scope_end(parser, parent_scope_i);
 
     const bool seen_return = fn_decl->fd_flags & FN_FLAGS_SEEN_RETURN;
     if (declared_type != TYPE_UNIT && !seen_return) {
@@ -2519,7 +2519,7 @@ static mkt_res_t parser_parse_class_declaration(parser_t* parser,
     const int body_node_i =
         parser->par_nodes[*new_node_i].node_n.node_class_decl.cl_body_node_i =
             buf_size(parser->par_nodes) - 1;
-    const int parent_scope_i = parser_enter_scope(parser, body_node_i);
+    const int parent_scope_i = parser_scope_begin(parser, body_node_i);
 
     if (!parser_match(
             parser,
@@ -2538,7 +2538,7 @@ static mkt_res_t parser_parse_class_declaration(parser_t* parser,
     const int last_tok_i =
         parser->par_nodes[body_node_i].node_n.node_block.bl_last_tok_i;
     class_decl->cl_last_tok_i = last_tok_i;
-    parser_leave_scope(parser, parent_scope_i);
+    parser_scope_end(parser, parent_scope_i);
     parser->par_class_i = old_class_i;
 
     return RES_OK;
