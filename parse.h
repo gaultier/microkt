@@ -2307,16 +2307,10 @@ static mkt_res_t parser_parse_fn_value_params(parser_t* parser,
     return RES_OK;
 }
 
-static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
-                                             int* new_node_i) {
+static int parser_add_fn_node(parser_t* parser, int first_tok_i,
+                              int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
-
-    if (parser_peek(parser) != TOK_ID_FUN) return RES_NONE;
-
-    int first_tok_i = -1, dummy = -1, *arg_nodes_i = NULL;
-
-    CHECK(parser_match(parser, &first_tok_i, 1, TOK_ID_FUN), ==, true, "%d");
 
     buf_push(
         parser->par_nodes,
@@ -2337,6 +2331,22 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
     buf_push(
         parser->par_nodes[parser->par_scope_i].node_n.node_block.bl_nodes_i,
         *new_node_i);
+
+    return old_fn_i;
+}
+
+static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
+                                             int* new_node_i) {
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
+
+    if (parser_peek(parser) != TOK_ID_FUN) return RES_NONE;
+
+    int first_tok_i = -1, dummy = -1, *arg_nodes_i = NULL;
+
+    CHECK(parser_match(parser, &first_tok_i, 1, TOK_ID_FUN), ==, true, "%d");
+
+    const int old_fn_i = parser_add_fn_node(parser, first_tok_i, new_node_i);
 
     if (!parser_match(
             parser,
