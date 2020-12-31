@@ -3,7 +3,6 @@
 #include <stdarg.h>
 
 #include "ast.h"
-#include "common.h"
 #include "lex.h"
 
 static const int TYPE_UNIT_I = 0;    // see parser_init
@@ -2372,9 +2371,7 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
     const int body_node_i = parser_block_enter(parser, *new_node_i);
     const int parent_scope_i = parser_scope_begin(parser, body_node_i);
 
-    mkt_res_t res = RES_NONE;
-    if ((res = parser_parse_fn_value_params(parser, &arg_nodes_i)) != RES_OK)
-        return res;
+    TRY(parser_parse_fn_value_params(parser, &arg_nodes_i));
 
     parser->par_nodes[body_node_i].node_n.node_block.bl_nodes_i = arg_nodes_i;
 
@@ -2413,8 +2410,7 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
             TOK_ID_LCURLY))
         return parser_err_unexpected_token(parser, TOK_ID_LCURLY);
 
-    res = parser_parse_stmts(parser);
-    if (res != RES_OK) return res;
+    TRY(parser_parse_stmts(parser));
     parser->par_nodes[body_node_i].node_type_i =
         parser->par_nodes[buf_size(parser->par_nodes) - 1].node_type_i;
 

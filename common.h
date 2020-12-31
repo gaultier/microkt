@@ -113,3 +113,9 @@ static void trim_end(const char** string, int* string_len) {
     while (*string_len > 0 && is_space((*string)[*string_len - 1]))
         *string_len -= 1;
 }
+
+#define TRY(expr)                               \
+    do {                                        \
+        mkt_res_t res = RES_NONE;               \
+        if ((res = expr) != RES_OK) return res; \
+    } while (0)
