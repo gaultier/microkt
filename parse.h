@@ -2307,8 +2307,7 @@ static mkt_res_t parser_parse_fn_value_params(parser_t* parser,
     return RES_OK;
 }
 
-static int parser_add_fn_node(parser_t* parser, int first_tok_i,
-                              int* new_node_i) {
+static int parser_fn_begin(parser_t* parser, int first_tok_i, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
@@ -2346,7 +2345,7 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
 
     CHECK(parser_match(parser, &first_tok_i, 1, TOK_ID_FUN), ==, true, "%d");
 
-    const int old_fn_i = parser_add_fn_node(parser, first_tok_i, new_node_i);
+    const int old_fn_i = parser_fn_begin(parser, first_tok_i, new_node_i);
 
     if (!parser_match(
             parser,
