@@ -329,9 +329,7 @@ static mkt_res_t parser_init(const char* file_name0, const char* source,
     parser->par_is_tty = isatty(2);
 
     mkt_res_t res = RES_NONE;
-    if ((res = lex_init(file_name0, source, source_len, &parser->par_lexer)) !=
-        RES_OK)
-        return res;
+    TRY_OK(lex_init(file_name0, source, source_len, &parser->par_lexer));
 
     // Add root main function
     buf_push(parser->par_lexer.lex_tokens,
@@ -1136,10 +1134,7 @@ static mkt_res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
         return parser_err_unexpected_token(parser, TOK_ID_LPAREN);
 
     int node_cond_i = -1, node_then_i = -1, node_else_i = -1;
-    if ((res = parser_parse_expr(parser, &node_cond_i)) != RES_OK) {
-        log_debug("failed to parse if-cond %d", res);
-        return res;
-    }
+    TRY_OK(parser_parse_expr(parser, &node_cond_i));
     CHECK(node_cond_i, >=, 0, "%d");
     CHECK(node_cond_i, <, (int)buf_size(parser->par_nodes), "%d");
     const mkt_node_t* const node_cond = &parser->par_nodes[node_cond_i];
