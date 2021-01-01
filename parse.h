@@ -2301,10 +2301,11 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
         // TODO: validate flags
 
         if (*flags & FN_FLAGS_PUBLIC) {
-            const char* name;
-            int name_len = 0;
             const int name_tok_i =
                 parser->par_nodes[*new_node_i].no_n.no_fn_decl.fd_name_tok_i;
+
+            const char* name;
+            int name_len = 0;
             parser_tok_source(parser, name_tok_i, &name, &name_len);
 
             const char name_main[] = "main";
