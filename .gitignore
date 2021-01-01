@@ -2,8 +2,7 @@ mktc
 test
 mktc_debug
 *.dSYM
-tests/*
-!tests/*.kts
+!**/*.kt
 META-INF
 **/.class
 **/.jar
