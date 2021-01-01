@@ -3,6 +3,7 @@
 #include <stdarg.h>
 
 #include "ast.h"
+#include "common.h"
 #include "lex.h"
 
 static const int TYPE_UNIT_I = 0;    // see parser_init
@@ -17,8 +18,8 @@ static const int TYPE_STRING_I = 8;  // see parser_init
 
 typedef struct {
     const char* par_file_name0;
-    int par_tok_i, par_scope_i, par_fn_i,
-        par_class_i;        // Current token/scope/function/class
+    int par_tok_i, par_scope_i, par_fn_i, par_class_i,
+        par_main_fn_i;      // Current token/scope/function/class/main function
     mkt_node_t* par_nodes;  // Arena of all nodes
     lexer_t par_lexer;
     int* par_node_decls;  // Declarations e.g. functions
@@ -319,6 +320,7 @@ static mkt_res_t parser_init(const char* file_name0, const char* source,
     CHECK((void*)parser, !=, NULL, "%p");
 
     parser->par_file_name0 = file_name0;
+    parser->par_main_fn_i = -1;
 
     TRY_OK(lex_init(file_name0, source, source_len, &parser->par_lexer));
 
@@ -2313,7 +2315,8 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
 
         if (name_len == name_main_len &&
             memcmp(name, name_main, name_len) == 0) {
-            *flags |= FN_FLAGS_ENTRYPOINT;
+            CHECK(parser->par_fn_i, !=, -1, "%d");
+            parser->par_main_fn_i = *new_node_i;
             *flags |= FN_FLAGS_PUBLIC;
             *flags &= ~FN_FLAGS_PRIVATE;
         }
@@ -2593,9 +2596,15 @@ static mkt_res_t parser_parse(parser_t* parser) {
             buf_push(parser_current_block(parser)->no_n.no_block.bl_nodes_i,
                      new_node_i);
             continue;
-        } else if (res == RES_NONE)
-            return RES_OK;
-        else
+        } else if (res == RES_NONE) {
+            if (parser->par_main_fn_i >= 0) return RES_OK;
+
+            fprintf(stderr,
+                    "%s%s:%sMissing main function, no entrypoint found\n",
+                    mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
+                    mkt_colors[is_tty][COL_RESET]);
+            return RES_ERR;
+        } else
             return res;
     }
     UNREACHABLE();
