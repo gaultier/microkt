@@ -2585,9 +2585,8 @@ static mkt_res_t parser_parse(parser_t* parser) {
     CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, parser->par_tok_i,
           "%d");
 
-    int new_node_i = -1;
-
     while (!parser_is_at_end(parser)) {
+        int new_node_i = -1;
         const mkt_res_t res = parser_parse_declaration(parser, &new_node_i);
         if (res == RES_OK) {
             node_dump(parser, new_node_i, 0);
