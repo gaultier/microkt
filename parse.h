@@ -2275,7 +2275,6 @@ static mkt_res_t parser_parse_fn_value_params(parser_t* parser,
     if (!parser_match(parser, &dummy, 1, TOK_ID_LPAREN))
         return parser_err_unexpected_token(parser, TOK_ID_LPAREN);
 
-    mkt_res_t res = RES_NONE;
     TRY_OK(parser_parse_parameter(parser, new_nodes_i));
 
     return RES_OK;
@@ -2524,12 +2523,8 @@ static mkt_res_t parser_parse_declaration(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
-    mkt_res_t res = RES_NONE;
-
-    if ((res = parser_parse_fn_declaration(parser, new_node_i)) != RES_NONE)
-        return res;
-    if ((res = parser_parse_class_declaration(parser, new_node_i)) != RES_NONE)
-        return res;
+    TRY_NONE(parser_parse_fn_declaration(parser, new_node_i));
+    TRY_NONE(parser_parse_class_declaration(parser, new_node_i));
 
     return parser_parse_property_declaration(parser, new_node_i);
 }
