@@ -635,9 +635,6 @@ static void emit(const parser_t* parser, FILE* asm_file) {
     CHECK((void*)asm_file, !=, NULL, "%p");
 
     output_file = asm_file;
-    println(".data");
-
-    println("\n.text");
 
     println(".file 1 \"%s\"", parser->par_file_name0);
 
