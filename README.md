@@ -7,27 +7,17 @@ For now it only supports x86_64 (macOS & Linux) although it would not be hard to
 Have a look at the `tests` directory to get a feeling of what's supported. Here's a sample (see the `Quickstart` section to see how to run it):
 
 ```kotlin
-// Compute the 35th fibonacci number iteratively
-var a: Long = 0
-var b: Long = 1
-var i: Long = 1
-
-while (i < 35) {
-    val tmp: Long = b
-    b = b + a
-    a = tmp
-    i = i + 1
-}
-println(b) // expect: 9227465
-
 // Compute the 35th fibonacci number recursively
 fun fibonacci(n: Long) : Long {
-  if (n == 0) return 0
-  if (n == 1) return 1
+  if (n == 0L) return 0L
+  if (n == 1L) return 1L
 
-  return fibonacci(n-1) + fibonacci(n-2)
+  return fibonacci(n-1L) + fibonacci(n-2L)
 }
-println(fibonacci(35)) // expect: 9227465
+
+fun main() {
+  println(fibonacci(35L)) // expect: 9227465
+}
 ```
 
 ## Quickstart
