@@ -10,7 +10,6 @@
 #include "buf.h"
 #include "common.h"
 
-bool is_tty = true;
 #define LENGTH (1L << 11)
 
 typedef struct {

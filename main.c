@@ -3,8 +3,10 @@
 #include <string.h>
 #include <sys/param.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include "codegen.h"
+#include "common.h"
 
 static bool is_file_name_valid(const char* file_name0) {
     const int len = strlen(file_name0);
@@ -185,6 +187,7 @@ int main(int argc, char* argv[]) {
         printf("Usage: %s <file>\n", argv[0]);
         return 0;
     };
+    is_tty = isatty(2);
 
     int err = 0;
     if ((err = run(argv[1])) != RES_OK) return err;

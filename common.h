@@ -24,6 +24,8 @@ typedef enum {
     RES_ERR,
 } mkt_res_t;
 
+static bool is_tty = false;
+
 #define STR(s) #s
 
 #define CHECK(a, cond, b, fmt)                                              \

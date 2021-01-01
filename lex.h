@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string.h>
-#include <unistd.h>  // isatty
 
 #include "buf.h"
 #include "common.h"
@@ -610,7 +609,6 @@ static mkt_res_t lex_init(const char* file_name0, const char* source,
     buf_grow(lexer->lex_tokens, source_len / 8);
     buf_grow(lexer->lex_tok_pos_ranges, source_len / 8);
 
-    const bool is_tty = isatty(2);
     bool err = false;
     int i = 0, col = 1, line = 1;
     while (true) {

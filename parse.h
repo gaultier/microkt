@@ -23,7 +23,6 @@ typedef struct {
     lexer_t par_lexer;
     int* par_node_decls;  // Declarations e.g. functions
     mkt_type_t* par_types;
-    bool par_is_tty;
 } parser_t;
 
 static mkt_res_t parser_parse_expr(parser_t* parser, int* new_node_i);
@@ -161,7 +160,6 @@ static mkt_res_t parser_err_assigning_val(const parser_t* parser,
         parser->par_lexer.lex_locs[var_def->vd_first_tok_i];
     const mkt_loc_t assign_loc_start = parser->par_lexer.lex_locs[assign_tok_i];
 
-    const bool is_tty = parser->par_is_tty;
     fprintf(stderr,
             "%s%s:%d:%d:%sTrying to assign a variable declared with `val`\n",
             mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
@@ -189,9 +187,9 @@ static mkt_res_t parser_err_missing_rhs(const parser_t* parser, int first_tok_i,
     const mkt_loc_t first_tok_loc = parser->par_lexer.lex_locs[first_tok_i];
 
     fprintf(stderr, "%s%s:%d:%d:%sMissing right hand-side operand\n",
-            mkt_colors[parser->par_is_tty][COL_GRAY], parser->par_file_name0,
+            mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
             first_tok_loc.loc_line, first_tok_loc.loc_column,
-            mkt_colors[parser->par_is_tty][COL_RESET]);
+            mkt_colors[is_tty][COL_RESET]);
 
     parser_print_source_on_error(parser, first_tok_i, last_tok_i);
     return RES_ERR;  // FIXME?
@@ -321,7 +319,6 @@ static mkt_res_t parser_init(const char* file_name0, const char* source,
     CHECK((void*)parser, !=, NULL, "%p");
 
     parser->par_file_name0 = file_name0;
-    parser->par_is_tty = isatty(2);
 
     TRY_OK(lex_init(file_name0, source, source_len, &parser->par_lexer));
 
@@ -945,9 +942,8 @@ static void parser_print_source_on_error(const parser_t* parser,
              first_tok_loc.loc_line, first_tok_loc.loc_column);
     int prefix_len = strlen(prefix);
 
-    fprintf(stderr, "%s%s%s%.*s\n", mkt_colors[parser->par_is_tty][COL_GRAY],
-            prefix, mkt_colors[parser->par_is_tty][COL_RESET], (int)source_len,
-            source);
+    fprintf(stderr, "%s%s%s%.*s\n", mkt_colors[is_tty][COL_GRAY], prefix,
+            mkt_colors[is_tty][COL_RESET], (int)source_len, source);
 
     const int source_before_without_squiggly_len =
         first_tok_pos_range.pr_start - first_line_start_tok_pos.pr_start;
@@ -957,7 +953,7 @@ static void parser_print_source_on_error(const parser_t* parser,
     for (int i = 0; i < prefix_len + source_before_without_squiggly_len; i++)
         fprintf(stderr, " ");
 
-    fprintf(stderr, "%s", mkt_colors[parser->par_is_tty][COL_RED]);
+    fprintf(stderr, "%s", mkt_colors[is_tty][COL_RED]);
 
     const int squiggly_len =
         last_tok_pos_range.pr_end - first_tok_pos_range.pr_start;
@@ -965,7 +961,7 @@ static void parser_print_source_on_error(const parser_t* parser,
 
     for (int i = 0; i < squiggly_len; i++) fprintf(stderr, "^");
 
-    fprintf(stderr, "%s", mkt_colors[parser->par_is_tty][COL_RESET]);
+    fprintf(stderr, "%s", mkt_colors[is_tty][COL_RESET]);
 
     fprintf(stderr, "\n");
 }
@@ -977,10 +973,9 @@ static mkt_res_t parser_err_unexpected_token(const parser_t* parser,
     const mkt_loc_t loc_start = parser->par_lexer.lex_locs[parser->par_tok_i];
 
     fprintf(stderr, "%s%s:%d:%d:%sUnexpected token. Expected `%s`, got `%s`\n",
-            mkt_colors[parser->par_is_tty][COL_GRAY], parser->par_file_name0,
+            mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
             loc_start.loc_line, loc_start.loc_column,
-            mkt_colors[parser->par_is_tty][COL_RESET],
-            mkt_token_id_to_str[expected],
+            mkt_colors[is_tty][COL_RESET], mkt_token_id_to_str[expected],
             mkt_token_id_to_str[parser_current(parser)]);
 
     parser_print_source_on_error(parser, parser->par_tok_i, parser->par_tok_i);
@@ -1058,10 +1053,10 @@ static mkt_res_t parser_err_non_matching_types(const parser_t* parser,
         parser->par_lexer.lex_locs[lhs_first_tok_i];
 
     fprintf(stderr, "%s%s:%d:%d:%sTypes do not match. Expected %s, got %s\n",
-            mkt_colors[parser->par_is_tty][COL_GRAY], parser->par_file_name0,
+            mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
             lhs_first_tok_loc.loc_line, lhs_first_tok_loc.loc_column,
-            mkt_colors[parser->par_is_tty][COL_RESET],
-            mkt_type_to_str[rhs_type_kind], mkt_type_to_str[lhs_type_kind]);
+            mkt_colors[is_tty][COL_RESET], mkt_type_to_str[rhs_type_kind],
+            mkt_type_to_str[lhs_type_kind]);
 
     parser_print_source_on_error(parser, lhs_first_tok_i, rhs_last_tok_i);
 
@@ -1095,10 +1090,9 @@ static mkt_res_t parser_err_unexpected_type(
         parser->par_lexer.lex_locs[lhs_first_tok_i];
 
     fprintf(stderr, "%s%s:%d:%d:%sTypes do not match. Expected %s, got %s\n",
-            mkt_colors[parser->par_is_tty][COL_GRAY], parser->par_file_name0,
+            mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
             lhs_first_tok_loc.loc_line, lhs_first_tok_loc.loc_column,
-            mkt_colors[parser->par_is_tty][COL_RESET],
-            mkt_type_to_str[expected_type_kind],
+            mkt_colors[is_tty][COL_RESET], mkt_type_to_str[expected_type_kind],
             mkt_type_to_str[lhs_type_kind]);
 
     parser_print_source_on_error(parser, lhs_first_tok_i, lhs_last_tok_i);
@@ -2388,7 +2382,6 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
     if (declared_type != TYPE_UNIT && !seen_return) {
         const mkt_loc_t loc = parser->par_lexer.lex_locs[last_tok_i];
 
-        const bool is_tty = parser->par_is_tty;
         fprintf(stderr,
                 "%s%s:%d:%d:%sThe function has declared to "
                 "return %s but has no return\n",
