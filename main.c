@@ -8,10 +8,12 @@
 #include "codegen.h"
 
 static bool is_file_name_valid(const char* file_name0) {
-    const char suffix[] = ".kts";
+    const char suffix[] = ".kt";
+    const int suffix_len = sizeof(suffix) - 1;
     const int len = strlen(file_name0);
-    return (len > (3 + 1) &&
-            memcmp(&file_name0[len - 4], suffix, sizeof(suffix) - 1) == 0);
+
+    return (len > suffix_len) &&
+           memcmp(&file_name0[len - suffix_len], suffix, suffix_len) == 0;
 }
 
 static char* stdlib_obj_path() {
@@ -44,7 +46,7 @@ static int run(const char* file_name0) {
     mkt_res_t res = RES_NONE;
     if (!is_file_name_valid(file_name0)) {
         res = RES_INVALID_SOURCE_FILE_NAME;
-        fprintf(stderr, "Invalid source file name %s, must end with `.kts`\n",
+        fprintf(stderr, "Invalid source file name %s, must end with `.kt`\n",
                 file_name0);
         return res;
     }
