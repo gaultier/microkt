@@ -2300,20 +2300,21 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
 
         // TODO: validate flags
 
-        if (*flags & FN_FLAGS_PUBLIC) {
-            const int name_tok_i =
-                parser->par_nodes[*new_node_i].no_n.no_fn_decl.fd_name_tok_i;
+        const int name_tok_i =
+            parser->par_nodes[*new_node_i].no_n.no_fn_decl.fd_name_tok_i;
 
-            const char* name;
-            int name_len = 0;
-            parser_tok_source(parser, name_tok_i, &name, &name_len);
+        const char* name;
+        int name_len = 0;
+        parser_tok_source(parser, name_tok_i, &name, &name_len);
 
-            const char name_main[] = "main";
-            const int name_main_len = sizeof(name_main) - 1;
+        const char name_main[] = "main";
+        const int name_main_len = sizeof(name_main) - 1;
 
-            if (name_len == name_main_len &&
-                memcmp(name, name_main, name_len) == 0)
-                *flags &= FN_FLAGS_ENTRYPOINT;
+        if (name_len == name_main_len &&
+            memcmp(name, name_main, name_len) == 0) {
+            *flags |= FN_FLAGS_ENTRYPOINT;
+            *flags |= FN_FLAGS_PUBLIC;
+            *flags &= ~FN_FLAGS_PRIVATE;
         }
     }
 
