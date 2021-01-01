@@ -160,24 +160,24 @@ typedef struct {
 } mkt_class_decl_t;
 
 typedef struct {
-    mkt_node_kind_t node_kind;
-    int node_type_i;
+    mkt_node_kind_t no_kind;
+    int no_type_i;
     union {
-        mkt_builtin_println_t node_builtin_println;  // NODE_BUILTIN_PRINTLN
-        mkt_string_t node_string;                    // NODE_STRING
-        number_t node_num;                           // NODE_LONG, NODE_CHAR
-        mkt_binary_t node_binary;  // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
+        mkt_builtin_println_t no_builtin_println;  // NODE_BUILTIN_PRINTLN
+        mkt_string_t no_string;                    // NODE_STRING
+        number_t no_num;                           // NODE_LONG, NODE_CHAR
+        mkt_binary_t no_binary;  // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
         // NODE_DIVIDE, NODE_MODULO
-        unary_t node_unary;                // NODE_NOT, NODE_RETURN
-        mkt_if_t node_if;                  // NODE_IF
-        mkt_block_t node_block;            // NODE_BLOCK
-        mkt_var_def_t node_var_def;        // NODE_VAR_DEF
-        mkt_var_t node_var;                // NODE_VAR
-        mkt_while_t node_while;            // NODE_WHILE
-        mkt_fn_decl_t node_fn_decl;        // NODE_FN_DECL
-        mkt_call_t node_call;              // NODE_CALL
-        mkt_syscall_t node_syscall;        // NODE_SYSCALL
-        mkt_class_decl_t node_class_decl;  // NODE_CLASS_DECL
-    } node_n;
+        unary_t no_unary;                // NODE_NOT, NODE_RETURN
+        mkt_if_t no_if;                  // NODE_IF
+        mkt_block_t no_block;            // NODE_BLOCK
+        mkt_var_def_t no_var_def;        // NODE_VAR_DEF
+        mkt_var_t no_var;                // NODE_VAR
+        mkt_while_t no_while;            // NODE_WHILE
+        mkt_fn_decl_t no_fn_decl;        // NODE_FN_DECL
+        mkt_call_t no_call;              // NODE_CALL
+        mkt_syscall_t no_syscall;        // NODE_SYSCALL
+        mkt_class_decl_t no_class_decl;  // NODE_CLASS_DECL
+    } no_n;
 } mkt_node_t;
 
