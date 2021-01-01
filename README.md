@@ -40,7 +40,7 @@ make
 make check
 
 # Compile a source file (requires `as` and `ld` in the PATH)
-./mktc tests/hello_world.kts
+./mktc tests/hello_world.kt
 
 # And then run the executable
 ./tests/hello_world.exe
@@ -48,7 +48,7 @@ Hello, world!
 
 # Also works in Docker
 docker build -t microkt .
-docker run --rm -it microkt sh -c 'mktc /usr/local/share/mktc/hello_world.kts \
+docker run --rm -it microkt sh -c 'mktc /usr/local/share/mktc/hello_world.kt \
     && /usr/local/share/mktc/hello_world.exe'
 
 Hello, world!
@@ -77,6 +77,7 @@ Hello, world!
 *Things that we do not have today. Maybe we will have them in the future, and maybe not. PRs welcome, I guess. In no particular order:*
 
 - Support for the full Kotlin language
+- .kts files i.e. 'script' files
 - Production grade quality. There will be bugs; use at your own risk
 - The Kotlin standard library (we only support `println` at the moment)
 - Language Server Protocol (LSP)
