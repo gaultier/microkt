@@ -84,7 +84,7 @@ check: mktc $(TESTS_SRC) $(TESTS_EXE) test
 	@./test
 
 clean:
-	$(RM) mktc $(TESTS_EXE) $(TESTS_ASM) $(TESTS_O) mkt_stdlib.o
+	$(RM) mktc {tests,err}/*.{asm,o,exe} mkt_stdlib.o
 	$(RM) -r ./*.dSYM
 
 install: mktc
