@@ -1469,11 +1469,11 @@ static mkt_res_t parser_parse_multiplicative_expr(parser_t* parser,
 
         int rhs_i = -1;
         res = parser_parse_as_expr(parser, &rhs_i);
-        if (res == RES_NONE) {
+        if (res == RES_NONE)
             return parser_err_missing_rhs(parser, tok_i, parser->par_tok_i);
-        } else if (res != RES_OK) {
+        else if (res != RES_OK)
             return res;
-        }
+
         CHECK(rhs_i, >=, 0, "%d");
         CHECK(rhs_i, <, (int)buf_size(parser->par_nodes), "%d");
 
@@ -1627,9 +1627,9 @@ static mkt_res_t parser_parse_value_args(parser_t* parser, int* last_tok_i,
     do {
         int new_node_i = -1;
         mkt_res_t res = parser_parse_value_arg(parser, &new_node_i);
-        if (res == RES_OK) {
+        if (res == RES_OK)
             buf_push(*arg_nodes_i, new_node_i);
-        } else if (res == RES_NONE)
+        else if (res == RES_NONE)
             break;
         else
             return res;
