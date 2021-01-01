@@ -696,7 +696,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
 
     println("call " MKT_NAME_PREFIX "mkt_init");
     println("movq $0, %%rax");  // Return value 0
-    println("call " MKT_NAME_PREFIX "main");
+    println("call main");
     println("movq $0, %%rax");  // Return value 0
     println("popq %%rbp");
     println(".cfi_endproc");
