@@ -727,15 +727,10 @@ static void emit(const parser_t* parser, FILE* asm_file) {
         CHECK(name_len, >=, 0, "%d");
         CHECK(name_len, <, parser->par_lexer.lex_source_len, "%d");
 
-        const char fn_main_name[] = MKT_NAME_PREFIX "main";
-        const int fn_main_name_len = sizeof(fn_main_name) - 1;
-
         if (fn_decl.fd_flags & FN_FLAGS_PUBLIC)
-            println(".global %.*s", name_len == 0 ? fn_main_name_len : name_len,
-                    name_len == 0 ? fn_main_name : name);
+            println(".global %.*s", name_len, name);
 
-        println("%.*s:", name_len == 0 ? fn_main_name_len : name_len,
-                name_len == 0 ? fn_main_name : name);
+        println("%.*s:", name_len, name);
 
         const int caller_current_fn_i = current_fn_i;
         CHECK(current_fn_i, >=, 0, "%d");
