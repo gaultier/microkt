@@ -1718,8 +1718,6 @@ static mkt_res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
-    mkt_res_t res = RES_NONE;
-
     int lhs_i = -1;
     TRY_OK(parser_parse_generical_call_like_comparison(parser, &lhs_i));
 
@@ -1798,8 +1796,6 @@ static mkt_res_t parser_parse_equality(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
-    mkt_res_t res = RES_NONE;
-
     int lhs_i = -1;
     TRY_OK(parser_parse_comparison(parser, &lhs_i));
 
@@ -1817,8 +1813,7 @@ static mkt_res_t parser_parse_equality(parser_t* parser, int* new_node_i) {
         const int tok_id = parser_previous(parser);
 
         int rhs_i = -1;
-        if ((res = parser_parse_comparison(parser, &rhs_i)) != RES_OK)
-            return res;
+        TRY_OK(parser_parse_comparison(parser, &rhs_i));
 
         CHECK(rhs_i, >=, 0, "%d");
         CHECK(rhs_i, <, (int)buf_size(parser->par_nodes), "%d");
