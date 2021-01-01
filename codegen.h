@@ -6,10 +6,10 @@
 
 // TODO: use platform headers for that?
 #ifdef __APPLE__
-static const char name_prefix[] = "_";
+#define MKT_NAME_PREFIX "_"
 static const long long int syscall_exit = 0x2000001;
 #else
-static const char name_prefix[] = "";
+#define MKT_NAME_PREFIX ""
 static const long long int syscall_exit = 60;
 #endif
 
@@ -171,7 +171,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             println("push %%r13");
             println("push %%r14");
             println("push %%r15");
-            println("call %smkt_string_make", name_prefix);
+            println("call " MKT_NAME_PREFIX "mkt_string_make");
             println("pop %%rbx");
             println("pop %%rcx");
             println("pop %%rdx");
@@ -279,7 +279,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
                 println("push %%r13");
                 println("push %%r14");
                 println("push %%r15");
-                println("call %smkt_string_concat", name_prefix);
+                println("call " MKT_NAME_PREFIX "mkt_string_concat");
                 println("pop %%rbx");
                 println("pop %%rbx");  // For 16 bytes alignment
                 println("pop %%r8");
@@ -378,16 +378,16 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 
             if (type == TYPE_LONG || type == TYPE_INT || type == TYPE_SHORT ||
                 type == TYPE_BYTE)
-                println("call %smkt_println_int", name_prefix);
+                println("call " MKT_NAME_PREFIX "mkt_println_int");
             else if (type == TYPE_CHAR)
-                println("call %smkt_println_char", name_prefix);
+                println("call " MKT_NAME_PREFIX "mkt_println_char");
             else if (type == TYPE_BOOL)
-                println("call %smkt_println_bool", name_prefix);
+                println("call " MKT_NAME_PREFIX "mkt_println_bool");
             else if (type == TYPE_STRING) {
                 println("mov %%rax, %s", fn_args[0]);
                 println("mov %%rax, %s", fn_args[1]);
                 println("sub $8, %s", fn_args[1]);
-                println("call %smkt_println_string", name_prefix);
+                println("call " MKT_NAME_PREFIX "mkt_println_string");
             } else {
                 log_debug("Type %s unimplemented", mkt_type_to_str[type]);
                 UNIMPLEMENTED();
@@ -638,58 +638,54 @@ static void emit(const parser_t* parser, FILE* asm_file) {
 
     println(".file 1 \"%s\"", parser->par_file_name0);
 
-    println(
-        ".globl %smkt_mmap\n"
-        "%smkt_mmap:\n"
-        ".cfi_startproc\n"
-        "push %%rbp\n"
-        "mov $%d, %%eax\n"
-        "mov %%ecx, %%r10d\n"  // r10 is used for the fourth parameter instead
-                               // of rcx for syscalls
-        "syscall\n"
-        "pop %%rbp\n"
-        ".cfi_endproc\n"
-        "ret\n",
-        name_prefix, name_prefix, MKT_SYSCALL_MMAP);
+    println(".globl " MKT_NAME_PREFIX "mkt_mmap\n" MKT_NAME_PREFIX
+            "mkt_mmap:\n"
+            ".cfi_startproc\n"
+            "push %%rbp\n"
+            "mov $%d, %%eax\n"
+            "mov %%ecx, %%r10d\n"  // r10 is used for the fourth parameter
+                                   // instead of rcx for syscalls
+            "syscall\n"
+            "pop %%rbp\n"
+            ".cfi_endproc\n"
+            "ret\n",
+            MKT_SYSCALL_MMAP);
 
-    println(
-        ".globl %smkt_munmap\n"
-        "%smkt_munmap:\n"
-        ".cfi_startproc\n"
-        "push %%rbp\n"
-        "mov $%d, %%eax\n"
-        "syscall\n"
-        "pop %%rbp\n"
-        ".cfi_endproc\n"
-        "ret\n",
-        name_prefix, name_prefix, MKT_SYSCALL_MUNMAP);
+    println(".globl " MKT_NAME_PREFIX "mkt_munmap\n" MKT_NAME_PREFIX
+            "mkt_munmap:\n"
+            ".cfi_startproc\n"
+            "push %%rbp\n"
+            "mov $%d, %%eax\n"
+            "syscall\n"
+            "pop %%rbp\n"
+            ".cfi_endproc\n"
+            "ret\n",
+            MKT_SYSCALL_MUNMAP);
 
-    println(
-        ".globl %smkt_write\n"
-        "%smkt_write:\n"
-        ".cfi_startproc\n"
-        "push %%rbp\n"
-        "mov $%d, %%eax\n"
-        "syscall\n"
-        "pop %%rbp\n"
-        ".cfi_endproc\n"
-        "ret\n",
-        name_prefix, name_prefix, MKT_SYSCALL_WRITE);
+    println(".globl " MKT_NAME_PREFIX "mkt_write\n" MKT_NAME_PREFIX
+            "mkt_write:\n"
+            ".cfi_startproc\n"
+            "push %%rbp\n"
+            "mov $%d, %%eax\n"
+            "syscall\n"
+            "pop %%rbp\n"
+            ".cfi_endproc\n"
+            "ret\n",
+            MKT_SYSCALL_WRITE);
 
-    println(
-        ".globl %smkt_kill\n"
-        "%smkt_kill:\n"
-        ".cfi_startproc\n"
-        "push %%rbp\n"
-        "mov $%d, %%eax\n"
-        "syscall\n"
-        "pop %%rbp\n"
-        ".cfi_endproc\n"
-        "ret\n",
-        name_prefix, name_prefix, MKT_SYSCALL_KILL);
+    println(".globl " MKT_NAME_PREFIX "mkt_kill\n" MKT_NAME_PREFIX
+            "mkt_kill:\n"
+            ".cfi_startproc\n"
+            "push %%rbp\n"
+            "mov $%d, %%eax\n"
+            "syscall\n"
+            "pop %%rbp\n"
+            ".cfi_endproc\n"
+            "ret\n",
+            MKT_SYSCALL_KILL);
 
-    println(".globl %sstart", name_prefix);
-    println("%sstart:", name_prefix);
+    println(".globl " MKT_NAME_PREFIX "start");
+    println(MKT_NAME_PREFIX "start:");
     println(".cfi_startproc");
     println(
         "push %%rbp\n"
@@ -698,9 +694,9 @@ static void emit(const parser_t* parser, FILE* asm_file) {
         "mov %%rsp, %%rbp\n"
         ".cfi_def_cfa_register %%rbp\n");
 
-    println("call %smkt_init", name_prefix);
+    println("call " MKT_NAME_PREFIX "mkt_init");
     println("movq $0, %%rax");  // Return value 0
-    println("call %smain", name_prefix);
+    println("call " MKT_NAME_PREFIX "main");
     println("movq $0, %%rax");  // Return value 0
     println("popq %%rbp");
     println(".cfi_endproc");
@@ -731,9 +727,8 @@ static void emit(const parser_t* parser, FILE* asm_file) {
         CHECK(name_len, >=, 0, "%d");
         CHECK(name_len, <, parser->par_lexer.lex_source_len, "%d");
 
-        char fn_main_name[6] = "";
-        snprintf(fn_main_name, sizeof(fn_main_name), "%smain", name_prefix);
-        const int fn_main_name_len = strlen(fn_main_name);
+        const char fn_main_name[] = MKT_NAME_PREFIX "main";
+        const int fn_main_name_len = sizeof(fn_main_name) - 1;
 
         if (fn_decl.fd_flags & FN_FLAGS_PUBLIC)
             println(".global %.*s", name_len == 0 ? fn_main_name_len : name_len,
