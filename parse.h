@@ -2585,34 +2585,15 @@ static mkt_res_t parser_parse(parser_t* parser) {
           "%d");
 
     int new_node_i = -1;
-    mkt_res_t res = RES_NONE;
-
-    if ((res = parser_parse_stmt(parser, &new_node_i)) == RES_OK) {
-        no_dump(parser, new_node_i, 0);
-        buf_push(parser_current_block(parser)->no_n.no_block.bl_nodes_i,
-                 new_node_i);
-
-    } else if (res == RES_NONE) {
-        fprintf(stderr, "At least one statement is required\n");
-        return RES_NEED_AT_LEAST_ONE_STMT;
-    } else
-        return res;
 
     while (!parser_is_at_end(parser)) {
-        if ((res = parser_parse_stmt(parser, &new_node_i)) == RES_OK) {
+        const mkt_res_t res = parser_parse_declaration(parser, &new_node_i);
+        if (res == RES_OK) {
             no_dump(parser, new_node_i, 0);
             buf_push(parser_current_block(parser)->no_n.no_block.bl_nodes_i,
                      new_node_i);
             continue;
         } else if (res == RES_NONE)
-            return RES_OK;
-
-        const mkt_token_id_t current = parser_current(parser);
-        if (current == TOK_ID_COMMENT) {
-            parser->par_tok_i += 1;
-            continue;
-        }
-        if (current == TOK_ID_EOF)
             return RES_OK;
         else
             return res;
