@@ -1168,11 +1168,7 @@ static mkt_res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
     // Else is optional
 
     if (parser_match(parser, &dummy, 1, TOK_ID_ELSE)) {
-        if ((res = parser_parse_control_structure_body(parser, &node_else_i)) !=
-            RES_OK) {
-            log_debug("failed to parse else-branch %d", res);
-            return res;
-        }
+        TRY_OK(parser_parse_control_structure_body(parser, &node_else_i));
         CHECK(node_else_i, >=, 0, "%d");
         CHECK(node_else_i, <, (int)buf_size(parser->par_nodes), "%d");
 
