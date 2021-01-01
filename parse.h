@@ -1153,11 +1153,7 @@ static mkt_res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
         return parser_err_unexpected_token(parser, TOK_ID_RPAREN);
 
     const int current_scope_i = parser->par_scope_i;
-    if ((res = parser_parse_control_structure_body(parser, &node_then_i)) !=
-        RES_OK) {
-        log_debug("failed to parse if-branch %d", res);
-        return res;
-    }
+    TRY_OK(parser_parse_control_structure_body(parser, &node_then_i));
     CHECK(node_then_i, >=, 0, "%d");
     CHECK(node_then_i, <, (int)buf_size(parser->par_nodes), "%d");
 
