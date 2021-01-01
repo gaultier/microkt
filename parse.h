@@ -2295,6 +2295,8 @@ static int parser_fn_begin(parser_t* parser, int first_tok_i, int* new_node_i) {
 }
 
 static int parser_block_enter(parser_t* parser, int current_fn_i) {
+    CHECK((void*)parser, !=, NULL, "%p");
+
     buf_push(
         parser->par_nodes,
         ((mkt_node_t){.node_kind = NODE_BLOCK,
@@ -2589,9 +2591,7 @@ static mkt_res_t parser_parse_stmt(parser_t* parser, int* new_node_i) {
     if (parser_peek(parser) == TOK_ID_EOF) return RES_NONE;
 
     TRY_NONE(parser_parse_declaration(parser, new_node_i));
-
     TRY_NONE(parser_parse_assignment(parser, new_node_i));
-
     TRY_NONE(parser_parse_loop(parser, new_node_i));
 
     return parser_parse_expr(parser, new_node_i);
