@@ -170,8 +170,8 @@ static mkt_res_t simple_test_run(const char* source_file_name) {
     }
 
     if (!differed)
-        printf("%s✔ %s%s\n", mkt_colors[is_tty][COL_GREEN], source_file_name,
-               mkt_colors[is_tty][COL_RESET]);
+        fprintf(stderr, "%s✔ %s%s\n", mkt_colors[is_tty][COL_GREEN],
+                source_file_name, mkt_colors[is_tty][COL_RESET]);
 
     return differed ? RES_ERR : RES_OK;
 }
@@ -198,8 +198,8 @@ static mkt_res_t err_test_run(const char* source_file_name) {
                 source_file_name, mkt_colors[is_tty][COL_RESET], ret_code);
         return RES_ERR;
     } else
-        printf("%s✔ %s%s\n", mkt_colors[is_tty][COL_GREEN], source_file_name,
-               mkt_colors[is_tty][COL_RESET]);
+        fprintf(stderr, "%s✔ %s%s\n", mkt_colors[is_tty][COL_GREEN],
+                source_file_name, mkt_colors[is_tty][COL_RESET]);
 
     return RES_OK;
 }
