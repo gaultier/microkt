@@ -2310,7 +2310,8 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
             const char name_main[] = "main";
             const int name_main_len = sizeof(name_main) - 1;
 
-            if (memcmp(name, name_main, MIN(name_len, name_main_len)) == 0)
+            if (name_len == name_main_len &&
+                memcmp(name, name_main, name_len) == 0)
                 *flags &= FN_FLAGS_ENTRYPOINT;
         }
     }
