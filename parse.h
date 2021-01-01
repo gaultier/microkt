@@ -983,8 +983,6 @@ static mkt_res_t parser_err_unexpected_token(const parser_t* parser,
                                              mkt_token_id_t expected) {
     CHECK((void*)parser, !=, NULL, "%p");
 
-    const mkt_res_t res = RES_UNEXPECTED_TOKEN;
-
     const mkt_loc_t loc_start = parser->par_lexer.lex_locs[parser->par_tok_i];
 
     fprintf(stderr, "%s%s:%d:%d:%sUnexpected token. Expected `%s`, got `%s`\n",
@@ -996,7 +994,7 @@ static mkt_res_t parser_err_unexpected_token(const parser_t* parser,
 
     parser_print_source_on_error(parser, parser->par_tok_i, parser->par_tok_i);
 
-    return res;
+    return RES_UNEXPECTED_TOKEN;
 }
 
 static bool parser_match(parser_t* parser, int* return_token_index,
@@ -1068,7 +1066,6 @@ static mkt_res_t parser_err_non_matching_types(const parser_t* parser,
     const mkt_loc_t lhs_first_tok_loc =
         parser->par_lexer.lex_locs[lhs_first_tok_i];
 
-    const mkt_res_t res = RES_NON_MATCHING_TYPES;
     fprintf(stderr, "%s%s:%d:%d:%sTypes do not match. Expected %s, got %s\n",
             mkt_colors[parser->par_is_tty][COL_GRAY], parser->par_file_name0,
             lhs_first_tok_loc.loc_line, lhs_first_tok_loc.loc_column,
@@ -1077,7 +1074,7 @@ static mkt_res_t parser_err_non_matching_types(const parser_t* parser,
 
     parser_print_source_on_error(parser, lhs_first_tok_i, rhs_last_tok_i);
 
-    return res;
+    return RES_NON_MATCHING_TYPES;
 }
 
 static mkt_res_t parser_err_unexpected_type(
@@ -1106,7 +1103,6 @@ static mkt_res_t parser_err_unexpected_type(
     const mkt_loc_t lhs_first_tok_loc =
         parser->par_lexer.lex_locs[lhs_first_tok_i];
 
-    const mkt_res_t res = RES_NON_MATCHING_TYPES;
     fprintf(stderr, "%s%s:%d:%d:%sTypes do not match. Expected %s, got %s\n",
             mkt_colors[parser->par_is_tty][COL_GRAY], parser->par_file_name0,
             lhs_first_tok_loc.loc_line, lhs_first_tok_loc.loc_column,
@@ -1116,7 +1112,7 @@ static mkt_res_t parser_err_unexpected_type(
 
     parser_print_source_on_error(parser, lhs_first_tok_i, lhs_last_tok_i);
 
-    return res;
+    return RES_NON_MATCHING_TYPES;
 }
 
 static mkt_res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
@@ -1399,16 +1395,11 @@ static mkt_res_t parser_parse_prefix_unary_expr(parser_t* parser,
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
-    mkt_res_t res = RES_NONE;
-
     int tok_i = -1;
     if (parser_match(parser, &tok_i, 1, TOK_ID_NOT)) {
         int node_i = -1;
 
-        if ((res = parser_parse_postfix_unary_expr(parser, &node_i)) !=
-            RES_OK) {
-            return res;
-        }
+        TRY_OK(parser_parse_postfix_unary_expr(parser, &node_i));
 
         const int type_i = parser->par_nodes[node_i].node_type_i;
         CHECK(type_i, >=, 0, "%d");
