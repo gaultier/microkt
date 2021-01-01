@@ -1,1 +1,3 @@
-println( 5 + )
+fun main() {
+  println( 5 + )
+}

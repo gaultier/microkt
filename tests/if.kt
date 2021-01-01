@@ -1,4 +1,5 @@
-println(if (true) { 42 } else { 99 }) // expect: 42
+fun main() {
+  println(if (true) { 42 } else { 99 }) // expect: 42
 println(if   (false) { 42 } else { 99 }) // expect: 99
 
 println(if   (true) { false } else { true }) // expect: false
@@ -43,3 +44,4 @@ if (false) {} else println("may the force be with you") // expect: may the force
 if (true) {
   println("I hate sand") // expect: I hate sand
 }  else {}
+}

@@ -5,4 +5,6 @@ fun fibonacci(n: Long) : Long {
   return fibonacci(n-1L) + fibonacci(n-2L)
 }
 
-println(fibonacci(35L)) // expect: 9227465
+fun main() {
+  println(fibonacci(35L)) // expect: 9227465
+}

@@ -1,4 +1,4 @@
-// 1 var
+fun main() {// 1 var
 val a : Long = 10L
 
 println(a) // expect: 10
@@ -61,3 +61,4 @@ println(bool) // expect: true
 
 var myFirstVar: Long = 123
 println(myFirstVar) // expect: 123
+}

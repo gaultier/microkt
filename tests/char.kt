@@ -1,3 +1,5 @@
-println('A') // expect: A
+fun main() {
+  println('A') // expect: A
 
 println('$') // expect: $
+}

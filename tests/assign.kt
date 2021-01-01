@@ -1,4 +1,5 @@
-var long : Long = 5L
+fun main() {
+  var long : Long = 5L
 long = 6L
 println(long) // expect: 6
 
@@ -25,3 +26,4 @@ var string : String= "hello"
 string = "world"
 println(string) // expect: world
 
+}

@@ -1,4 +1,4 @@
-
+fun main() {
 // A comment
 println(true) // expect: true
 
@@ -8,3 +8,4 @@ println(true) // expect: true
     println(false)         // expect: false
 
     // A final comment
+}

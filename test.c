@@ -80,16 +80,13 @@ static mkt_res_t simple_test_run(const char* source_file_name) {
     const size_t source_file_name_len = strlen(source_file_name);
     CHECK(source_file_name_len, >, 1L + 3, "%zu");
     CHECK(source_file_name_len, <, (size_t)MAXPATHLEN, "%zu");
-    CHECK(source_file_name[source_file_name_len - 1], ==, 's', "%c");
-    CHECK(source_file_name[source_file_name_len - 2], ==, 't', "%c");
-    CHECK(source_file_name[source_file_name_len - 3], ==, 'k', "%c");
-    CHECK(source_file_name[source_file_name_len - 4], ==, '.', "%c");
+    CHECK(source_file_name[source_file_name_len - 3], ==, '.', "%c");
+    CHECK(source_file_name[source_file_name_len - 2], ==, 'k', "%c");
+    CHECK(source_file_name[source_file_name_len - 1], ==, 't', "%c");
 
     char argv[MAXPATHLEN] = "";
-    memcpy(argv, source_file_name, source_file_name_len);
-    argv[source_file_name_len - 1] = 'e';
-    argv[source_file_name_len - 2] = 'x';
-    argv[source_file_name_len - 3] = 'e';
+    snprintf(argv, MAXPATHLEN, "%.*s.exe", (int)(source_file_name_len - 3),
+             source_file_name);
 
     struct stat st = {0};
     if (stat(source_file_name, &st) != 0) {
@@ -180,10 +177,9 @@ static mkt_res_t err_test_run(const char* source_file_name) {
     const size_t source_file_name_len = strlen(source_file_name);
     CHECK(source_file_name_len, >, 1L + 3, "%zu");
     CHECK(source_file_name_len, <, (size_t)MAXPATHLEN, "%zu");
-    CHECK(source_file_name[source_file_name_len - 1], ==, 's', "%c");
-    CHECK(source_file_name[source_file_name_len - 2], ==, 't', "%c");
-    CHECK(source_file_name[source_file_name_len - 3], ==, 'k', "%c");
-    CHECK(source_file_name[source_file_name_len - 4], ==, '.', "%c");
+    CHECK(source_file_name[source_file_name_len - 3], ==, '.', "%c");
+    CHECK(source_file_name[source_file_name_len - 2], ==, 'k', "%c");
+    CHECK(source_file_name[source_file_name_len - 1], ==, 't', "%c");
 
     char argv[MAXPATHLEN] = "";
     snprintf(argv, MAXPATHLEN, "./mktc %s", source_file_name);
@@ -208,27 +204,27 @@ int main() {
     is_tty = isatty(2);
 
     const char simple_tests[][MAXPATHLEN] = {
-        "./tests/assign.kts",      "./tests/bool.kts",
-        "./tests/char.kts",        "./tests/comparison.kts",
-        "./tests/fibo_iter.kts",   "./tests/fibonacci_rec.kts",
-        "./tests/fn.kts",          "./tests/grouping.kts",
-        "./tests/hello_world.kts", "./tests/if.kts",
-        "./tests/integers.kts",    "./tests/math_integers.kts",
-        "./tests/negation.kts",    "./tests/string.kts",
-        "./tests/var.kts",         "./tests/while.kts",
+        "./tests/assign.kt",      "./tests/bool.kt",
+        "./tests/char.kt",        "./tests/comparison.kt",
+        "./tests/fibo_iter.kt",   "./tests/fibonacci_rec.kt",
+        "./tests/fn.kt",          "./tests/grouping.kt",
+        "./tests/hello_world.kt", "./tests/if.kt",
+        "./tests/integers.kt",    "./tests/math_integers.kt",
+        "./tests/negation.kt",    "./tests/string.kt",
+        "./tests/var.kt",         "./tests/while.kt",
     };
     const char err_tests[][MAXPATHLEN] = {
-        "./err/err_fn_missing_return.kts",
-        "./err/err_multiplication_type.kts",
-        "./err/err_non_matching_types.kts",
-        "./err/err_unexpected_token.kts",
-        "./err/err_unexpected_token_on_first_line.kts",
-        "./err/error_empty.kts",
-        "./err/error_unexpected_token.kts",
-        "./err/fn_mismatched_types.kts",
-        "./err/invalid_token.kts",
-        "./err/missing_param_println.kts",
-        "./err/val_assign.kts",
+        "./err/err_fn_missing_return.kt",
+        "./err/err_multiplication_type.kt",
+        "./err/err_non_matching_types.kt",
+        "./err/err_unexpected_token.kt",
+        "./err/err_unexpected_token_on_first_line.kt",
+        "./err/error_empty.kt",
+        "./err/error_unexpected_token.kt",
+        "./err/fn_mismatched_types.kt",
+        "./err/invalid_token.kt",
+        "./err/missing_param_println.kt",
+        "./err/val_assign.kt",
     };
 
     bool failed = false;

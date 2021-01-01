@@ -1,4 +1,5 @@
-println("hello!") // expect: hello!
+fun main() {
+  println("hello!") // expect: hello!
 println("world") // expect: world
 
 println("""The quick brown 
@@ -18,3 +19,4 @@ val a: String = "May the "
 val b: String = "Force be with you"
 val ab: String = a + b
 println(ab) // expect: May the Force be with you
+}

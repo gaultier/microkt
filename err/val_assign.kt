@@ -1,3 +1,5 @@
-        val a : Long = 1
+fun main() {
+    val a : Long = 1
 
     a = 2
+}

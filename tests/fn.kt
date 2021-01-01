@@ -1,4 +1,4 @@
-fun zero_stmt_no_args() {}
+fun main() {fun zero_stmt_no_args() {}
 
 fun one_stmt_no_args() {
   println("one_stmt_no_args")
@@ -108,3 +108,4 @@ fun local_string_var(): String {
 
 var s: String = local_string_var()
 println(s) // expect: You're a wizard, Harry
+}

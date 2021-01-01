@@ -1,1 +1,3 @@
-println( false * true)
+fun main() {
+  println( false * true)
+}

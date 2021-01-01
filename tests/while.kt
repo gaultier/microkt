@@ -1,4 +1,5 @@
-var a: Long = 0L
+fun main() {
+  var a: Long = 0L
 while (a<5L) {
   println(a)
   a = a + 1L
@@ -10,3 +11,4 @@ println(2L*a)
 // expect: 3
 // expect: 4
 // expect: 10
+}
