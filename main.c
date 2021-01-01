@@ -8,8 +8,10 @@
 #include "codegen.h"
 
 static bool is_file_name_valid(const char* file_name0) {
+    const char suffix[] = ".kts";
     const int len = strlen(file_name0);
-    return (len > (3 + 1) && memcmp(&file_name0[len - 4], ".kts", 3UL) == 0);
+    return (len > (3 + 1) &&
+            memcmp(&file_name0[len - 4], suffix, sizeof(suffix) - 1) == 0);
 }
 
 static char* stdlib_obj_path() {
