@@ -31,7 +31,6 @@ static void base_source_file_name(const char* file_name0,
 
     const int len = strlen(file_name0);
 
-    base_file_name0[len - 4] = 0;
     base_file_name0[len - 3] = 0;
     base_file_name0[len - 2] = 0;
     base_file_name0[len - 1] = 0;
@@ -91,11 +90,9 @@ static int run(const char* file_name0) {
     if ((res = parser_parse(&parser)) != RES_OK) return res;
 
     const int file_name_len = strlen(file_name0);
-    char asm_file_name0[MAXPATHLEN + 1] = "\0";
-    memcpy(asm_file_name0, file_name0, (size_t)file_name_len);
-    asm_file_name0[file_name_len - 3] = 'a';
-    asm_file_name0[file_name_len - 2] = 's';
-    asm_file_name0[file_name_len - 1] = 'm';
+    char asm_file_name0[MAXPATHLEN + 1] = "";
+    snprintf(asm_file_name0, MAXPATHLEN, "%.*s.asm", (int)(file_name_len - 3),
+             file_name0);
     FILE* asm_file = fopen(asm_file_name0, "w");
     if (asm_file == NULL) {
         res = RES_ASM_FILE_READ_FAILED;

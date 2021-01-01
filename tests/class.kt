@@ -1,2 +1,2 @@
 class Empty{}
-fun main{ }
+fun main(){ }
