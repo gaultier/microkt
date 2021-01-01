@@ -1523,11 +1523,8 @@ static mkt_res_t parser_parse_multiplicative_expr(parser_t* parser,
 }
 
 static mkt_res_t parser_parse_additive_expr(parser_t* parser, int* new_node_i) {
-    mkt_res_t res = RES_NONE;
-
     int lhs_i = -1;
-    if ((res = parser_parse_multiplicative_expr(parser, &lhs_i)) != RES_OK)
-        return res;
+    TRY_OK(parser_parse_multiplicative_expr(parser, &lhs_i));
 
     CHECK(lhs_i, >=, 0, "%d");
     CHECK(lhs_i, <, (int)buf_size(parser->par_nodes), "%d");
@@ -1544,7 +1541,8 @@ static mkt_res_t parser_parse_additive_expr(parser_t* parser, int* new_node_i) {
         const int tok_id = parser_previous(parser);
 
         int rhs_i = -1;
-        res = parser_parse_multiplicative_expr(parser, &rhs_i);
+
+        mkt_res_t res = parser_parse_multiplicative_expr(parser, &rhs_i);
         if (res == RES_NONE) {
             return parser_err_missing_rhs(parser, tok_i, parser->par_tok_i);
         } else if (res != RES_OK) {
@@ -1573,7 +1571,7 @@ static mkt_res_t parser_parse_additive_expr(parser_t* parser, int* new_node_i) {
         *new_node_i = lhs_i = (int)buf_size(parser->par_nodes) - 1;
     }
 
-    return res;
+    return RES_OK;
 }
 
 static mkt_res_t parser_parse_range_expr(parser_t* parser, int* new_node_i) {
@@ -1729,9 +1727,7 @@ static mkt_res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
     mkt_res_t res = RES_NONE;
 
     int lhs_i = -1;
-    if ((res = parser_parse_generical_call_like_comparison(parser, &lhs_i)) !=
-        RES_OK)
-        return res;
+    TRY_OK(parser_parse_generical_call_like_comparison(parser, &lhs_i));
 
     CHECK(lhs_i, >=, 0, "%d");
     CHECK(lhs_i, <, (int)buf_size(parser->par_nodes), "%d");
@@ -1803,7 +1799,7 @@ static mkt_res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
         *new_node_i = lhs_i = (int)buf_size(parser->par_nodes) - 1;
     }
 
-    return res;
+    return RES_OK;
 }
 
 static mkt_res_t parser_parse_equality(parser_t* parser, int* new_node_i) {
@@ -1813,7 +1809,7 @@ static mkt_res_t parser_parse_equality(parser_t* parser, int* new_node_i) {
     mkt_res_t res = RES_NONE;
 
     int lhs_i = -1;
-    if ((res = parser_parse_comparison(parser, &lhs_i)) != RES_OK) return res;
+    TRY_OK(parser_parse_comparison(parser, &lhs_i));
 
     CHECK(lhs_i, >=, 0, "%d");
     CHECK(lhs_i, <, (int)buf_size(parser->par_nodes), "%d");
@@ -1854,7 +1850,7 @@ static mkt_res_t parser_parse_equality(parser_t* parser, int* new_node_i) {
         *new_node_i = lhs_i = (int)buf_size(parser->par_nodes) - 1;
     }
 
-    return res;
+    return RES_OK;
 }
 
 static mkt_res_t parser_parse_conjunction(parser_t* parser, int* new_node_i) {
@@ -1925,11 +1921,7 @@ static mkt_res_t parser_parse_block(parser_t* parser, int* new_node_i) {
             TOK_ID_LCURLY))
         return parser_err_unexpected_token(parser, TOK_ID_LCURLY);
 
-    mkt_res_t res = RES_NONE;
-    if ((res = parser_parse_stmts(parser)) != RES_OK) {
-        log_debug("failed to parse expr in optional curlies %d", res);
-        return res;
-    }
+    TRY_OK(parser_parse_stmts(parser));
 
     if (!parser_match(
             parser,
@@ -1958,7 +1950,7 @@ static mkt_res_t parser_parse_block(parser_t* parser, int* new_node_i) {
               mkt_type_to_str[parser->par_types[type_i].ty_kind],
               parser->par_nodes[*new_node_i].node_n.node_block.bl_last_tok_i);
 
-    return res;
+    return RES_OK;
 }
 
 static mkt_res_t parser_parse_control_structure_body(parser_t* parser,
@@ -2284,8 +2276,7 @@ static mkt_res_t parser_parse_fn_value_params(parser_t* parser,
         return parser_err_unexpected_token(parser, TOK_ID_LPAREN);
 
     mkt_res_t res = RES_NONE;
-    if ((res = parser_parse_parameter(parser, new_nodes_i)) != RES_OK)
-        return res;
+    TRY_OK(parser_parse_parameter(parser, new_nodes_i));
 
     return RES_OK;
 }
