@@ -1127,8 +1127,6 @@ static mkt_res_t parser_parse_if_expr(parser_t* parser, int* new_node_i) {
     if (!parser_match(parser, &first_tok_i, 1, TOK_ID_IF))
         return parser_err_unexpected_token(parser, TOK_ID_IF);
 
-    mkt_res_t res = RES_NONE;
-
     if (!parser_match(parser, &dummy, 1, TOK_ID_LPAREN))
         return parser_err_unexpected_token(parser, TOK_ID_LPAREN);
 
