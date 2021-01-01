@@ -114,14 +114,14 @@ static void trim_end(const char** string, int* string_len) {
         *string_len -= 1;
 }
 
-#define TRY_OK(expr)                            \
-    do {                                        \
-        mkt_res_t res = RES_NONE;               \
-        if ((res = expr) != RES_OK) return res; \
-    } while (0)
-
-#define TRY_NONE(expr)                            \
+#define TRY_OK(expr)                              \
     do {                                          \
         mkt_res_t res = RES_NONE;                 \
-        if ((res = expr) != RES_NONE) return res; \
+        if ((res = (expr)) != RES_OK) return res; \
+    } while (0)
+
+#define TRY_NONE(expr)                              \
+    do {                                            \
+        mkt_res_t res = RES_NONE;                   \
+        if ((res = (expr)) != RES_NONE) return res; \
     } while (0)

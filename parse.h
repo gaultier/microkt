@@ -328,7 +328,6 @@ static mkt_res_t parser_init(const char* file_name0, const char* source,
     parser->par_file_name0 = file_name0;
     parser->par_is_tty = isatty(2);
 
-    mkt_res_t res = RES_NONE;
     TRY_OK(lex_init(file_name0, source, source_len, &parser->par_lexer));
 
     // Add root main function
