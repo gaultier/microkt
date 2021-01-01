@@ -1443,7 +1443,7 @@ static mkt_res_t parser_parse_multiplicative_expr(parser_t* parser,
     mkt_res_t res = RES_NONE;
 
     int lhs_i = -1;
-    if ((res = parser_parse_as_expr(parser, &lhs_i)) != RES_OK) return res;
+    TRY_OK(parser_parse_as_expr(parser, &lhs_i));
     CHECK(lhs_i, >=, 0, "%d");
     CHECK(lhs_i, <, (int)buf_size(parser->par_nodes), "%d");
 
@@ -1510,10 +1510,13 @@ static mkt_res_t parser_parse_multiplicative_expr(parser_t* parser,
         *new_node_i = lhs_i = (int)buf_size(parser->par_nodes) - 1;
     }
 
-    return res;
+    return RES_OK;
 }
 
 static mkt_res_t parser_parse_additive_expr(parser_t* parser, int* new_node_i) {
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
+
     int lhs_i = -1;
     TRY_OK(parser_parse_multiplicative_expr(parser, &lhs_i));
 
@@ -1534,11 +1537,11 @@ static mkt_res_t parser_parse_additive_expr(parser_t* parser, int* new_node_i) {
         int rhs_i = -1;
 
         mkt_res_t res = parser_parse_multiplicative_expr(parser, &rhs_i);
-        if (res == RES_NONE) {
+        if (res == RES_NONE)
             return parser_err_missing_rhs(parser, tok_i, parser->par_tok_i);
-        } else if (res != RES_OK) {
+        else if (res != RES_OK)
             return res;
-        }
+
         CHECK(rhs_i, >=, 0, "%d");
         CHECK(rhs_i, <, (int)buf_size(parser->par_nodes), "%d");
 
@@ -1735,9 +1738,7 @@ static mkt_res_t parser_parse_comparison(parser_t* parser, int* new_node_i) {
         const int tok_id = parser_previous(parser);
 
         int rhs_i = -1;
-        if ((res = parser_parse_generical_call_like_comparison(
-                 parser, &rhs_i)) != RES_OK)
-            return res;
+        TRY_OK(parser_parse_generical_call_like_comparison(parser, &rhs_i));
 
         CHECK(rhs_i, >=, 0, "%d");
         CHECK(rhs_i, <, (int)buf_size(parser->par_nodes), "%d");
