@@ -742,7 +742,8 @@ static void emit(const parser_t* parser, FILE* asm_file) {
                   fn_decl.fd_stack_size, aligned_stack_size);
         fn_prolog(parser, &fn_decl, aligned_stack_size);
         emit_stmt(parser, fn_decl.fd_body_node_i);
-        if (i == 0) emit_program_epilog();
+
+        if (fn_decl.fd_flags & FN_FLAGS_ENTRYPOINT) emit_program_epilog();
 
         fn_epilog(aligned_stack_size);
 

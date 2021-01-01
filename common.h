@@ -119,3 +119,7 @@ static void trim_end(const char** string, int* string_len) {
         mkt_res_t res = expr;            \
         if (res != RES_NONE) return res; \
     } while (0)
+
+#ifndef MIN
+#define MIN(a, b) ((a) < (b)) ? (a) : (b)
+#endif
