@@ -2499,8 +2499,9 @@ static mkt_res_t parser_parse_declaration(parser_t* parser, int* new_node_i) {
 
     TRY_NONE(parser_parse_fn_declaration(parser, new_node_i));
     TRY_NONE(parser_parse_class_declaration(parser, new_node_i));
+    TRY_NONE(parser_parse_property_declaration(parser, new_node_i));
 
-    return parser_parse_property_declaration(parser, new_node_i);
+    return RES_NONE;
 }
 
 static mkt_res_t parser_parse_while_stmt(parser_t* parser, int* new_node_i) {
@@ -2596,16 +2597,30 @@ static mkt_res_t parser_parse(parser_t* parser) {
             buf_push(parser_current_block(parser)->no_n.no_block.bl_nodes_i,
                      new_node_i);
             continue;
-        } else if (res == RES_NONE) {
-            if (parser->par_main_fn_i >= 0) return RES_OK;
-
-            fprintf(stderr,
-                    "%s%s:%sMissing main function, no entrypoint found\n",
-                    mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
-                    mkt_colors[is_tty][COL_RESET]);
-            return RES_ERR;
-        } else
+        } else if (res == RES_NONE)
+            break;
+        else
             return res;
     }
-    UNREACHABLE();
+
+    if (parser_current(parser) != TOK_ID_EOF) {
+        const mkt_pos_range_t pos_range_start =
+            parser->par_lexer.lex_tok_pos_ranges[parser->par_tok_i];
+        const mkt_loc_t loc = parser->par_lexer.lex_locs[parser->par_tok_i];
+
+        fprintf(stderr,
+                "%s%s:%d:%sExpected top-level declaration, got something else: "
+                "%s\n",
+                mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
+                loc.loc_line, mkt_colors[is_tty][COL_RESET],
+                parser->par_lexer.lex_source + pos_range_start.pr_start);
+        return RES_ERR;
+    }
+
+    if (parser->par_main_fn_i >= 0) return RES_OK;
+
+    fprintf(stderr, "%s%s:%sMissing main function, no entrypoint found\n",
+            mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
+            mkt_colors[is_tty][COL_RESET]);
+    return RES_ERR;
 }
