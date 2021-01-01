@@ -21,8 +21,7 @@ typedef struct {
         par_class_i;        // Current token/scope/function/class
     mkt_node_t* par_nodes;  // Arena of all nodes
     lexer_t par_lexer;
-    int* par_node_decls;  // Declarations that need to be generated first e.g.
-                          // functions
+    int* par_node_decls;  // Declarations e.g. functions
     mkt_type_t* par_types;
     bool par_is_tty;
 } parser_t;
