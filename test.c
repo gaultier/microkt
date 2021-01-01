@@ -19,7 +19,7 @@ typedef struct {
 } str;
 
 static mkt_res_t proc_run(const char* exe_name, char output[LENGTH],
-                          ssize_t* read_bytes, int* ret_code) {
+                          size_t* read_bytes, int* ret_code) {
     CHECK((void*)exe_name, !=, NULL, "%p");
     CHECK((void*)read_bytes, !=, NULL, "%p");
     CHECK((void*)ret_code, !=, NULL, "%p");
@@ -119,7 +119,7 @@ static mkt_res_t simple_test_run(const char* source_file_name) {
     if (read_bytes != file_size) {
         fprintf(stderr,
                 "Failed to fully `read(2)` the source file %s: bytes to "
-                "read=%d, bytes read=%d errno=%d err=%s\n",
+                "read=%d, bytes read=%zd errno=%d err=%s\n",
                 source_file_name, file_size, read_bytes, errno,
                 strerror(errno));
         return errno ? errno : EIO;
@@ -131,7 +131,8 @@ static mkt_res_t simple_test_run(const char* source_file_name) {
 
     char output[LENGTH] = "";
     int ret_code = 0;
-    if (proc_run(argv, output, &read_bytes, &ret_code) != RES_OK)
+    size_t proc_read_bytes = 0;
+    if (proc_run(argv, output, &proc_read_bytes, &ret_code) != RES_OK)
         return RES_ERR;
     if (ret_code != 0) {
         fprintf(stderr, "%s✘ %s:%s ret_code=%d\n", mkt_colors[is_tty][COL_RED],
@@ -142,9 +143,9 @@ static mkt_res_t simple_test_run(const char* source_file_name) {
     const char* out = output;
     size_t line = 0;
     bool differed = false;
-    while (out < output + read_bytes) {
+    while (out < output + proc_read_bytes) {
         const char* end = strchr(out, '\n');
-        if (!end) end = output + read_bytes;
+        if (!end) end = output + proc_read_bytes;
 
         CHECK((void*)out, <, (void*)end, "%p");
         const size_t out_len = end - out;
