@@ -331,8 +331,6 @@ static mkt_res_t parser_init(const char* file_name0, const char* source,
     buf_push(parser->par_lexer.lex_locs,
              ((mkt_loc_t){.loc_line = 1, .loc_column = 1}));
 
-    const int fn_main_name_tok_i = buf_size(parser->par_lexer.lex_tokens) - 1;
-
     CHECK((void*)parser->par_nodes, ==, NULL, "%p");
     buf_grow(parser->par_nodes, 100);
 
@@ -344,17 +342,6 @@ static mkt_res_t parser_init(const char* file_name0, const char* source,
                                                  .bl_last_tok_i = -1,
                                                  .bl_nodes_i = NULL,
                                                  .bl_parent_scope_i = -1}}}));
-    buf_push(parser->par_nodes,
-             ((mkt_node_t){
-                 .no_type_i = TYPE_UNIT_I,
-                 .no_kind = NODE_FN_DECL,
-                 .no_n = {.no_fn_decl = {.fd_first_tok_i = fn_main_name_tok_i,
-                                         .fd_name_tok_i = fn_main_name_tok_i,
-                                         .fd_last_tok_i = fn_main_name_tok_i,
-                                         .fd_body_node_i = 0,
-                                         .fd_flags = FN_FLAGS_SYNTHETIC |
-                                                     FN_FLAGS_PUBLIC}}}));
-
     CHECK((void*)parser->par_node_decls, ==, NULL, "%p");
     buf_grow(parser->par_node_decls, 10);
     buf_push(
