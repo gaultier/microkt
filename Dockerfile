@@ -12,7 +12,7 @@ FROM alpine:3.12
 RUN apk add --no-cache binutils
 COPY --from=builder /mktc/mktc /usr/local/bin/
 COPY --from=builder /mktc/mkt_stdlib.o /usr/local/lib/
-RUN mkdir -p  /usr/local/share/mktc/ && echo 'println("Hello, world!")' > /usr/local/share/mktc/hello_world.kts
+RUN mkdir -p  /usr/local/share/mktc/ && echo 'fun main() {println("Hello, world!")}' > /usr/local/share/mktc/hello_world.kt
 
 # Sanity check
-RUN mktc /usr/local/share/mktc/hello_world.kts && /usr/local/share/mktc/hello_world.exe | grep "Hello, world!"
+RUN mktc /usr/local/share/mktc/hello_world.kt && /usr/local/share/mktc/hello_world.exe | grep "Hello, world!"

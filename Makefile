@@ -56,10 +56,10 @@ else
 	CFLAGS_STDLIB += -O2
 endif
 
-TESTS_SRC := $(wildcard tests/*.kts)
-TESTS_O := $(TESTS_SRC:.kts=.o)
-TESTS_ASM := $(TESTS_SRC:.kts=.asm)
-TESTS_EXE := $(TESTS_SRC:.kts=.exe)
+TESTS_SRC := $(wildcard tests/*.kt)
+TESTS_O := $(TESTS_SRC:.kt=.o)
+TESTS_ASM := $(TESTS_SRC:.kt=.asm)
+TESTS_EXE := $(TESTS_SRC:.kt=.exe)
 
 .DEFAULT:
 mktc: $(SRC) $(HEADERS) mkt_stdlib.o
@@ -77,7 +77,7 @@ ifeq "$(WITH_DTRACE)" "1"
 		dtrace -o $@ -h -s $<
 endif
 
-%.exe: %.kts mktc $(TESTS_SRC)
+%.exe: %.kt mktc $(TESTS_SRC)
 	./mktc $<
 
 check: mktc $(TESTS_SRC) $(TESTS_EXE) test

@@ -22,7 +22,6 @@ static mkt_res_t proc_run(const char* exe_name, char output[LENGTH],
     CHECK((void*)exe_name, !=, NULL, "%p");
     CHECK((void*)read_bytes, !=, NULL, "%p");
     CHECK((void*)ret_code, !=, NULL, "%p");
-    CHECK(*read_bytes, >=, 0L, "%zd");
 
     FILE* exe_process = popen(exe_name, "r");
     if (exe_process == NULL) {

@@ -130,15 +130,15 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
     CHECK(expr->no_type_i, <, (int)buf_size(parser->par_types), "%d");
     const mkt_type_t* const type = &parser->par_types[expr->no_type_i];
 
-    const char *ax, *di, *dx;
+    const char *ax, *di /*, *dx */;
     if (type->ty_size == 8) {
         ax = "%rax";
         di = "%rdi";
-        dx = "%rdx";
+        /* dx = "%rdx"; */
     } else {
         ax = "%eax";
         di = "%edi";
-        dx = "%edx";
+        /* dx = "%edx"; */
     }
 
     switch (expr->no_kind) {
