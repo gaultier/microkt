@@ -148,6 +148,48 @@ static mkt_res_t parser_resolve_var(const parser_t* parser, int tok_i,
     return RES_NONE;
 }
 
+static void parser_class_begin(parser_t* parser, int first_tok_i,
+                               int* new_node_i, int* old_class_i,
+                               int* body_node_i, int* parent_scope_i) {
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
+    CHECK((void*)old_class_i, !=, NULL, "%p");
+    CHECK((void*)body_node_i, !=, NULL, "%p");
+    CHECK((void*)parent_scope_i, !=, NULL, "%p");
+
+    buf_push(parser->par_nodes,
+             ((mkt_node_t){.no_type_i = TYPE_UNIT_I,
+                           .no_kind = NODE_CLASS_DECL,
+                           .no_n = {.no_class_decl = {
+                                        .cl_first_tok_i = first_tok_i,
+                                        .cl_name_tok_i = -1,
+                                        .cl_last_tok_i = -1,
+                                        .cl_flags = CLASS_FLAGS_PUBLIC,
+                                    }}}));
+
+    *old_class_i = parser->par_class_i;
+    parser->par_class_i = *new_node_i = buf_size(parser->par_nodes) - 1;
+    buf_push(parser->par_node_decls, *new_node_i);
+
+    CHECK(parser->par_scope_i, >=, 0, "%d");
+    CHECK(parser->par_scope_i, <, (int)buf_size(parser->par_nodes), "%d");
+    buf_push(parser->par_nodes[parser->par_scope_i].no_n.no_block.bl_nodes_i,
+             *new_node_i);
+
+    buf_push(parser->par_nodes,
+             ((mkt_node_t){.no_kind = NODE_BLOCK,
+                           .no_type_i = TYPE_UNIT_I,
+                           .no_n = {.no_block = {.bl_first_tok_i = -1,
+                                                 .bl_last_tok_i = -1,
+                                                 .bl_nodes_i = NULL,
+                                                 .bl_parent_scope_i =
+                                                     parser->par_scope_i}}}));
+    *body_node_i =
+        parser->par_nodes[*new_node_i].no_n.no_class_decl.cl_body_node_i =
+            buf_size(parser->par_nodes) - 1;
+    *parent_scope_i = parser_scope_begin(parser, *body_node_i);
+}
+
 static mkt_res_t parser_err_assigning_val(const parser_t* parser,
                                           int assign_tok_i,
                                           const mkt_var_def_t* var_def) {
@@ -324,17 +366,11 @@ static mkt_res_t parser_init(const char* file_name0, const char* source,
 
     TRY_OK(lex_init(file_name0, source, source_len, &parser->par_lexer));
 
-    // Add root main function
-    buf_push(parser->par_lexer.lex_tokens,
-             ((mkt_token_t){.tok_id = TOK_ID_IDENTIFIER,
-                            .tok_pos_range = {.pr_start = 0, .pr_end = 0}}));
-    buf_push(parser->par_lexer.lex_tok_pos_ranges,
-             ((mkt_pos_range_t){.pr_start = 0, .pr_end = 0}));
-    buf_push(parser->par_lexer.lex_locs,
-             ((mkt_loc_t){.loc_line = 1, .loc_column = 1}));
-
     CHECK((void*)parser->par_nodes, ==, NULL, "%p");
     buf_grow(parser->par_nodes, 100);
+
+    // Add root class
+    /* buf_push(parser->par_nodes, ((mkt_node_t) */
 
     // Add initial scope
     buf_push(parser->par_nodes,
@@ -2433,43 +2469,18 @@ static mkt_res_t parser_parse_class_declaration(parser_t* parser,
     int first_tok_i = -1;
     CHECK(parser_match(parser, &first_tok_i, 1, TOK_ID_CLASS), ==, true, "%d");
 
-    buf_push(parser->par_nodes,
-             ((mkt_node_t){.no_type_i = TYPE_UNIT_I,
-                           .no_kind = NODE_CLASS_DECL,
-                           .no_n = {.no_class_decl = {
-                                        .cl_first_tok_i = first_tok_i,
-                                        .cl_name_tok_i = -1,
-                                        .cl_last_tok_i = -1,
-                                        .cl_flags = CLASS_FLAGS_PUBLIC,
-                                    }}}));
-
-    const int old_class_i = parser->par_class_i;
-    parser->par_class_i = *new_node_i = buf_size(parser->par_nodes) - 1;
-    buf_push(parser->par_node_decls, *new_node_i);
-
-    CHECK(parser->par_scope_i, >=, 0, "%d");
-    CHECK(parser->par_scope_i, <, (int)buf_size(parser->par_nodes), "%d");
-    buf_push(parser->par_nodes[parser->par_scope_i].no_n.no_block.bl_nodes_i,
-             *new_node_i);
+    int old_class_i = -1, body_node_i = -1, parent_scope_i = -1;
+    parser_class_begin(parser, first_tok_i, new_node_i, &old_class_i,
+                       &body_node_i, &parent_scope_i);
+    CHECK(old_class_i, >=, 0, "%d");
+    CHECK(body_node_i, >=, 0, "%d");
+    CHECK(parent_scope_i, >=, 0, "%d");
 
     if (!parser_match(
             parser,
             &parser->par_nodes[*new_node_i].no_n.no_class_decl.cl_name_tok_i, 1,
             TOK_ID_IDENTIFIER))
         return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
-
-    buf_push(parser->par_nodes,
-             ((mkt_node_t){.no_kind = NODE_BLOCK,
-                           .no_type_i = TYPE_UNIT_I,
-                           .no_n = {.no_block = {.bl_first_tok_i = -1,
-                                                 .bl_last_tok_i = -1,
-                                                 .bl_nodes_i = NULL,
-                                                 .bl_parent_scope_i =
-                                                     parser->par_scope_i}}}));
-    const int body_node_i =
-        parser->par_nodes[*new_node_i].no_n.no_class_decl.cl_body_node_i =
-            buf_size(parser->par_nodes) - 1;
-    const int parent_scope_i = parser_scope_begin(parser, body_node_i);
 
     if (!parser_match(
             parser,
@@ -2487,6 +2498,7 @@ static mkt_res_t parser_parse_class_declaration(parser_t* parser,
     const int last_tok_i =
         parser->par_nodes[body_node_i].no_n.no_block.bl_last_tok_i;
     class_decl->cl_last_tok_i = last_tok_i;
+
     parser_scope_end(parser, parent_scope_i);
     parser->par_class_i = old_class_i;
 
