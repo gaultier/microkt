@@ -3,7 +3,6 @@
 #include <stdarg.h>
 
 #include "ast.h"
-#include "common.h"
 #include "lex.h"
 
 static const int TYPE_UNIT_I = 0;    // see parser_init
@@ -219,7 +218,8 @@ static int parser_make_type(parser_t* parser,
             return TYPE_CHAR_I;
         case TYPE_UNIT:
             return TYPE_UNIT_I;
-            // User defined type
+
+        // User defined type
         default:
             UNIMPLEMENTED();
     }
