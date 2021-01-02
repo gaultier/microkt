@@ -619,7 +619,7 @@ static void node_dump(const parser_t* parser, int no_i, int indent) {
 #endif
 }
 
-static int no_first_token(const parser_t* parser, const mkt_node_t* node) {
+static int node_first_token(const parser_t* parser, const mkt_node_t* node) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)node, !=, NULL, "%p");
 
@@ -646,7 +646,7 @@ static int no_first_token(const parser_t* parser, const mkt_node_t* node) {
         case NODE_ADD: {
             const mkt_node_t* const lhs =
                 &parser->par_nodes[node->no_n.no_binary.bi_lhs_i];
-            return no_first_token(parser, lhs);
+            return node_first_token(parser, lhs);
         }
         case NODE_RETURN:
         case NODE_NOT: {
@@ -673,7 +673,7 @@ static int no_first_token(const parser_t* parser, const mkt_node_t* node) {
     UNREACHABLE();
 }
 
-static int no_last_token(const parser_t* parser, const mkt_node_t* node) {
+static int node_last_token(const parser_t* parser, const mkt_node_t* node) {
     CHECK((void*)parser, !=, NULL, "%p");
     if (node == NULL) return -1;
 
@@ -700,7 +700,7 @@ static int no_last_token(const parser_t* parser, const mkt_node_t* node) {
         case NODE_ADD: {
             const mkt_node_t* const rhs =
                 &parser->par_nodes[node->no_n.no_binary.bi_rhs_i];
-            return no_first_token(parser, rhs);
+            return node_first_token(parser, rhs);
         }
         case NODE_RETURN:
         case NODE_NOT: {
@@ -1024,7 +1024,7 @@ static mkt_res_t parser_err_non_matching_types(const parser_t* parser,
     const mkt_type_kind_t lhs_type_kind =
         parser->par_types[lhs->no_type_i].ty_kind;
 
-    const int lhs_first_tok_i = no_first_token(parser, lhs);
+    const int lhs_first_tok_i = node_first_token(parser, lhs);
     CHECK(lhs_first_tok_i, >=, 0, "%d");
     CHECK(lhs_first_tok_i, <, parser->par_lexer.lex_source_len, "%d");
 
@@ -1035,7 +1035,7 @@ static mkt_res_t parser_err_non_matching_types(const parser_t* parser,
     CHECK(rhs->no_type_i, <, (int)buf_size(parser->par_types), "%d");
     const int rhs_type_kind = parser->par_types[rhs->no_type_i].ty_kind;
 
-    const int rhs_last_tok_i = no_last_token(parser, rhs);
+    const int rhs_last_tok_i = node_last_token(parser, rhs);
     CHECK(rhs_last_tok_i, >=, 0, "%d");
     CHECK(rhs_last_tok_i, <, parser->par_lexer.lex_source_len, "%d");
 
@@ -1068,11 +1068,11 @@ static mkt_res_t parser_err_unexpected_type(
     const mkt_type_kind_t lhs_type_kind =
         parser->par_types[lhs->no_type_i].ty_kind;
 
-    const int lhs_first_tok_i = no_first_token(parser, lhs);
+    const int lhs_first_tok_i = node_first_token(parser, lhs);
     CHECK(lhs_first_tok_i, >=, 0, "%d");
     CHECK(lhs_first_tok_i, <, parser->par_lexer.lex_source_len, "%d");
 
-    const int lhs_last_tok_i = no_last_token(parser, lhs);
+    const int lhs_last_tok_i = node_last_token(parser, lhs);
     CHECK(lhs_last_tok_i, >=, 0, "%d");
     CHECK(lhs_last_tok_i, <, parser->par_lexer.lex_source_len, "%d");
 
@@ -1195,14 +1195,14 @@ static mkt_res_t parser_parse_jump_expr(parser_t* parser, int* new_node_i) {
 
         const mkt_node_t* const expr =
             expr_node_i >= 0 ? &parser->par_nodes[expr_node_i] : NULL;
-        buf_push(
-            parser->par_nodes,
-            ((mkt_node_t){.no_type_i = type_i,
-                          .no_kind = NODE_RETURN,
-                          .no_n = {.no_unary = {.un_first_tok_i = tok_i,
-                                                .un_last_tok_i =
-                                                    no_last_token(parser, expr),
-                                                .un_node_i = expr_node_i}}}));
+        buf_push(parser->par_nodes,
+                 ((mkt_node_t){
+                     .no_type_i = type_i,
+                     .no_kind = NODE_RETURN,
+                     .no_n = {.no_unary = {.un_first_tok_i = tok_i,
+                                           .un_last_tok_i =
+                                               node_last_token(parser, expr),
+                                           .un_node_i = expr_node_i}}}));
         *new_node_i = buf_size(parser->par_nodes) - 1;
         log_debug("New return %d type=%s", *new_node_i,
                   mkt_type_to_str[parser->par_types[type_i].ty_kind]);
@@ -1384,14 +1384,14 @@ static mkt_res_t parser_parse_prefix_unary_expr(parser_t* parser,
         CHECK(no_i, <, (int)buf_size(parser->par_nodes), "%d");
         const mkt_node_t* const node = &parser->par_nodes[no_i];
 
-        buf_push(
-            parser->par_nodes,
-            ((mkt_node_t){.no_type_i = type_i,
-                          .no_kind = NODE_NOT,
-                          .no_n = {.no_unary = {.un_first_tok_i = tok_i,
-                                                .un_last_tok_i =
-                                                    no_last_token(parser, node),
-                                                .un_node_i = no_i}}}));
+        buf_push(parser->par_nodes,
+                 ((mkt_node_t){
+                     .no_type_i = type_i,
+                     .no_kind = NODE_NOT,
+                     .no_n = {.no_unary = {.un_first_tok_i = tok_i,
+                                           .un_last_tok_i =
+                                               node_last_token(parser, node),
+                                           .un_node_i = no_i}}}));
         *new_node_i = no_i = (int)buf_size(parser->par_nodes) - 1;
 
         return RES_OK;

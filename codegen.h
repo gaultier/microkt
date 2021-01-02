@@ -114,7 +114,7 @@ static void emit_loc(const parser_t* parser, const mkt_node_t* const node) {
     CHECK((void*)node, !=, NULL, "%p");
 
     const mkt_loc_t loc =
-        parser->par_lexer.lex_locs[no_first_token(parser, node)];
+        parser->par_lexer.lex_locs[node_first_token(parser, node)];
     println(".loc 1 %d %d\t## %s:%d:%d", loc.loc_line, loc.loc_column,
             parser->par_file_name0, loc.loc_line, loc.loc_column);
 }
@@ -512,7 +512,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
 
     const mkt_node_t* const stmt = &parser->par_nodes[stmt_i];
     const mkt_loc_t loc =
-        parser->par_lexer.lex_locs[no_first_token(parser, stmt)];
+        parser->par_lexer.lex_locs[node_first_token(parser, stmt)];
     println(".loc 1 %d %d\t## %s:%d:%d", loc.loc_line, loc.loc_column,
             parser->par_file_name0, loc.loc_line, loc.loc_column);
 
