@@ -171,10 +171,12 @@ static void parser_class_begin(parser_t* parser, int first_tok_i,
     parser->par_class_i = *new_node_i = buf_size(parser->par_nodes) - 1;
     buf_push(parser->par_node_decls, *new_node_i);
 
-    CHECK(parser->par_scope_i, >=, 0, "%d");
-    CHECK(parser->par_scope_i, <, (int)buf_size(parser->par_nodes), "%d");
-    buf_push(parser->par_nodes[parser->par_scope_i].no_n.no_block.bl_nodes_i,
-             *new_node_i);
+    if (parser->par_scope_i >= 0) {
+        CHECK(parser->par_scope_i, <, (int)buf_size(parser->par_nodes), "%d");
+        buf_push(
+            parser->par_nodes[parser->par_scope_i].no_n.no_block.bl_nodes_i,
+            *new_node_i);
+    }
 
     buf_push(parser->par_nodes,
              ((mkt_node_t){.no_kind = NODE_BLOCK,
@@ -372,6 +374,8 @@ static mkt_res_t parser_init(const char* file_name0, const char* source,
     buf_grow(parser->par_nodes, 100);
 
     TRY_OK(lex_init(file_name0, source, source_len, &parser->par_lexer));
+
+    // Add synthetic tokens for synthetic root class
     buf_push(parser->par_lexer.lex_tokens,
              ((mkt_token_t){.tok_id = TOK_ID_IDENTIFIER,
                             .tok_pos_range = {.pr_start = 0, .pr_end = 0}}));
@@ -380,20 +384,11 @@ static mkt_res_t parser_init(const char* file_name0, const char* source,
     buf_push(parser->par_lexer.lex_locs,
              ((mkt_loc_t){.loc_line = 1, .loc_column = 1}));
 
-    // Add initial scope
-    buf_push(parser->par_nodes,
-             ((mkt_node_t){.no_kind = NODE_BLOCK,
-                           .no_type_i = TYPE_UNIT_I,
-                           .no_n = {.no_block = {.bl_first_tok_i = -1,
-                                                 .bl_last_tok_i = -1,
-                                                 .bl_parent_scope_i = -1}}}));
-    parser->par_scope_i = buf_size(parser->par_nodes) - 1;
-
     // Add root class
-    // int new_node_i = -1, old_class_i = -1, body_node_i = -1,
-    //    parent_scope_i = -1;
-    // parser_class_begin(parser, 0, &new_node_i, &old_class_i, &body_node_i,
-    //                   &parent_scope_i);
+    int new_node_i = -1, old_class_i = -1, body_node_i = -1,
+        parent_scope_i = -1;
+    parser_class_begin(parser, 0, &new_node_i, &old_class_i, &body_node_i,
+                       &parent_scope_i);
 
     CHECK((void*)parser->par_types, ==, NULL, "%p");
     buf_grow(parser->par_types, 100);
