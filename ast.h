@@ -91,9 +91,9 @@ const char mkt_node_kind_to_str[][30] = {
     [NODE_WHILE] = "While",
     [NODE_FN_DECL] = "FnDecl",
     [NODE_RETURN] = "Return",
-    [NODE_CALL_DECL] = "Call",
+    [NODE_CALL] = "Call",
     [NODE_SYSCALL] = "Syscall",
-    [NODE_CLASS] = "Class",
+    [NODE_CLASS_DECL] = "Class",
 };
 #endif
 

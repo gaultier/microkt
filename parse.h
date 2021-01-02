@@ -379,22 +379,21 @@ static mkt_res_t parser_init(const char* file_name0, const char* source,
              ((mkt_pos_range_t){.pr_start = 0, .pr_end = 0}));
     buf_push(parser->par_lexer.lex_locs,
              ((mkt_loc_t){.loc_line = 1, .loc_column = 1}));
-    //
+
     // Add initial scope
     buf_push(parser->par_nodes,
              ((mkt_node_t){.no_kind = NODE_BLOCK,
                            .no_type_i = TYPE_UNIT_I,
                            .no_n = {.no_block = {.bl_first_tok_i = -1,
                                                  .bl_last_tok_i = -1,
-                                                 .bl_nodes_i = NULL,
                                                  .bl_parent_scope_i = -1}}}));
     parser->par_scope_i = buf_size(parser->par_nodes) - 1;
 
     // Add root class
-    int new_node_i = -1, old_class_i = -1, body_node_i = -1,
-        parent_scope_i = -1;
-    parser_class_begin(parser, 0, &new_node_i, &old_class_i, &body_node_i,
-                       &parent_scope_i);
+    // int new_node_i = -1, old_class_i = -1, body_node_i = -1,
+    //    parent_scope_i = -1;
+    // parser_class_begin(parser, 0, &new_node_i, &old_class_i, &body_node_i,
+    //                   &parent_scope_i);
 
     CHECK((void*)parser->par_types, ==, NULL, "%p");
     buf_grow(parser->par_types, 100);
@@ -2626,16 +2625,28 @@ static mkt_res_t parser_parse(parser_t* parser) {
     }
 
     if (parser_peek(parser) != TOK_ID_EOF) {
+        CHECK(parser->par_tok_i, <,
+              (int)buf_size(parser->par_lexer.lex_tok_pos_ranges), "%d");
         const mkt_pos_range_t pos_range_start =
             parser->par_lexer.lex_tok_pos_ranges[parser->par_tok_i];
+        CHECK(parser->par_tok_i, <, (int)buf_size(parser->par_lexer.lex_locs),
+              "%d");
         const mkt_loc_t loc = parser->par_lexer.lex_locs[parser->par_tok_i];
+
+        const char* const src_start =
+            parser->par_lexer.lex_source + pos_range_start.pr_start;
+        const char* const src_end =
+            parser->par_lexer.lex_source + parser->par_lexer.lex_source_len;
+
+        CHECK((void*)src_start, <, (void*)src_end, "%p");
+        const int src_len = src_end - src_start;
 
         fprintf(stderr,
                 "%s%s:%d:%sExpected top-level declaration, got something else: "
-                "%s\n",
+                "%.*s\n",
                 mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
-                loc.loc_line, mkt_colors[is_tty][COL_RESET],
-                parser->par_lexer.lex_source + pos_range_start.pr_start);
+                loc.loc_line, mkt_colors[is_tty][COL_RESET], src_len,
+                src_start);
         return RES_ERR;
     }
 
