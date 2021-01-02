@@ -90,7 +90,7 @@ static int run(const char* file_name0) {
     if ((res = parser_parse(&parser)) != RES_OK) return res;
 
     for (int i = 0; i < (int)buf_size(parser.par_node_decls); i++) {
-        node_dump(&parser, i, 0);
+        node_dump(&parser, parser.par_node_decls[i], 0);
     }
 
     const int file_name_len = strlen(file_name0);
