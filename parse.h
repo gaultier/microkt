@@ -2603,7 +2603,7 @@ static mkt_res_t parser_parse(parser_t* parser) {
             return res;
     }
 
-    if (parser_current(parser) != TOK_ID_EOF) {
+    if (parser_peek(parser) != TOK_ID_EOF) {
         const mkt_pos_range_t pos_range_start =
             parser->par_lexer.lex_tok_pos_ranges[parser->par_tok_i];
         const mkt_loc_t loc = parser->par_lexer.lex_locs[parser->par_tok_i];
