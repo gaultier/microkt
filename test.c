@@ -224,6 +224,7 @@ int main() {
         "./err/invalid_token.kt",
         "./err/missing_param_println.kt",
         "./err/val_assign.kt",
+        "./err/non_top_level_declaration.kt",
     };
 
     bool failed = false;
