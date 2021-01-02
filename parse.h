@@ -653,8 +653,18 @@ static void node_dump(const parser_t* parser, int no_i, int indent) {
             node_dump(parser, call.ca_lhs_node_i, indent + 2);
             return;
         }
-        case NODE_CLASS_DECL:
-            UNIMPLEMENTED();
+        case NODE_CLASS_DECL: {
+            const mkt_class_decl_t class_decl = node->no_n.no_class_decl;
+            const char* src = NULL;
+            int src_len = 0;
+            parser_tok_source(parser, class_decl.cl_name_tok_i, &src, &src_len);
+
+            log_debug_with_indent(indent, "node #%d %s `%.*s`", no_i,
+                                  mkt_node_kind_to_str[node->no_kind], src_len,
+                                  src);
+
+            return;
+        }
     }
 #endif
 }
