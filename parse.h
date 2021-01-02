@@ -657,7 +657,13 @@ static void node_dump(const parser_t* parser, int no_i, int indent) {
             const mkt_class_decl_t class_decl = node->no_n.no_class_decl;
             const char* src = NULL;
             int src_len = 0;
-            parser_tok_source(parser, class_decl.cl_name_tok_i, &src, &src_len);
+            if (class_decl.cl_name_tok_i >= 0)
+                parser_tok_source(parser, class_decl.cl_name_tok_i, &src,
+                                  &src_len);
+            else {
+                src_len = strlen(parser->par_file_name0);
+                src = parser->par_file_name0;
+            }
 
             log_debug_with_indent(indent, "node #%d %s `%.*s`", no_i,
                                   mkt_node_kind_to_str[node->no_kind], src_len,
@@ -2619,7 +2625,6 @@ static mkt_res_t parser_parse(parser_t* parser) {
         int new_node_i = -1;
         const mkt_res_t res = parser_parse_declaration(parser, &new_node_i);
         if (res == RES_OK) {
-            node_dump(parser, new_node_i, 0);
             buf_push(parser_current_block(parser)->no_n.no_block.bl_nodes_i,
                      new_node_i);
             continue;
