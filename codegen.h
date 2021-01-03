@@ -493,8 +493,10 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             emit_expr(parser, call.ca_lhs_node_i);
             return;
         }
+        case NODE_INSTANCE:
+            UNIMPLEMENTED();
 
-            // Forbidden by the grammer
+            // Forbidden by the grammar
         case NODE_WHILE:
         case NODE_VAR_DEF:
         case NODE_FN_DECL:
@@ -535,6 +537,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
         case NODE_ADD:
         case NODE_RETURN:
         case NODE_NOT:
+        case NODE_INSTANCE:
         case NODE_IF: {
             emit_expr(parser, stmt_i);
             return;

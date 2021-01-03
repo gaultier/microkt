@@ -64,6 +64,7 @@ typedef enum {
     NODE_RETURN,
     NODE_SYSCALL,
     NODE_CLASS_DECL,
+    NODE_INSTANCE,
 } mkt_node_kind_t;
 
 #if WITH_LOGS == 1
@@ -94,6 +95,7 @@ const char mkt_node_kind_to_str[][30] = {
     [NODE_CALL] = "Call",
     [NODE_SYSCALL] = "Syscall",
     [NODE_CLASS_DECL] = "Class",
+    [NODE_INSTANCE] = "Instance",
 };
 #endif
 
@@ -160,6 +162,10 @@ typedef struct {
 } mkt_class_decl_t;
 
 typedef struct {
+    int in_class, in_first_tok_i, in_last_tok_i;
+} mkt_instance_t;
+
+typedef struct {
     mkt_node_kind_t no_kind;
     int no_type_i;
     union {
@@ -178,6 +184,7 @@ typedef struct {
         mkt_call_t no_call;              // NODE_CALL
         mkt_syscall_t no_syscall;        // NODE_SYSCALL
         mkt_class_decl_t no_class_decl;  // NODE_CLASS_DECL
+        mkt_instance_t no_instance;      // NODE_INSTANCE
     } no_n;
 } mkt_node_t;
 

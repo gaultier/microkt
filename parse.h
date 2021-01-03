@@ -671,6 +671,28 @@ static void node_dump(const parser_t* parser, int no_i, int indent) {
 
             return;
         }
+        case NODE_INSTANCE: {
+            const mkt_instance_t instance = node->no_n.no_instance;
+            CHECK(instance.in_class, >=, 0, "%d");
+
+            const mkt_class_decl_t class_decl =
+                parser->par_nodes[instance.in_class].no_n.no_class_decl;
+            const char* src = NULL;
+            int src_len = 0;
+            if (class_decl.cl_name_tok_i >= 0)
+                parser_tok_source(parser, class_decl.cl_name_tok_i, &src,
+                                  &src_len);
+            else {
+                src_len = strlen(parser->par_file_name0);
+                src = parser->par_file_name0;
+            }
+
+            log_debug_with_indent(indent, "node #%d %s `%.*s`", no_i,
+                                  mkt_node_kind_to_str[node->no_kind], src_len,
+                                  src);
+
+            return;
+        }
     }
 #endif
 }
@@ -724,6 +746,8 @@ static int node_first_token(const parser_t* parser, const mkt_node_t* node) {
             return node->no_n.no_class_decl.cl_first_tok_i;
         case NODE_CALL:
             return node->no_n.no_call.ca_first_tok_i;
+        case NODE_INSTANCE:
+            return node->no_n.no_instance.in_first_tok_i;
     }
     log_debug("node kind=%d", node->no_kind);
     UNREACHABLE();
@@ -778,6 +802,8 @@ static int node_last_token(const parser_t* parser, const mkt_node_t* node) {
             return node->no_n.no_class_decl.cl_last_tok_i;
         case NODE_CALL:
             return node->no_n.no_call.ca_last_tok_i;
+        case NODE_INSTANCE:
+            return node->no_n.no_instance.in_last_tok_i;
     }
     log_debug("node kind=%d", node->no_kind);
     UNREACHABLE();
