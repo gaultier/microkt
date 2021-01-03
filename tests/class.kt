@@ -1,2 +1,4 @@
 class Empty{}
-fun main(){ }
+fun main(){ 
+  println(Empty())
+}

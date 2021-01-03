@@ -1398,6 +1398,14 @@ static mkt_res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
     if (parser_match(parser, &tok_i, 1, TOK_ID_IDENTIFIER)) {
         int no_def_i = -1;
         if (parser_resolve_var(parser, tok_i, &no_def_i) != RES_OK) {
+            const char* src = NULL;
+            int src_len = 0;
+            parser_tok_source(parser, tok_i, &src, &src_len);
+            const mkt_loc_t loc = parser->par_lexer.lex_locs[tok_i];
+            fprintf(stderr, "%s%s:%d:%sUndefined variable %.*s\n",
+                    mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
+                    loc.loc_line, mkt_colors[is_tty][COL_RESET], src_len, src);
+            parser_print_source_on_error(parser, tok_i, tok_i);
             return RES_UNKNOWN_VAR;
         }
 
