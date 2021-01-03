@@ -74,6 +74,8 @@ static int parser_node_find_fn_decl_for_call(const parser_t* parser, int no_i) {
                 parser, node->no_n.no_var.va_var_node_i);
         case NODE_FN_DECL:
             return no_i;
+        case NODE_CLASS_DECL:
+            return no_i;
         default:
             log_debug("kind: %s", mkt_node_kind_to_str[node->no_kind]);
             UNIMPLEMENTED();
@@ -113,13 +115,17 @@ static mkt_res_t parser_resolve_var(const parser_t* parser, int tok_i,
             const char* def_source = NULL;
             int def_source_len = 0;
 
-            if (stmt->no_kind == NODE_VAR_DEF) {
+            if (stmt->no_kind == NODE_VAR_DEF)
                 parser_tok_source(parser, stmt->no_n.no_var_def.vd_name_tok_i,
                                   &def_source, &def_source_len);
-            } else if (stmt->no_kind == NODE_FN_DECL) {
+            else if (stmt->no_kind == NODE_FN_DECL)
                 parser_tok_source(parser, stmt->no_n.no_fn_decl.fd_name_tok_i,
                                   &def_source, &def_source_len);
-            } else
+            else if (stmt->no_kind == NODE_CLASS_DECL)
+                parser_tok_source(parser,
+                                  stmt->no_n.no_class_decl.cl_name_tok_i,
+                                  &def_source, &def_source_len);
+            else
                 continue;
 
             CHECK((void*)def_source, !=, NULL, "%p");
@@ -1724,6 +1730,7 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i) {
 
     const mkt_node_t* const fn_decl_node = &parser->par_nodes[fn_decl_node_i];
     CHECK((void*)fn_decl_node, !=, NULL, "%p");
+    CHECK(fn_decl_node->no_kind, ==, NODE_FN_DECL, "%d");
 
     const mkt_fn_decl_t fn_decl = fn_decl_node->no_n.no_fn_decl;
     const int declared_arity = buf_size(fn_decl.fd_arg_nodes_i);
