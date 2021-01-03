@@ -1785,17 +1785,27 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i) {
                                                 .bi_rhs_i = arg_nodes_i[i]}}}));
         }
         parser_scope_end(parser, current_scope_i);
+        buf_push(parser->par_nodes,
+                 ((mkt_node_t){
+                     .no_type_i = type_i,
+                     .no_kind = NODE_CALL,
+                     .no_n = {.no_call = {.ca_arg_nodes_i = arg_nodes_i,
+                                          .ca_lhs_node_i = *new_node_i}}}));
     } else if (fn_decl_node->no_kind == NODE_CLASS_DECL) {
-        UNIMPLEMENTED();
+        /* const mkt_class_decl_t class_decl = fn_decl_node->no_n.no_class_decl;
+         */
+        buf_push(parser->par_nodes,
+                 ((mkt_node_t){.no_kind = NODE_INSTANCE,
+                               .no_type_i = -1,  // FIXME
+                               .no_n = {.no_instance = {
+                                            .in_class = callable_node_i,
+                                            .in_first_tok_i = -1,  // FIXME
+                                            .in_last_tok_i = -1    // FIXME
+                                        }}}));
+
     } else
         UNREACHABLE();
 
-    buf_push(
-        parser->par_nodes,
-        ((mkt_node_t){.no_type_i = type_i,
-                      .no_kind = NODE_CALL,
-                      .no_n = {.no_call = {.ca_arg_nodes_i = arg_nodes_i,
-                                           .ca_lhs_node_i = *new_node_i}}}));
     *new_node_i = buf_size(parser->par_nodes) - 1;
 
     return RES_OK;
