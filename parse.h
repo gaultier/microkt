@@ -63,22 +63,27 @@ static void parser_scope_end(parser_t* parser, int parent_node_i) {
     parser->par_scope_i = parent_node_i;
 }
 
-static int parser_node_find_fn_decl_for_call(const parser_t* parser, int no_i) {
+static mkt_res_t parser_node_find_fn_decl_for_call(const parser_t* parser,
+                                                   int no_i, int* node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK(no_i, >=, 0, "%d");
+    CHECK((void*)node_i, !=, NULL, "%p");
 
     const mkt_node_t* const node = &parser->par_nodes[no_i];
     switch (node->no_kind) {
         case NODE_VAR:
-            return parser_node_find_fn_decl_for_call(
-                parser, node->no_n.no_var.va_var_node_i);
+            TRY_OK(parser_node_find_fn_decl_for_call(
+                parser, node->no_n.no_var.va_var_node_i, node_i));
+            return RES_OK;
         case NODE_FN_DECL:
-            return no_i;
+            *node_i = no_i;
+            return RES_OK;
         case NODE_CLASS_DECL:
-            return no_i;
+            *node_i = no_i;
+            return RES_OK;
         default:
             log_debug("kind: %s", mkt_node_kind_to_str[node->no_kind]);
-            UNIMPLEMENTED();
+            return RES_ERR;
     }
 }
 
@@ -1723,45 +1728,67 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i) {
     CHECK(type_i, >=, 0, "%d");
     CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
 
-    const int fn_decl_node_i =
-        parser_node_find_fn_decl_for_call(parser, *new_node_i);
-    CHECK(fn_decl_node_i, >=, 0, "%d");
-    CHECK(fn_decl_node_i, <, (int)buf_size(parser->par_nodes), "%d");
+    int callable_node_i = -1;
 
-    const mkt_node_t* const fn_decl_node = &parser->par_nodes[fn_decl_node_i];
-    CHECK((void*)fn_decl_node, !=, NULL, "%p");
-    CHECK(fn_decl_node->no_kind, ==, NODE_FN_DECL, "%d");
-
-    const mkt_fn_decl_t fn_decl = fn_decl_node->no_n.no_fn_decl;
-    const int declared_arity = buf_size(fn_decl.fd_arg_nodes_i);
-    const int found_arity = buf_size(arg_nodes_i);
-    if (declared_arity != found_arity) UNIMPLEMENTED();  // TODO: err
-
-    const int current_scope_i =
-        parser_scope_begin(parser, fn_decl.fd_body_node_i);
-
-    for (int i = 0; i < (int)buf_size(fn_decl.fd_arg_nodes_i); i++) {
-        const int decl_arg_i = fn_decl.fd_arg_nodes_i[i];
-        const mkt_node_t* const decl_arg = &parser->par_nodes[decl_arg_i];
-        const mkt_type_kind_t decl_type_kind =
-            parser->par_types[decl_arg->no_type_i].ty_kind;
-        const int found_arg_i = arg_nodes_i[i];
-        const mkt_node_t* const found_arg = &parser->par_nodes[found_arg_i];
-        const mkt_type_kind_t found_type_kind =
-            parser->par_types[found_arg->no_type_i].ty_kind;
-
-        if (decl_type_kind != found_type_kind)
-            return parser_err_non_matching_types(parser, decl_arg_i,
-                                                 found_arg_i);
-
-        buf_push(parser->par_nodes,
-                 ((mkt_node_t){
-                     .no_kind = NODE_ASSIGN,
-                     .no_type_i = TYPE_UNIT_I,
-                     .no_n = {.no_binary = {.bi_lhs_i = decl_arg_i,
-                                            .bi_rhs_i = arg_nodes_i[i]}}}));
+    res = parser_node_find_fn_decl_for_call(parser, *new_node_i,
+                                            &callable_node_i);
+    if (res != RES_OK) {
+        const char* src = NULL;
+        int src_len = 0;
+        const int tok_i =
+            node_first_token(parser, &parser->par_nodes[*new_node_i]);
+        parser_tok_source(parser, tok_i, &src, &src_len);
+        const mkt_loc_t loc = parser->par_lexer.lex_locs[tok_i];
+        const mkt_node_kind_t node_kind =
+            parser->par_nodes[*new_node_i].no_kind;
+        fprintf(stderr,
+                "%s%s:%d:%s Trying to call a non-callable entity: %.*s (%s)\n",
+                mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
+                loc.loc_line, mkt_colors[is_tty][COL_RESET], src_len, src,
+                mkt_node_kind_to_str[node_kind]);
+        parser_print_source_on_error(parser, tok_i, tok_i);
+        return RES_ERR;
     }
-    parser_scope_end(parser, current_scope_i);
+    CHECK(callable_node_i, >=, 0, "%d");
+    CHECK(callable_node_i, <, (int)buf_size(parser->par_nodes), "%d");
+
+    const mkt_node_t* const fn_decl_node = &parser->par_nodes[callable_node_i];
+    CHECK((void*)fn_decl_node, !=, NULL, "%p");
+    if (fn_decl_node->no_kind == NODE_FN_DECL) {
+        const mkt_fn_decl_t fn_decl = fn_decl_node->no_n.no_fn_decl;
+        const int declared_arity = buf_size(fn_decl.fd_arg_nodes_i);
+        const int found_arity = buf_size(arg_nodes_i);
+        if (declared_arity != found_arity) UNIMPLEMENTED();  // TODO: err
+
+        const int current_scope_i =
+            parser_scope_begin(parser, fn_decl.fd_body_node_i);
+
+        for (int i = 0; i < (int)buf_size(fn_decl.fd_arg_nodes_i); i++) {
+            const int decl_arg_i = fn_decl.fd_arg_nodes_i[i];
+            const mkt_node_t* const decl_arg = &parser->par_nodes[decl_arg_i];
+            const mkt_type_kind_t decl_type_kind =
+                parser->par_types[decl_arg->no_type_i].ty_kind;
+            const int found_arg_i = arg_nodes_i[i];
+            const mkt_node_t* const found_arg = &parser->par_nodes[found_arg_i];
+            const mkt_type_kind_t found_type_kind =
+                parser->par_types[found_arg->no_type_i].ty_kind;
+
+            if (decl_type_kind != found_type_kind)
+                return parser_err_non_matching_types(parser, decl_arg_i,
+                                                     found_arg_i);
+
+            buf_push(parser->par_nodes,
+                     ((mkt_node_t){
+                         .no_kind = NODE_ASSIGN,
+                         .no_type_i = TYPE_UNIT_I,
+                         .no_n = {.no_binary = {.bi_lhs_i = decl_arg_i,
+                                                .bi_rhs_i = arg_nodes_i[i]}}}));
+        }
+        parser_scope_end(parser, current_scope_i);
+    } else if (fn_decl_node->no_kind == NODE_CLASS_DECL) {
+        UNIMPLEMENTED();
+    } else
+        UNREACHABLE();
 
     buf_push(
         parser->par_nodes,
