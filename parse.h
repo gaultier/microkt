@@ -1718,8 +1718,8 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i) {
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
     int* arg_nodes_i = NULL;
-    int dummy = 0;
-    mkt_res_t res = parser_parse_value_args(parser, &dummy, &arg_nodes_i);
+    int last_tok_i = -1;
+    mkt_res_t res = parser_parse_value_args(parser, &last_tok_i, &arg_nodes_i);
     if (res != RES_OK) return res;
 
     CHECK(*new_node_i, >=, 0, "%d");
@@ -1732,13 +1732,13 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i) {
 
     res = parser_node_find_fn_decl_for_call(parser, *new_node_i,
                                             &callable_node_i);
+    const int first_tok_i =
+        node_first_token(parser, &parser->par_nodes[*new_node_i]);
     if (res != RES_OK) {
         const char* src = NULL;
         int src_len = 0;
-        const int tok_i =
-            node_first_token(parser, &parser->par_nodes[*new_node_i]);
-        parser_tok_source(parser, tok_i, &src, &src_len);
-        const mkt_loc_t loc = parser->par_lexer.lex_locs[tok_i];
+        parser_tok_source(parser, first_tok_i, &src, &src_len);
+        const mkt_loc_t loc = parser->par_lexer.lex_locs[first_tok_i];
         const mkt_node_kind_t node_kind =
             parser->par_nodes[*new_node_i].no_kind;
         fprintf(stderr,
@@ -1746,7 +1746,7 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i) {
                 mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
                 loc.loc_line, mkt_colors[is_tty][COL_RESET], src_len, src,
                 mkt_node_kind_to_str[node_kind]);
-        parser_print_source_on_error(parser, tok_i, tok_i);
+        parser_print_source_on_error(parser, first_tok_i, first_tok_i);
         return RES_ERR;
     }
     CHECK(callable_node_i, >=, 0, "%d");
@@ -1799,10 +1799,9 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i) {
                                .no_type_i = -1,  // FIXME
                                .no_n = {.no_instance = {
                                             .in_class = callable_node_i,
-                                            .in_first_tok_i = -1,  // FIXME
-                                            .in_last_tok_i = -1    // FIXME
+                                            .in_first_tok_i = first_tok_i,
+                                            .in_last_tok_i = last_tok_i,
                                         }}}));
-
     } else
         UNREACHABLE();
 
