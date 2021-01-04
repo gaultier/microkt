@@ -42,6 +42,7 @@ typedef enum {
     TOK_ID_COMMA,
     TOK_ID_SYSCALL,
     TOK_ID_CLASS,
+    TOK_ID_DOT,
     TOK_ID_EOF,
     TOK_ID_INVALID,
 } mkt_token_id_t;
@@ -83,6 +84,7 @@ const char mkt_token_id_to_str[][30] = {
     [TOK_ID_COMMA] = ",",
     [TOK_ID_SYSCALL] = "syscall",
     [TOK_ID_CLASS] = "class",
+    [TOK_ID_DOT] = ".",
     [TOK_ID_EOF] = "Eof",
     [TOK_ID_INVALID] = "Invalid",
 };
@@ -406,6 +408,12 @@ static mkt_token_t lex_next(lexer_t* lexer, int* line, int* start_col,
                     result.tok_id = TOK_ID_SLASH;
                     goto outer;
                 }
+            }
+            case '.': {
+                lex_match(lexer, '.', col);
+                result.tok_id = TOK_ID_DOT;
+
+                goto outer;
             }
             case '=': {
                 lex_match(lexer, '=', col);

@@ -1457,6 +1457,15 @@ static mkt_res_t parser_parse_navigation_suffix(parser_t* parser,
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
+    if (parser_peek(parser) != TOK_ID_DOT) return RES_NONE;
+
+    int dummy = -1;
+    CHECK(parser_match(parser, &dummy, 1, TOK_ID_DOT), ==, true, "%d");
+
+    int identifier_tok_i = -1;
+    if (!parser_match(parser, &identifier_tok_i, 1, TOK_ID_IDENTIFIER))
+        return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
+
     return RES_OK;
 }
 
