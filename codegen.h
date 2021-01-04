@@ -493,8 +493,40 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             emit_expr(parser, call.ca_lhs_node_i);
             return;
         }
-        case NODE_INSTANCE:
-            UNIMPLEMENTED();
+        case NODE_INSTANCE: {
+            const int size = parser->par_types[expr->no_type_i].ty_size;
+            println("mov $%d, %s", size, fn_args[0]);
+            println("push %%rbx");
+            println("push %%rbx");  // For alignment
+            println("push %%rcx");
+            println("push %%rdi");
+            println("push %%rdx");
+            println("push %%rsi");
+            println("push %%r8");
+            println("push %%r9");
+            println("push %%r10");
+            println("push %%r11");
+            println("push %%r12");
+            println("push %%r13");
+            println("push %%r14");
+            println("push %%r15");
+            println("call " MKT_NAME_PREFIX "mkt_instance_make");
+            println("pop %%rbx");
+            println("pop %%rbx");  // For alignment
+            println("pop %%rcx");
+            println("pop %%rdi");
+            println("pop %%rdx");
+            println("pop %%rsi");
+            println("pop %%r8");
+            println("pop %%r9");
+            println("pop %%r10");
+            println("pop %%r11");
+            println("pop %%r12");
+            println("pop %%r13");
+            println("pop %%r14");
+            println("pop %%r15");
+            return;
+        }
 
             // Forbidden by the grammar
         case NODE_WHILE:

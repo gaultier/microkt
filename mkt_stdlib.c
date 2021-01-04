@@ -8,6 +8,7 @@ static size_t gc_round = 0;
 static size_t gc_allocated_bytes = 0;
 static const unsigned char RV_TAG_MARKED = 0x01;
 static const unsigned char RV_TAG_STRING = 0x02;
+static const unsigned char RV_TAG_INSTANCE = 0x04;
 static intptr_t* mkt_rbp;
 static intptr_t* mkt_rsp;
 static intptr_t* stack_top;
@@ -207,6 +208,17 @@ void* mkt_string_make(size_t size) {
     CHECK_NO_STDLIB((void*)atom, !=, NULL, "%p");
     atom->aa_header =
         (runtime_val_header){.rv_size = size, .rv_tag = RV_TAG_STRING};
+
+    return &atom->aa_data;
+}
+
+void* mkt_instance_make(size_t size) {
+    mkt_gc();
+
+    alloc_atom* atom = mkt_alloc_atom_make(size);
+    CHECK_NO_STDLIB((void*)atom, !=, NULL, "%p");
+    atom->aa_header =
+        (runtime_val_header){.rv_size = size, .rv_tag = RV_TAG_INSTANCE};
 
     return &atom->aa_data;
 }
