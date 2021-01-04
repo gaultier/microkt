@@ -37,7 +37,8 @@ static void parser_tok_source(const parser_t* parser, int tok_i,
                               const char** source, int* source_len);
 static void parser_print_source_on_error(const parser_t* parser,
                                          int first_tok_i, int last_tok_i);
-static mkt_res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i);
+static mkt_res_t parser_parse_call_suffix(parser_t* parser, int lhs_i,
+                                          int* new_node_i);
 static mkt_res_t parser_parse_syscall(parser_t* parser, int* new_node_i);
 static mkt_res_t parser_parse_declaration(parser_t* parser, int* new_node_i);
 
@@ -1484,7 +1485,7 @@ static mkt_res_t parser_parse_postfix_unary_suffix(parser_t* parser, int lhs_i,
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
-    TRY_NONE(parser_parse_call_suffix(parser, new_node_i));
+    TRY_NONE(parser_parse_call_suffix(parser, lhs_i, new_node_i));
 
     return parser_parse_navigation_suffix(parser, lhs_i, new_node_i);
 }
@@ -1496,14 +1497,13 @@ static mkt_res_t parser_parse_postfix_unary_expr(parser_t* parser,
 
     TRY_OK(parser_parse_primary_expr(parser, new_node_i));
 
-    // Optional
-    mkt_res_t res =
-        parser_parse_postfix_unary_suffix(parser, *new_node_i, new_node_i);
+    mkt_res_t res = RES_NONE;
+    while ((res = parser_parse_postfix_unary_suffix(parser, *new_node_i,
+                                                    new_node_i)) == RES_OK) {
+    }
     if (res == RES_NONE) return RES_OK;
 
-    if (res != RES_OK) return res;
-
-    return RES_OK;
+    return res;
 }
 
 static mkt_res_t parser_parse_prefix_unary_expr(parser_t* parser,
@@ -1757,7 +1757,8 @@ static mkt_res_t parser_parse_value_args(parser_t* parser, int* last_tok_i,
     return RES_OK;
 }
 
-static mkt_res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i) {
+static mkt_res_t parser_parse_call_suffix(parser_t* parser, int lhs_i,
+                                          int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
@@ -1830,12 +1831,12 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i) {
                                                 .bi_rhs_i = arg_nodes_i[i]}}}));
         }
         parser_scope_end(parser, current_scope_i);
-        buf_push(parser->par_nodes,
-                 ((mkt_node_t){
-                     .no_type_i = type_i,
-                     .no_kind = NODE_CALL,
-                     .no_n = {.no_call = {.ca_arg_nodes_i = arg_nodes_i,
-                                          .ca_lhs_node_i = *new_node_i}}}));
+        buf_push(
+            parser->par_nodes,
+            ((mkt_node_t){.no_type_i = type_i,
+                          .no_kind = NODE_CALL,
+                          .no_n = {.no_call = {.ca_arg_nodes_i = arg_nodes_i,
+                                               .ca_lhs_node_i = lhs_i}}}));
     } else if (callable_decl_node->no_kind == NODE_CLASS_DECL) {
         buf_push(parser->par_nodes,
                  ((mkt_node_t){.no_kind = NODE_INSTANCE,
