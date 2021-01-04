@@ -529,7 +529,10 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             println("pop %%r14");
             println("pop %%r15");
 
-            mkt_class_decl_t class_decl = expr->no_n.no_class_decl;
+            mkt_instance_t instance = expr->no_n.no_instance;
+            const mkt_node_t* const class_node =
+                &parser->par_nodes[instance.in_class];
+            mkt_class_decl_t class_decl = class_node->no_n.no_class_decl;
             for (int i = 0; i < (int)buf_size(class_decl.cl_members); i++) {
                 emit_stmt(parser, class_decl.cl_members[i]);
             }
