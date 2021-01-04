@@ -38,6 +38,7 @@ static void parser_print_source_on_error(const parser_t* parser,
                                          int first_tok_i, int last_tok_i);
 static mkt_res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i);
 static mkt_res_t parser_parse_syscall(parser_t* parser, int* new_node_i);
+static mkt_res_t parser_parse_declaration(parser_t* parser, int* new_node_i);
 
 static mkt_node_t* parser_current_block(parser_t* parser) {
     CHECK((void*)parser, !=, NULL, "%p");
@@ -2585,6 +2586,12 @@ static mkt_res_t parser_parse_class_declaration(parser_t* parser,
             &parser->par_nodes[body_node_i].no_n.no_block.bl_first_tok_i, 1,
             TOK_ID_LCURLY))
         return parser_err_unexpected_token(parser, TOK_ID_LCURLY);
+
+    int** members = NULL;
+    int member = -1;
+    mkt_res_t res = RES_NONE;
+    while ((res = parser_parse_declaration(parser, &member)) == RES_OK) {
+    }
 
     if (!parser_match(
             parser, &parser->par_nodes[body_node_i].no_n.no_block.bl_last_tok_i,
