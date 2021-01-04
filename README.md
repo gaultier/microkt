@@ -46,7 +46,7 @@ Hello, world!
 
 ## Features
 
-- Small, fast, and portable: the code is written in C99 with zero dependencies. It compiles under a second to an executable no bigger than 100 Kib
+- Small, fast, and portable: the code is written in C99 with zero dependencies. It compiles in under a second to an executable no bigger than 100 Kib
 - Produces small native executables under 10 Kib in a few milliseconds
 - Friendly error messages
 - Tiny memory usage
