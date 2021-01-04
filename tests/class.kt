@@ -11,5 +11,6 @@ fun main(){
 
   println(Person()) // expect: Instance of size 16
 
-  println(Person().id)
+  // WIP
+  // println(Person().id)
 }
