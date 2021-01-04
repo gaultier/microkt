@@ -224,7 +224,7 @@ void* mkt_instance_make(size_t size) {
     return &atom->aa_data;
 }
 
-void mkt_println_bool(int b) {
+void mkt_bool_println(int b) {
     if (b) {
         const char s[] = "true\n";
         mkt_write(mkt_stdout, s, sizeof(s) - 1);
@@ -234,12 +234,12 @@ void mkt_println_bool(int b) {
     }
 }
 
-void mkt_println_char(char c) {
+void mkt_char_println(char c) {
     char s[2] = {c, '\n'};
     mkt_write(mkt_stdout, s, 2);
 }
 
-void mkt_println_int(long long int n) {
+void mkt_int_println(long long int n) {
     char s[23] = "";
     int len = 0;
     s[23 - 1 - len++] = '\n';
@@ -258,7 +258,7 @@ void mkt_println_int(long long int n) {
     mkt_write(mkt_stdout, s + 23 - len, len);
 }
 
-void mkt_println_string(char* s, const runtime_val_header* s_header) {
+void mkt_string_println(char* s, const runtime_val_header* s_header) {
     CHECK_NO_STDLIB((void*)s, !=, NULL, "%p");
     CHECK_NO_STDLIB((void*)s_header, !=, NULL, "%p");
 
@@ -285,6 +285,8 @@ char* mkt_string_concat(const char* a, const runtime_val_header* a_header,
 }
 
 void mkt_instance_println(void* instance) {
+    (void)instance;
+
     const char s[] = "Instance of size 0\n";  // FIXME
     mkt_write(mkt_stdout, s, sizeof(s) - 1);
 }

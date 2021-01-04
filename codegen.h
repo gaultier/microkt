@@ -378,16 +378,16 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 
             if (type == TYPE_LONG || type == TYPE_INT || type == TYPE_SHORT ||
                 type == TYPE_BYTE)
-                println("call " MKT_NAME_PREFIX "mkt_println_int");
+                println("call " MKT_NAME_PREFIX "mkt_int_println");
             else if (type == TYPE_CHAR)
-                println("call " MKT_NAME_PREFIX "mkt_println_char");
+                println("call " MKT_NAME_PREFIX "mkt_char_println");
             else if (type == TYPE_BOOL)
-                println("call " MKT_NAME_PREFIX "mkt_println_bool");
+                println("call " MKT_NAME_PREFIX "mkt_bool_println");
             else if (type == TYPE_STRING) {
                 println("mov %%rax, %s", fn_args[0]);
                 println("mov %%rax, %s", fn_args[1]);
                 println("sub $8, %s", fn_args[1]);
-                println("call " MKT_NAME_PREFIX "mkt_println_string");
+                println("call " MKT_NAME_PREFIX "mkt_string_println");
             } else if (type == TYPE_USER) {
                 println("mov %%rax, %s", fn_args[0]);
                 println("call " MKT_NAME_PREFIX "mkt_instance_println");
