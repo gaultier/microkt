@@ -683,6 +683,9 @@ static void node_dump(const parser_t* parser, int no_i, int indent) {
                                   mkt_node_kind_to_str[node->no_kind], src_len,
                                   src);
 
+            for (int i = 0; i < (int)buf_size(class_decl.cl_members); i++)
+                node_dump(parser, class_decl.cl_members[i], indent + 2);
+
             return;
         }
         case NODE_INSTANCE: {
@@ -2262,13 +2265,16 @@ static mkt_res_t parser_parse_property_declaration(parser_t* parser,
     const int type_size = parser->par_types[type_i].ty_size;
     log_debug("parsed type %s size=%d", mkt_type_to_str[type_kind], type_size);
 
-    CHECK(parser->par_fn_i, >=, 0, "%d");
-    CHECK(parser->par_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
-    parser->par_nodes[parser->par_fn_i].no_n.no_fn_decl.fd_stack_size +=
-        type_size;
+    int offset = 0;
+    if (parser->par_fn_i >= 0) {
+        CHECK(parser->par_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
+        parser->par_nodes[parser->par_fn_i].no_n.no_fn_decl.fd_stack_size +=
+            type_size;
 
-    const int offset =
-        parser->par_nodes[parser->par_fn_i].no_n.no_fn_decl.fd_stack_size;
+        offset =
+            parser->par_nodes[parser->par_fn_i].no_n.no_fn_decl.fd_stack_size;
+    }
+
     buf_push(
         parser->par_nodes,
         ((mkt_node_t){.no_kind = NODE_VAR_DEF,
@@ -2587,11 +2593,15 @@ static mkt_res_t parser_parse_class_declaration(parser_t* parser,
             TOK_ID_LCURLY))
         return parser_err_unexpected_token(parser, TOK_ID_LCURLY);
 
-    int** members = NULL;
+    int* members = NULL;
     int member = -1;
     mkt_res_t res = RES_NONE;
-    while ((res = parser_parse_declaration(parser, &member)) == RES_OK) {
-    }
+    while ((res = parser_parse_declaration(parser, &member)) == RES_OK)
+        buf_push(members, member);
+
+    // TODO: print error here?
+    if (res != RES_NONE) return res;
+    parser->par_nodes[*new_node_i].no_n.no_class_decl.cl_members = members;
 
     if (!parser_match(
             parser, &parser->par_nodes[body_node_i].no_n.no_block.bl_last_tok_i,

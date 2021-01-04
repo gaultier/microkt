@@ -158,7 +158,8 @@ typedef struct {
 static const unsigned char CLASS_FLAGS_PUBLIC = 1;
 
 typedef struct {
-    int cl_first_tok_i, cl_last_tok_i, cl_name_tok_i, cl_body_node_i;
+    int cl_first_tok_i, cl_last_tok_i, cl_name_tok_i, cl_body_node_i,
+        *cl_members;
     unsigned char cl_flags;
 } mkt_class_decl_t;
 
