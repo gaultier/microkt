@@ -6,6 +6,7 @@ class Person {
 }
 
 fun main(){ 
-  println(Empty()) // Expected: Instance of size 0
-  println(Empty()) // Expected: Instance of size 0
+  println(Empty()) // expect: Instance of size 0
+  println(Empty()) // expect: Instance of size 0
+  println(Person()) // expect: Instance of size 16
 }

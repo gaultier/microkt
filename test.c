@@ -211,6 +211,7 @@ int main() {
         "./tests/integers.kt",    "./tests/math_integers.kt",
         "./tests/negation.kt",    "./tests/string.kt",
         "./tests/var.kt",         "./tests/while.kt",
+        "./tests/class.kt",
     };
     const char err_tests[][MAXPATHLEN] = {
         "./err/fn_missing_return.kt",
