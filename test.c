@@ -142,7 +142,7 @@ static mkt_res_t simple_test_run(const char* source_file_name) {
         const char* end = strchr(out, '\n');
         if (!end) end = output + proc_read_bytes;
 
-        CHECK((void*)out, <, (void*)end, "%p");
+        CHECK((void*)out, <=, (void*)end, "%p");
         const size_t out_len = end - out;
         const str expect_line = (line >= expects_count)
                                     ? ((str){.str_len = 0, .str_s = ""})

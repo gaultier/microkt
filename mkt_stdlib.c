@@ -239,23 +239,33 @@ void mkt_char_println(char c) {
     mkt_write(mkt_stdout, s, 2);
 }
 
-void mkt_int_println(long long int n) {
-    char s[23] = "";
-    int len = 0;
-    s[23 - 1 - len++] = '\n';
+static void mkt_int_to_string(long long int n, char* s, int* s_len) {
+    CHECK_NO_STDLIB((void*)s_len, !=, 0, "%p");
 
+    *s_len = 0;
     const int neg = n < 0;
     n = neg ? -n : n;
 
     do {
         const char rem = n % 10;
         n /= 10;
-        s[23 - 1 - len++] = rem + '0';
+
+        CHECK_NO_STDLIB(*s_len, >=, 0, "%d");
+        CHECK_NO_STDLIB(*s_len, <=, 22, "%d");
+        s[22 - (*s_len)++] = rem + '0';
     } while (n != 0);
 
-    if (neg) s[23 - 1 - len++] = '-';
+    if (neg) s[22 - (*s_len)++] = '-';
+}
 
-    mkt_write(mkt_stdout, s + 23 - len, len);
+void mkt_int_println(long long int n) {
+    char s[23] = "";
+    int s_len = 0;
+    mkt_int_to_string(n, s, &s_len);
+
+    mkt_write(mkt_stdout, s + 23 - s_len, s_len);
+    const char newline = '\n';
+    mkt_write(mkt_stdout, &newline, 1);
 }
 
 void mkt_string_println(char* s, const runtime_val_header* s_header) {
@@ -264,8 +274,8 @@ void mkt_string_println(char* s, const runtime_val_header* s_header) {
 
     CHECK_NO_STDLIB(s_header->rv_tag & RV_TAG_STRING, !=, 0, "%u");
 
-    const char newline = '\n';
     mkt_write(mkt_stdout, s, s_header->rv_size);
+    const char newline = '\n';
     mkt_write(mkt_stdout, &newline, 1);
 }
 
@@ -284,9 +294,10 @@ char* mkt_string_concat(const char* a, const runtime_val_header* a_header,
     return ret;
 }
 
-void mkt_instance_println(void* instance) {
-    CHECK_NO_STDLIB((void*)instance, !=, NULL, "%p");
+void mkt_instance_println(uintptr_t addr) {
+    CHECK_NO_STDLIB(addr, !=, 0, "%p");
 
+    const runtime_val_header* const header = addr - sizeof(runtime_val_header*);
     const char s[] = "Instance of size 0\n";  // FIXME
     mkt_write(mkt_stdout, s, sizeof(s) - 1);
 }
