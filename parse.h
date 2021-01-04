@@ -3,6 +3,7 @@
 #include <stdarg.h>
 
 #include "ast.h"
+#include "common.h"
 #include "lex.h"
 
 static const int TYPE_UNIT_I = 1;    // see parser_init
@@ -1451,16 +1452,33 @@ static mkt_res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
     return RES_NONE;  // TODO
 }
 
+static mkt_res_t parser_parse_navigation_suffix(parser_t* parser,
+                                                int* new_node_i) {
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
+
+    return RES_OK;
+}
+
+static mkt_res_t parser_parse_postfix_unary_suffix(parser_t* parser,
+                                                   int* new_node_i) {
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)new_node_i, !=, NULL, "%p");
+
+    TRY_NONE(parser_parse_call_suffix(parser, new_node_i));
+
+    return parser_parse_navigation_suffix(parser, new_node_i);
+}
+
 static mkt_res_t parser_parse_postfix_unary_expr(parser_t* parser,
                                                  int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
-    mkt_res_t res = parser_parse_primary_expr(parser, new_node_i);
-    if (res != RES_OK) return res;
+    TRY_OK(parser_parse_primary_expr(parser, new_node_i));
 
     // Optional
-    res = parser_parse_call_suffix(parser, new_node_i);
+    mkt_res_t res = parser_parse_postfix_unary_suffix(parser, new_node_i);
     if (res == RES_NONE) return RES_OK;
 
     if (res != RES_OK) return res;
