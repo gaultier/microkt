@@ -536,6 +536,7 @@ static void node_dump(const parser_t* parser, int no_i, int indent) {
         case NODE_MODULO:
         case NODE_SUBTRACT:
         case NODE_ASSIGN:
+        case NODE_MEMBER_GET:
         case NODE_ADD: {
             log_debug_with_indent(
                 indent, "node #%d %s type=%s", no_i,
@@ -739,6 +740,7 @@ static int node_first_token(const parser_t* parser, const mkt_node_t* node) {
         case NODE_MODULO:
         case NODE_SUBTRACT:
         case NODE_ASSIGN:
+        case NODE_MEMBER_GET:
         case NODE_ADD: {
             const mkt_node_t* const lhs =
                 &parser->par_nodes[node->no_n.no_binary.bi_lhs_i];
@@ -795,6 +797,7 @@ static int node_last_token(const parser_t* parser, const mkt_node_t* node) {
         case NODE_MODULO:
         case NODE_SUBTRACT:
         case NODE_ASSIGN:
+        case NODE_MEMBER_GET:
         case NODE_ADD: {
             const mkt_node_t* const rhs =
                 &parser->par_nodes[node->no_n.no_binary.bi_rhs_i];
@@ -1452,7 +1455,7 @@ static mkt_res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
     return RES_NONE;  // TODO
 }
 
-static mkt_res_t parser_parse_navigation_suffix(parser_t* parser,
+static mkt_res_t parser_parse_navigation_suffix(parser_t* parser, int lhs_i,
                                                 int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
@@ -1462,21 +1465,28 @@ static mkt_res_t parser_parse_navigation_suffix(parser_t* parser,
     int dummy = -1;
     CHECK(parser_match(parser, &dummy, 1, TOK_ID_DOT), ==, true, "%d");
 
-    int identifier_tok_i = -1;
-    if (!parser_match(parser, &identifier_tok_i, 1, TOK_ID_IDENTIFIER))
-        return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
+    int rhs_i = -1;
+    TRY_OK(parser_parse_expr(parser, &rhs_i));
+
+    buf_push(parser->par_nodes, ((mkt_node_t){.no_kind = NODE_MEMBER_GET,
+                                              .no_type_i = -1 /* FIXME */,
+                                              .no_n = {.no_binary = {
+                                                           .bi_lhs_i = lhs_i,
+                                                           .bi_rhs_i = rhs_i,
+                                                       }}}));
+    *new_node_i = buf_size(parser->par_nodes) - 1;
 
     return RES_OK;
 }
 
-static mkt_res_t parser_parse_postfix_unary_suffix(parser_t* parser,
+static mkt_res_t parser_parse_postfix_unary_suffix(parser_t* parser, int lhs_i,
                                                    int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
     TRY_NONE(parser_parse_call_suffix(parser, new_node_i));
 
-    return parser_parse_navigation_suffix(parser, new_node_i);
+    return parser_parse_navigation_suffix(parser, lhs_i, new_node_i);
 }
 
 static mkt_res_t parser_parse_postfix_unary_expr(parser_t* parser,
@@ -1487,7 +1497,8 @@ static mkt_res_t parser_parse_postfix_unary_expr(parser_t* parser,
     TRY_OK(parser_parse_primary_expr(parser, new_node_i));
 
     // Optional
-    mkt_res_t res = parser_parse_postfix_unary_suffix(parser, new_node_i);
+    mkt_res_t res =
+        parser_parse_postfix_unary_suffix(parser, *new_node_i, new_node_i);
     if (res == RES_NONE) return RES_OK;
 
     if (res != RES_OK) return res;

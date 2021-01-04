@@ -297,6 +297,8 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 
             return;
         }
+        case NODE_MEMBER_GET:
+            UNIMPLEMENTED();
         case NODE_ASSIGN:
             UNIMPLEMENTED();
         case NODE_LT:
@@ -589,6 +591,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
         case NODE_RETURN:
         case NODE_NOT:
         case NODE_INSTANCE:
+        case NODE_MEMBER_GET:
         case NODE_IF: {
             emit_expr(parser, stmt_i);
             return;

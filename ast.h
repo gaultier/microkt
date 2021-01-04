@@ -68,6 +68,7 @@ typedef enum {
     NODE_SYSCALL,
     NODE_CLASS_DECL,
     NODE_INSTANCE,
+    NODE_MEMBER_GET,
 } mkt_node_kind_t;
 
 const char mkt_node_kind_to_str[][30] = {
@@ -98,6 +99,7 @@ const char mkt_node_kind_to_str[][30] = {
     [NODE_SYSCALL] = "Syscall",
     [NODE_CLASS_DECL] = "Class",
     [NODE_INSTANCE] = "Instance",
+    [NODE_MEMBER_GET] = "MemberGet",
 };
 
 typedef struct {
@@ -175,7 +177,7 @@ typedef struct {
         mkt_string_t no_string;                    // NODE_STRING
         number_t no_num;                           // NODE_LONG, NODE_CHAR
         mkt_binary_t no_binary;  // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
-        // NODE_DIVIDE, NODE_MODULO
+        // NODE_DIVIDE, NODE_MODULO, NODE_MEMBER_GET
         unary_t no_unary;                // NODE_NOT, NODE_RETURN
         mkt_if_t no_if;                  // NODE_IF
         mkt_block_t no_block;            // NODE_BLOCK
