@@ -9,4 +9,6 @@
 * Hex numbers
 * Binary numbers
 * Octal numbers
-* Class
+* Class properties
+* Class methods
+* Class constructor
