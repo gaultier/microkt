@@ -11,12 +11,15 @@ typedef enum {
     TYPE_SHORT,
     TYPE_LONG,
     TYPE_STRING,
+    TYPE_USER,
 } mkt_type_kind_t;
 
 static const char mkt_type_to_str[][20] = {
-    [TYPE_ANY] = "Any",     [TYPE_UNIT] = "Unit", [TYPE_BOOL] = "Bool",
-    [TYPE_CHAR] = "Char",   [TYPE_BYTE] = "Byte", [TYPE_INT] = "Int",
-    [TYPE_SHORT] = "Short", [TYPE_LONG] = "Long", [TYPE_STRING] = "String",
+    [TYPE_ANY] = "Any",       [TYPE_UNIT] = "Unit",
+    [TYPE_BOOL] = "Bool",     [TYPE_CHAR] = "Char",
+    [TYPE_BYTE] = "Byte",     [TYPE_INT] = "Int",
+    [TYPE_SHORT] = "Short",   [TYPE_LONG] = "Long",
+    [TYPE_STRING] = "String", [TYPE_USER] = "User defined",
 };
 
 typedef struct {

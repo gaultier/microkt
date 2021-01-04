@@ -5,15 +5,15 @@
 #include "ast.h"
 #include "lex.h"
 
-static const int TYPE_UNIT_I = 0;    // see parser_init
-static const int TYPE_ANY_I = 1;     // see parser_init
-static const int TYPE_LONG_I = 2;    // see parser_init
-static const int TYPE_INT_I = 3;     // see parser_init
-static const int TYPE_BOOL_I = 4;    // see parser_init
-static const int TYPE_CHAR_I = 5;    // see parser_init
-static const int TYPE_BYTE_I = 6;    // see parser_init
-static const int TYPE_SHORT_I = 7;   // see parser_init
-static const int TYPE_STRING_I = 8;  // see parser_init
+static const int TYPE_UNIT_I = 1;    // see parser_init
+static const int TYPE_ANY_I = 2;     // see parser_init
+static const int TYPE_LONG_I = 3;    // see parser_init
+static const int TYPE_INT_I = 4;     // see parser_init
+static const int TYPE_BOOL_I = 5;    // see parser_init
+static const int TYPE_CHAR_I = 6;    // see parser_init
+static const int TYPE_BYTE_I = 7;    // see parser_init
+static const int TYPE_SHORT_I = 8;   // see parser_init
+static const int TYPE_STRING_I = 9;  // see parser_init
 
 typedef struct {
     const char* par_file_name0;
@@ -168,8 +168,10 @@ static void parser_class_begin(parser_t* parser, int first_tok_i,
     CHECK((void*)body_node_i, !=, NULL, "%p");
     CHECK((void*)parent_scope_i, !=, NULL, "%p");
 
+    buf_push(parser->par_types,
+             ((mkt_type_t){.ty_kind = TYPE_USER, .ty_size = 0 /* FIXME */}));
     buf_push(parser->par_nodes,
-             ((mkt_node_t){.no_type_i = TYPE_UNIT_I,
+             ((mkt_node_t){.no_type_i = buf_size(parser->par_types) - 1,
                            .no_kind = NODE_CLASS_DECL,
                            .no_n = {.no_class_decl = {
                                         .cl_first_tok_i = first_tok_i,
@@ -398,46 +400,46 @@ static mkt_res_t parser_init(const char* file_name0, const char* source,
     // Add root class
     int new_node_i = -1, old_class_i = -1, body_node_i = -1,
         parent_scope_i = -1;
+    CHECK((void*)parser->par_types, ==, NULL, "%p");
+    buf_grow(parser->par_types, 100);
     parser_class_begin(parser, 0, &new_node_i, &old_class_i, &body_node_i,
                        &parent_scope_i);
 
-    CHECK((void*)parser->par_types, ==, NULL, "%p");
-    buf_grow(parser->par_types, 100);
     // Pre-allocate common types
     buf_push(parser->par_types, ((mkt_type_t){
                                     .ty_kind = TYPE_UNIT,
-                                }));  // Hence TYPE_UNIT_I = 0
+                                }));  // Hence TYPE_UNIT_I = 1
     buf_push(parser->par_types, ((mkt_type_t){
                                     .ty_kind = TYPE_ANY,
-                                }));  // Hence TYPE_ANY_I = 1
+                                }));  // Hence TYPE_ANY_I = 2
     buf_push(parser->par_types, ((mkt_type_t){
                                     .ty_kind = TYPE_LONG,
                                     .ty_size = 8,
-                                }));  // Hence TYPE_LONG_I = 2
+                                }));  // Hence TYPE_LONG_I = 3
     buf_push(parser->par_types, ((mkt_type_t){
                                     .ty_kind = TYPE_INT,
                                     .ty_size = 4,
-                                }));  // Hence TYPE_INT_I = 3
+                                }));  // Hence TYPE_INT_I = 4
     buf_push(parser->par_types, ((mkt_type_t){
                                     .ty_kind = TYPE_BOOL,
                                     .ty_size = 1,
-                                }));  // Hence TYPE_BOOL_I = 4
+                                }));  // Hence TYPE_BOOL_I = 5
     buf_push(parser->par_types, ((mkt_type_t){
                                     .ty_kind = TYPE_CHAR,
                                     .ty_size = 1,
-                                }));  // Hence TYPE_CHAR_I = 5
+                                }));  // Hence TYPE_CHAR_I = 6
     buf_push(parser->par_types, ((mkt_type_t){
                                     .ty_kind = TYPE_BYTE,
                                     .ty_size = 1,
-                                }));  // Hence TYPE_BYTE_I = 6
+                                }));  // Hence TYPE_BYTE_I = 7
     buf_push(parser->par_types, ((mkt_type_t){
                                     .ty_kind = TYPE_SHORT,
                                     .ty_size = 2,
-                                }));  // Hence TYPE_SHORT_I = 7
+                                }));  // Hence TYPE_SHORT_I = 8
     buf_push(parser->par_types, ((mkt_type_t){
                                     .ty_kind = TYPE_STRING,
                                     .ty_size = 8,
-                                }));  // Hence TYPE_STRING_I = 8
+                                }));  // Hence TYPE_STRING_I = 9
 
     return RES_OK;
 }
@@ -1792,11 +1794,10 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i) {
                      .no_n = {.no_call = {.ca_arg_nodes_i = arg_nodes_i,
                                           .ca_lhs_node_i = *new_node_i}}}));
     } else if (fn_decl_node->no_kind == NODE_CLASS_DECL) {
-        /* const mkt_class_decl_t class_decl = fn_decl_node->no_n.no_class_decl;
-         */
+        // const mkt_class_decl_t class_decl = fn_decl_node->no_n.no_class_decl;
         buf_push(parser->par_nodes,
                  ((mkt_node_t){.no_kind = NODE_INSTANCE,
-                               .no_type_i = -1,  // FIXME
+                               .no_type_i = fn_decl_node->no_type_i,
                                .no_n = {.no_instance = {
                                             .in_class = callable_node_i,
                                             .in_first_tok_i = first_tok_i,
