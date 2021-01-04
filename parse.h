@@ -2596,12 +2596,20 @@ static mkt_res_t parser_parse_class_declaration(parser_t* parser,
     int* members = NULL;
     int member = -1;
     mkt_res_t res = RES_NONE;
-    while ((res = parser_parse_declaration(parser, &member)) == RES_OK)
+    int size = 0;
+    while ((res = parser_parse_declaration(parser, &member)) == RES_OK) {
         buf_push(members, member);
+        const mkt_node_t* const node = &parser->par_nodes[member];
+        size += parser->par_types[node->no_type_i].ty_size;
+    }
 
     // TODO: print error here?
     if (res != RES_NONE) return res;
-    parser->par_nodes[*new_node_i].no_n.no_class_decl.cl_members = members;
+    {
+        mkt_node_t* const class_node = &parser->par_nodes[*new_node_i];
+        class_node->no_n.no_class_decl.cl_members = members;
+        parser->par_types[class_node->no_type_i].ty_size = size;
+    }
 
     if (!parser_match(
             parser, &parser->par_nodes[body_node_i].no_n.no_block.bl_last_tok_i,
