@@ -188,7 +188,7 @@ static int run(const char* file_name0) {
 
 int main(int argc, char* argv[]) {
     if (argc != 2) {
-        printf("Usage: %s <file>\n", argv[0]);
+        printf("microkt: Tiny Kotlin compiler\nUsage: %s <file>\n", argv[0]);
         return 0;
     };
     is_tty = isatty(2);
