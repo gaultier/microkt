@@ -1,4 +1,4 @@
 class Empty{}
 fun main(){ 
-  Empty()
+  println(Empty()) // Expected: Instance of size 0
 }
