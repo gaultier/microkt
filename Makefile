@@ -77,7 +77,7 @@ ifeq "$(WITH_DTRACE)" "1"
 		dtrace -o $@ -h -s $<
 endif
 
-%.exe: %.kt mktc $(TESTS_SRC)
+%.exe: %.kt mktc
 	./mktc $<
 
 check: mktc $(TESTS_SRC) $(TESTS_EXE) test

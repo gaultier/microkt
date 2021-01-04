@@ -285,7 +285,7 @@ char* mkt_string_concat(const char* a, const runtime_val_header* a_header,
 }
 
 void mkt_instance_println(void* instance) {
-    (void)instance;
+    CHECK_NO_STDLIB((void*)instance, !=, NULL, "%p");
 
     const char s[] = "Instance of size 0\n";  // FIXME
     mkt_write(mkt_stdout, s, sizeof(s) - 1);
