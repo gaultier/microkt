@@ -80,7 +80,7 @@ endif
 %.exe: %.kt mktc
 	./mktc $<
 
-check: mktc $(TESTS_SRC) $(TESTS_EXE) test
+check: mktc $(TESTS_EXE) test
 	@./test
 
 clean:
