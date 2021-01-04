@@ -25,7 +25,8 @@ static intptr_t* stack_top;
 #define MKT_MAP_ANON 0x20
 #endif
 #define MKT_SIGABRT 6
-#define stderr 2
+#define mkt_stdout 1
+#define mkt_stderr 2
 
 void* mkt_mmap(void* addr, size_t len, int prot, int flags, int fd,
                off_t offset);
@@ -41,7 +42,7 @@ void mkt_abort(void) { mkt_kill(0, MKT_SIGABRT); }
         if (!((a)cond(b))) {                                            \
             const char s[] = __FILE__ ":CHECK failed: " STR(a) " " STR( \
                 cond) " " STR(b) " is false\n";                         \
-            mkt_write(stderr, s, sizeof(s));                            \
+            mkt_write(mkt_stderr, s, sizeof(s));                        \
             mkt_abort();                                                \
         }                                                               \
     } while (0)
@@ -226,16 +227,16 @@ void* mkt_instance_make(size_t size) {
 void mkt_println_bool(int b) {
     if (b) {
         const char s[] = "true\n";
-        mkt_write(1, s, sizeof(s) - 1);
+        mkt_write(mkt_stdout, s, sizeof(s) - 1);
     } else {
         const char s[] = "false\n";
-        mkt_write(1, s, sizeof(s) - 1);
+        mkt_write(mkt_stdout, s, sizeof(s) - 1);
     }
 }
 
 void mkt_println_char(char c) {
     char s[2] = {c, '\n'};
-    mkt_write(1, s, 2);
+    mkt_write(mkt_stdout, s, 2);
 }
 
 void mkt_println_int(long long int n) {
@@ -254,7 +255,7 @@ void mkt_println_int(long long int n) {
 
     if (neg) s[23 - 1 - len++] = '-';
 
-    mkt_write(1, s + 23 - len, len);
+    mkt_write(mkt_stdout, s + 23 - len, len);
 }
 
 void mkt_println_string(char* s, const runtime_val_header* s_header) {
@@ -264,8 +265,8 @@ void mkt_println_string(char* s, const runtime_val_header* s_header) {
     CHECK_NO_STDLIB(s_header->rv_tag & RV_TAG_STRING, !=, 0, "%u");
 
     const char newline = '\n';
-    mkt_write(1, s, s_header->rv_size);
-    mkt_write(1, &newline, 1);
+    mkt_write(mkt_stdout, s, s_header->rv_size);
+    mkt_write(mkt_stdout, &newline, 1);
 }
 
 char* mkt_string_concat(const char* a, const runtime_val_header* a_header,
@@ -281,4 +282,9 @@ char* mkt_string_concat(const char* a, const runtime_val_header* a_header,
     *(ret - 8) = a_header->rv_size + b_header->rv_size;
 
     return ret;
+}
+
+static void mkt_instance_println(void* instance) {
+    const char s[] = "Instance#\n";
+    mkt_write(mkt_stdout, s, sizeof(s) - 1);
 }
