@@ -1758,10 +1758,11 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i) {
     CHECK(callable_node_i, >=, 0, "%d");
     CHECK(callable_node_i, <, (int)buf_size(parser->par_nodes), "%d");
 
-    const mkt_node_t* const fn_decl_node = &parser->par_nodes[callable_node_i];
-    CHECK((void*)fn_decl_node, !=, NULL, "%p");
-    if (fn_decl_node->no_kind == NODE_FN_DECL) {
-        const mkt_fn_decl_t fn_decl = fn_decl_node->no_n.no_fn_decl;
+    const mkt_node_t* const callable_decl_node =
+        &parser->par_nodes[callable_node_i];
+    CHECK((void*)callable_decl_node, !=, NULL, "%p");
+    if (callable_decl_node->no_kind == NODE_FN_DECL) {
+        const mkt_fn_decl_t fn_decl = callable_decl_node->no_n.no_fn_decl;
         const int declared_arity = buf_size(fn_decl.fd_arg_nodes_i);
         const int found_arity = buf_size(arg_nodes_i);
         if (declared_arity != found_arity) UNIMPLEMENTED();  // TODO: err
@@ -1797,11 +1798,10 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, int* new_node_i) {
                      .no_kind = NODE_CALL,
                      .no_n = {.no_call = {.ca_arg_nodes_i = arg_nodes_i,
                                           .ca_lhs_node_i = *new_node_i}}}));
-    } else if (fn_decl_node->no_kind == NODE_CLASS_DECL) {
-        // const mkt_class_decl_t class_decl = fn_decl_node->no_n.no_class_decl;
+    } else if (callable_decl_node->no_kind == NODE_CLASS_DECL) {
         buf_push(parser->par_nodes,
                  ((mkt_node_t){.no_kind = NODE_INSTANCE,
-                               .no_type_i = fn_decl_node->no_type_i,
+                               .no_type_i = callable_decl_node->no_type_i,
                                .no_n = {.no_instance = {
                                             .in_class = callable_node_i,
                                             .in_first_tok_i = first_tok_i,
