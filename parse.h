@@ -1518,18 +1518,13 @@ static mkt_res_t parser_parse_navigation_suffix(parser_t* parser, int lhs_i,
         int rhs_src_len = 0;
         parser_tok_source(parser, member_tok_i, &rhs_src, &rhs_src_len);
 
-        const char* lhs_src = NULL;
-        int lhs_src_len = 0;
-        parser_tok_source(parser, member_tok_i, &lhs_src, &lhs_src_len);
-
         const mkt_loc_t loc = parser->par_lexer.lex_locs[member_tok_i];
         fprintf(stderr,
                 "%s%s:%d:%sTrying to access member %.*s of non-instance type "
-                "%.*s (%s)\n",
+                "(%s)\n",
                 mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
                 loc.loc_line, mkt_colors[is_tty][COL_RESET], rhs_src_len,
-                rhs_src, lhs_src_len, lhs_src,
-                mkt_type_to_str[lhs_type.ty_kind]);
+                rhs_src, mkt_type_to_str[lhs_type.ty_kind]);
         parser_print_source_on_error(parser, member_tok_i, member_tok_i);
         return RES_UNKNOWN_VAR;
     }
