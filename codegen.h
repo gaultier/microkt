@@ -388,7 +388,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
                 parser->par_types[arg->no_type_i].ty_kind;
 
             emit_loc(parser, expr);
-            println("mov %%rax, %%rdi");
+            println("mov %%rax, %s", fn_args[0]);
 
             if (type == TYPE_LONG || type == TYPE_INT || type == TYPE_SHORT ||
                 type == TYPE_BYTE)
@@ -398,12 +398,10 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             else if (type == TYPE_BOOL)
                 println("call " MKT_NAME_PREFIX "mkt_bool_println");
             else if (type == TYPE_STRING) {
-                println("mov %%rax, %s", fn_args[0]);
                 println("mov %%rax, %s", fn_args[1]);
                 println("sub $8, %s", fn_args[1]);
                 println("call " MKT_NAME_PREFIX "mkt_string_println");
             } else if (type == TYPE_USER) {
-                println("mov %%rax, %s", fn_args[0]);
                 println("call " MKT_NAME_PREFIX "mkt_instance_println");
             } else {
                 log_debug("Type %s unimplemented", mkt_type_to_str[type]);
