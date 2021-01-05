@@ -227,6 +227,7 @@ int main() {
         "./err/val_assign.kt",
         "./err/non_top_level_declaration.kt",
         "./err/var_undefined.kt",
+        "./err/member_get_non_instance.kt",
     };
 
     bool failed = false;
