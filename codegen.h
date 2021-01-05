@@ -337,7 +337,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             else
                 UNREACHABLE();
 
-            // Required to be able to do later `push %rax
+            // Required to be able to do later `push %rax`
             println("movzb %%al, %%rax");
 
             return;
@@ -496,6 +496,8 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
         }
         case NODE_CALL: {
             const mkt_call_t call = expr->no_n.no_call;
+            CHECK(buf_size(call.ca_arg_nodes_i), <=, 6UL, "%zu");  // TODO
+
             for (int i = 0; i < (int)buf_size(call.ca_arg_nodes_i); i++) {
                 emit_expr(parser, call.ca_arg_nodes_i[i]);
                 emit_loc(parser, expr);
