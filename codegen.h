@@ -552,9 +552,9 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             const mkt_node_t* const class_node =
                 &parser->par_nodes[instance.in_class];
             mkt_class_decl_t class_decl = class_node->no_n.no_class_decl;
-            for (int i = 0; i < (int)buf_size(class_decl.cl_members); i++) {
+            for (int i = 0; i < (int)buf_size(class_decl.cl_members); i++)
                 emit_stmt(parser, class_decl.cl_members[i]);
-            }
+
             println("pop %%rax");
             println("pop %%rax");  // For alignment
 
@@ -686,7 +686,11 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
             println(".Lwhile_loop_end%d:", stmt_i);
             return;
         }
+            // No-op: Already generated base on `par_node_decls`
         case NODE_FN_DECL:
+
+            // No-op: Generated for NODE_INSTANCE, does not
+            // exist at runtime
         case NODE_CLASS_DECL:
             return;
         case NODE_CALL: {
@@ -764,7 +768,6 @@ static void emit(const parser_t* parser, FILE* asm_file) {
         ".cfi_def_cfa_register %%rbp\n");
 
     println("call " MKT_NAME_PREFIX "mkt_init");
-    println("movq $0, %%rax");  // Return value 0
     println("call main");
     println("movq $0, %%rax");  // Return value 0
     println("popq %%rbp");
