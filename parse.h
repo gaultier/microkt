@@ -90,6 +90,44 @@ static mkt_res_t parser_node_find_fn_decl_for_call(const parser_t* parser,
     }
 }
 
+static mkt_res_t parser_resolve_member(const parser_t* parser, int tok_i,
+                                       const mkt_class_decl_t* class_decl,
+                                       int* def_node_i) {
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)class_decl, !=, NULL, "%p");
+    CHECK((void*)def_node_i, !=, NULL, "%p");
+    CHECK(tok_i, >=, 0, "%d");
+
+    const char* member_source = NULL;
+    int member_source_len = 0;
+    parser_tok_source(parser, tok_i, &member_source, &member_source_len);
+    CHECK((void*)member_source, !=, NULL, "%p");
+    CHECK(member_source_len, >=, 0, "%d");
+
+    for (int i = 0; i < (int)buf_size(class_decl->cl_members); i++) {
+        const int m_i = class_decl->cl_members[i];
+        const mkt_node_t* const m_node = &parser->par_nodes[m_i];
+
+        if (m_node->no_kind != NODE_VAR_DEF) continue;
+
+        const mkt_var_def_t var_def = m_node->no_n.no_var_def;
+        const int tok_i = var_def.vd_name_tok_i;
+        const char* m_source = NULL;
+        int m_source_len = 0;
+        parser_tok_source(parser, tok_i, &m_source, &m_source_len);
+        CHECK((void*)m_source, !=, NULL, "%p");
+        CHECK(m_source_len, >=, 0, "%d");
+
+        if (m_source_len == member_source_len &&
+            memcmp(m_source, member_source, m_source_len) == 0) {
+            *def_node_i = i;  // FIXME
+            return RES_OK;
+        }
+    }
+
+    return RES_NONE;
+}
+
 // TODO: optimize, currently it is O(n*m) where n= # of stmt and m = # of var
 // def per scope
 static mkt_res_t parser_resolve_var(const parser_t* parser, int tok_i,
@@ -1467,10 +1505,60 @@ static mkt_res_t parser_parse_navigation_suffix(parser_t* parser, int lhs_i,
     CHECK(parser_match(parser, &dummy, 1, TOK_ID_DOT), ==, true, "%d");
 
     int rhs_i = -1;
-    TRY_OK(parser_parse_expr(parser, &rhs_i));
+    int member_tok_i = -1;
+    if (!parser_match(parser, &member_tok_i, 1, TOK_ID_IDENTIFIER)) {
+        UNIMPLEMENTED();
+    }
+
+    const mkt_node_t* const lhs = &parser->par_nodes[lhs_i];
+    const mkt_type_t lhs_type = parser->par_types[lhs->no_type_i];
+
+    if (lhs->no_kind != NODE_INSTANCE) {
+        const char* rhs_src = NULL;
+        int rhs_src_len = 0;
+        parser_tok_source(parser, member_tok_i, &rhs_src, &rhs_src_len);
+
+        const char* lhs_src = NULL;
+        int lhs_src_len = 0;
+        parser_tok_source(parser, member_tok_i, &lhs_src, &lhs_src_len);
+
+        const mkt_loc_t loc = parser->par_lexer.lex_locs[member_tok_i];
+        fprintf(stderr,
+                "%s%s:%d:%sTrying to access member %.*s of non-instance type "
+                "%.*s (%s)\n",
+                mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
+                loc.loc_line, mkt_colors[is_tty][COL_RESET], rhs_src_len,
+                rhs_src, lhs_src_len, lhs_src,
+                mkt_type_to_str[lhs_type.ty_kind]);
+        parser_print_source_on_error(parser, member_tok_i, member_tok_i);
+        return RES_UNKNOWN_VAR;
+    }
+
+    const mkt_instance_t instance = lhs->no_n.no_instance;
+    const mkt_class_decl_t class_decl =
+        parser->par_nodes[instance.in_class].no_n.no_class_decl;
+    if (parser_resolve_member(parser, member_tok_i, &class_decl, &rhs_i) !=
+        RES_OK) {
+        const char* src = NULL;
+        int src_len = 0;
+        parser_tok_source(parser, member_tok_i, &src, &src_len);
+        const mkt_loc_t loc = parser->par_lexer.lex_locs[member_tok_i];
+        fprintf(stderr, "%s%s:%d:%sUndefined member %.*s\n",
+                mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
+                loc.loc_line, mkt_colors[is_tty][COL_RESET], src_len, src);
+        parser_print_source_on_error(parser, member_tok_i, member_tok_i);
+        return RES_UNKNOWN_VAR;
+    }
+
+    const mkt_node_t* const rhs = &parser->par_nodes[rhs_i];
+    CHECK((void*)rhs, !=, NULL, "%p");
+
+    const int type_i = rhs->no_type_i;
+    CHECK(type_i, >=, 0, "%d");
+    CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
 
     buf_push(parser->par_nodes, ((mkt_node_t){.no_kind = NODE_MEMBER_GET,
-                                              .no_type_i = -1 /* FIXME */,
+                                              .no_type_i = rhs->no_type_i,
                                               .no_n = {.no_binary = {
                                                            .bi_lhs_i = lhs_i,
                                                            .bi_rhs_i = rhs_i,
