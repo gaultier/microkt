@@ -2721,7 +2721,9 @@ static mkt_res_t parser_parse_class_declaration(parser_t* parser,
     int size = 0;
     while ((res = parser_parse_declaration(parser, &member)) == RES_OK) {
         buf_push(members, member);
-        const mkt_node_t* const node = &parser->par_nodes[member];
+        mkt_node_t* const node = &parser->par_nodes[member];
+        if (node->no_kind == NODE_VAR_DEF)
+            node->no_n.no_var_def.vd_stack_offset = size;
         size += parser->par_types[node->no_type_i].ty_size;
     }
 

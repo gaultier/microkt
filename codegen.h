@@ -297,8 +297,20 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 
             return;
         }
-        case NODE_MEMBER_GET:
-            UNIMPLEMENTED();
+        case NODE_MEMBER_GET: {
+            const mkt_binary_t bin = expr->no_n.no_binary;
+            emit_loc(parser, expr);
+            emit_expr(parser, bin.bi_lhs_i);
+
+            const mkt_node_t* const rhs = &parser->par_nodes[bin.bi_rhs_i];
+            const mkt_var_def_t var_def = rhs->no_n.no_var_def;
+
+            // FIXME
+            println("mov %d(%%rax), %%rdi", var_def.vd_stack_offset);
+            println("mov %%rdi, %%rax");
+
+            return;
+        }
         case NODE_ASSIGN:
             UNIMPLEMENTED();
         case NODE_LT:
