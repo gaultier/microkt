@@ -120,7 +120,7 @@ static mkt_res_t parser_resolve_member(const parser_t* parser, int tok_i,
 
         if (m_source_len == member_source_len &&
             memcmp(m_source, member_source, m_source_len) == 0) {
-            *def_node_i = i;  // FIXME
+            *def_node_i = m_i;
             return RES_OK;
         }
     }

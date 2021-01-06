@@ -540,8 +540,8 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             return;
         }
         case NODE_INSTANCE: {
-            const int size = parser->par_types[expr->no_type_i].ty_size;
-            println("mov $%d, %s", size, fn_args[0]);
+            const mkt_type_t type = parser->par_types[expr->no_type_i];
+            println("mov $%d, %s", type.ty_size, fn_args[0]);
             println("push %%rbx");
             println("push %%rbx");  // For alignment
             println("push %%rcx");
@@ -581,8 +581,12 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             const mkt_node_t* const class_node =
                 &parser->par_nodes[instance.in_class];
             mkt_class_decl_t class_decl = class_node->no_n.no_class_decl;
-            for (int i = 0; i < (int)buf_size(class_decl.cl_members); i++)
-                emit_stmt(parser, class_decl.cl_members[i]);
+            for (int i = 0; i < (int)buf_size(class_decl.cl_members); i++) {
+                const int m_i = class_decl.cl_members[i];
+                // FIXME
+                /* emit_load(&parser->par_types[m_i]); */
+                emit_stmt(parser, m_i);
+            }
 
             println("pop %%rax");
             println("pop %%rax");  // For alignment
