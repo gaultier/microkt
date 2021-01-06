@@ -10,7 +10,7 @@ fun main(){
   println(Empty()) // expect: Instance of size 0
 
   // WIP
-  println(Person()) // expect: Instance of size 16
+  println(Person()) // expect: Instance of size 32
 
   //println(Person().id)
 }
