@@ -2420,8 +2420,19 @@ static mkt_res_t parser_parse_property_declaration(parser_t* parser,
 
     int type_i = -1;
     if (!parser_parse_identifier_to_type_kind(parser, type_tok_i, &type_i)) {
-        log_debug("user types not yet supported: type_tok_i=%d", type_tok_i);
-        UNIMPLEMENTED();
+        const char* src = NULL;
+        int src_len = 0;
+        parser_tok_source(parser, type_tok_i, &src, &src_len);
+
+        const mkt_loc_t loc = parser->par_lexer.lex_locs[type_tok_i];
+
+        fprintf(stderr, "%s%s:%d:%d:%s Unknown type %.*s\n",
+                mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
+                loc.loc_line, loc.loc_column, mkt_colors[is_tty][COL_RESET],
+                src_len, src);
+        parser_print_source_on_error(parser, type_tok_i, type_tok_i);
+
+        return RES_ERR;
     }
     CHECK(type_i, >=, 0, "%d");
     CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
