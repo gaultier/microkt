@@ -775,14 +775,7 @@ static void node_dump(const parser_t* parser, int no_i, int indent) {
             const mkt_class_decl_t class_decl =
                 parser->par_nodes[instance.in_class].no_n.no_class_decl;
             const char* src = NULL;
-            int src_len = 0;
-            if (class_decl.cl_name_tok_i >= 0)
-                parser_tok_source(parser, class_decl.cl_name_tok_i, &src,
-                                  &src_len);
-            else {
-                src_len = strlen(parser->par_file_name0);
-                src = parser->par_file_name0;
-            }
+            parser_tok_source(parser, class_decl.cl_name_tok_i, &src, &src_len);
 
             log_debug_with_indent(indent, "node #%d %s `%.*s`", no_i,
                                   mkt_node_kind_to_str[node->no_kind], src_len,
@@ -1557,7 +1550,7 @@ static mkt_res_t parser_parse_navigation_suffix(parser_t* parser, int lhs_i,
     const mkt_node_t* const lhs = &parser->par_nodes[lhs_i];
     const mkt_type_t lhs_type = parser->par_types[lhs->no_type_i];
 
-    if (lhs->no_kind != NODE_INSTANCE) {
+    if (lhs_type.ty_kind != TYPE_USER) {
         const char* rhs_src = NULL;
         int rhs_src_len = 0;
         parser_tok_source(parser, member_tok_i, &rhs_src, &rhs_src_len);
@@ -1574,8 +1567,12 @@ static mkt_res_t parser_parse_navigation_suffix(parser_t* parser, int lhs_i,
     }
 
     const mkt_instance_t instance = lhs->no_n.no_instance;
-    const mkt_class_decl_t class_decl =
-        parser->par_nodes[instance.in_class].no_n.no_class_decl;
+    CHECK(instance.in_class, >=, 0, "%d");
+    CHECK(instance.in_class, <, (int)buf_size(parser->par_nodes), "%d");
+
+    const mkt_node_t* const class_node = &parser->par_nodes[instance.in_class];
+    CHECK(class_node->no_kind, ==, NODE_CLASS_DECL, "%d");
+    const mkt_class_decl_t class_decl = class_node->no_n.no_class_decl;
     if (parser_resolve_member(parser, member_tok_i, &class_decl, &rhs_i) !=
         RES_OK) {
         const char* src = NULL;
