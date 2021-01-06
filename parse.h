@@ -1547,7 +1547,7 @@ static mkt_res_t parser_parse_navigation_suffix(parser_t* parser, int lhs_i,
         UNIMPLEMENTED();
     }
 
-    const mkt_node_t* const lhs = &parser->par_nodes[lhs_i];
+    const mkt_node_t* lhs = &parser->par_nodes[lhs_i];
     const mkt_type_t lhs_type = parser->par_types[lhs->no_type_i];
 
     if (lhs_type.ty_kind != TYPE_USER) {
@@ -1566,6 +1566,12 @@ static mkt_res_t parser_parse_navigation_suffix(parser_t* parser, int lhs_i,
         return RES_UNKNOWN_VAR;
     }
 
+    if (lhs->no_kind == NODE_VAR) {
+        lhs = &parser->par_nodes[lhs->no_n.no_var.va_var_node_i];
+        CHECK(lhs->no_kind, ==, NODE_VAR_DEF, "%d");
+        lhs = &parser->par_nodes[lhs->no_n.no_var_def.vd_init_node_i];
+    }
+    CHECK(lhs->no_kind, ==, NODE_INSTANCE, "%d");
     const mkt_instance_t instance = lhs->no_n.no_instance;
     CHECK(instance.in_class, >=, 0, "%d");
     CHECK(instance.in_class, <, (int)buf_size(parser->par_nodes), "%d");
@@ -1922,7 +1928,7 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, int lhs_i,
 
     const mkt_node_t* const callable_decl_node =
         &parser->par_nodes[callable_node_i];
-    CHECK((void*)callable_decl_node, !=, NULL, "%p");
+
     if (callable_decl_node->no_kind == NODE_FN_DECL) {
         const mkt_fn_decl_t fn_decl = callable_decl_node->no_n.no_fn_decl;
         const int declared_arity = buf_size(fn_decl.fd_arg_nodes_i);
