@@ -228,6 +228,7 @@ int main() {
         "./err/non_top_level_declaration.kt",
         "./err/var_undefined.kt",
         "./err/member_get_non_instance.kt",
+        "./err/unknown_type.kt",
     };
 
     bool failed = false;
