@@ -89,10 +89,10 @@ typedef enum {
     COL_COUNT,
 } mkt_color_t;
 
-static const char mkt_colors[2][COL_COUNT][10] = {
+static const char mkt_colors[2][COL_COUNT][14] = {
     // is_tty == true
     [true] = {[COL_RESET] = "\x1b[0m",
-              [COL_GRAY] = "\x1b[37m",
+              [COL_GRAY] = "\x1b[38;5;250m",
               [COL_RED] = "\x1b[31m",
               [COL_GREEN] = "\x1b[32m"}};
 
