@@ -74,8 +74,8 @@ static void parser_scope_end(parser_t* parser, int parent_node_i) {
     parser->par_scope_i = parent_node_i;
 }
 
-static mkt_res_t parser_node_find_fn_decl_for_call(const parser_t* parser,
-                                                   int no_i, int* node_i) {
+static mkt_res_t parser_node_find_callable(const parser_t* parser, int no_i,
+                                           int* node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK(no_i, >=, 0, "%d");
     CHECK((void*)node_i, !=, NULL, "%p");
@@ -83,7 +83,7 @@ static mkt_res_t parser_node_find_fn_decl_for_call(const parser_t* parser,
     const mkt_node_t* const node = &parser->par_nodes[no_i];
     switch (node->no_kind) {
         case NODE_VAR:
-            TRY_OK(parser_node_find_fn_decl_for_call(
+            TRY_OK(parser_node_find_callable(
                 parser, node->no_n.no_var.va_var_node_i, node_i));
             return RES_OK;
         case NODE_FN_DECL:
@@ -1885,8 +1885,7 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, int lhs_i,
 
     int callable_node_i = -1;
 
-    res = parser_node_find_fn_decl_for_call(parser, *new_node_i,
-                                            &callable_node_i);
+    res = parser_node_find_callable(parser, *new_node_i, &callable_node_i);
     const int first_tok_i =
         node_first_token(parser, &parser->par_nodes[*new_node_i]);
     if (res != RES_OK) {
