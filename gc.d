@@ -15,6 +15,10 @@ pid$target::mkt_instance_make:entry {
     printf("size=%lld", arg0)
 }
 
+pid$target::mkt_instance_make:return {
+    printf("ptr=%p\n", arg1)
+}
+
 mkt*:::gc_sweep-free {
     this->atom = (struct alloc_atom*) copyin(arg2, sizeof(struct alloc_atom));
     this->header = (struct runtime_val_header) this->atom->aa_header;

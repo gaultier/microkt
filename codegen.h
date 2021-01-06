@@ -56,6 +56,28 @@ static int emit_align_to_16(int stack_size) {
     return (stack_size + 16 - 1) / 16 * 16;
 }
 
+static void emit_load(const mkt_type_t* type) {
+    CHECK((void*)type, !=, NULL, "%p");
+
+    switch (type->ty_kind) {
+        case TYPE_USER:
+            // Do not try to load the value into a register since it likely
+            // would not fit. So we 'decay' to the address of the array and
+            // hence also of the  first element
+            return;
+        default:;
+    }
+
+    if (type->ty_size == 1)
+        println("movsbl (%%rax), %%eax");
+    else if (type->ty_size == 2)
+        println("movswl (%%rax), %%eax");
+    else if (type->ty_size == 4)
+        println("movsxd (%%rax), %%rax");
+    else
+        println("mov (%%rax), %%rax");
+}
+
 static void fn_prolog(const parser_t* parser, const mkt_fn_decl_t* fn_decl,
                       int aligned_stack_size) {
     CHECK((void*)parser, !=, NULL, "%p");
@@ -305,9 +327,15 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             const mkt_node_t* const rhs = &parser->par_nodes[bin.bi_rhs_i];
             const mkt_var_def_t var_def = rhs->no_n.no_var_def;
 
-            // FIXME
-            println("mov %d(%%rax), %%rdi", var_def.vd_stack_offset);
-            println("mov %%rdi, %%rax");
+            const char* member_src = NULL;
+            int member_src_len = 0;
+            parser_tok_source(parser, var_def.vd_name_tok_i, &member_src,
+                              &member_src_len);
+            println("add %d(%%rax), %%rax # get %.*s", var_def.vd_stack_offset,
+                    member_src_len, member_src);
+
+            const mkt_type_t* const type = &parser->par_types[expr_i];
+            emit_load(type);
 
             return;
         }
