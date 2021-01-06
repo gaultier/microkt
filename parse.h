@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdarg.h>
+#include <string.h>
 
 #include "ast.h"
 #include "common.h"
@@ -16,6 +17,12 @@ static const int TYPE_BYTE_I = 7;    // see parser_init
 static const int TYPE_SHORT_I = 8;   // see parser_init
 static const int TYPE_STRING_I = 9;  // see parser_init
 
+// User Defined Type (UDF)
+typedef struct {
+    int ud_type_i, ud_name_len;
+    char* ud_name;  // Allocated, non nul terminated
+} udf_t;
+
 typedef struct {
     const char* par_file_name0;
     int par_tok_i, par_scope_i, par_fn_i, par_class_i,
@@ -24,6 +31,7 @@ typedef struct {
     lexer_t par_lexer;
     int* par_node_decls;  // Declarations e.g. functions
     mkt_type_t* par_types;
+    udf_t* par_udfs;
 } parser_t;
 
 static mkt_res_t parser_parse_expr(parser_t* parser, int* new_node_i);
@@ -201,8 +209,9 @@ static mkt_res_t parser_resolve_var(const parser_t* parser, int tok_i,
 }
 
 static void parser_class_begin(parser_t* parser, int first_tok_i,
-                               int* new_node_i, int* old_class_i,
-                               int* body_node_i, int* parent_scope_i) {
+                               int name_tok_i, int* new_node_i,
+                               int* old_class_i, int* body_node_i,
+                               int* parent_scope_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
     CHECK((void*)old_class_i, !=, NULL, "%p");
@@ -211,12 +220,14 @@ static void parser_class_begin(parser_t* parser, int first_tok_i,
 
     buf_push(parser->par_types,
              ((mkt_type_t){.ty_kind = TYPE_USER, .ty_size = 0 /* FIXME */}));
+    const int type_i = buf_size(parser->par_types) - 1;
+
     buf_push(parser->par_nodes,
              ((mkt_node_t){.no_type_i = buf_size(parser->par_types) - 1,
                            .no_kind = NODE_CLASS_DECL,
                            .no_n = {.no_class_decl = {
                                         .cl_first_tok_i = first_tok_i,
-                                        .cl_name_tok_i = -1,
+                                        .cl_name_tok_i = name_tok_i,
                                         .cl_last_tok_i = -1,
                                         .cl_flags = CLASS_FLAGS_PUBLIC,
                                     }}}));
@@ -224,6 +235,14 @@ static void parser_class_begin(parser_t* parser, int first_tok_i,
     *old_class_i = parser->par_class_i;
     parser->par_class_i = *new_node_i = buf_size(parser->par_nodes) - 1;
     buf_push(parser->par_node_decls, *new_node_i);
+
+    int class_name_len = 0;
+    const char* class_name = NULL;
+    parser_tok_source(parser, name_tok_i, &class_name, &class_name_len);
+    buf_push(parser->par_udfs,
+             ((udf_t){.ud_type_i = type_i,
+                      .ud_name_len = class_name_len,
+                      .ud_name = strndup(class_name, class_name_len)}));
 
     if (parser->par_scope_i >= 0) {
         CHECK(parser->par_scope_i, <, (int)buf_size(parser->par_nodes), "%d");
@@ -427,6 +446,9 @@ static mkt_res_t parser_init(const char* file_name0, const char* source,
     CHECK((void*)parser->par_nodes, ==, NULL, "%p");
     buf_grow(parser->par_nodes, 100);
 
+    CHECK((void*)parser->par_udfs, ==, NULL, "%p");
+    buf_grow(parser->par_udfs, 100);
+
     TRY_OK(lex_init(file_name0, source, source_len, &parser->par_lexer));
 
     // Add synthetic tokens for synthetic root class
@@ -443,7 +465,7 @@ static mkt_res_t parser_init(const char* file_name0, const char* source,
         parent_scope_i = -1;
     CHECK((void*)parser->par_types, ==, NULL, "%p");
     buf_grow(parser->par_types, 100);
-    parser_class_begin(parser, 0, &new_node_i, &old_class_i, &body_node_i,
+    parser_class_begin(parser, 0, -1, &new_node_i, &old_class_i, &body_node_i,
                        &parent_scope_i);
 
     // Pre-allocate common types
@@ -874,8 +896,13 @@ static void parser_tok_source(const parser_t* parser, int tok_i,
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)source, !=, NULL, "%p");
     CHECK((void*)source_len, !=, NULL, "%p");
-    CHECK(tok_i, >=, 0, "%d");
     CHECK(tok_i, <, parser->par_lexer.lex_source_len, "%d");
+
+    if (tok_i == -1) {
+        *source = parser->par_file_name0;
+        *source_len = strlen(parser->par_file_name0);
+        return;
+    }
 
     const mkt_token_id_t tok = parser->par_lexer.lex_tokens[tok_i].tok_id;
     const mkt_pos_range_t pos_range =
@@ -2693,21 +2720,18 @@ static mkt_res_t parser_parse_class_declaration(parser_t* parser,
 
     if (parser_peek(parser) != TOK_ID_CLASS) return RES_NONE;
 
-    int first_tok_i = -1;
+    int first_tok_i = -1, name_tok_i = -1;
     CHECK(parser_match(parser, &first_tok_i, 1, TOK_ID_CLASS), ==, true, "%d");
 
+    if (!parser_match(parser, &name_tok_i, 1, TOK_ID_IDENTIFIER))
+        return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
+
     int old_class_i = -1, body_node_i = -1, parent_scope_i = -1;
-    parser_class_begin(parser, first_tok_i, new_node_i, &old_class_i,
-                       &body_node_i, &parent_scope_i);
+    parser_class_begin(parser, first_tok_i, name_tok_i, new_node_i,
+                       &old_class_i, &body_node_i, &parent_scope_i);
     CHECK(old_class_i, >=, 0, "%d");
     CHECK(body_node_i, >=, 0, "%d");
     CHECK(parent_scope_i, >=, 0, "%d");
-
-    if (!parser_match(
-            parser,
-            &parser->par_nodes[*new_node_i].no_n.no_class_decl.cl_name_tok_i, 1,
-            TOK_ID_IDENTIFIER))
-        return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
 
     if (!parser_match(
             parser,
