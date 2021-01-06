@@ -302,6 +302,8 @@ void mkt_instance_println(void* addr) {
 
     const runtime_val_header* const header =
         (runtime_val_header*)((uintptr_t)addr - sizeof(runtime_val_header*));
+    CHECK_NO_STDLIB(header->rv_tag & RV_TAG_INSTANCE, !=, 0, "%d");
+
     char size_s[23] = "";
     int size_s_len = 0;
     mkt_int_to_string(header->rv_size, size_s, &size_s_len);
