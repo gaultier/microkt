@@ -11,6 +11,9 @@ fun main(){
 
   println(Person()) // expect: Instance of size 32
 
+  val p : Person = Person()
+  println(p) // expect: Instance of size 32
+
   // WIP
   // println(Person().id)
 }
