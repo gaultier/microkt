@@ -312,42 +312,10 @@ static mkt_res_t parser_err_missing_rhs(const parser_t* parser, int first_tok_i,
     return RES_ERR;  // FIXME?
 }
 
-static int parser_make_type(parser_t* parser,
-                            mkt_type_kind_t type_kind) {  // Returns type_i
-    CHECK((void*)parser, !=, NULL, "%p");
-
-    switch (type_kind) {
-        case TYPE_LONG:
-            return TYPE_LONG_I;
-        case TYPE_STRING:
-            return TYPE_STRING_I;
-        case TYPE_ANY:
-            return TYPE_ANY_I;
-        case TYPE_INT:
-            return TYPE_INT_I;
-        case TYPE_SHORT:
-            return TYPE_SHORT_I;
-        case TYPE_BOOL:
-            return TYPE_BOOL_I;
-        case TYPE_BYTE:
-            return TYPE_BYTE_I;
-        case TYPE_CHAR:
-            return TYPE_CHAR_I;
-        case TYPE_UNIT:
-            return TYPE_UNIT_I;
-
-        // User defined type
-        default:
-            UNIMPLEMENTED();
-    }
-}
-
 static bool parser_check_keyword(const parser_t* parser,
                                  const char* source_start, const char suffix[],
-                                 int suffix_len, mkt_type_kind_t* type_kind,
-                                 mkt_type_kind_t expected) {
+                                 int suffix_len) {
     CHECK((void*)parser, !=, NULL, "%p");
-    CHECK((void*)type_kind, !=, NULL, "%p");
     CHECK((void*)source_start, !=, NULL, "%p");
     CHECK((void*)(source_start + suffix_len), <,
           (void*)(parser->par_lexer.lex_source +
@@ -360,15 +328,13 @@ static bool parser_check_keyword(const parser_t* parser,
 
     if (remaining_len >= suffix_len &&
         memcmp(source_start, suffix, suffix_len) == 0) {
-        *type_kind = expected;
         return true;
     } else
         return false;
 }
 
 static bool parser_parse_identifier_to_type_kind(const parser_t* parser,
-                                                 int tok_i,
-                                                 mkt_type_kind_t* type_kind) {
+                                                 int tok_i, int* type_i) {
     CHECK((void*)parser, !=, NULL, "%p");
 
     const char* source = NULL;
@@ -377,57 +343,108 @@ static bool parser_parse_identifier_to_type_kind(const parser_t* parser,
     CHECK((void*)source, !=, NULL, "%p");
     CHECK(source_len, <=, parser->par_lexer.lex_source_len, "%d");
 
-    if (source_len <= 2) return RES_NONE;
+    if (source_len <= 2) goto udf;
 
     switch (source[0]) {
         case 'A':
-            return parser_check_keyword(parser, source + 1, "ny", 2, type_kind,
-                                        TYPE_ANY);
+            if (parser_check_keyword(parser, source + 1, "ny", 2)) {
+                *type_i = TYPE_ANY_I;
+                return true;
+            }
+
+            break;
         case 'B': {
             switch (source[1]) {
                 case 'o':
-                    return parser_check_keyword(parser, source + 2, "ol", 2,
-                                                type_kind, TYPE_BOOL);
+                    if (parser_check_keyword(parser, source + 2, "ol", 2)) {
+                        *type_i = TYPE_BOOL_I;
+                        return true;
+                    }
+
+                    break;
                 case 'y':
-                    return parser_check_keyword(parser, source + 2, "te", 2,
-                                                type_kind, TYPE_BYTE);
+                    if (parser_check_keyword(parser, source + 2, "te", 2)) {
+                        *type_i = TYPE_BYTE_I;
+                        return true;
+                    }
+
+                    break;
                 default:
-                    return false;
+                    break;
             }
+            break;
         }
         case 'C':
-            return parser_check_keyword(parser, source + 1, "har", 3, type_kind,
-                                        TYPE_CHAR);
+            if (parser_check_keyword(parser, source + 1, "har", 3)) {
+                *type_i = TYPE_CHAR_I;
+                return true;
+            }
+
+            break;
         case 'I':
-            return parser_check_keyword(parser, source + 1, "nt", 2, type_kind,
-                                        TYPE_INT);
+            if (parser_check_keyword(parser, source + 1, "nt", 2)) {
+                *type_i = TYPE_INT_I;
+                return true;
+            }
+
+            break;
         case 'L':
-            return parser_check_keyword(parser, source + 1, "ong", 3, type_kind,
-                                        TYPE_LONG);
+            if (parser_check_keyword(parser, source + 1, "ong", 3)) {
+                *type_i = TYPE_LONG_I;
+                return true;
+            }
+
+            break;
         case 'S': {
             switch (source[1]) {
                 case 'h':
-                    return parser_check_keyword(parser, source + 2, "ort", 3,
-                                                type_kind, TYPE_SHORT);
+                    if (parser_check_keyword(parser, source + 2, "ort", 3)) {
+                        *type_i = TYPE_SHORT_I;
+                        return true;
+                    }
+
+                    break;
                 case 't':
-                    return parser_check_keyword(parser, source + 2, "ring", 4,
-                                                type_kind, TYPE_STRING);
+                    if (parser_check_keyword(parser, source + 2, "ring", 4)) {
+                        *type_i = TYPE_STRING_I;
+                        return true;
+                    }
+
+                    break;
                 default:
-                    return false;
+                    break;
             }
+            break;
         }
         case 'U': {
             switch (source[1]) {
                 case 'n':
-                    return parser_check_keyword(parser, source + 2, "it", 2,
-                                                type_kind, TYPE_UNIT);
+                    if (parser_check_keyword(parser, source + 2, "it", 2)) {
+                        *type_i = TYPE_UNIT_I;
+                        return true;
+                    }
+
+                    break;
                 default:
-                    return false;
+                    break;
             }
         }
         default:
-            return false;
+            break;
     }
+
+udf:
+    // Try to find UDF
+    for (int i = 0; i < (int)buf_size(parser->par_udfs); i++) {
+        const udf_t* const udf = &parser->par_udfs[i];
+        if (source_len == udf->ud_name_len &&
+            memcmp(source, udf->ud_name, source_len) == 0) {
+            *type_i = udf->ud_type_i;
+            return true;
+        }
+    }
+
+    return false;
 }
 
 static mkt_res_t parser_init(const char* file_name0, const char* source,
@@ -2401,23 +2418,23 @@ static mkt_res_t parser_parse_property_declaration(parser_t* parser,
     }
     if (res != RES_OK) return res;
 
-    mkt_type_kind_t type_kind = TYPE_ANY;
-    if (!parser_parse_identifier_to_type_kind(parser, type_tok_i, &type_kind)) {
+    int type_i = -1;
+    if (!parser_parse_identifier_to_type_kind(parser, type_tok_i, &type_i)) {
         log_debug("user types not yet supported: type_tok_i=%d", type_tok_i);
         UNIMPLEMENTED();
     }
-    const int type_i = parser_make_type(parser, type_kind);
     CHECK(type_i, >=, 0, "%d");
     CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
 
-    const int type_size = parser->par_types[type_i].ty_size;
-    log_debug("parsed type %s size=%d", mkt_type_to_str[type_kind], type_size);
+    const mkt_type_t type = parser->par_types[type_i];
+    log_debug("parsed type %s size=%d", mkt_type_to_str[type.type_kind],
+              type.ty_size);
 
     int offset = 0;
     if (parser->par_fn_i >= 0) {
         CHECK(parser->par_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
         parser->par_nodes[parser->par_fn_i].no_n.no_fn_decl.fd_stack_size +=
-            type_size;
+            type.ty_size;
 
         offset =
             parser->par_nodes[parser->par_fn_i].no_n.no_fn_decl.fd_stack_size;
@@ -2460,12 +2477,10 @@ static mkt_res_t parser_parse_parameter(parser_t* parser, int** new_nodes_i) {
         if (!parser_match(parser, &type_tok_i, 1, TOK_ID_IDENTIFIER))
             return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
 
-        mkt_type_kind_t type_kind = TYPE_UNIT;
-        if (!parser_parse_identifier_to_type_kind(parser, type_tok_i,
-                                                  &type_kind))
+        int type_i = -1;
+        if (!parser_parse_identifier_to_type_kind(parser, type_tok_i, &type_i))
             UNIMPLEMENTED();
 
-        const int type_i = parser_make_type(parser, type_kind);
         CHECK(type_i, >=, 0, "%d");
         CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
 
@@ -2622,14 +2637,13 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
         buf_push(parser->par_nodes[*new_node_i].no_n.no_fn_decl.fd_arg_nodes_i,
                  arg_nodes_i[i]);
 
-    int declared_type_tok_i = -1, declared_type_i = -1;
-    mkt_type_kind_t declared_type_kind = -1;
+    int declared_type_tok_i = -1, declared_type_i = TYPE_UNIT_I;
     if (parser_match(parser, &dummy, 1, TOK_ID_COLON)) {
         if (!parser_match(parser, &declared_type_tok_i, 1, TOK_ID_IDENTIFIER)) {
             return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
         }
         if (!parser_parse_identifier_to_type_kind(parser, declared_type_tok_i,
-                                                  &declared_type_kind)) {
+                                                  &declared_type_i)) {
             parser_print_source_on_error(parser, declared_type_tok_i,
                                          declared_type_tok_i);
             log_debug(
@@ -2638,10 +2652,7 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
                 "");
             UNIMPLEMENTED();
         }
-        declared_type_i = parser_make_type(parser, declared_type_kind);
-    } else
-        declared_type_i = TYPE_UNIT_I;
-
+    }
     CHECK(declared_type_i, >=, 0, "%d");
     CHECK(declared_type_i, <, (int)buf_size(parser->par_types), "%d");
     parser->par_nodes[*new_node_i].no_type_i = declared_type_i;
