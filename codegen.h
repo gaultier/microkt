@@ -78,6 +78,26 @@ static void emit_load(const mkt_type_t* type) {
         println("mov (%%rax), %%rax");
 }
 
+// Pop the top of the stack and store it in rax
+void emit_store(const mkt_type_t* type) {
+    println("pop %%rdi");
+
+    switch (type->ty_kind) {
+        case TYPE_USER:
+            UNIMPLEMENTED();
+        default:;
+    }
+
+    if (type->ty_size == 1)
+        println("mov %%al, (%%rdi)");
+    else if (type->ty_size == 2)
+        println("mov %%ax, (%%rdi)");
+    else if (type->ty_size == 4)
+        println("mov %%eax), (%%rdi)");
+    else
+        println("mov %%rax, (%%rdi)");
+}
+
 static void fn_prolog(const parser_t* parser, const mkt_fn_decl_t* fn_decl,
                       int aligned_stack_size) {
     CHECK((void*)parser, !=, NULL, "%p");
@@ -332,11 +352,12 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             int member_src_len = 0;
             parser_tok_source(parser, var_def.vd_name_tok_i, &member_src,
                               &member_src_len);
-            println("add %d(%%rax), %%rax # get %.*s", var_def.vd_stack_offset,
+            println("add $%d, %%rax # get `%.*s`", var_def.vd_stack_offset,
                     member_src_len, member_src);
 
-            const mkt_type_t* const type = &parser->par_types[expr_i];
-            emit_load(type);
+            const mkt_type_t* const member_type =
+                &parser->par_types[rhs->no_type_i];
+            emit_load(member_type);
 
             return;
         }
@@ -583,8 +604,8 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             mkt_class_decl_t class_decl = class_node->no_n.no_class_decl;
             for (int i = 0; i < (int)buf_size(class_decl.cl_members); i++) {
                 const int m_i = class_decl.cl_members[i];
+                /* const mkt_type_t* const type = &parser->par_types[m_i]; */
                 // FIXME
-                /* emit_load(&parser->par_types[m_i]); */
                 emit_stmt(parser, m_i);
             }
 
