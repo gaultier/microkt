@@ -294,14 +294,14 @@ char* mkt_string_concat(const char* a, const runtime_val_header* a_header,
     return ret;
 }
 
-void mkt_instance_println(uintptr_t addr) {
+void mkt_instance_println(void* addr) {
     CHECK_NO_STDLIB(addr, !=, 0, "%p");
 
     const char s[] = "Instance of size ";
     mkt_write(mkt_stdout, s, sizeof(s) - 1);
 
     const runtime_val_header* const header =
-        (runtime_val_header*)(addr - sizeof(runtime_val_header*));
+        (runtime_val_header*)((uintptr_t)addr - sizeof(runtime_val_header*));
     char size_s[23] = "";
     int size_s_len = 0;
     mkt_int_to_string(header->rv_size, size_s, &size_s_len);
