@@ -325,6 +325,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             emit_expr(parser, bin.bi_lhs_i);
 
             const mkt_node_t* const rhs = &parser->par_nodes[bin.bi_rhs_i];
+            CHECK(rhs->no_kind, ==, NODE_VAR_DEF, "%d");
             const mkt_var_def_t var_def = rhs->no_n.no_var_def;
 
             const char* member_src = NULL;
