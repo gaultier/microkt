@@ -24,7 +24,7 @@ static const char mkt_type_to_str[][20] = {
 
 typedef struct {
     mkt_type_kind_t ty_kind;
-    int ty_size;
+    int ty_size, ty_class_i /* only for TYPE_USER */;
 } mkt_type_t;
 
 typedef struct {

@@ -219,7 +219,9 @@ static void parser_class_begin(parser_t* parser, int first_tok_i,
     CHECK((void*)parent_scope_i, !=, NULL, "%p");
 
     buf_push(parser->par_types,
-             ((mkt_type_t){.ty_kind = TYPE_USER, .ty_size = 0 /* FIXME */}));
+             ((mkt_type_t){.ty_kind = TYPE_USER,
+                           .ty_size = 0 /* Patched after parsing members */,
+                           .ty_class_i = -1 /* Patched later */}));
     const int type_i = buf_size(parser->par_types) - 1;
 
     buf_push(parser->par_nodes,
@@ -234,6 +236,7 @@ static void parser_class_begin(parser_t* parser, int first_tok_i,
 
     *old_class_i = parser->par_class_i;
     parser->par_class_i = *new_node_i = buf_size(parser->par_nodes) - 1;
+    parser->par_types[type_i].ty_class_i = *new_node_i;
     buf_push(parser->par_node_decls, *new_node_i);
 
     int class_name_len = 0;
@@ -1566,17 +1569,8 @@ static mkt_res_t parser_parse_navigation_suffix(parser_t* parser, int lhs_i,
         return RES_UNKNOWN_VAR;
     }
 
-    if (lhs->no_kind == NODE_VAR) {
-        lhs = &parser->par_nodes[lhs->no_n.no_var.va_var_node_i];
-        CHECK(lhs->no_kind, ==, NODE_VAR_DEF, "%d");
-        lhs = &parser->par_nodes[lhs->no_n.no_var_def.vd_init_node_i];
-    }
-    CHECK(lhs->no_kind, ==, NODE_INSTANCE, "%d");
-    const mkt_instance_t instance = lhs->no_n.no_instance;
-    CHECK(instance.in_class, >=, 0, "%d");
-    CHECK(instance.in_class, <, (int)buf_size(parser->par_nodes), "%d");
-
-    const mkt_node_t* const class_node = &parser->par_nodes[instance.in_class];
+    const mkt_node_t* const class_node =
+        &parser->par_nodes[lhs_type.ty_class_i];
     CHECK(class_node->no_kind, ==, NODE_CLASS_DECL, "%d");
     const mkt_class_decl_t class_decl = class_node->no_n.no_class_decl;
     if (parser_resolve_member(parser, member_tok_i, &class_decl, &rhs_i) !=
