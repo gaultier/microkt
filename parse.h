@@ -1015,27 +1015,6 @@ static mkt_token_id_t parser_peek(parser_t* parser) {
     UNREACHABLE();
 }
 
-static mkt_token_id_t parser_peek_next(parser_t* parser) {
-    CHECK((void*)parser, !=, NULL, "%p");
-    CHECK((void*)parser->par_lexer.lex_tokens, !=, NULL, "%p");
-    CHECK(parser->par_tok_i, >=, 0, "%d");
-    CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, 0, "%d");
-    CHECK((int)buf_size(parser->par_lexer.lex_tokens), >, parser->par_tok_i,
-          "%d");
-
-    int i = parser->par_tok_i;
-    while (i < (int)buf_size(parser->par_lexer.lex_tokens) - 1) {
-        const mkt_token_id_t id = parser->par_lexer.lex_tokens[i + 1].tok_id;
-        if (id == TOK_ID_COMMENT) {
-            i++;
-            continue;
-        }
-
-        return id;
-    }
-    return TOK_ID_EOF;
-}
-
 static void parser_print_source_on_error(const parser_t* parser,
                                          int first_tok_i, int last_tok_i) {
     CHECK((void*)parser, !=, NULL, "%p");
