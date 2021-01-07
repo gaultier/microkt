@@ -2223,6 +2223,27 @@ static mkt_res_t parser_parse_control_structure_body(parser_t* parser,
     return parser_parse_stmt(parser, new_node_i);
 }
 
+static mkt_res_t parser_check_var_assignable(parser_t* parser, int var_i,
+                                             int var_tok_i) {
+    CHECK((void*)parser, !=, NULL, "%p");
+
+    const mkt_node_t* const node = &parser->par_nodes[var_i];
+    if (node->no_kind != NODE_VAR_DEF) {
+        CHECK(node->no_kind, ==, NODE_VAR, "%d");
+
+        const mkt_var_t var = node->no_n.no_var;
+        return parser_check_var_assignable(parser, var.va_var_node_i,
+                                           var.va_tok_i);
+    }
+
+    CHECK(node->no_kind, ==, NODE_VAR_DEF, "%d");
+    const mkt_var_def_t var_def = node->no_n.no_var_def;
+    if (var_def.vd_flags & MKT_VAR_FLAGS_VAL)
+        return parser_err_assigning_val(parser, var_tok_i, &var_def);
+
+    return RES_OK;
+}
+
 static mkt_res_t parser_parse_syscall(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
@@ -2327,6 +2348,8 @@ static mkt_res_t parser_parse_assignment(parser_t* parser, int* new_node_i) {
         parser_reset(parser, &old_parser);
         return RES_NONE;
     }
+
+    TRY_OK(parser_check_var_assignable(parser, lhs_node_i, -1));
 
     res = parser_parse_expr(parser, &rhs_node_i);
     if (res == RES_NONE) {
