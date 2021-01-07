@@ -2355,7 +2355,7 @@ static mkt_res_t parser_parse_assignment(parser_t* parser, int* new_node_i) {
 
     // TODO: check size?
     if (lhs_type_kind != rhs_type_kind) {
-        return parser_err_non_matching_types(parser, rhs_node_i, lhs_node_i);
+        return parser_err_non_matching_types(parser, lhs_node_i, rhs_node_i);
     }
 
     buf_push(
