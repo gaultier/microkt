@@ -2203,22 +2203,27 @@ static mkt_res_t parser_parse_control_structure_body(parser_t* parser,
 }
 
 static mkt_res_t parser_check_var_assignable(parser_t* parser, int var_i,
-                                             int var_tok_i) {
+                                             int eq_tok_i) {
     CHECK((void*)parser, !=, NULL, "%p");
 
     const mkt_node_t* const node = &parser->par_nodes[var_i];
     if (node->no_kind != NODE_VAR_DEF) {
-        CHECK(node->no_kind, ==, NODE_VAR, "%d");
+        if (node->no_kind == NODE_VAR) {
+            const mkt_var_t var = node->no_n.no_var;
+            return parser_check_var_assignable(parser, var.va_var_node_i,
+                                               eq_tok_i);
+        } else if (node->no_kind == NODE_MEMBER_GET) {
+            const mkt_binary_t bin = node->no_n.no_binary;
+            return parser_check_var_assignable(parser, bin.bi_rhs_i, eq_tok_i);
+        }
 
-        const mkt_var_t var = node->no_n.no_var;
-        return parser_check_var_assignable(parser, var.va_var_node_i,
-                                           var.va_tok_i);
+        UNREACHABLE();
     }
 
     CHECK(node->no_kind, ==, NODE_VAR_DEF, "%d");
     const mkt_var_def_t var_def = node->no_n.no_var_def;
     if (var_def.vd_flags & MKT_VAR_FLAGS_VAL)
-        return parser_err_assigning_val(parser, var_tok_i, &var_def);
+        return parser_err_assigning_val(parser, eq_tok_i, &var_def);
 
     return RES_OK;
 }
@@ -2313,7 +2318,7 @@ static mkt_res_t parser_parse_assignment(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
-    int lhs_node_i = -1, dummy = -1, rhs_node_i = -1;
+    int lhs_node_i = -1, eq_tok_i = -1, rhs_node_i = -1;
     const parser_t old_parser = *parser;
     mkt_res_t res = parser_parse_postfix_unary_expr(parser, &lhs_node_i);
     if (res != RES_OK) {
@@ -2323,12 +2328,12 @@ static mkt_res_t parser_parse_assignment(parser_t* parser, int* new_node_i) {
     CHECK(lhs_node_i, >=, 0, "%d");
     CHECK(lhs_node_i, <, (int)buf_size(parser->par_nodes), "%d");
 
-    if (!parser_match(parser, &dummy, 1, TOK_ID_EQ)) {
+    if (!parser_match(parser, &eq_tok_i, 1, TOK_ID_EQ)) {
         parser_reset(parser, &old_parser);
         return RES_NONE;
     }
 
-    TRY_OK(parser_check_var_assignable(parser, lhs_node_i, -1));
+    TRY_OK(parser_check_var_assignable(parser, lhs_node_i, eq_tok_i));
 
     res = parser_parse_expr(parser, &rhs_node_i);
     if (res == RES_NONE) {
