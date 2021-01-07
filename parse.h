@@ -2297,84 +2297,70 @@ static mkt_res_t parser_parse_builtin_println(parser_t* parser,
     return RES_NONE;
 }
 
+static void parser_reset(parser_t* parser, const parser_t* old_parser) {
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK((void*)old_parser, !=, NULL, "%p");
+
+    parser->par_class_i = old_parser->par_class_i;
+    parser->par_fn_i = old_parser->par_fn_i;
+    parser->par_main_fn_i = old_parser->par_main_fn_i;
+    parser->par_scope_i = old_parser->par_scope_i;
+    parser->par_lexer = old_parser->par_lexer;
+    parser->par_tok_i = old_parser->par_tok_i;
+}
+
 static mkt_res_t parser_parse_assignment(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
-    mkt_res_t res = RES_NONE;
-    int dummy = -1, expr_node_i = -1, lhs_tok_i = -1;
-    if (parser_peek(parser) == TOK_ID_IDENTIFIER &&
-        parser_peek_next(parser) == TOK_ID_EQ) {
-        parser_match(parser, &lhs_tok_i, 1, TOK_ID_IDENTIFIER);
+    int lhs_node_i = -1, dummy = -1, rhs_node_i = -1;
+    const parser_t old_parser = *parser;
+    mkt_res_t res = parser_parse_postfix_unary_expr(parser, &lhs_node_i);
+    if (res != RES_OK) {
+        parser_reset(parser, &old_parser);
+        return res;
+    }
+    CHECK(lhs_node_i, >=, 0, "%d");
+    CHECK(lhs_node_i, <, (int)buf_size(parser->par_nodes), "%d");
 
-        int no_def_i = -1;
-        if (parser_resolve_var(parser, lhs_tok_i, &no_def_i) != RES_OK) {
-            return RES_UNKNOWN_VAR;
-        }
-        CHECK(no_def_i, >=, 0, "%d");
-        CHECK(no_def_i, <, (int)buf_size(parser->par_nodes), "%d");
-
-        const mkt_node_t* const no_def = &parser->par_nodes[no_def_i];
-        if (no_def->no_kind != NODE_VAR_DEF) {
-            UNIMPLEMENTED();  // err
-        }
-        CHECK((void*)no_def, !=, NULL, "%p");
-
-        const mkt_var_def_t var_def = no_def->no_n.no_var_def;
-        if (var_def.vd_flags & MKT_VAR_FLAGS_VAL)
-            return parser_err_assigning_val(parser, lhs_tok_i, &var_def);
-
-        const int type_i = no_def->no_type_i;
-        CHECK(type_i, >=, 0, "%d");
-        CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
-
-        buf_push(
-            parser->par_nodes,
-            ((mkt_node_t){.no_kind = NODE_VAR,
-                          .no_type_i = type_i,
-                          .no_n = {.no_var = {.va_tok_i = lhs_tok_i,
-                                              .va_var_node_i = no_def_i}}}));
-        int lhs_node_i = (int)buf_size(parser->par_nodes) - 1;
-
-        parser_match(parser, &dummy, 1, TOK_ID_EQ);
-
-        res = parser_parse_expr(parser, &expr_node_i);
-        if (res == RES_NONE) {
-            log_debug("Missing assignment rhs %d", lhs_node_i);
-            return RES_EXPECTED_PRIMARY;
-        } else if (res != RES_OK)
-            return res;
-
-        const int lhs_type_i = parser->par_nodes[lhs_node_i].no_type_i;
-        CHECK(lhs_type_i, >=, 0, "%d");
-        CHECK(lhs_type_i, <, (int)buf_size(parser->par_types), "%d");
-
-        const int rhs_type_i = parser->par_nodes[expr_node_i].no_type_i;
-        CHECK(rhs_type_i, >=, 0, "%d");
-        CHECK(rhs_type_i, <, (int)buf_size(parser->par_types), "%d");
-
-        const mkt_type_kind_t lhs_type_kind =
-            parser->par_types[lhs_type_i].ty_kind;
-        const mkt_type_kind_t rhs_type_kind =
-            parser->par_types[rhs_type_i].ty_kind;
-
-        if (lhs_type_kind != rhs_type_kind) {
-            return parser_err_non_matching_types(parser, expr_node_i,
-                                                 lhs_node_i);
-        }
-
-        buf_push(parser->par_nodes,
-                 ((mkt_node_t){.no_kind = NODE_ASSIGN,
-                               .no_type_i = type_i,
-                               .no_n = {.no_binary = ((mkt_binary_t){
-                                            .bi_lhs_i = lhs_node_i,
-                                            .bi_rhs_i = expr_node_i})}}));
-        *new_node_i = buf_size(parser->par_nodes) - 1;
-
-        return RES_OK;
+    if (!parser_match(parser, &dummy, 1, TOK_ID_EQ)) {
+        parser_reset(parser, &old_parser);
+        return RES_NONE;
     }
 
-    return RES_NONE;
+    res = parser_parse_expr(parser, &rhs_node_i);
+    if (res == RES_NONE) {
+        log_debug("Missing assignment rhs %d", lhs_node_i);
+        return RES_EXPECTED_PRIMARY;
+    } else if (res != RES_OK)
+        return res;
+
+    const int lhs_type_i = parser->par_nodes[lhs_node_i].no_type_i;
+    CHECK(lhs_type_i, >=, 0, "%d");
+    CHECK(lhs_type_i, <, (int)buf_size(parser->par_types), "%d");
+
+    const int rhs_type_i = parser->par_nodes[rhs_node_i].no_type_i;
+    CHECK(rhs_type_i, >=, 0, "%d");
+    CHECK(rhs_type_i, <, (int)buf_size(parser->par_types), "%d");
+
+    const mkt_type_kind_t lhs_type_kind = parser->par_types[lhs_type_i].ty_kind;
+    const mkt_type_kind_t rhs_type_kind = parser->par_types[rhs_type_i].ty_kind;
+
+    // TODO: check size?
+    if (lhs_type_kind != rhs_type_kind) {
+        return parser_err_non_matching_types(parser, rhs_node_i, lhs_node_i);
+    }
+
+    buf_push(
+        parser->par_nodes,
+        ((mkt_node_t){
+            .no_kind = NODE_ASSIGN,
+            .no_type_i = rhs_type_i,
+            .no_n = {.no_binary = ((mkt_binary_t){.bi_lhs_i = lhs_node_i,
+                                                  .bi_rhs_i = rhs_node_i})}}));
+    *new_node_i = buf_size(parser->par_nodes) - 1;
+
+    return RES_OK;
 }
 
 static mkt_res_t parser_parse_property_declaration(parser_t* parser,
