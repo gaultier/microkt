@@ -1569,8 +1569,11 @@ static mkt_res_t parser_parse_navigation_suffix(parser_t* parser, int lhs_i,
         return RES_UNKNOWN_VAR;
     }
 
+    CHECK(lhs_type.ty_class_i, >=, 0, "%d");
+    CHECK(lhs_type.ty_class_i, <, (int)buf_size(parser->par_types), "%d");
     const mkt_node_t* const class_node =
         &parser->par_nodes[lhs_type.ty_class_i];
+
     CHECK(class_node->no_kind, ==, NODE_CLASS_DECL, "%d");
     const mkt_class_decl_t class_decl = class_node->no_n.no_class_decl;
     if (parser_resolve_member(parser, member_tok_i, &class_decl, &rhs_i) !=
