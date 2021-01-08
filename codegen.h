@@ -111,7 +111,7 @@ static void emit_load(const mkt_type_t* type) {
     else if (type->ty_size == 2)
         println("movswl (%%rax), %%eax");
     else if (type->ty_size == 4)
-        println("movsxd (%%rax), %%eax");
+        println("movslq (%%rax), %%eax");
     else
         println("mov (%%rax), %%rax");
 }
