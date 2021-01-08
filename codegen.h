@@ -111,7 +111,7 @@ static void emit_load(const mkt_type_t* type) {
     else if (type->ty_size == 2)
         println("movswl (%%rax), %%eax");
     else if (type->ty_size == 4)
-        println("movslq (%%rax), %%eax");
+        println("mov (%%rax), %%eax");
     else
         println("mov (%%rax), %%rax");
 }
@@ -122,7 +122,11 @@ void emit_store(const mkt_type_t* type) {
 
     switch (type->ty_kind) {
         case TYPE_USER:
-            UNIMPLEMENTED();
+            for (int i = 0; i < type->ty_size; i++) {
+                println("  mov %d(%%rax), %%r8b", i);
+                println("  mov %%r8b, %d(%%rdi)", i);
+            }
+            return;
         default:;
     }
 

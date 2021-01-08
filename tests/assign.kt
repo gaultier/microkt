@@ -8,9 +8,9 @@ val int_mult: Int = 2
 int = int * int_mult
 println(int) // expect: 198
 
-var short : Short = 200
+var short : Short = 100
 short = short* short
-println(short) // expect: 40000
+println(short) // expect: 10000
 
 var byte : Byte = 7
 val byte_mult: Byte = 2
