@@ -111,7 +111,7 @@ static void emit_load(const mkt_type_t* type) {
     else if (type->ty_size == 2)
         println("movswl (%%rax), %%eax");
     else if (type->ty_size == 4)
-        println("movsxd (%%rax), %%rax");
+        println("mov (%%rax), %%eax");
     else
         println("mov (%%rax), %%rax");
 }
@@ -524,14 +524,8 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
                 const mkt_var_def_t var_def = no_def->no_n.no_var_def;
                 const int offset = var_def.vd_stack_offset;
 
-                if (type_size == 1)
-                    println("mov -%d(%%rbp), %%al", offset);
-                else if (type_size == 2)
-                    println("mov -%d(%%rbp), %%ax", offset);
-                else if (type_size == 4)
-                    println("mov -%d(%%rbp), %%eax", offset);
-                else
-                    println("mov -%d(%%rbp), %%rax", offset);
+                emit_addr(parser, var.va_var_node_i);
+                emit_load(type);
             } else if (no_def->no_kind == NODE_FN_DECL) {
                 CHECK(current_fn_i, >=, 0, "%d");
                 CHECK(current_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
