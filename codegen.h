@@ -357,7 +357,6 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 
             const mkt_type_t* const member_type =
                 &parser->par_types[rhs->no_type_i];
-            emit_load(member_type);
 
             return;
         }
@@ -664,35 +663,13 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
         }
         case NODE_ASSIGN: {
             const mkt_binary_t binary = stmt->no_n.no_binary;
-            const mkt_node_t* const lhs = &parser->par_nodes[binary.bi_lhs_i];
 
+            emit_expr(parser, binary.bi_lhs_i);
+            println("push %%rax");
             emit_expr(parser, binary.bi_rhs_i);
 
-            const mkt_var_t var = lhs->no_n.no_var;
-
-            CHECK(var.va_var_node_i, >=, 0, "%d");
-            CHECK(var.va_var_node_i, <, (int)buf_size(parser->par_nodes), "%d");
-            const mkt_node_t* const no_def =
-                &parser->par_nodes[var.va_var_node_i];
-
-            const mkt_var_def_t var_def = no_def->no_n.no_var_def;
-            const int offset = var_def.vd_stack_offset;
-            CHECK(offset, >=, 0, "%d");
-
-            CHECK(stmt->no_type_i, >=, 0, "%d");
-            CHECK(stmt->no_type_i, <, (int)buf_size(parser->par_types), "%d");
-            const int type_size = parser->par_types[stmt->no_type_i].ty_size;
-            CHECK(type_size, >=, 0, "%d");
-
-            emit_loc(parser, stmt);
-            if (type_size == 1)
-                println("mov %%al, -%d(%%rbp)", offset);
-            else if (type_size == 2)
-                println("mov %%ax, -%d(%%rbp)", offset);
-            else if (type_size == 4)
-                println("mov %%eax, -%d(%%rbp)", offset);
-            else
-                println("mov %%rax, -%d(%%rbp)", offset);
+            const mkt_type_t* const type = &parser->par_types[stmt_i];
+            emit_store(type);
 
             return;
         }
