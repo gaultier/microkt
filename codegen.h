@@ -56,6 +56,45 @@ static int emit_align_to_16(int stack_size) {
     return (stack_size + 16 - 1) / 16 * 16;
 }
 
+static void emit_addr(const parser_t* parser, int node_i) {
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK(node_i, >=, 0, "%d");
+    CHECK(node_i, <, (int)buf_size(parser->par_nodes), "%d");
+
+    const mkt_node_t* const node = &parser->par_nodes[node_i];
+
+    switch (node->no_kind) {
+        case NODE_VAR: {
+            emit_addr(parser, node->no_n.no_var.va_var_node_i);
+            return;
+        }
+        case NODE_VAR_DEF: {
+            const mkt_var_def_t var_def = node->no_n.no_var_def;
+            println("lea %d(%%rbp), %%rax", var_def.vd_stack_offset);
+            return;
+        }
+        case NODE_MEMBER_GET: {
+            const mkt_binary_t bin = node->no_n.no_binary;
+            emit_addr(parser, bin.bi_lhs_i);
+
+            const mkt_node_t* const rhs = &parser->par_nodes[bin.bi_rhs_i];
+            CHECK(rhs->no_kind, ==, NODE_VAR_DEF, "%d");
+            const mkt_var_def_t var_def = rhs->no_n.no_var_def;
+
+            const char* member_src = NULL;
+            int member_src_len = 0;
+            parser_tok_source(parser, var_def.vd_name_tok_i, &member_src,
+                              &member_src_len);
+            println("add $%d, %%rax # get `%.*s`", var_def.vd_stack_offset,
+                    member_src_len, member_src);
+            /* println("add $%d, %%rax", n) */
+            return;
+        }
+        default:
+            UNREACHABLE();
+    }
+}
+
 static void emit_load(const mkt_type_t* type) {
     CHECK((void*)type, !=, NULL, "%p");
 
@@ -343,20 +382,6 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             const mkt_binary_t bin = expr->no_n.no_binary;
             emit_loc(parser, expr);
             emit_expr(parser, bin.bi_lhs_i);
-
-            const mkt_node_t* const rhs = &parser->par_nodes[bin.bi_rhs_i];
-            CHECK(rhs->no_kind, ==, NODE_VAR_DEF, "%d");
-            const mkt_var_def_t var_def = rhs->no_n.no_var_def;
-
-            const char* member_src = NULL;
-            int member_src_len = 0;
-            parser_tok_source(parser, var_def.vd_name_tok_i, &member_src,
-                              &member_src_len);
-            println("add $%d, %%rax # get `%.*s`", var_def.vd_stack_offset,
-                    member_src_len, member_src);
-
-            const mkt_type_t* const member_type =
-                &parser->par_types[rhs->no_type_i];
 
             return;
         }
@@ -664,7 +689,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
         case NODE_ASSIGN: {
             const mkt_binary_t binary = stmt->no_n.no_binary;
 
-            emit_expr(parser, binary.bi_lhs_i);
+            emit_addr(parser, binary.bi_lhs_i);
             println("push %%rax");
             emit_expr(parser, binary.bi_rhs_i);
 
