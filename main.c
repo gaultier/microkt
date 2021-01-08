@@ -123,12 +123,14 @@ static int run(const char* file_name0) {
         FILE* as_process = popen(argv0, "r");
         if (as_process == NULL) {
             res = RES_FAILED_AS;
-            fprintf(stderr, "Failed to run `%s`: %s\n", argv0, strerror(errno));
+            fprintf(stderr, "Failed to assemble `%s`: %s\n", argv0,
+                    strerror(errno));
             return res;
         }
         if (pclose(as_process) != 0) {
             res = RES_FAILED_AS;
-            fprintf(stderr, "Failed to run `%s`: %s\n", argv0, strerror(errno));
+            fprintf(stderr, "Failed to assemble `%s`: %s\n", argv0,
+                    strerror(errno));
             return res;
         }
         fflush(stdout);
@@ -170,12 +172,14 @@ static int run(const char* file_name0) {
         FILE* ld_process = popen(argv0, "r");
         if (ld_process == NULL) {
             res = RES_FAILED_LD;
-            fprintf(stderr, "Failed to run `%s`: %s\n", argv0, strerror(errno));
+            fprintf(stderr, "Failed to link `%s`: %s\n", argv0,
+                    strerror(errno));
             return res;
         }
         if (pclose(ld_process) != 0) {
             res = RES_FAILED_LD;
-            fprintf(stderr, "Failed to run `%s`: %s\n", argv0, strerror(errno));
+            fprintf(stderr, "Failed to link `%s`: %s\n", argv0,
+                    strerror(errno));
             return res;
         }
         fflush(stdout);
