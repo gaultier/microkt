@@ -526,6 +526,8 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             CHECK(type_size, >=, 0, "%d");
 
             emit_loc(parser, expr);
+            // TODO:
+            /* emit_expr(var.va_var_node_i); */
             if (no_def->no_kind == NODE_VAR_DEF) {
                 emit_addr(parser, var.va_var_node_i);
                 emit_load(type);
@@ -575,8 +577,9 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
                 // TODO: preserver registers by spilling
                 // TODO: use the stack if # args > 6
             }
-
+            // TODO: move above the args and here add `call *%%r10`
             emit_expr(parser, call.ca_lhs_node_i);
+
             return;
         }
         case NODE_INSTANCE: {
@@ -613,22 +616,18 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 
             // Push the pointer to the instance on the stack to avoid losing it
             // when handling the members
-            println("push %%rax");
-            println("push %%rax");  // For alignment
+            // println("push %%rax");
 
-            mkt_instance_t instance = expr->no_n.no_instance;
-            const mkt_node_t* const class_node =
-                &parser->par_nodes[instance.in_class];
-            mkt_class_decl_t class_decl = class_node->no_n.no_class_decl;
-            for (int i = 0; i < (int)buf_size(class_decl.cl_members); i++) {
-                const int m_i = class_decl.cl_members[i];
-                /* const mkt_type_t* const type = &parser->par_types[m_i]; */
-                // FIXME
-                emit_stmt(parser, m_i);
-            }
-
-            println("pop %%rax");
-            println("pop %%rax");  // For alignment
+            // mkt_instance_t instance = expr->no_n.no_instance;
+            // const mkt_node_t* const class_node =
+            //    &parser->par_nodes[instance.in_class];
+            // mkt_class_decl_t class_decl = class_node->no_n.no_class_decl;
+            // for (int i = 0; i < (int)buf_size(class_decl.cl_members); i++) {
+            //    const int m_i = class_decl.cl_members[i];
+            //    /* const mkt_type_t* const type = &parser->par_types[m_i]; */
+            //    // FIXME
+            //    emit_stmt(parser, m_i);
+            //}
 
             return;
         }

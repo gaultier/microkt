@@ -83,6 +83,9 @@ static mkt_res_t simple_test_run(const char* source_file_name) {
     CHECK(source_file_name[source_file_name_len - 2], ==, 'k', "%c");
     CHECK(source_file_name[source_file_name_len - 1], ==, 't', "%c");
 
+    fprintf(stderr, "%s| %s%s\n", mkt_colors[is_tty][COL_GRAY],
+            source_file_name, mkt_colors[is_tty][COL_RESET]);
+
     char argv[MAXPATHLEN] = "";
     snprintf(argv, MAXPATHLEN, "%.*s.exe", (int)(source_file_name_len - 3),
              source_file_name);
