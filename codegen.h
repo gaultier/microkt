@@ -70,7 +70,7 @@ static void emit_addr(const parser_t* parser, int node_i) {
         }
         case NODE_VAR_DEF: {
             const mkt_var_def_t var_def = node->no_n.no_var_def;
-            println("lea %d(%%rbp), %%rax", var_def.vd_stack_offset);
+            println("lea -%d(%%rbp), %%rax", var_def.vd_stack_offset);
             return;
         }
         case NODE_MEMBER_GET: {
@@ -87,7 +87,6 @@ static void emit_addr(const parser_t* parser, int node_i) {
                               &member_src_len);
             println("add $%d, %%rax # get `%.*s`", var_def.vd_stack_offset,
                     member_src_len, member_src);
-            /* println("add $%d, %%rax", n) */
             return;
         }
         default:
@@ -379,14 +378,13 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             return;
         }
         case NODE_MEMBER_GET: {
-            const mkt_binary_t bin = expr->no_n.no_binary;
-            emit_loc(parser, expr);
-            emit_expr(parser, bin.bi_lhs_i);
+            emit_addr(parser, expr_i);
+            emit_load(type);
 
             return;
         }
         case NODE_ASSIGN:
-            UNIMPLEMENTED();
+            UNREACHABLE();
         case NODE_LT:
         case NODE_EQ:
         case NODE_NEQ:
@@ -585,8 +583,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             return;
         }
         case NODE_INSTANCE: {
-            const mkt_type_t type = parser->par_types[expr->no_type_i];
-            println("mov $%d, %s", type.ty_size, fn_args[0]);
+            println("mov $%d, %s", type->ty_size, fn_args[0]);
             println("push %%rbx");
             println("push %%rbx");  // For alignment
             println("push %%rcx");
