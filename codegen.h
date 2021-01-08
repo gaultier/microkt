@@ -111,7 +111,7 @@ static void emit_load(const mkt_type_t* type) {
     else if (type->ty_size == 2)
         println("movswl (%%rax), %%eax");
     else if (type->ty_size == 4)
-        println("mov (%%rax), %%eax");
+        println("movsxd (%%rax), %%eax");
     else
         println("mov (%%rax), %%rax");
 }
@@ -692,24 +692,11 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
             const mkt_var_def_t var_def = stmt->no_n.no_var_def;
             if (var_def.vd_init_node_i < 0) return;
 
-            emit_expr(parser, var_def.vd_init_node_i);
-
-            const int type_size = parser->par_types[stmt->no_type_i].ty_size;
-            CHECK(type_size, >=, 0, "%d");
-
-            const int offset = var_def.vd_stack_offset;
-            CHECK(offset, >=, 0, "%d");
-
             emit_loc(parser, stmt);
-
-            if (type_size == 1)
-                println("mov %%al, -%d(%%rbp)", offset);
-            else if (type_size == 2)
-                println("mov %%ax, -%d(%%rbp)", offset);
-            else if (type_size == 4)
-                println("mov %%eax, -%d(%%rbp)", offset);
-            else
-                println("mov %%rax, -%d(%%rbp)", offset);
+            emit_addr(parser, stmt_i);
+            println("push %%rax");
+            emit_expr(parser, var_def.vd_init_node_i);
+            emit_store(&parser->par_types[stmt->no_type_i]);
 
             return;
         }
