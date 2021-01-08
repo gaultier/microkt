@@ -737,6 +737,14 @@ static void node_dump(const parser_t* parser, int no_i, int indent) {
                 mkt_node_kind_to_str[node->no_kind], name_len, name,
                 mkt_type_to_str[parser->par_types[node->no_type_i].ty_kind],
                 arity, fn_decl.fd_body_node_i);
+
+            const mkt_node_t* const body_node =
+                &parser->par_nodes[fn_decl.fd_body_node_i];
+            CHECK(body_node->no_kind, ==, NODE_BLOCK, "%d");
+            const mkt_block_t block = body_node->no_n.no_block;
+            for (int i = 0; i < (int)buf_size(block.bl_nodes_i); i++) {
+                node_dump(parser, block.bl_nodes_i[i], indent + 2);
+            }
             return;
         }
         case NODE_CALL: {
@@ -778,6 +786,7 @@ static void node_dump(const parser_t* parser, int no_i, int indent) {
             const mkt_class_decl_t class_decl =
                 parser->par_nodes[instance.in_class].no_n.no_class_decl;
             const char* src = NULL;
+            int src_len = 0;
             parser_tok_source(parser, class_decl.cl_name_tok_i, &src, &src_len);
 
             log_debug_with_indent(indent, "node #%d %s `%.*s`", no_i,
@@ -2431,7 +2440,7 @@ static mkt_res_t parser_parse_property_declaration(parser_t* parser,
     CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
 
     const mkt_type_t type = parser->par_types[type_i];
-    log_debug("parsed type %s size=%d", mkt_type_to_str[type.type_kind],
+    log_debug("parsed type %s size=%d", mkt_type_to_str[type.ty_kind],
               type.ty_size);
 
     int offset = 0;
@@ -2488,12 +2497,12 @@ static mkt_res_t parser_parse_parameter(parser_t* parser, int** new_nodes_i) {
         CHECK(type_i, >=, 0, "%d");
         CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
 
-        const int type_size = parser->par_types[type_i].ty_size;
+        const mkt_type_t type = parser->par_types[type_i];
 
         CHECK(parser->par_fn_i, >=, 0, "%d");
         CHECK(parser->par_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
         parser->par_nodes[parser->par_fn_i].no_n.no_fn_decl.fd_stack_size +=
-            type_size;
+            type.ty_size;
 
         const int offset =
             parser->par_nodes[parser->par_fn_i].no_n.no_fn_decl.fd_stack_size;
@@ -2518,7 +2527,7 @@ static mkt_res_t parser_parse_parameter(parser_t* parser, int** new_nodes_i) {
         CHECK(source_len, <=, parser->par_lexer.lex_source_len, "%d");
 
         log_debug("New fn param: `%.*s` type=%s scope=%d offset=%d", source_len,
-                  source, mkt_type_to_str[type_kind], parser->par_scope_i,
+                  source, mkt_type_to_str[type.ty_kind], parser->par_scope_i,
                   offset);
     } while (parser_match(parser, &dummy, 1, TOK_ID_COMMA));
 

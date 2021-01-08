@@ -93,7 +93,7 @@ void emit_store(const mkt_type_t* type) {
     else if (type->ty_size == 2)
         println("mov %%ax, (%%rdi)");
     else if (type->ty_size == 4)
-        println("mov %%eax), (%%rdi)");
+        println("mov %%eax, (%%rdi)");
     else
         println("mov %%rax, (%%rdi)");
 }
