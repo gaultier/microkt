@@ -132,8 +132,10 @@ void emit_store(const mkt_type_t* type) {
         println("mov %%ax, (%%rdi)");
     else if (type->ty_size == 4)
         println("mov %%eax, (%%rdi)");
-    else
+    else if (type->ty_size == 8)
         println("mov %%rax, (%%rdi)");
+    else
+        UNREACHABLE();
 }
 
 static void fn_prolog(const parser_t* parser, const mkt_fn_decl_t* fn_decl,
@@ -521,9 +523,6 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 
             emit_loc(parser, expr);
             if (no_def->no_kind == NODE_VAR_DEF) {
-                const mkt_var_def_t var_def = no_def->no_n.no_var_def;
-                const int offset = var_def.vd_stack_offset;
-
                 emit_addr(parser, var.va_var_node_i);
                 emit_load(type);
             } else if (no_def->no_kind == NODE_FN_DECL) {
@@ -684,7 +683,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
             println("push %%rax");
             emit_expr(parser, binary.bi_rhs_i);
 
-            const mkt_type_t* const type = &parser->par_types[stmt_i];
+            const mkt_type_t* const type = &parser->par_types[stmt->no_type_i];
             emit_store(type);
 
             return;
