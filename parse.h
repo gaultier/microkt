@@ -2536,8 +2536,6 @@ static mkt_res_t parser_parse_property_declaration(parser_t* parser,
                                               .vd_stack_offset = offset,
                                               .vd_flags = flags}}}));
     *new_node_i = buf_size(parser->par_nodes) - 1;
-    parser->par_nodes[parser->par_fn_i].no_n.no_fn_decl.fd_stack_size +=
-        type.ty_size;
 
     log_debug("new var def=%d current_scope_i=%d flags=%d offset=%d fn=%d",
               *new_node_i, parser->par_scope_i, flags, offset,
