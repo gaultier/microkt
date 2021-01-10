@@ -73,7 +73,7 @@ static void emit_addr(const parser_t* parser, int node_i) {
             println("lea -%d(%%rbp), %%rax", var_def.vd_stack_offset);
             return;
         }
-        case NODE_MEMBER_GET: {
+        case NODE_MEMBER: {
             const mkt_binary_t bin = node->no_n.no_binary;
             emit_addr(parser, bin.bi_lhs_i);
 
@@ -413,7 +413,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 
             return;
         }
-        case NODE_MEMBER_GET: {
+        case NODE_MEMBER: {
             emit_addr(parser, expr_i);
             emit_load(type);
 
@@ -665,7 +665,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
         case NODE_RETURN:
         case NODE_NOT:
         case NODE_INSTANCE:
-        case NODE_MEMBER_GET:
+        case NODE_MEMBER:
         case NODE_IF: {
             emit_expr(parser, stmt_i);
             return;

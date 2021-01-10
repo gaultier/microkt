@@ -70,7 +70,7 @@ typedef enum {
     NODE_SYSCALL,
     NODE_CLASS_DECL,
     NODE_INSTANCE,
-    NODE_MEMBER_GET,
+    NODE_MEMBER,
     NODE_COUNT,
 } mkt_node_kind_t;
 

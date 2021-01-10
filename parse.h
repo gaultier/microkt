@@ -837,7 +837,7 @@ static int node_first_token(const parser_t* parser, const mkt_node_t* node) {
         case NODE_MODULO:
         case NODE_SUBTRACT:
         case NODE_ASSIGN:
-        case NODE_MEMBER_GET:
+        case NODE_MEMBER:
         case NODE_ADD: {
             const mkt_node_t* const lhs =
                 &parser->par_nodes[node->no_n.no_binary.bi_lhs_i];
@@ -895,7 +895,7 @@ static int node_last_token(const parser_t* parser, const mkt_node_t* node) {
         case NODE_MODULO:
         case NODE_SUBTRACT:
         case NODE_ASSIGN:
-        case NODE_MEMBER_GET:
+        case NODE_MEMBER:
         case NODE_ADD: {
             const mkt_node_t* const rhs =
                 &parser->par_nodes[node->no_n.no_binary.bi_rhs_i];
@@ -1651,7 +1651,7 @@ static mkt_res_t parser_parse_navigation_suffix(parser_t* parser, int lhs_i,
     CHECK(type_i, >=, 0, "%d");
     CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
 
-    buf_push(parser->par_nodes, ((mkt_node_t){.no_kind = NODE_MEMBER_GET,
+    buf_push(parser->par_nodes, ((mkt_node_t){.no_kind = NODE_MEMBER,
                                               .no_type_i = rhs->no_type_i,
                                               .no_n = {.no_binary = {
                                                            .bi_lhs_i = lhs_i,
@@ -2296,7 +2296,7 @@ static mkt_res_t parser_check_var_assignable(parser_t* parser, int var_i,
             const mkt_var_t var = node->no_n.no_var;
             return parser_check_var_assignable(parser, var.va_var_node_i,
                                                eq_tok_i);
-        } else if (node->no_kind == NODE_MEMBER_GET) {
+        } else if (node->no_kind == NODE_MEMBER) {
             const mkt_binary_t bin = node->no_n.no_binary;
             return parser_check_var_assignable(parser, bin.bi_rhs_i, eq_tok_i);
         }
