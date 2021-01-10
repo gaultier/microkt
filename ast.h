@@ -141,7 +141,7 @@ static const unsigned short FN_FLAGS_SEEN_RETURN = 0x8;
 
 typedef struct {
     int fd_first_tok_i, fd_last_tok_i, fd_name_tok_i, fd_body_node_i,
-        fd_stack_size, *fd_arg_nodes_i;
+        fd_stack_size, *fd_arg_nodes_i, fd_return_type_i;
     unsigned short fd_flags;
 } mkt_fn_decl_t;
 
