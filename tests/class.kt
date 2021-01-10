@@ -14,5 +14,7 @@ fun main(){
 
 
   // WIP
-  println(Person().id)
+  var p : Person = Person()
+  println(p.id)
+  
 }
