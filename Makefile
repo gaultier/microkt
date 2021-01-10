@@ -58,7 +58,7 @@ endif
 
 TESTS_SRC := $(wildcard tests/*.kt)
 TESTS_O := $(TESTS_SRC:.kt=.o)
-TESTS_ASM := $(TESTS_SRC:.kt=.asm)
+TESTS_ASM := $(TESTS_SRC:.kt=.s)
 TESTS_EXE := $(TESTS_SRC:.kt=.exe)
 
 .DEFAULT:
@@ -84,7 +84,7 @@ check: mktc $(TESTS_EXE) test
 	@./test
 
 clean:
-	$(RM) mktc {tests,err}/*.{asm,o,exe} mkt_stdlib.o
+	$(RM) mktc {tests,err}/*.{s,o,exe} mkt_stdlib.o
 	$(RM) -r ./*.dSYM
 
 install: mktc

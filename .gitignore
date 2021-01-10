@@ -7,5 +7,5 @@ META-INF
 **/.class
 **/.jar
 **/*.o
-**/*.asm
+**/*.s
 **/*.exe

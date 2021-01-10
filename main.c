@@ -94,7 +94,7 @@ static int run(const char* file_name0) {
 
     const int file_name_len = strlen(file_name0);
     char asm_file_name0[MAXPATHLEN + 1] = "";
-    snprintf(asm_file_name0, MAXPATHLEN, "%.*s.asm", (int)(file_name_len - 3),
+    snprintf(asm_file_name0, MAXPATHLEN, "%.*s.s", (int)(file_name_len - 3),
              file_name0);
     FILE* asm_file = fopen(asm_file_name0, "w");
     if (asm_file == NULL) {
