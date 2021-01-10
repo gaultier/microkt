@@ -1367,6 +1367,7 @@ static mkt_res_t parser_parse_jump_expr(parser_t* parser, int* new_node_i) {
                                : TYPE_UNIT_I;
         CHECK(type_i, >=, 0, "%d");
         CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
+        // TODO: check if we are in a function, if yes, check return type here
 
         const mkt_node_t* const expr =
             expr_node_i >= 0 ? &parser->par_nodes[expr_node_i] : NULL;
@@ -2732,6 +2733,7 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
         !seen_return)
         return RES_OK;
 
+    // TODO: move this to NODE_RETURN parse
     if (actual_return_type != declared_return_type) {
         CHECK(seen_return, ==, true, "%d");
         const int* const body_nodes =
