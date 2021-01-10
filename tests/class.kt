@@ -14,5 +14,5 @@ fun main(){
 
 
   // WIP
-  // println(Person().id)
+  println(Person().id)
 }

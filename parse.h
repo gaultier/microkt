@@ -1603,9 +1603,9 @@ static mkt_res_t parser_parse_navigation_suffix(parser_t* parser, int lhs_i,
     }
 
     const mkt_node_t* lhs = &parser->par_nodes[lhs_i];
-    const mkt_type_t lhs_type = parser->par_types[lhs->no_type_i];
+    mkt_type_t lhs_type = parser->par_types[lhs->no_type_i];
 
-    if (lhs_type.ty_kind != TYPE_CLASS) {
+    if (lhs_type.ty_kind != TYPE_PTR) {
         const char* rhs_src = NULL;
         int rhs_src_len = 0;
         parser_tok_source(parser, member_tok_i, &rhs_src, &rhs_src_len);
@@ -1620,6 +1620,9 @@ static mkt_res_t parser_parse_navigation_suffix(parser_t* parser, int lhs_i,
         parser_print_source_on_error(parser, member_tok_i, member_tok_i);
         return RES_UNKNOWN_VAR;
     }
+
+    // Auto-deref: follow the type pointed by the TYPE_PTR type
+    lhs_type = parser->par_types[lhs_type.ty_ptr_type_i];
 
     CHECK(lhs_type.ty_class_i, >=, 0, "%d");
     CHECK(lhs_type.ty_class_i, <, (int)buf_size(parser->par_types), "%d");
