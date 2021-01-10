@@ -1384,8 +1384,10 @@ static mkt_res_t parser_parse_jump_expr(parser_t* parser, int* new_node_i) {
         CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
 
         const mkt_type_t actual_return_type = parser->par_types[type_i];
+        const mkt_fn_decl_t fn_decl =
+            parser->par_nodes[parser->par_fn_i].no_n.no_fn_decl;
         const mkt_type_t declared_return_type =
-            parser->par_types[parser->par_nodes[parser->par_fn_i].no_type_i];
+            parser->par_types[fn_decl.fd_return_type_i];
         if (actual_return_type.ty_kind != declared_return_type.ty_kind) {
             const mkt_loc_t declared_loc = parser->par_lexer.lex_locs[tok_i];
             const mkt_loc_t actual_loc = parser->par_lexer.lex_locs[tok_i];
