@@ -2696,7 +2696,7 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
     CHECK(actual_type_i, >=, 0, "%d");
     CHECK(actual_type_i, <, (int)buf_size(parser->par_types), "%d");
 
-    const mkt_type_kind_t actual_type =
+    const mkt_type_kind_t actual_return_type =
         parser->par_types[actual_type_i].ty_kind;
     const mkt_type_kind_t declared_return_type =
         parser->par_types[declared_return_type_i].ty_kind;
@@ -2728,11 +2728,11 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
 
         return RES_ERR;
     }
-    if (declared_return_type == TYPE_UNIT && actual_type != TYPE_UNIT &&
+    if (declared_return_type == TYPE_UNIT && actual_return_type != TYPE_UNIT &&
         !seen_return)
         return RES_OK;
 
-    if (actual_type != declared_return_type)
+    if (actual_return_type != declared_return_type)
         return parser_err_non_matching_types(
             parser, body_node_i,
             *new_node_i);  // TODO: implement custom error function
