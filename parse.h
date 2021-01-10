@@ -226,7 +226,7 @@ static void parser_class_begin(parser_t* parser, int first_tok_i,
     const int type_i = buf_size(parser->par_types) - 1;
 
     buf_push(parser->par_nodes,
-             ((mkt_node_t){.no_type_i = buf_size(parser->par_types) - 1,
+             ((mkt_node_t){.no_type_i = type_i,
                            .no_kind = NODE_CLASS_DECL,
                            .no_n = {.no_class_decl = {
                                         .cl_first_tok_i = first_tok_i,
@@ -1358,6 +1358,17 @@ static mkt_res_t parser_parse_jump_expr(parser_t* parser, int* new_node_i) {
     int tok_i = -1;
     mkt_res_t res = RES_NONE;
     if (parser_match(parser, &tok_i, 1, TOK_ID_RETURN)) {
+        if (parser->par_fn_i < 0) {
+            const mkt_loc_t loc = parser->par_lexer.lex_locs[tok_i];
+            fprintf(stderr,
+                    "%s%s:%d:%d:%sUnexpected return outside of a function\n",
+                    mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
+                    loc.loc_line, loc.loc_column,
+                    mkt_colors[is_tty][COL_RESET]);
+            parser_print_source_on_error(parser, tok_i, tok_i);
+            return RES_ERR;
+        }
+
         int expr_node_i = -1;
         res = parser_parse_expr(parser, &expr_node_i);
         if (res != RES_OK && res != RES_NONE) return res;
@@ -1367,7 +1378,34 @@ static mkt_res_t parser_parse_jump_expr(parser_t* parser, int* new_node_i) {
                                : TYPE_UNIT_I;
         CHECK(type_i, >=, 0, "%d");
         CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
-        // TODO: check if we are in a function, if yes, check return type here
+
+        const mkt_type_t actual_return_type = parser->par_types[type_i];
+        const mkt_type_t declared_return_type =
+            parser->par_types[parser->par_nodes[parser->par_fn_i].no_type_i];
+        if (actual_return_type.ty_kind != declared_return_type.ty_kind) {
+            const mkt_loc_t declared_loc = parser->par_lexer.lex_locs[tok_i];
+            const mkt_loc_t actual_loc = parser->par_lexer.lex_locs[tok_i];
+            fprintf(stderr,
+                    "%s%s:%d:%d:%sDeclared return type %s does not match the "
+                    "actual "
+                    "return type %s\n",
+                    mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
+                    actual_loc.loc_line, actual_loc.loc_column,
+                    mkt_colors[is_tty][COL_RESET],
+                    mkt_type_to_str[declared_return_type.ty_kind],
+                    mkt_type_to_str[actual_return_type.ty_kind]);
+            fprintf(stderr, "%s%s:%d:%d:%sDeclared here:\n",
+                    mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
+                    declared_loc.loc_line, declared_loc.loc_column,
+                    mkt_colors[is_tty][COL_RESET]);
+            parser_print_source_on_error(parser, tok_i, tok_i);
+            fprintf(stderr, "%s%s:%d:%d:%sActual return here:\n",
+                    mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
+                    actual_loc.loc_line, actual_loc.loc_column,
+                    mkt_colors[is_tty][COL_RESET]);
+            parser_print_source_on_error(parser, tok_i, tok_i);
+            return RES_ERR;
+        }
 
         const mkt_node_t* const expr =
             expr_node_i >= 0 ? &parser->par_nodes[expr_node_i] : NULL;
@@ -2693,12 +2731,6 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
             1, TOK_ID_RCURLY))
         return parser_err_unexpected_token(parser, TOK_ID_RCURLY);
 
-    const int actual_type_i = parser->par_nodes[body_node_i].no_type_i;
-    CHECK(actual_type_i, >=, 0, "%d");
-    CHECK(actual_type_i, <, (int)buf_size(parser->par_types), "%d");
-
-    const mkt_type_kind_t actual_return_type =
-        parser->par_types[actual_type_i].ty_kind;
     const mkt_type_kind_t declared_return_type =
         parser->par_types[declared_return_type_i].ty_kind;
 
@@ -2727,45 +2759,6 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
                 mkt_type_to_str[declared_return_type]);
         parser_print_source_on_error(parser, last_tok_i, last_tok_i);
 
-        return RES_ERR;
-    }
-    if (declared_return_type == TYPE_UNIT && actual_return_type != TYPE_UNIT &&
-        !seen_return)
-        return RES_OK;
-
-    // TODO: move this to NODE_RETURN parse
-    if (actual_return_type != declared_return_type) {
-        CHECK(seen_return, ==, true, "%d");
-        const int* const body_nodes =
-            parser->par_nodes[body_node_i].no_n.no_block.bl_nodes_i;
-        const int return_node_i = body_nodes[buf_size(body_nodes) - 1];
-        const mkt_node_t* const return_node = &parser->par_nodes[return_node_i];
-        const int actual_type_tok_i = node_last_token(parser, return_node);
-        const mkt_loc_t declared_loc =
-            parser->par_lexer.lex_locs[declared_type_tok_i];
-        const mkt_loc_t actual_loc =
-            parser->par_lexer.lex_locs[actual_type_tok_i];
-        fprintf(
-            stderr,
-            "%s%s:%d:%d:%sDeclared return type %s does not match the actual "
-            "return type %s\n",
-            mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
-            actual_loc.loc_line, actual_loc.loc_column,
-            mkt_colors[is_tty][COL_RESET],
-            mkt_type_to_str[declared_return_type],
-            mkt_type_to_str[actual_return_type]);
-        fprintf(stderr, "%s%s:%d:%d:%sDeclared here:\n",
-                mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
-                declared_loc.loc_line, declared_loc.loc_column,
-                mkt_colors[is_tty][COL_RESET]);
-        parser_print_source_on_error(parser, declared_type_tok_i,
-                                     declared_type_tok_i);
-        fprintf(stderr, "%s%s:%d:%d:%sActual return here:\n",
-                mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
-                actual_loc.loc_line, actual_loc.loc_column,
-                mkt_colors[is_tty][COL_RESET]);
-        parser_print_source_on_error(parser, actual_type_tok_i,
-                                     actual_type_tok_i);
         return RES_ERR;
     }
 
