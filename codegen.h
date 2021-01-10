@@ -152,10 +152,10 @@ void emit_store(const mkt_type_t* type) {
 
     switch (type->ty_kind) {
         case TYPE_USER:
-            for (int i = 0; i < type->ty_size; i++) {
-                println("  mov %d(%%rax), %%r8b", i);
-                println("  mov %%r8b, %d(%%rdi)", i);
-            }
+            //     for (int i = 0; i < type->ty_size; i++) {
+            //         println("  mov %d(%%rax), %%r8b", i);
+            //         println("  mov %%r8b, %d(%%rdi)", i);
+            //     }
             return;
         default:;
     }

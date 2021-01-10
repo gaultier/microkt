@@ -591,6 +591,8 @@ static void node_dump(const parser_t* parser, int no_i, int indent) {
     IGNORE(indent);
 #else
     const mkt_node_t* const node = &parser->par_nodes[no_i];
+    const mkt_type_t type = parser->par_types[node->no_type_i];
+
     switch (node->no_kind) {
         case NODE_BUILTIN_PRINTLN: {
             log_debug_with_indent(
@@ -741,8 +743,8 @@ static void node_dump(const parser_t* parser, int no_i, int indent) {
                 indent,
                 "node #%d %s `%.*s` type=%s arity=%d stack_size=%d body_i=%d",
                 no_i, mkt_node_kind_to_str[node->no_kind], name_len, name,
-                mkt_type_to_str[parser->par_types[node->no_type_i].ty_kind],
-                arity, fn_decl.fd_stack_size, fn_decl.fd_body_node_i);
+                mkt_type_to_str[type.ty_kind], arity, fn_decl.fd_stack_size,
+                fn_decl.fd_body_node_i);
 
             const mkt_node_t* const body_node =
                 &parser->par_nodes[fn_decl.fd_body_node_i];
@@ -795,9 +797,9 @@ static void node_dump(const parser_t* parser, int no_i, int indent) {
             int src_len = 0;
             parser_tok_source(parser, class_decl.cl_name_tok_i, &src, &src_len);
 
-            log_debug_with_indent(indent, "node #%d %s `%.*s`", no_i,
+            log_debug_with_indent(indent, "node #%d %s `%.*s` type=%s", no_i,
                                   mkt_node_kind_to_str[node->no_kind], src_len,
-                                  src);
+                                  src, mkt_type_to_str[type.ty_kind]);
 
             return;
         }
