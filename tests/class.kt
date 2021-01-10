@@ -1,5 +1,5 @@
 class Empty{}
-// class Person{var id: Long = 99}
+class Person{var id: Long = 99}
 
 fun main(){ 
   println(Empty()) // expect: Instance of size 0

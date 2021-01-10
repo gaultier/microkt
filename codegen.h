@@ -571,6 +571,10 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
         }
         case NODE_INSTANCE: {
             CHECK(type->ty_kind, ==, TYPE_PTR, "%d");
+            CHECK(type->ty_ptr_type_i, >=, 0, "%d");
+            CHECK(type->ty_ptr_type_i, <, (int)buf_size(parser->par_types),
+                  "%d");
+
             const mkt_type_t* const instance_type =
                 &parser->par_types[type->ty_ptr_type_i];
             println("mov $%d, %s", instance_type->ty_size, fn_args[0]);
