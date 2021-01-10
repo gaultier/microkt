@@ -240,6 +240,9 @@ int main() {
         "./err/unknown_type.kt",
         "./err/val_assign.kt",
         "./err/var_undefined.kt",
+        "err/non_matching_fn_return_type.kt",
+        "err/non_matching_fn_return_type_unit.kt",
+        "err/return_not_in_fn.kt",
     };
 
     bool failed = false;
