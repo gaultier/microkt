@@ -150,15 +150,15 @@ static void emit_load(const mkt_type_t* type) {
 void emit_store(const mkt_type_t* type) {
     println("pop %%rdi");
 
-    switch (type->ty_kind) {
-        case TYPE_USER:
-            //     for (int i = 0; i < type->ty_size; i++) {
-            //         println("  mov %d(%%rax), %%r8b", i);
-            //         println("  mov %%r8b, %d(%%rdi)", i);
-            //     }
-            return;
-        default:;
-    }
+    /* switch (type->ty_kind) { */
+    /*     case TYPE_USER: */
+    /*         //     for (int i = 0; i < type->ty_size; i++) { */
+    /*         //         println("  mov %d(%%rax), %%r8b", i); */
+    /*         //         println("  mov %%r8b, %d(%%rdi)", i); */
+    /*         //     } */
+    /*         return; */
+    /*     default:; */
+    /* } */
 
     if (type->ty_size == 1)
         println("mov %%al, (%%rdi)");
@@ -632,6 +632,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
     CHECK(stmt_i, <, (int)buf_size(parser->par_nodes), "%d");
 
     const mkt_node_t* const stmt = &parser->par_nodes[stmt_i];
+    const mkt_type_t* const type = &parser->par_types[stmt->no_type_i];
     const mkt_loc_t loc =
         parser->par_lexer.lex_locs[node_first_token(parser, stmt)];
     println(".loc 1 %d %d\t## %s:%d:%d", loc.loc_line, loc.loc_column,
@@ -668,8 +669,6 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
             emit_addr(parser, binary.bi_lhs_i);
             println("push %%rax");
             emit_expr(parser, binary.bi_rhs_i);
-
-            const mkt_type_t* const type = &parser->par_types[stmt->no_type_i];
             emit_store(type);
 
             return;
@@ -682,7 +681,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
             emit_addr(parser, stmt_i);
             println("push %%rax");
             emit_expr(parser, var_def.vd_init_node_i);
-            emit_store(&parser->par_types[stmt->no_type_i]);
+            emit_store(type);
 
             return;
         }
