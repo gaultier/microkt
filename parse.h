@@ -221,7 +221,7 @@ static void parser_class_begin(parser_t* parser, int first_tok_i,
 
     buf_push(parser->par_types,
              ((mkt_type_t){.ty_kind = TYPE_USER,
-                           .ty_size = 8 /* Patched after parsing members */,
+                           .ty_size = 0 /* Patched after parsing members */,
                            .ty_class_i = -1 /* Patched later */}));
     const int type_i = buf_size(parser->par_types) - 1;
 
