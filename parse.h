@@ -2732,10 +2732,40 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
         !seen_return)
         return RES_OK;
 
-    if (actual_return_type != declared_return_type)
-        return parser_err_non_matching_types(
-            parser, body_node_i,
-            *new_node_i);  // TODO: implement custom error function
+    if (actual_return_type != declared_return_type) {
+        CHECK(seen_return, ==, true, "%d");
+        const int* const body_nodes =
+            parser->par_nodes[body_node_i].no_n.no_block.bl_nodes_i;
+        const int return_node_i = body_nodes[buf_size(body_nodes) - 1];
+        const mkt_node_t* const return_node = &parser->par_nodes[return_node_i];
+        const int actual_type_tok_i = node_last_token(parser, return_node);
+        const mkt_loc_t declared_loc =
+            parser->par_lexer.lex_locs[declared_type_tok_i];
+        const mkt_loc_t actual_loc =
+            parser->par_lexer.lex_locs[actual_type_tok_i];
+        fprintf(
+            stderr,
+            "%s%s:%d:%d:%sDeclared return type %s does not match the actual "
+            "return type %s\n",
+            mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
+            actual_loc.loc_line, actual_loc.loc_column,
+            mkt_colors[is_tty][COL_RESET],
+            mkt_type_to_str[declared_return_type],
+            mkt_type_to_str[actual_return_type]);
+        fprintf(stderr, "%s%s:%d:%d:%sDeclared here:\n",
+                mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
+                declared_loc.loc_line, declared_loc.loc_column,
+                mkt_colors[is_tty][COL_RESET]);
+        parser_print_source_on_error(parser, declared_type_tok_i,
+                                     declared_type_tok_i);
+        fprintf(stderr, "%s%s:%d:%d:%sActual return here:\n",
+                mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
+                actual_loc.loc_line, actual_loc.loc_column,
+                mkt_colors[is_tty][COL_RESET]);
+        parser_print_source_on_error(parser, actual_type_tok_i,
+                                     actual_type_tok_i);
+        return RES_ERR;
+    }
 
     parser->par_fn_i = old_fn_i;
 
