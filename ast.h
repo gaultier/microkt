@@ -13,18 +13,20 @@ typedef enum {
     TYPE_STRING,
     TYPE_FN,
     TYPE_CLASS,
+    TYPE_PTR,
     TYPE_COUNT,
 } mkt_type_kind_t;
 
 static const char mkt_type_to_str[TYPE_COUNT][20] = {
-    [TYPE_ANY] = "Any",     [TYPE_UNIT] = "Unit",  [TYPE_BOOL] = "Boolean",
-    [TYPE_CHAR] = "Char",   [TYPE_BYTE] = "Byte",  [TYPE_INT] = "Int",
-    [TYPE_SHORT] = "Short", [TYPE_LONG] = "Long",  [TYPE_STRING] = "String",
-    [TYPE_CLASS] = "Class", [TYPE_FN] = "Function"};
+    [TYPE_ANY] = "Any",     [TYPE_UNIT] = "Unit",   [TYPE_BOOL] = "Boolean",
+    [TYPE_CHAR] = "Char",   [TYPE_BYTE] = "Byte",   [TYPE_INT] = "Int",
+    [TYPE_SHORT] = "Short", [TYPE_LONG] = "Long",   [TYPE_STRING] = "String",
+    [TYPE_CLASS] = "Class", [TYPE_FN] = "Function", [TYPE_PTR] = "Pointer"};
 
 typedef struct {
     mkt_type_kind_t ty_kind;
-    int ty_size, ty_class_i /* only for TYPE_CLASS */;
+    int ty_size, ty_class_i /* only for TYPE_CLASS */,
+        ty_ptr_type_i /* only for TYPE_PTR */;
 } mkt_type_t;
 
 typedef struct {

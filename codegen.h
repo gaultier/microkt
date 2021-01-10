@@ -509,7 +509,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
                 println("mov %%rax, %s", fn_args[1]);
                 println("sub $8, %s", fn_args[1]);
                 println("call " MKT_NAME_PREFIX "mkt_string_println");
-            } else if (type == TYPE_CLASS) {
+            } else if (type == TYPE_PTR) {
                 println("call " MKT_NAME_PREFIX "mkt_instance_println");
             } else {
                 log_debug("Type %s unimplemented", mkt_type_to_str[type]);
@@ -570,7 +570,10 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             return;
         }
         case NODE_INSTANCE: {
-            println("mov $%d, %s", type->ty_size, fn_args[0]);
+            CHECK(type->ty_kind, ==, TYPE_PTR, "%d");
+            const mkt_type_t* const instance_type =
+                &parser->par_types[type->ty_ptr_type_i];
+            println("mov $%d, %s", instance_type->ty_size, fn_args[0]);
             println("push %%rbx");
             println("push %%rbx");  // For alignment
             println("push %%rcx");

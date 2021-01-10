@@ -337,8 +337,8 @@ static bool parser_check_keyword(const parser_t* parser,
         return false;
 }
 
-static bool parser_parse_identifier_to_type_kind(const parser_t* parser,
-                                                 int tok_i, int* type_i) {
+static bool parser_parse_identifier_to_type_kind(parser_t* parser, int tok_i,
+                                                 int* type_i) {
     CHECK((void*)parser, !=, NULL, "%p");
 
     const char* source = NULL;
@@ -443,7 +443,11 @@ udf:
         const udf_t* const udf = &parser->par_udfs[i];
         if (source_len == udf->ud_name_len &&
             memcmp(source, udf->ud_name, source_len) == 0) {
-            *type_i = udf->ud_type_i;
+            buf_push(parser->par_types,
+                     ((mkt_type_t){.ty_kind = TYPE_PTR,
+                                   .ty_size = 8,
+                                   .ty_ptr_type_i = udf->ud_type_i}));
+            *type_i = buf_size(parser->par_types) - 1;
             return true;
         }
     }
@@ -2013,9 +2017,16 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, int lhs_i,
                           .no_n = {.no_call = {.ca_arg_nodes_i = arg_nodes_i,
                                                .ca_lhs_node_i = lhs_i}}}));
     } else if (callable_decl_node->no_kind == NODE_CLASS_DECL) {
+        buf_push(parser->par_types,
+                 ((mkt_type_t){
+                     .ty_kind = TYPE_PTR,
+                     .ty_size = 8,
+                     .ty_ptr_type_i = callable_decl_node->no_type_i,
+                 }));
+        const int type_i = buf_size(parser->par_types) - 1;
         buf_push(parser->par_nodes,
                  ((mkt_node_t){.no_kind = NODE_INSTANCE,
-                               .no_type_i = callable_decl_node->no_type_i,
+                               .no_type_i = type_i,
                                .no_n = {.no_instance = {
                                             .in_class = callable_node_i,
                                             .in_first_tok_i = first_tok_i,
