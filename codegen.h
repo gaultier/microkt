@@ -509,7 +509,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
                 println("mov %%rax, %s", fn_args[1]);
                 println("sub $8, %s", fn_args[1]);
                 println("call " MKT_NAME_PREFIX "mkt_string_println");
-            } else if (type == TYPE_USER) {
+            } else if (type == TYPE_CLASS) {
                 println("call " MKT_NAME_PREFIX "mkt_instance_println");
             } else {
                 log_debug("Type %s unimplemented", mkt_type_to_str[type]);

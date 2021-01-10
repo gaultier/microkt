@@ -220,7 +220,7 @@ static void parser_class_begin(parser_t* parser, int first_tok_i,
     CHECK((void*)parent_scope_i, !=, NULL, "%p");
 
     buf_push(parser->par_types,
-             ((mkt_type_t){.ty_kind = TYPE_USER,
+             ((mkt_type_t){.ty_kind = TYPE_CLASS,
                            .ty_size = 0 /* Patched after parsing members */,
                            .ty_class_i = -1 /* Patched later */}));
     const int type_i = buf_size(parser->par_types) - 1;
@@ -1601,7 +1601,7 @@ static mkt_res_t parser_parse_navigation_suffix(parser_t* parser, int lhs_i,
     const mkt_node_t* lhs = &parser->par_nodes[lhs_i];
     const mkt_type_t lhs_type = parser->par_types[lhs->no_type_i];
 
-    if (lhs_type.ty_kind != TYPE_USER) {
+    if (lhs_type.ty_kind != TYPE_CLASS) {
         const char* rhs_src = NULL;
         int rhs_src_len = 0;
         parser_tok_source(parser, member_tok_i, &rhs_src, &rhs_src_len);
