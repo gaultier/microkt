@@ -1934,7 +1934,7 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, int lhs_i,
 
     CHECK(*new_node_i, >=, 0, "%d");
     CHECK(*new_node_i, <, (int)buf_size(parser->par_nodes), "%d");
-    const int type_i = parser->par_nodes[*new_node_i].no_type_i;
+    int type_i = parser->par_nodes[*new_node_i].no_type_i;
     CHECK(type_i, >=, 0, "%d");
     CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
 
@@ -1966,6 +1966,7 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, int lhs_i,
 
     if (callable_decl_node->no_kind == NODE_FN_DECL) {
         const mkt_fn_decl_t fn_decl = callable_decl_node->no_n.no_fn_decl;
+        type_i = fn_decl.fd_return_type_i;
         const int declared_arity = buf_size(fn_decl.fd_arg_nodes_i);
         const int found_arity = buf_size(arg_nodes_i);
         if (declared_arity != found_arity) UNIMPLEMENTED();  // TODO: err
