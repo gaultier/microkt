@@ -128,7 +128,7 @@ static void emit_load(const mkt_type_t* type) {
 
     switch (type->ty_kind) {
         case TYPE_FN:
-        case TYPE_USER:
+            /* case TYPE_USER: */
             // Do not try to load the value into a register since it likely
             // would not fit. So we 'decay' to the address of the array and
             // hence also of the  first element
