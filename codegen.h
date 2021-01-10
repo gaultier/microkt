@@ -89,6 +89,35 @@ static void emit_addr(const parser_t* parser, int node_i) {
                     member_src_len, member_src);
             return;
         }
+        case NODE_FN_DECL: {
+            CHECK(current_fn_i, >=, 0, "%d");
+            CHECK(current_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
+            const int caller_current_fn_i = current_fn_i;
+
+            CHECK(current_fn_i, >=, 0, "%d");
+            CHECK(current_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
+            current_fn_i = node_i;
+            CHECK(current_fn_i, >=, 0, "%d");
+            CHECK(current_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
+
+            const mkt_fn_decl_t fn_decl = node->no_n.no_fn_decl;
+            const char* name = NULL;
+            int name_len = 0;
+            parser_tok_source(parser, fn_decl.fd_name_tok_i, &name, &name_len);
+            CHECK((void*)name, !=, NULL, "%p");
+            CHECK(name_len, >=, 0, "%d");
+            CHECK(name_len, <, parser->par_lexer.lex_source_len, "%d");
+
+            println("lea %.*s(%%rip), %%rax", name_len, name);
+
+            CHECK(current_fn_i, >=, 0, "%d");
+            CHECK(current_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
+            current_fn_i = caller_current_fn_i;
+            CHECK(current_fn_i, >=, 0, "%d");
+            CHECK(current_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
+
+            return;
+        }
         default:
             UNREACHABLE();
     }
@@ -516,53 +545,9 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             return;
         }
         case NODE_VAR: {
-            const mkt_var_t var = expr->no_n.no_var;
-            const mkt_node_t* const no_def =
-                &parser->par_nodes[var.va_var_node_i];
-
-            CHECK(no_def->no_type_i, >=, 0, "%d");
-            CHECK(no_def->no_type_i, <, (int)buf_size(parser->par_types), "%d");
-            const int type_size = parser->par_types[no_def->no_type_i].ty_size;
-            CHECK(type_size, >=, 0, "%d");
-
             emit_loc(parser, expr);
-            // TODO:
-            /* emit_expr(var.va_var_node_i); */
-            if (no_def->no_kind == NODE_VAR_DEF) {
-                emit_addr(parser, var.va_var_node_i);
-                emit_load(type);
-            } else if (no_def->no_kind == NODE_FN_DECL) {
-                CHECK(current_fn_i, >=, 0, "%d");
-                CHECK(current_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
-                const int caller_current_fn_i = current_fn_i;
-
-                CHECK(current_fn_i, >=, 0, "%d");
-                CHECK(current_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
-                current_fn_i = var.va_var_node_i;
-                CHECK(current_fn_i, >=, 0, "%d");
-                CHECK(current_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
-
-                const mkt_fn_decl_t fn_decl = no_def->no_n.no_fn_decl;
-                const char* name = NULL;
-                int name_len = 0;
-                parser_tok_source(parser, fn_decl.fd_name_tok_i, &name,
-                                  &name_len);
-                CHECK((void*)name, !=, NULL, "%p");
-                CHECK(name_len, >=, 0, "%d");
-                CHECK(name_len, <, parser->par_lexer.lex_source_len, "%d");
-
-                // TODO: args, etc
-
-                println("call %.*s", name_len, name);
-
-                CHECK(current_fn_i, >=, 0, "%d");
-                CHECK(current_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
-                current_fn_i = caller_current_fn_i;
-                CHECK(current_fn_i, >=, 0, "%d");
-                CHECK(current_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
-            } else
-                UNREACHABLE();
-
+            emit_addr(parser, expr_i);
+            emit_load(type);
             return;
         }
         case NODE_CALL: {
@@ -577,8 +562,9 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
                 // TODO: preserver registers by spilling
                 // TODO: use the stack if # args > 6
             }
-            // TODO: move above the args and here add `call *%%r10`
             emit_expr(parser, call.ca_lhs_node_i);
+            println("mov %%rax, %%r10");
+            println("call *%%r10");
 
             return;
         }
