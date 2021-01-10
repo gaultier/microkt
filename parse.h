@@ -1389,7 +1389,13 @@ static mkt_res_t parser_parse_jump_expr(parser_t* parser, int* new_node_i) {
         const mkt_type_t declared_return_type =
             parser->par_types[fn_decl.fd_return_type_i];
         if (actual_return_type.ty_kind != declared_return_type.ty_kind) {
-            const mkt_loc_t declared_loc = parser->par_lexer.lex_locs[tok_i];
+            const int declared_return_type_tok_i =
+                fn_decl.fd_return_type_tok_i >= 0
+                    ? fn_decl.fd_return_type_tok_i
+                    : node_first_token(
+                          parser, &parser->par_nodes[fn_decl.fd_body_node_i]);
+            const mkt_loc_t declared_loc =
+                parser->par_lexer.lex_locs[declared_return_type_tok_i];
             const mkt_loc_t actual_loc = parser->par_lexer.lex_locs[tok_i];
             fprintf(stderr,
                     "%s%s:%d:%d:%sDeclared return type %s does not match the "
@@ -1404,7 +1410,8 @@ static mkt_res_t parser_parse_jump_expr(parser_t* parser, int* new_node_i) {
                     mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
                     declared_loc.loc_line, declared_loc.loc_column,
                     mkt_colors[is_tty][COL_RESET]);
-            parser_print_source_on_error(parser, tok_i, tok_i);
+            parser_print_source_on_error(parser, declared_return_type_tok_i,
+                                         declared_return_type_tok_i);
             fprintf(stderr, "%s%s:%d:%d:%sActual return here:\n",
                     mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
                     actual_loc.loc_line, actual_loc.loc_column,
@@ -2606,17 +2613,18 @@ static int parser_fn_begin(parser_t* parser, int first_tok_i, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
-    buf_push(parser->par_nodes,
-             ((mkt_node_t){
-                 .no_type_i = TYPE_FN_I,
-                 .no_kind = NODE_FN_DECL,
-                 .no_n = {.no_fn_decl = {.fd_first_tok_i = first_tok_i,
-                                         .fd_name_tok_i = -1,
-                                         .fd_last_tok_i = -1,
-                                         .fd_body_node_i = -1,
-                                         .fd_flags = FN_FLAGS_PRIVATE,
-                                         .fd_arg_nodes_i = NULL,
-                                         .fd_return_type_i = TYPE_UNIT_I}}}));
+    buf_push(
+        parser->par_nodes,
+        ((mkt_node_t){.no_type_i = TYPE_FN_I,
+                      .no_kind = NODE_FN_DECL,
+                      .no_n = {.no_fn_decl = {.fd_first_tok_i = first_tok_i,
+                                              .fd_name_tok_i = -1,
+                                              .fd_last_tok_i = -1,
+                                              .fd_body_node_i = -1,
+                                              .fd_flags = FN_FLAGS_PRIVATE,
+                                              .fd_arg_nodes_i = NULL,
+                                              .fd_return_type_i = TYPE_UNIT_I,
+                                              .fd_return_type_tok_i = -1}}}));
     const int old_fn_i = parser->par_fn_i;
     parser->par_fn_i = *new_node_i = buf_size(parser->par_nodes) - 1;
     buf_push(parser->par_node_decls, *new_node_i);
@@ -2722,6 +2730,8 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
     CHECK(declared_return_type_i, <, (int)buf_size(parser->par_types), "%d");
     parser->par_nodes[*new_node_i].no_n.no_fn_decl.fd_return_type_i =
         declared_return_type_i;
+    parser->par_nodes[*new_node_i].no_n.no_fn_decl.fd_return_type_tok_i =
+        declared_type_tok_i;
 
     if (!parser_match(
             parser,

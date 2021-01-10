@@ -18,7 +18,7 @@ typedef enum {
 
 static const char mkt_type_to_str[TYPE_COUNT][20] = {
     [TYPE_ANY] = "Any",       [TYPE_UNIT] = "Unit",
-    [TYPE_BOOL] = "Bool",     [TYPE_CHAR] = "Char",
+    [TYPE_BOOL] = "Boolean",  [TYPE_CHAR] = "Char",
     [TYPE_BYTE] = "Byte",     [TYPE_INT] = "Int",
     [TYPE_SHORT] = "Short",   [TYPE_LONG] = "Long",
     [TYPE_STRING] = "String", [TYPE_USER] = "User defined",
@@ -142,8 +142,8 @@ static const unsigned short FN_FLAGS_PRIVATE = 0x4;
 static const unsigned short FN_FLAGS_SEEN_RETURN = 0x8;
 
 typedef struct {
-    int fd_first_tok_i, fd_last_tok_i, fd_name_tok_i, fd_body_node_i,
-        fd_stack_size, *fd_arg_nodes_i, fd_return_type_i;
+    int fd_first_tok_i, fd_last_tok_i, fd_name_tok_i, fd_return_type_tok_i,
+        fd_body_node_i, fd_stack_size, *fd_arg_nodes_i, fd_return_type_i;
     unsigned short fd_flags;
 } mkt_fn_decl_t;
 
