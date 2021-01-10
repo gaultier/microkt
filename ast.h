@@ -13,15 +13,16 @@ typedef enum {
     TYPE_STRING,
     TYPE_FN,
     TYPE_USER,
+    TYPE_COUNT,
 } mkt_type_kind_t;
 
-static const char mkt_type_to_str[][20] = {
+static const char mkt_type_to_str[TYPE_COUNT][20] = {
     [TYPE_ANY] = "Any",       [TYPE_UNIT] = "Unit",
     [TYPE_BOOL] = "Bool",     [TYPE_CHAR] = "Char",
     [TYPE_BYTE] = "Byte",     [TYPE_INT] = "Int",
     [TYPE_SHORT] = "Short",   [TYPE_LONG] = "Long",
     [TYPE_STRING] = "String", [TYPE_USER] = "User defined",
-};
+    [TYPE_FN] = "Function"};
 
 typedef struct {
     mkt_type_kind_t ty_kind;
@@ -70,9 +71,10 @@ typedef enum {
     NODE_CLASS_DECL,
     NODE_INSTANCE,
     NODE_MEMBER_GET,
+    NODE_COUNT,
 } mkt_node_kind_t;
 
-const char mkt_node_kind_to_str[][30] = {
+const char mkt_node_kind_to_str[NODE_COUNT][30] = {
     [NODE_BUILTIN_PRINTLN] = "Print",
     [NODE_KEYWORD_BOOL] = "Bool",
     [NODE_STRING] = "String",

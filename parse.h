@@ -800,6 +800,8 @@ static void node_dump(const parser_t* parser, int no_i, int indent) {
 
             return;
         }
+        case NODE_COUNT:
+            UNREACHABLE();
     }
 #endif
 }
@@ -856,9 +858,10 @@ static int node_first_token(const parser_t* parser, const mkt_node_t* node) {
             return node->no_n.no_call.ca_first_tok_i;
         case NODE_INSTANCE:
             return node->no_n.no_instance.in_first_tok_i;
+        default:
+            log_debug("node kind=%d", node->no_kind);
+            UNREACHABLE();
     }
-    log_debug("node kind=%d", node->no_kind);
-    UNREACHABLE();
 }
 
 static int node_last_token(const parser_t* parser, const mkt_node_t* node) {
@@ -913,9 +916,10 @@ static int node_last_token(const parser_t* parser, const mkt_node_t* node) {
             return node->no_n.no_call.ca_last_tok_i;
         case NODE_INSTANCE:
             return node->no_n.no_instance.in_last_tok_i;
+        default:
+            log_debug("node kind=%d", node->no_kind);
+            UNREACHABLE();
     }
-    log_debug("node kind=%d", node->no_kind);
-    UNREACHABLE();
 }
 
 static void parser_tok_source(const parser_t* parser, int tok_i,

@@ -619,15 +619,11 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             return;
         }
 
-            // Forbidden by the grammar
-        case NODE_WHILE:
-        case NODE_VAR_DEF:
-        case NODE_FN_DECL:
-        case NODE_CLASS_DECL:
+            // Forbidden by the grammar or simply impossible
+        default:
+            log_debug("no_kind=%s", mkt_node_kind_to_str[expr->no_kind]);
             UNREACHABLE();
     }
-    log_debug("no_kind=%s", mkt_node_kind_to_str[expr->no_kind]);
-    UNREACHABLE();
 }
 
 static void emit_stmt(const parser_t* parser, int stmt_i) {
@@ -720,9 +716,10 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
             emit_expr(parser, stmt_i);
             return;
         }
+        default:
+            log_debug("no_kind=%s", mkt_node_kind_to_str[stmt->no_kind]);
+            UNREACHABLE();
     }
-    log_debug("no_kind=%s", mkt_node_kind_to_str[stmt->no_kind]);
-    UNREACHABLE();
 }
 
 static void emit(const parser_t* parser, FILE* asm_file) {
