@@ -16,6 +16,7 @@ static const int TYPE_CHAR_I = 6;    // see parser_init
 static const int TYPE_BYTE_I = 7;    // see parser_init
 static const int TYPE_SHORT_I = 8;   // see parser_init
 static const int TYPE_STRING_I = 9;  // see parser_init
+static const int TYPE_FN_I = 10;     // see parser_init
 
 // User Defined Type (UDF)
 typedef struct {
@@ -523,6 +524,10 @@ static mkt_res_t parser_init(const char* file_name0, const char* source,
                                     .ty_kind = TYPE_STRING,
                                     .ty_size = 8,
                                 }));  // Hence TYPE_STRING_I = 9
+    buf_push(parser->par_types, ((mkt_type_t){
+                                    .ty_kind = TYPE_FN,
+                                    .ty_size = 8,
+                                }));  // Hence TYPE_FN = 10
 
     return RES_OK;
 }
@@ -2557,7 +2562,7 @@ static int parser_fn_begin(parser_t* parser, int first_tok_i, int* new_node_i) {
 
     buf_push(
         parser->par_nodes,
-        ((mkt_node_t){.no_type_i = TYPE_UNIT_I,
+        ((mkt_node_t){.no_type_i = TYPE_FN_I,
                       .no_kind = NODE_FN_DECL,
                       .no_n = {.no_fn_decl = {.fd_first_tok_i = first_tok_i,
                                               .fd_name_tok_i = -1,

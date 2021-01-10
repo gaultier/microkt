@@ -11,6 +11,7 @@ typedef enum {
     TYPE_SHORT,
     TYPE_LONG,
     TYPE_STRING,
+    TYPE_FN,
     TYPE_USER,
 } mkt_type_kind_t;
 
