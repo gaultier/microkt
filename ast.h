@@ -102,7 +102,7 @@ const char mkt_node_kind_to_str[NODE_COUNT][30] = {
     [NODE_SYSCALL] = "Syscall",
     [NODE_CLASS_DECL] = "Class",
     [NODE_INSTANCE] = "Instance",
-    [NODE_MEMBER_GET] = "MemberGet",
+    [NODE_MEMBER] = "Member",
 };
 
 typedef struct {

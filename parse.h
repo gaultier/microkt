@@ -628,7 +628,7 @@ static void node_dump(const parser_t* parser, int no_i, int indent) {
         case NODE_MODULO:
         case NODE_SUBTRACT:
         case NODE_ASSIGN:
-        case NODE_MEMBER_GET:
+        case NODE_MEMBER:
         case NODE_ADD: {
             log_debug_with_indent(
                 indent, "node #%d %s type=%s", no_i,
