@@ -221,7 +221,7 @@ static void parser_class_begin(parser_t* parser, int first_tok_i,
 
     buf_push(parser->par_types,
              ((mkt_type_t){.ty_kind = TYPE_USER,
-                           .ty_size = 0 /* Patched after parsing members */,
+                           .ty_size = 8 /* Patched after parsing members */,
                            .ty_class_i = -1 /* Patched later */}));
     const int type_i = buf_size(parser->par_types) - 1;
 
@@ -738,10 +738,11 @@ static void node_dump(const parser_t* parser, int no_i, int indent) {
                 &parser->par_lexer.lex_source[pos_range.pr_start];
             const int name_len = pos_range.pr_end - pos_range.pr_start;
             log_debug_with_indent(
-                indent, "node #%d %s `%.*s` type=%s arity=%d body_i=%d", no_i,
-                mkt_node_kind_to_str[node->no_kind], name_len, name,
+                indent,
+                "node #%d %s `%.*s` type=%s arity=%d stack_size=%d body_i=%d",
+                no_i, mkt_node_kind_to_str[node->no_kind], name_len, name,
                 mkt_type_to_str[parser->par_types[node->no_type_i].ty_kind],
-                arity, fn_decl.fd_body_node_i);
+                arity, fn_decl.fd_stack_size, fn_decl.fd_body_node_i);
 
             const mkt_node_t* const body_node =
                 &parser->par_nodes[fn_decl.fd_body_node_i];
@@ -2522,6 +2523,8 @@ static mkt_res_t parser_parse_property_declaration(parser_t* parser,
                                               .vd_stack_offset = offset,
                                               .vd_flags = flags}}}));
     *new_node_i = buf_size(parser->par_nodes) - 1;
+    parser->par_nodes[parser->par_fn_i].no_n.no_fn_decl.fd_stack_size +=
+        type.ty_size;
 
     log_debug("new var def=%d current_scope_i=%d flags=%d offset=%d fn=%d",
               *new_node_i, parser->par_scope_i, flags, offset,
@@ -2830,7 +2833,7 @@ static mkt_res_t parser_parse_class_declaration(parser_t* parser,
     {
         mkt_node_t* const class_node = &parser->par_nodes[*new_node_i];
         class_node->no_n.no_class_decl.cl_members = members;
-        parser->par_types[class_node->no_type_i].ty_size = size;
+        parser->par_types[class_node->no_type_i].ty_size += size;
     }
 
     if (!parser_match(
