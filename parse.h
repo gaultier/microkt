@@ -2698,7 +2698,7 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
 
     const mkt_type_kind_t actual_type =
         parser->par_types[actual_type_i].ty_kind;
-    const mkt_type_kind_t declared_type =
+    const mkt_type_kind_t declared_return_type =
         parser->par_types[declared_return_type_i].ty_kind;
 
     mkt_fn_decl_t* const fn_decl =
@@ -2709,13 +2709,13 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
 
     log_debug("new fn decl=%d flags=%d body_node_i=%d type=%s arity=%d",
               *new_node_i, fn_decl->fd_flags, fn_decl->fd_body_node_i,
-              mkt_type_to_str[declared_type],
+              mkt_type_to_str[declared_return_type],
               (int)buf_size(fn_decl->fd_arg_nodes_i));
 
     parser_scope_end(parser, parent_scope_i);
 
     const bool seen_return = fn_decl->fd_flags & FN_FLAGS_SEEN_RETURN;
-    if (declared_type != TYPE_UNIT && !seen_return) {
+    if (declared_return_type != TYPE_UNIT && !seen_return) {
         const mkt_loc_t loc = parser->par_lexer.lex_locs[last_tok_i];
 
         fprintf(stderr,
@@ -2723,15 +2723,16 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
                 "return %s but has no return\n",
                 mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
                 loc.loc_line, loc.loc_column, mkt_colors[is_tty][COL_RESET],
-                mkt_type_to_str[declared_type]);
+                mkt_type_to_str[declared_return_type]);
         parser_print_source_on_error(parser, last_tok_i, last_tok_i);
 
         return RES_ERR;
     }
-    if (declared_type == TYPE_UNIT && actual_type != TYPE_UNIT && !seen_return)
+    if (declared_return_type == TYPE_UNIT && actual_type != TYPE_UNIT &&
+        !seen_return)
         return RES_OK;
 
-    if (actual_type != declared_type)
+    if (actual_type != declared_return_type)
         return parser_err_non_matching_types(
             parser, body_node_i,
             *new_node_i);  // TODO: implement custom error function
