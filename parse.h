@@ -1963,7 +1963,7 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, int lhs_i,
         const mkt_fn_decl_t fn_decl = callable_decl_node->no_n.no_fn_decl;
         type_i = fn_decl.fd_return_type_i;
         const int declared_arity = buf_size(fn_decl.fd_arg_nodes_i);
-        const int found_arity = buf_size(arg_nodes_i);
+        const int found_arity = buf_size(arg_nodes_i) / 2;
         if (declared_arity != found_arity) UNIMPLEMENTED();  // TODO: err
 
         const int current_scope_i =
@@ -2571,17 +2571,18 @@ static mkt_res_t parser_parse_parameter(parser_t* parser, int** new_nodes_i) {
                                             .va_offset = offset,
                                             .va_flags = MKT_VAR_FLAGS_VAR,
                                         }}}));
-        buf_push(parser->par_nodes,
-                 ((mkt_node_t){
-                     .no_kind = NODE_ASSIGN,
-                     .no_type_i = type_i,
-                     .no_n = {.no_binary = {
-                                  .bi_lhs_i = buf_size(parser->par_nodes) - 1,
-                                  .bi_rhs_i = -1,
-                              }}}));
-
         const int new_node_i = buf_size(parser->par_nodes) - 1;
         buf_push(*new_nodes_i, new_node_i);
+
+        buf_push(parser->par_nodes,
+                 ((mkt_node_t){.no_kind = NODE_ASSIGN,
+                               .no_type_i = type_i,
+                               .no_n = {.no_binary = {
+                                            .bi_lhs_i = new_node_i,
+                                            .bi_rhs_i = -1,
+                                        }}}));
+
+        buf_push(*new_nodes_i, buf_size(parser->par_nodes) - 1);
 
         const char* source = NULL;
         int source_len = 0;
