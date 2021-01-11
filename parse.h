@@ -2279,8 +2279,6 @@ static mkt_res_t parser_check_var_assignable(parser_t* parser, int var_i,
         return parser_check_var_assignable(parser, bin.bi_rhs_i, eq_tok_i);
     }
 
-    UNREACHABLE();
-
     CHECK(node->no_kind, ==, NODE_VAR, "%d");
     const mkt_var_t var = node->no_n.no_var;
     CHECK(var.va_var_node_i, ==, -1, "%d");
@@ -2513,15 +2511,14 @@ static mkt_res_t parser_parse_property_declaration(parser_t* parser,
                                                .va_var_node_i = -1,
                                                .va_offset = offset,
                                                .va_flags = flags}}}));
-    buf_push(
-        parser->par_nodes,
-        ((mkt_node_t){.no_kind = NODE_ASSIGN,
-                      .no_type_i = type_i,
-                      .no_n = {.no_binary = {
-                                   .bi_lhs_i = buf_size(parser->par_nodes) - 1,
-                                   .bi_rhs_i = init_node_i,
-                               }}}));
     *new_node_i = buf_size(parser->par_nodes) - 1;
+    buf_push(parser->par_nodes,
+             ((mkt_node_t){.no_kind = NODE_ASSIGN,
+                           .no_type_i = type_i,
+                           .no_n = {.no_binary = {
+                                        .bi_lhs_i = *new_node_i,
+                                        .bi_rhs_i = init_node_i,
+                                    }}}));
 
     log_debug("new var def=%d current_scope_i=%d flags=%d offset=%d fn=%d",
               *new_node_i, parser->par_scope_i, flags, offset,
