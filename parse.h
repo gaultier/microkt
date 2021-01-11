@@ -107,6 +107,8 @@ static mkt_res_t parser_resolve_member(const parser_t* parser, int tok_i,
     CHECK((void*)def_node_i, !=, NULL, "%p");
     CHECK(tok_i, >=, 0, "%d");
 
+    UNIMPLEMENTED();
+
     const char* member_source = NULL;
     int member_source_len = 0;
     parser_tok_source(parser, tok_i, &member_source, &member_source_len);
@@ -117,10 +119,12 @@ static mkt_res_t parser_resolve_member(const parser_t* parser, int tok_i,
         const int m_i = class_decl->cl_members[i];
         const mkt_node_t* const m_node = &parser->par_nodes[m_i];
 
-        if (m_node->no_kind != NODE_VAR_DEF) continue;
+        if (m_node->no_kind != NODE_VAR ||
+            m_node->no_n.no_var.va_var_node_i != -1)
+            continue;
 
-        const mkt_var_def_t var_def = m_node->no_n.no_var_def;
-        const int tok_i = var_def.vd_name_tok_i;
+        const mkt_var_t var = m_node->no_n.no_var;
+        const int tok_i = var.va_tok_i;
         const char* m_source = NULL;
         int m_source_len = 0;
         parser_tok_source(parser, tok_i, &m_source, &m_source_len);
@@ -170,18 +174,20 @@ static mkt_res_t parser_resolve_var(const parser_t* parser, int tok_i,
             const char* def_source = NULL;
             int def_source_len = 0;
 
-            if (stmt->no_kind == NODE_VAR_DEF)
-                parser_tok_source(parser, stmt->no_n.no_var_def.vd_name_tok_i,
-                                  &def_source, &def_source_len);
-            else if (stmt->no_kind == NODE_FN_DECL)
-                parser_tok_source(parser, stmt->no_n.no_fn_decl.fd_name_tok_i,
-                                  &def_source, &def_source_len);
+            int tok_i = -1;
+            if (stmt->no_kind == NODE_VAR) {
+                const mkt_var_t var = stmt->no_n.no_var;
+                if (var.va_var_node_i != -1)
+                    continue;  // Not a var definition, simply a var reference
+                tok_i = var.va_tok_i;
+            } else if (stmt->no_kind == NODE_FN_DECL)
+                tok_i = stmt->no_n.no_fn_decl.fd_name_tok_i;
             else if (stmt->no_kind == NODE_CLASS_DECL)
-                parser_tok_source(parser,
-                                  stmt->no_n.no_class_decl.cl_name_tok_i,
-                                  &def_source, &def_source_len);
+                tok_i = stmt->no_n.no_class_decl.cl_name_tok_i;
             else
                 continue;
+
+            parser_tok_source(parser, tok_i, &def_source, &def_source_len);
 
             CHECK((void*)def_source, !=, NULL, "%p");
             CHECK(def_source_len, >=, 0, "%d");
@@ -271,14 +277,13 @@ static void parser_class_begin(parser_t* parser, int first_tok_i,
 
 static mkt_res_t parser_err_assigning_val(const parser_t* parser,
                                           int assign_tok_i,
-                                          const mkt_var_def_t* var_def) {
+                                          const mkt_var_t* var) {
     CHECK((void*)parser, !=, NULL, "%p");
-    CHECK((void*)var_def, !=, NULL, "%p");
+    CHECK((void*)var, !=, NULL, "%p");
     CHECK(assign_tok_i, >=, 0, "%d");
     CHECK(assign_tok_i, <, parser->par_lexer.lex_source_len, "%d");
 
-    const mkt_loc_t vd_loc_start =
-        parser->par_lexer.lex_locs[var_def->vd_first_tok_i];
+    const mkt_loc_t vd_loc_start = parser->par_lexer.lex_locs[var->va_tok_i];
     const mkt_loc_t assign_loc_start = parser->par_lexer.lex_locs[assign_tok_i];
 
     fprintf(stderr,
@@ -292,8 +297,7 @@ static mkt_res_t parser_err_assigning_val(const parser_t* parser,
             mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
             vd_loc_start.loc_line, vd_loc_start.loc_column,
             mkt_colors[is_tty][COL_RESET]);
-    parser_print_source_on_error(parser, var_def->vd_first_tok_i,
-                                 var_def->vd_first_tok_i);
+    parser_print_source_on_error(parser, var->va_tok_i, var->va_tok_i);
     return RES_ASSIGNING_VAL;
 }
 
@@ -686,42 +690,20 @@ static void node_dump(const parser_t* parser, int no_i, int indent) {
 
             break;
         }
-        case NODE_VAR_DEF: {
-            const mkt_var_def_t var_def = node->no_n.no_var_def;
-            const mkt_pos_range_t pos_range =
-                parser->par_lexer.lex_tok_pos_ranges[var_def.vd_name_tok_i];
-
-            const char* const name =
-                &parser->par_lexer.lex_source[pos_range.pr_start];
-            const int name_len = pos_range.pr_end - pos_range.pr_start;
-            log_debug_with_indent(
-                indent, "node #%d %s type=%s name=%.*s offset=%d flags=%d",
-                no_i, mkt_node_kind_to_str[node->no_kind],
-                mkt_type_to_str[parser->par_types[node->no_type_i].ty_kind],
-                name_len, name, var_def.vd_stack_offset, var_def.vd_flags);
-
-            if (var_def.vd_init_node_i >= 0)
-                node_dump(parser, var_def.vd_init_node_i, indent + 2);
-
-            break;
-        }
         case NODE_VAR: {
             const mkt_var_t var = node->no_n.no_var;
-            const mkt_node_t* const no_var_def =
-                &parser->par_nodes[var.va_var_node_i];
-            const mkt_var_def_t var_def = no_var_def->no_n.no_var_def;
             const mkt_pos_range_t pos_range =
-                parser->par_lexer.lex_tok_pos_ranges[var_def.vd_name_tok_i];
+                parser->par_lexer.lex_tok_pos_ranges[var.va_tok_i];
 
             const char* const name =
                 &parser->par_lexer.lex_source[pos_range.pr_start];
             const int name_len = pos_range.pr_end - pos_range.pr_start;
 
             log_debug_with_indent(
-                indent, "node #%d %s type=%s name=%.*s offset=%d", no_i,
-                mkt_node_kind_to_str[node->no_kind],
-                mkt_type_to_str[parser->par_types[node->no_type_i].ty_kind],
-                name_len, name, var_def.vd_stack_offset);
+                indent, "node #%d %s type=%s name=%.*s offset=%d flags=%hu",
+                no_i, mkt_node_kind_to_str[node->no_kind],
+                mkt_type_to_str[type.ty_kind], name_len, name, var.va_offset,
+                var.va_flags);
 
             break;
         }
@@ -851,8 +833,6 @@ static int node_first_token(const parser_t* parser, const mkt_node_t* node) {
             return node->no_n.no_if.if_first_tok_i;
         case NODE_BLOCK:
             return node->no_n.no_block.bl_first_tok_i;
-        case NODE_VAR_DEF:
-            return node->no_n.no_var_def.vd_first_tok_i;
         case NODE_VAR:
             return node->no_n.no_var.va_tok_i;
         case NODE_WHILE:
@@ -909,8 +889,6 @@ static int node_last_token(const parser_t* parser, const mkt_node_t* node) {
             return node->no_n.no_if.if_last_tok_i;
         case NODE_BLOCK:
             return node->no_n.no_block.bl_last_tok_i;
-        case NODE_VAR_DEF:
-            return node->no_n.no_var_def.vd_last_tok_i;
         case NODE_VAR:
             return node->no_n.no_var.va_tok_i;
         case NODE_WHILE:
@@ -2291,23 +2269,23 @@ static mkt_res_t parser_check_var_assignable(parser_t* parser, int var_i,
     CHECK((void*)parser, !=, NULL, "%p");
 
     const mkt_node_t* const node = &parser->par_nodes[var_i];
-    if (node->no_kind != NODE_VAR_DEF) {
-        if (node->no_kind == NODE_VAR) {
-            const mkt_var_t var = node->no_n.no_var;
+    if (node->no_kind == NODE_VAR) {
+        const mkt_var_t var = node->no_n.no_var;
+        if (var.va_var_node_i >= 0)
             return parser_check_var_assignable(parser, var.va_var_node_i,
                                                eq_tok_i);
-        } else if (node->no_kind == NODE_MEMBER) {
-            const mkt_binary_t bin = node->no_n.no_binary;
-            return parser_check_var_assignable(parser, bin.bi_rhs_i, eq_tok_i);
-        }
-
-        UNREACHABLE();
+    } else if (node->no_kind == NODE_MEMBER) {
+        const mkt_binary_t bin = node->no_n.no_binary;
+        return parser_check_var_assignable(parser, bin.bi_rhs_i, eq_tok_i);
     }
 
-    CHECK(node->no_kind, ==, NODE_VAR_DEF, "%d");
-    const mkt_var_def_t var_def = node->no_n.no_var_def;
-    if (var_def.vd_flags & MKT_VAR_FLAGS_VAL)
-        return parser_err_assigning_val(parser, eq_tok_i, &var_def);
+    UNREACHABLE();
+
+    CHECK(node->no_kind, ==, NODE_VAR, "%d");
+    const mkt_var_t var = node->no_n.no_var;
+    CHECK(var.va_var_node_i, ==, -1, "%d");
+    if (var.va_flags & MKT_VAR_FLAGS_VAL)
+        return parser_err_assigning_val(parser, eq_tok_i, &var);
 
     return RES_OK;
 }
@@ -2464,7 +2442,7 @@ static mkt_res_t parser_parse_property_declaration(parser_t* parser,
         return RES_NONE;
 
     int first_tok_i = -1, name_tok_i = -1, type_tok_i = -1, dummy = -1,
-        last_tok_i = -1, init_node_i = -1;
+        init_node_i = -1;
 
     unsigned short flags = 0;
     if (parser_match(parser, &first_tok_i, 1, TOK_ID_VAR))
@@ -2528,16 +2506,21 @@ static mkt_res_t parser_parse_property_declaration(parser_t* parser,
             parser->par_nodes[parser->par_fn_i].no_n.no_fn_decl.fd_stack_size;
     }
 
+    buf_push(parser->par_nodes,
+             ((mkt_node_t){.no_kind = NODE_VAR,
+                           .no_type_i = type_i,
+                           .no_n = {.no_var = {.va_tok_i = name_tok_i,
+                                               .va_var_node_i = -1,
+                                               .va_offset = offset,
+                                               .va_flags = flags}}}));
     buf_push(
         parser->par_nodes,
-        ((mkt_node_t){.no_kind = NODE_VAR_DEF,
+        ((mkt_node_t){.no_kind = NODE_ASSIGN,
                       .no_type_i = type_i,
-                      .no_n = {.no_var_def = {.vd_first_tok_i = first_tok_i,
-                                              .vd_last_tok_i = last_tok_i,
-                                              .vd_name_tok_i = name_tok_i,
-                                              .vd_init_node_i = init_node_i,
-                                              .vd_stack_offset = offset,
-                                              .vd_flags = flags}}}));
+                      .no_n = {.no_binary = {
+                                   .bi_lhs_i = buf_size(parser->par_nodes) - 1,
+                                   .bi_rhs_i = init_node_i,
+                               }}}));
     *new_node_i = buf_size(parser->par_nodes) - 1;
 
     log_debug("new var def=%d current_scope_i=%d flags=%d offset=%d fn=%d",
@@ -2583,15 +2566,23 @@ static mkt_res_t parser_parse_parameter(parser_t* parser, int** new_nodes_i) {
             parser->par_nodes[parser->par_fn_i].no_n.no_fn_decl.fd_stack_size;
 
         buf_push(parser->par_nodes,
+                 ((mkt_node_t){.no_kind = NODE_VAR,
+                               .no_type_i = type_i,
+                               .no_n = {.no_var = {
+                                            .va_tok_i = identifier_tok_i,
+                                            .va_var_node_i = -1,
+                                            .va_offset = offset,
+                                            .va_flags = MKT_VAR_FLAGS_VAR,
+                                        }}}));
+        buf_push(parser->par_nodes,
                  ((mkt_node_t){
-                     .no_kind = NODE_VAR_DEF,
+                     .no_kind = NODE_ASSIGN,
                      .no_type_i = type_i,
-                     .no_n = {.no_var_def = {.vd_name_tok_i = identifier_tok_i,
-                                             .vd_first_tok_i = identifier_tok_i,
-                                             .vd_last_tok_i = type_tok_i,
-                                             .vd_init_node_i = -1,
-                                             .vd_stack_offset = offset,
-                                             .vd_flags = MKT_VAR_FLAGS_VAR}}}));
+                     .no_n = {.no_binary = {
+                                  .bi_lhs_i = buf_size(parser->par_nodes) - 1,
+                                  .bi_rhs_i = -1,
+                              }}}));
+
         const int new_node_i = buf_size(parser->par_nodes) - 1;
         buf_push(*new_nodes_i, new_node_i);
 
@@ -2836,8 +2827,7 @@ static mkt_res_t parser_parse_class_declaration(parser_t* parser,
     while ((res = parser_parse_declaration(parser, &member)) == RES_OK) {
         buf_push(members, member);
         mkt_node_t* const node = &parser->par_nodes[member];
-        if (node->no_kind == NODE_VAR_DEF)
-            node->no_n.no_var_def.vd_stack_offset = size;
+        if (node->no_kind == NODE_VAR) node->no_n.no_var.va_offset = size;
         size += /* runtime header */ sizeof(void*) +
                 parser->par_types[node->no_type_i].ty_size;
     }

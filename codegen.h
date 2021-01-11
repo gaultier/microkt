@@ -65,29 +65,27 @@ static void emit_addr(const parser_t* parser, int node_i) {
 
     switch (node->no_kind) {
         case NODE_VAR: {
-            emit_addr(parser, node->no_n.no_var.va_var_node_i);
-            return;
-        }
-        case NODE_VAR_DEF: {
-            const mkt_var_def_t var_def = node->no_n.no_var_def;
-            println("lea -%d(%%rbp), %%rax", var_def.vd_stack_offset);
+            const mkt_var_t var = node->no_n.no_var;
+            println("lea -%d(%%rbp), %%rax", var.va_offset);
             return;
         }
         case NODE_MEMBER: {
-            const mkt_binary_t bin = node->no_n.no_binary;
-            emit_addr(parser, bin.bi_lhs_i);
+            /* const mkt_binary_t bin = node->no_n.no_binary; */
+            /* emit_addr(parser, bin.bi_lhs_i); */
 
-            const mkt_node_t* const rhs = &parser->par_nodes[bin.bi_rhs_i];
-            CHECK(rhs->no_kind, ==, NODE_VAR_DEF, "%d");
-            const mkt_var_def_t var_def = rhs->no_n.no_var_def;
+            /* const mkt_node_t* const rhs = &parser->par_nodes[bin.bi_rhs_i];
+             */
+            /* CHECK(rhs->no_kind, ==, NODE_VAR_DEF, "%d"); */
+            /* const mkt_var_def_t var_def = rhs->no_n.no_var_def; */
 
-            const char* member_src = NULL;
-            int member_src_len = 0;
-            parser_tok_source(parser, var_def.vd_name_tok_i, &member_src,
-                              &member_src_len);
-            println("add $%d, %%rax # get `%.*s`", var_def.vd_stack_offset,
-                    member_src_len, member_src);
-            return;
+            /* const char* member_src = NULL; */
+            /* int member_src_len = 0; */
+            /* parser_tok_source(parser, var_def.vd_name_tok_i, &member_src, */
+            /*                   &member_src_len); */
+            /* println("add $%d, %%rax # get `%.*s`", var_def.vd_stack_offset,
+             */
+            /*         member_src_len, member_src); */
+            /* return; */
         }
         case NODE_FN_DECL: {
             CHECK(current_fn_i, >=, 0, "%d");
@@ -194,7 +192,7 @@ static void fn_prolog(const parser_t* parser, const mkt_fn_decl_t* fn_decl,
         CHECK(arg_i, <, (int)buf_size(parser->par_nodes), "%d");
 
         const mkt_node_t* const arg = &parser->par_nodes[arg_i];
-        const int stack_offset = arg->no_n.no_var_def.vd_stack_offset;
+        const int stack_offset = arg->no_n.no_var.va_offset;
         CHECK(stack_offset, >=, 0, "%d");
 
         CHECK(i, <, 6, "%d");  // FIXME: stack args
@@ -676,18 +674,6 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
             emit_addr(parser, binary.bi_lhs_i);
             println("push %%rax");
             emit_expr(parser, binary.bi_rhs_i);
-            emit_store(type);
-
-            return;
-        }
-        case NODE_VAR_DEF: {
-            const mkt_var_def_t var_def = stmt->no_n.no_var_def;
-            if (var_def.vd_init_node_i < 0) return;
-
-            emit_loc(parser, stmt);
-            emit_addr(parser, stmt_i);
-            println("push %%rax");
-            emit_expr(parser, var_def.vd_init_node_i);
             emit_store(type);
 
             return;

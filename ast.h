@@ -60,7 +60,6 @@ typedef enum {
     NODE_NOT,
     NODE_IF,
     NODE_BLOCK,
-    NODE_VAR_DEF,
     NODE_VAR,
     NODE_ASSIGN,
     NODE_WHILE,
@@ -92,7 +91,6 @@ const char mkt_node_kind_to_str[NODE_COUNT][30] = {
     [NODE_NOT] = "Not",
     [NODE_IF] = "If",
     [NODE_BLOCK] = "Block",
-    [NODE_VAR_DEF] = "VarDef",
     [NODE_VAR] = "Var",
     [NODE_ASSIGN] = "Assign",
     [NODE_WHILE] = "While",
@@ -119,17 +117,12 @@ typedef struct {
     int bl_first_tok_i, bl_last_tok_i, *bl_nodes_i, bl_parent_scope_i;
 } mkt_block_t;
 
-typedef struct {
-    int vd_first_tok_i, vd_last_tok_i, vd_name_tok_i, vd_init_node_i,
-        vd_stack_offset;
-    unsigned short vd_flags;
-} mkt_var_def_t;
-
 static const unsigned short MKT_VAR_FLAGS_VAL = 0x1;
 static const unsigned short MKT_VAR_FLAGS_VAR = 0x2;
 
 typedef struct {
-    int va_tok_i, va_var_node_i;  // Node the variable refers to
+    int va_tok_i, va_var_node_i /* Node the variable refers to */, va_offset;
+    unsigned short va_flags;
 } mkt_var_t;
 
 typedef struct {
@@ -184,7 +177,6 @@ typedef struct {
         unary_t no_unary;                // NODE_NOT, NODE_RETURN
         mkt_if_t no_if;                  // NODE_IF
         mkt_block_t no_block;            // NODE_BLOCK
-        mkt_var_def_t no_var_def;        // NODE_VAR_DEF
         mkt_var_t no_var;                // NODE_VAR
         mkt_while_t no_while;            // NODE_WHILE
         mkt_fn_decl_t no_fn_decl;        // NODE_FN_DECL
