@@ -15,6 +15,6 @@ fun main(){
 
   // WIP
   var p : Person = Person()
-  println(p.id)
+  // println(p.id)
   
 }
