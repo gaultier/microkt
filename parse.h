@@ -1552,6 +1552,22 @@ static mkt_res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
             return RES_UNKNOWN_VAR;
         }
 
+        const mkt_node_t* const no_def = &parser->par_nodes[no_def_i];
+        CHECK((void*)no_def, !=, NULL, "%p");
+        if (no_def->no_kind != NODE_VAR) {
+            const int type_i = no_def->no_type_i;
+            CHECK(type_i, >=, 0, "%d");
+            CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
+
+            buf_push(parser->par_nodes,
+                     ((mkt_node_t){
+                         .no_kind = NODE_VAR,
+                         .no_type_i = type_i,
+                         .no_n = {.no_var = {.va_tok_i = tok_i,
+                                             .va_var_node_i = no_def_i}}}));
+            *new_node_i = (int)buf_size(parser->par_nodes) - 1;
+        }
+
         *new_node_i = no_def_i;
 
         return RES_OK;
