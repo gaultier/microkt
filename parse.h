@@ -2560,6 +2560,9 @@ static mkt_res_t parser_parse_property_declaration(parser_t* parser,
                                         .bi_lhs_i = *new_node_i,
                                         .bi_rhs_i = init_node_i,
                                     }}}));
+    mkt_node_t* const block = parser_current_block(parser);
+    CHECK((void*)block, !=, NULL, "%p");
+    buf_push(block->no_n.no_block.bl_nodes_i, buf_size(parser->par_nodes) - 1);
 
     log_debug("new var def=%d current_scope_i=%d flags=%d offset=%d fn=%d",
               *new_node_i, parser->par_scope_i, flags, offset,
