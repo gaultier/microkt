@@ -199,8 +199,8 @@ static mkt_res_t parser_resolve_var(const parser_t* parser, int tok_i,
                 memcmp(def_source, var_source, var_source_len) == 0) {
                 *def_node_i = stmt_i;
 
-                log_debug("resolved var: name=`%.*s` kind=%s scope=%d",
-                          def_source_len, def_source,
+                log_debug("resolved var: id=%d name=`%.*s` kind=%s scope=%d",
+                          *def_node_i, def_source_len, def_source,
                           mkt_node_kind_to_str[stmt->no_kind], current_scope_i);
 
                 return RES_OK;
@@ -1549,20 +1549,7 @@ static mkt_res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
             return RES_UNKNOWN_VAR;
         }
 
-        const mkt_node_t* const no_def = &parser->par_nodes[no_def_i];
-        CHECK((void*)no_def, !=, NULL, "%p");
-
-        const int type_i = no_def->no_type_i;
-        CHECK(type_i, >=, 0, "%d");
-        CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
-
-        buf_push(
-            parser->par_nodes,
-            ((mkt_node_t){.no_kind = NODE_VAR,
-                          .no_type_i = type_i,
-                          .no_n = {.no_var = {.va_tok_i = tok_i,
-                                              .va_var_node_i = no_def_i}}}));
-        *new_node_i = (int)buf_size(parser->par_nodes) - 1;
+        *new_node_i = no_def_i;
 
         return RES_OK;
     }
