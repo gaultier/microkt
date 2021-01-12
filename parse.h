@@ -597,6 +597,13 @@ static void node_dump(const parser_t* parser, int no_i, int indent) {
     IGNORE(no_i);
     IGNORE(indent);
 #else
+    // Prevent cycles
+    static int* seen_nodes_i = NULL;
+    for (int i = 0; i < (int)buf_size(seen_nodes_i); i++) {
+        if (no_i == seen_nodes_i[i]) return;
+    }
+    buf_push(seen_nodes_i, no_i);
+
     const mkt_node_t* const node = &parser->par_nodes[no_i];
     const mkt_type_t type = parser->par_types[node->no_type_i];
 
