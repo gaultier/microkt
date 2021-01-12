@@ -1962,9 +1962,30 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, int lhs_i,
     if (callable_decl_node->no_kind == NODE_FN_DECL) {
         const mkt_fn_decl_t fn_decl = callable_decl_node->no_n.no_fn_decl;
         type_i = fn_decl.fd_return_type_i;
-        const int declared_arity = buf_size(fn_decl.fd_arg_nodes_i);
-        const int found_arity = buf_size(arg_nodes_i) / 2;
-        if (declared_arity != found_arity) UNIMPLEMENTED();  // TODO: err
+        const int declared_arity = buf_size(fn_decl.fd_arg_nodes_i) / 2;
+        const int found_arity = buf_size(arg_nodes_i);
+        if (declared_arity != found_arity) {
+            const mkt_loc_t call_loc = parser->par_lexer.lex_locs[first_tok_i];
+
+            fprintf(stderr, "%s%s:%d:%d:%sMismatched arity in call\n",
+                    mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
+                    call_loc.loc_line, call_loc.loc_column,
+                    mkt_colors[is_tty][COL_RESET]);
+            fprintf(stderr, "%s%s:%d:%d:%sCalled with %d arguments\n",
+                    mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
+                    call_loc.loc_line, call_loc.loc_column,
+                    mkt_colors[is_tty][COL_RESET], found_arity);
+            parser_print_source_on_error(parser, first_tok_i, first_tok_i);
+
+            const int decl_tok_i = node_first_token(parser, callable_decl_node);
+            const mkt_loc_t decl_loc = parser->par_lexer.lex_locs[decl_tok_i];
+            fprintf(stderr, "%s%s:%d:%d:%sDeclared with %d arguments\n",
+                    mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
+                    decl_loc.loc_line, decl_loc.loc_column,
+                    mkt_colors[is_tty][COL_RESET], declared_arity);
+            parser_print_source_on_error(parser, decl_tok_i, decl_tok_i);
+            return RES_ERR;
+        }
 
         const int current_scope_i =
             parser_scope_begin(parser, fn_decl.fd_body_node_i);
