@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ast.h"
 #include "parse.h"
 
 // TODO: use platform headers for that?
@@ -643,6 +644,8 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 
             return;
         }
+        case NODE_FN_DECL:
+            return;  // Already generated in the .data section
 
             // Forbidden by the grammar or simply impossible
         default:
