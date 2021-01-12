@@ -597,15 +597,21 @@ static void node_dump(const parser_t* parser, int no_i, int indent) {
     IGNORE(no_i);
     IGNORE(indent);
 #else
+    const mkt_node_t* const node = &parser->par_nodes[no_i];
+    const mkt_type_t type = parser->par_types[node->no_type_i];
+
     // Prevent cycles
     static int* seen_nodes_i = NULL;
     for (int i = 0; i < (int)buf_size(seen_nodes_i); i++) {
-        if (no_i == seen_nodes_i[i]) return;
+        if (no_i == seen_nodes_i[i]) {
+            log_debug_with_indent(
+                indent, "node #%d %s type=%s", no_i,
+                mkt_node_kind_to_str[node->no_kind],
+                mkt_type_to_str[parser->par_types[node->no_type_i].ty_kind]);
+            return;
+        }
     }
     buf_push(seen_nodes_i, no_i);
-
-    const mkt_node_t* const node = &parser->par_nodes[no_i];
-    const mkt_type_t type = parser->par_types[node->no_type_i];
 
     switch (node->no_kind) {
         case NODE_BUILTIN_PRINTLN: {
@@ -1551,6 +1557,7 @@ static mkt_res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
             parser_print_source_on_error(parser, tok_i, tok_i);
             return RES_UNKNOWN_VAR;
         }
+        CHECK(no_def_i, >=, 0, "%d");
 
         const mkt_node_t* const no_def = &parser->par_nodes[no_def_i];
         CHECK((void*)no_def, !=, NULL, "%p");
@@ -1566,9 +1573,9 @@ static mkt_res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
                          .no_n = {.no_var = {.va_tok_i = tok_i,
                                              .va_var_node_i = no_def_i}}}));
             *new_node_i = (int)buf_size(parser->par_nodes) - 1;
+        } else {
+            *new_node_i = no_def_i;
         }
-
-        *new_node_i = no_def_i;
 
         return RES_OK;
     }
