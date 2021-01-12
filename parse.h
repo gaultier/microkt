@@ -590,7 +590,7 @@ static long long int parse_tok_to_char(const parser_t* parser, int tok_i) {
 
 static void node_dump(const parser_t* parser, int no_i, int indent) {
     CHECK((void*)parser, !=, NULL, "%p");
-    CHECK(no_i, >=, 0, "%d");
+    if (no_i < 0) return;
     CHECK(no_i, <, (int)buf_size(parser->par_nodes), "%d");
 
 #if WITH_LOGS == 0
@@ -700,10 +700,11 @@ static void node_dump(const parser_t* parser, int no_i, int indent) {
             const int name_len = pos_range.pr_end - pos_range.pr_start;
 
             log_debug_with_indent(
-                indent, "node #%d %s type=%s name=%.*s offset=%d flags=%hu",
+                indent,
+                "node #%d %s type=%s name=%.*s offset=%d flags=%hu ref=%d",
                 no_i, mkt_node_kind_to_str[node->no_kind],
                 mkt_type_to_str[type.ty_kind], name_len, name, var.va_offset,
-                var.va_flags);
+                var.va_flags, var.va_var_node_i);
 
             break;
         }
@@ -1962,7 +1963,7 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, int lhs_i,
     if (callable_decl_node->no_kind == NODE_FN_DECL) {
         const mkt_fn_decl_t fn_decl = callable_decl_node->no_n.no_fn_decl;
         type_i = fn_decl.fd_return_type_i;
-        const int declared_arity = buf_size(fn_decl.fd_arg_nodes_i) / 2;
+        const int declared_arity = buf_size(fn_decl.fd_arg_nodes_i);
         const int found_arity = buf_size(arg_nodes_i);
         if (declared_arity != found_arity) {
             const mkt_loc_t call_loc = parser->par_lexer.lex_locs[first_tok_i];
@@ -1992,9 +1993,13 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, int lhs_i,
 
         for (int i = 0; i < (int)buf_size(fn_decl.fd_arg_nodes_i); i++) {
             const int decl_arg_i = fn_decl.fd_arg_nodes_i[i];
+            CHECK(decl_arg_i, >=, 0, "%d");
+            CHECK(decl_arg_i, <, (int)buf_size(parser->par_nodes), "%d");
             const mkt_node_t* const decl_arg = &parser->par_nodes[decl_arg_i];
+            CHECK(decl_arg->no_kind, ==, NODE_VAR, "%d");
             const mkt_type_kind_t decl_type_kind =
                 parser->par_types[decl_arg->no_type_i].ty_kind;
+
             const int found_arg_i = arg_nodes_i[i];
             CHECK(found_arg_i, >=, 0, "%d");
             CHECK(found_arg_i, <, (int)buf_size(parser->par_nodes), "%d");
@@ -2599,16 +2604,6 @@ static mkt_res_t parser_parse_parameter(parser_t* parser, int** new_nodes_i) {
                                         }}}));
         const int new_node_i = buf_size(parser->par_nodes) - 1;
         buf_push(*new_nodes_i, new_node_i);
-
-        buf_push(parser->par_nodes,
-                 ((mkt_node_t){.no_kind = NODE_ASSIGN,
-                               .no_type_i = type_i,
-                               .no_n = {.no_binary = {
-                                            .bi_lhs_i = new_node_i,
-                                            .bi_rhs_i = -1,
-                                        }}}));
-
-        buf_push(*new_nodes_i, buf_size(parser->par_nodes) - 1);
 
         const char* source = NULL;
         int source_len = 0;

@@ -235,7 +235,7 @@ static void emit_loc(const parser_t* parser, const mkt_node_t* const node) {
 
 static void emit_expr(const parser_t* parser, const int expr_i) {
     CHECK((void*)parser, !=, NULL, "%p");
-    CHECK(expr_i, >=, 0, "%d");
+    if (expr_i < 0) return;
     CHECK(expr_i, <, (int)buf_size(parser->par_nodes), "%d");
 
     const mkt_node_t* const expr = &parser->par_nodes[expr_i];
