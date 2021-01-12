@@ -669,7 +669,14 @@ static void node_dump(const parser_t* parser, int no_i, int indent) {
         }
         case NODE_KEYWORD_BOOL:
         case NODE_LONG:
-        case NODE_CHAR:
+        case NODE_CHAR: {
+            log_debug_with_indent(
+                indent, "node #%d %s type=%s val=%lld", no_i,
+                mkt_node_kind_to_str[node->no_kind],
+                mkt_type_to_str[parser->par_types[node->no_type_i].ty_kind],
+                node->no_n.no_num.nu_val);
+            break;
+        }
         case NODE_STRING: {
             log_debug_with_indent(
                 indent, "node #%d %s type=%s", no_i,
@@ -1470,11 +1477,12 @@ static mkt_res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         // The source is either `true` or `false` hence the len is either 4
         // or 5
         const int8_t val = (memcmp("true", source, 4) == 0);
-        buf_push(parser->par_nodes,
-                 ((mkt_node_t){.no_kind = NODE_LONG,
-                               .no_type_i = TYPE_BOOL_I,
-                               .no_n = {.no_num = (number_t){.nu_tok_i = tok_i,
-                                                             .nu_val = val}}}));
+        buf_push(
+            parser->par_nodes,
+            ((mkt_node_t){.no_kind = NODE_LONG,
+                          .no_type_i = TYPE_BOOL_I,
+                          .no_n = {.no_num = (mkt_number_t){.nu_tok_i = tok_i,
+                                                            .nu_val = val}}}));
         *new_node_i = (int)buf_size(parser->par_nodes) - 1;
 
         return RES_OK;
@@ -1506,22 +1514,24 @@ static mkt_res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         CHECK(type_i, >=, 0, "%d");
         CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
 
-        buf_push(parser->par_nodes,
-                 ((mkt_node_t){.no_kind = NODE_LONG,
-                               .no_type_i = type_i,
-                               .no_n = {.no_num = (number_t){.nu_tok_i = tok_i,
-                                                             .nu_val = val}}}));
+        buf_push(
+            parser->par_nodes,
+            ((mkt_node_t){.no_kind = NODE_LONG,
+                          .no_type_i = type_i,
+                          .no_n = {.no_num = (mkt_number_t){.nu_tok_i = tok_i,
+                                                            .nu_val = val}}}));
         *new_node_i = (int)buf_size(parser->par_nodes) - 1;
 
         return RES_OK;
     }
     if (parser_match(parser, &tok_i, 1, TOK_ID_CHAR)) {
         const long long int val = parse_tok_to_char(parser, tok_i);
-        buf_push(parser->par_nodes,
-                 ((mkt_node_t){.no_kind = NODE_CHAR,
-                               .no_type_i = TYPE_CHAR_I,
-                               .no_n = {.no_num = (number_t){.nu_tok_i = tok_i,
-                                                             .nu_val = val}}}));
+        buf_push(
+            parser->par_nodes,
+            ((mkt_node_t){.no_kind = NODE_CHAR,
+                          .no_type_i = TYPE_CHAR_I,
+                          .no_n = {.no_num = (mkt_number_t){.nu_tok_i = tok_i,
+                                                            .nu_val = val}}}));
         *new_node_i = (int)buf_size(parser->par_nodes) - 1;
 
         return RES_OK;
