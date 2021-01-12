@@ -809,9 +809,11 @@ static void node_dump(const parser_t* parser, int no_i, int indent) {
 #endif
 }
 
-static int node_first_token(const parser_t* parser, const mkt_node_t* node) {
+static int node_first_token(const parser_t* parser, int node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
-    CHECK((void*)node, !=, NULL, "%p");
+    CHECK(node_i, >=, 0, "%d");
+
+    const mkt_node_t* const node = &parser->par_nodes[node_i];
 
     switch (node->no_kind) {
         case NODE_BUILTIN_PRINTLN:
@@ -834,11 +836,9 @@ static int node_first_token(const parser_t* parser, const mkt_node_t* node) {
         case NODE_SUBTRACT:
         case NODE_ASSIGN:
         case NODE_MEMBER:
-        case NODE_ADD: {
-            const mkt_node_t* const lhs =
-                &parser->par_nodes[node->no_n.no_binary.bi_lhs_i];
-            return node_first_token(parser, lhs);
-        }
+        case NODE_ADD:
+            return node_first_token(parser, node->no_n.no_binary.bi_lhs_i);
+
         case NODE_RETURN:
         case NODE_NOT: {
             return node->no_n.no_unary.un_first_tok_i;
@@ -893,15 +893,11 @@ static int node_last_token(const parser_t* parser, int node_i) {
         case NODE_SUBTRACT:
         case NODE_ASSIGN:
         case NODE_MEMBER:
-        case NODE_ADD: {
-            const mkt_node_t* const rhs =
-                &parser->par_nodes[node->no_n.no_binary.bi_rhs_i];
-            return node_first_token(parser, rhs);
-        }
+        case NODE_ADD:
+            return node_first_token(parser, node->no_n.no_binary.bi_rhs_i);
         case NODE_RETURN:
-        case NODE_NOT: {
+        case NODE_NOT:
             return node->no_n.no_unary.un_last_tok_i;
-        }
         case NODE_IF:
             return node->no_n.no_if.if_last_tok_i;
         case NODE_BLOCK:
@@ -1205,7 +1201,7 @@ static mkt_res_t parser_err_non_matching_types(const parser_t* parser,
     const mkt_type_kind_t lhs_type_kind =
         parser->par_types[lhs->no_type_i].ty_kind;
 
-    const int lhs_first_tok_i = node_first_token(parser, lhs);
+    const int lhs_first_tok_i = node_first_token(parser, lhs_node_i);
     CHECK(lhs_first_tok_i, >=, 0, "%d");
     CHECK(lhs_first_tok_i, <, parser->par_lexer.lex_source_len, "%d");
 
@@ -1249,7 +1245,7 @@ static mkt_res_t parser_err_unexpected_type(
     const mkt_type_kind_t lhs_type_kind =
         parser->par_types[lhs->no_type_i].ty_kind;
 
-    const int lhs_first_tok_i = node_first_token(parser, lhs);
+    const int lhs_first_tok_i = node_first_token(parser, lhs_node_i);
     CHECK(lhs_first_tok_i, >=, 0, "%d");
     CHECK(lhs_first_tok_i, <, parser->par_lexer.lex_source_len, "%d");
 
@@ -1394,8 +1390,7 @@ static mkt_res_t parser_parse_jump_expr(parser_t* parser, int* new_node_i) {
             const int declared_return_type_tok_i =
                 fn_decl.fd_return_type_tok_i >= 0
                     ? fn_decl.fd_return_type_tok_i
-                    : node_first_token(
-                          parser, &parser->par_nodes[fn_decl.fd_body_node_i]);
+                    : node_first_token(parser, fn_decl.fd_body_node_i);
             const mkt_loc_t declared_loc =
                 parser->par_lexer.lex_locs[declared_return_type_tok_i];
             const mkt_loc_t actual_loc = parser->par_lexer.lex_locs[tok_i];
@@ -1940,8 +1935,7 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, int lhs_i,
     int callable_node_i = -1;
 
     res = parser_node_find_callable(parser, *new_node_i, &callable_node_i);
-    const int first_tok_i =
-        node_first_token(parser, &parser->par_nodes[*new_node_i]);
+    const int first_tok_i = node_first_token(parser, *new_node_i);
     if (res != RES_OK) {
         const char* src = NULL;
         int src_len = 0;
@@ -1981,7 +1975,7 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, int lhs_i,
                     mkt_colors[is_tty][COL_RESET], found_arity);
             parser_print_source_on_error(parser, first_tok_i, first_tok_i);
 
-            const int decl_tok_i = node_first_token(parser, callable_decl_node);
+            const int decl_tok_i = node_first_token(parser, callable_node_i);
             const mkt_loc_t decl_loc = parser->par_lexer.lex_locs[decl_tok_i];
             fprintf(stderr, "%s%s:%d:%d:%sDeclared with %d arguments\n",
                     mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,

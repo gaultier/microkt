@@ -244,12 +244,12 @@ static void emit_program_epilog() {
 
 static void emit_push() { println("push %%rax"); }
 
-static void emit_loc(const parser_t* parser, const mkt_node_t* const node) {
+static void emit_loc(const parser_t* parser, int node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
-    CHECK((void*)node, !=, NULL, "%p");
+    CHECK(node_i, >=, 0, "%d");
 
     const mkt_loc_t loc =
-        parser->par_lexer.lex_locs[node_first_token(parser, node)];
+        parser->par_lexer.lex_locs[node_first_token(parser, node_i)];
     println(".loc 1 %d %d\t## %s:%d:%d", loc.loc_line, loc.loc_column,
             parser->par_file_name0, loc.loc_line, loc.loc_column);
 }
@@ -278,7 +278,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 
     switch (expr->no_kind) {
         case NODE_KEYWORD_BOOL: {
-            emit_loc(parser, expr);
+            emit_loc(parser, expr_i);
             println("mov $%d, %s", (int8_t)expr->no_n.no_num.nu_val, ax);
             return;
         }
@@ -291,7 +291,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             CHECK(source_len, >=, 0, "%d");
             CHECK(source_len, <, parser->par_lexer.lex_source_len, "%d");
 
-            emit_loc(parser, expr);
+            emit_loc(parser, expr_i);
             println("mov $%d, %s # string len=%d", source_len, fn_args[0],
                     source_len);
             println("push %%rbx");
@@ -326,12 +326,12 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             return;
         }
         case NODE_CHAR: {
-            emit_loc(parser, expr);
+            emit_loc(parser, expr_i);
             println("mov $%d, %s", (char)expr->no_n.no_num.nu_val, ax);
             return;
         }
         case NODE_LONG: {
-            emit_loc(parser, expr);
+            emit_loc(parser, expr_i);
             println("mov $%lld, %s", expr->no_n.no_num.nu_val, ax);
             return;
         }
@@ -341,7 +341,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             emit_expr(parser, bin.bi_rhs_i);
             emit_push();
             emit_expr(parser, bin.bi_lhs_i);
-            emit_loc(parser, expr);
+            emit_loc(parser, expr_i);
             println("pop %%rdi");
             println("cqo");  // ?
             println("xor %%rdx, %%rdx");
@@ -356,7 +356,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             emit_expr(parser, bin.bi_rhs_i);
             emit_push();
             emit_expr(parser, bin.bi_lhs_i);
-            emit_loc(parser, expr);
+            emit_loc(parser, expr_i);
             println("pop %%rdi");
             println("cqo");  // ?
             println("idiv %%rdi");
@@ -369,7 +369,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             emit_expr(parser, bin.bi_rhs_i);
             emit_push();
             emit_expr(parser, bin.bi_lhs_i);
-            emit_loc(parser, expr);
+            emit_loc(parser, expr_i);
             println("pop %%rdi");
             println("imul %%rdi, %%rax");
 
@@ -381,7 +381,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             emit_expr(parser, bin.bi_rhs_i);
             emit_push();
             emit_expr(parser, bin.bi_lhs_i);
-            emit_loc(parser, expr);
+            emit_loc(parser, expr_i);
             println("pop %%rdi");
             println("sub %%rdi, %%rax");
 
@@ -393,7 +393,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             emit_expr(parser, bin.bi_rhs_i);
             emit_push();
             emit_expr(parser, bin.bi_lhs_i);
-            emit_loc(parser, expr);
+            emit_loc(parser, expr_i);
 
             const mkt_type_kind_t type_kind =
                 parser->par_types[expr->no_type_i].ty_kind;
@@ -449,7 +449,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             emit_expr(parser, bin.bi_rhs_i);
             emit_push();
             emit_expr(parser, bin.bi_lhs_i);
-            emit_loc(parser, expr);
+            emit_loc(parser, expr_i);
             println("pop %%rdi");
             println("cmp %%rdi, %%rax");
 
@@ -473,13 +473,13 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             if (expr->no_n.no_unary.un_node_i >= 0)
                 emit_expr(parser, expr->no_n.no_unary.un_node_i);
 
-            emit_loc(parser, expr);
+            emit_loc(parser, expr_i);
             println("jmp .L.return.%d", current_fn_i);
             return;
         }
         case NODE_NOT: {
             emit_expr(parser, expr->no_n.no_unary.un_node_i);
-            emit_loc(parser, expr);
+            emit_loc(parser, expr_i);
             println("cmp $0, %%rax");
             println("sete %%al");
             return;
@@ -488,7 +488,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             const mkt_if_t node = expr->no_n.no_if;
 
             emit_expr(parser, node.if_node_cond_i);
-            emit_loc(parser, expr);
+            emit_loc(parser, expr_i);
             println("cmp $0, %%rax");
             println("je .L.else.%d", expr_i);
 
@@ -514,7 +514,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             const mkt_type_kind_t type =
                 parser->par_types[arg->no_type_i].ty_kind;
 
-            emit_loc(parser, expr);
+            emit_loc(parser, expr_i);
             println("mov %%rax, %s", fn_args[0]);
 
             if (type == TYPE_LONG || type == TYPE_INT || type == TYPE_SHORT ||
@@ -565,7 +565,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             return;
         }
         case NODE_VAR: {
-            emit_loc(parser, expr);
+            emit_loc(parser, expr_i);
             emit_addr(parser, expr_i);
             emit_load(type);
             return;
@@ -576,7 +576,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
 
             for (int i = 0; i < (int)buf_size(call.ca_arg_nodes_i); i++) {
                 emit_expr(parser, call.ca_arg_nodes_i[i]);
-                emit_loc(parser, expr);
+                emit_loc(parser, expr_i);
                 println("mov %%rax, %s", fn_args[i]);
 
                 // TODO: preserver registers by spilling
@@ -662,7 +662,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
     const mkt_node_t* const stmt = &parser->par_nodes[stmt_i];
     const mkt_type_t* const type = &parser->par_types[stmt->no_type_i];
     const mkt_loc_t loc =
-        parser->par_lexer.lex_locs[node_first_token(parser, stmt)];
+        parser->par_lexer.lex_locs[node_first_token(parser, stmt_i)];
     println(".loc 1 %d %d\t## %s:%d:%d", loc.loc_line, loc.loc_column,
             parser->par_file_name0, loc.loc_line, loc.loc_column);
 
@@ -707,7 +707,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
         }
         case NODE_WHILE: {
             const mkt_while_t w = stmt->no_n.no_while;
-            emit_loc(parser, stmt);
+            emit_loc(parser, stmt_i);
             println(".Lwhile_loop_start%d:", stmt_i);
             emit_expr(parser, w.wh_cond_i);
 
