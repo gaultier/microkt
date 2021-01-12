@@ -62,10 +62,30 @@ static void emit_addr(const parser_t* parser, int node_i) {
     CHECK(node_i, <, (int)buf_size(parser->par_nodes), "%d");
 
     const mkt_node_t* const node = &parser->par_nodes[node_i];
+    const mkt_type_t* const type = &parser->par_types[node->no_type_i];
 
     switch (node->no_kind) {
         case NODE_VAR: {
             const mkt_var_t var = node->no_n.no_var;
+
+            if (type->ty_kind == TYPE_FN) {
+                CHECK(var.va_var_node_i, >=, 0, "%d");
+                const int fn_decl_i = var.va_var_node_i;
+                const mkt_node_t* const fn_decl_node =
+                    &parser->par_nodes[fn_decl_i];
+                const mkt_fn_decl_t fn_decl = fn_decl_node->no_n.no_fn_decl;
+                const char* name = NULL;
+                int name_len = 0;
+                parser_tok_source(parser, fn_decl.fd_name_tok_i, &name,
+                                  &name_len);
+                CHECK((void*)name, !=, NULL, "%p");
+                CHECK(name_len, >=, 0, "%d");
+                CHECK(name_len, <, parser->par_lexer.lex_source_len, "%d");
+
+                println("lea %.*s(%%rip), %%rax", name_len, name);
+                return;
+            }
+
             println("lea -%d(%%rbp), %%rax", var.va_offset);
             return;
         }
@@ -88,6 +108,8 @@ static void emit_addr(const parser_t* parser, int node_i) {
             /* return; */
         }
         case NODE_FN_DECL: {
+            UNREACHABLE();
+
             CHECK(current_fn_i, >=, 0, "%d");
             CHECK(current_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
             const int caller_current_fn_i = current_fn_i;
