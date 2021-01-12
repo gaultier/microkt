@@ -4,7 +4,6 @@
 #include <string.h>
 
 #include "ast.h"
-#include "common.h"
 #include "lex.h"
 
 static const int TYPE_UNIT_I = 1;    // see parser_init
