@@ -1996,7 +1996,12 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, int lhs_i,
             const mkt_type_kind_t decl_type_kind =
                 parser->par_types[decl_arg->no_type_i].ty_kind;
             const int found_arg_i = arg_nodes_i[i];
+            CHECK(found_arg_i, >=, 0, "%d");
+            CHECK(found_arg_i, <, (int)buf_size(parser->par_nodes), "%d");
             const mkt_node_t* const found_arg = &parser->par_nodes[found_arg_i];
+            CHECK(found_arg->no_type_i, >=, 0, "%d");
+            CHECK(found_arg->no_type_i, <, (int)buf_size(parser->par_types),
+                  "%d");
             const mkt_type_kind_t found_type_kind =
                 parser->par_types[found_arg->no_type_i].ty_kind;
 
