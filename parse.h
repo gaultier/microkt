@@ -67,6 +67,9 @@ static int node_make_block(parser_t* parser) {
 static int node_make_assign(parser_t* parser, int type_i, int lhs_i,
                             int rhs_i) {
     CHECK((void*)parser, !=, NULL, "%p");
+    CHECK(type_i, >=, 0, "%d");
+    CHECK(lhs_i, >=, 0, "%d");
+    CHECK(rhs_i, >=, 0, "%d");
 
     buf_push(parser->par_nodes,
              ((mkt_node_t){.no_kind = NODE_ASSIGN,
@@ -79,6 +82,7 @@ static int node_make_assign(parser_t* parser, int type_i, int lhs_i,
 static int node_make_var(parser_t* parser, int type_i, int tok_i,
                          int var_node_i, int offset, unsigned short flags) {
     CHECK((void*)parser, !=, NULL, "%p");
+    CHECK(type_i, >=, 0, "%d");
     CHECK(offset, >=, 0, "%d");
     CHECK(tok_i, >=, 0, "%d");
 
