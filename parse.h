@@ -96,6 +96,16 @@ static int node_make_var(parser_t* parser, int type_i, int tok_i,
     return buf_size(parser->par_nodes) - 1;
 }
 
+static int node_make_long(parser_t* parser, int type_i, int tok_i,
+                          long long int val) {
+    buf_push(parser->par_nodes,
+             ((mkt_node_t){.no_kind = NODE_LONG,
+                           .no_type_i = type_i,
+                           .no_n = {.no_num = (mkt_number_t){.nu_tok_i = tok_i,
+                                                             .nu_val = val}}}));
+    return buf_size(parser->par_nodes) - 1;
+}
+
 static mkt_node_t* parser_current_block(parser_t* parser) {
     CHECK((void*)parser, !=, NULL, "%p");
 
@@ -1524,13 +1534,7 @@ static mkt_res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         // The source is either `true` or `false` hence the len is either 4
         // or 5
         const int8_t val = (memcmp("true", source, 4) == 0);
-        buf_push(
-            parser->par_nodes,
-            ((mkt_node_t){.no_kind = NODE_LONG,
-                          .no_type_i = TYPE_BOOL_I,
-                          .no_n = {.no_num = (mkt_number_t){.nu_tok_i = tok_i,
-                                                            .nu_val = val}}}));
-        *new_node_i = (int)buf_size(parser->par_nodes) - 1;
+        *new_node_i = node_make_long(parser, TYPE_BOOL_I, tok_i, val);
 
         return RES_OK;
     }
@@ -1561,13 +1565,7 @@ static mkt_res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         CHECK(type_i, >=, 0, "%d");
         CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
 
-        buf_push(
-            parser->par_nodes,
-            ((mkt_node_t){.no_kind = NODE_LONG,
-                          .no_type_i = type_i,
-                          .no_n = {.no_num = (mkt_number_t){.nu_tok_i = tok_i,
-                                                            .nu_val = val}}}));
-        *new_node_i = (int)buf_size(parser->par_nodes) - 1;
+        *new_node_i = node_make_long(parser, type_i, tok_i, val);
 
         return RES_OK;
     }
