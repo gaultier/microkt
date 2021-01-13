@@ -152,7 +152,7 @@ typedef struct {
     int* sy_arg_nodes_i;
 } mkt_syscall_t;
 
-static const unsigned char CLASS_FLAGS_PUBLIC = 1;
+static const unsigned char CLASS_FLAGS_PUBLIC = 0x1;
 
 typedef struct {
     int cl_first_tok_i, cl_last_tok_i, cl_name_tok_i, cl_body_node_i,
