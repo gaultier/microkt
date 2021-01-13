@@ -96,10 +96,10 @@ static int node_make_var(parser_t* parser, int type_i, int tok_i,
     return buf_size(parser->par_nodes) - 1;
 }
 
-static int node_make_long(parser_t* parser, int type_i, int tok_i,
-                          long long int val) {
+static int node_make_num(parser_t* parser, int type_i, int tok_i,
+                         long long int val) {
     buf_push(parser->par_nodes,
-             ((mkt_node_t){.no_kind = NODE_LONG,
+             ((mkt_node_t){.no_kind = NODE_NUM,
                            .no_type_i = type_i,
                            .no_n = {.no_num = (mkt_number_t){.nu_tok_i = tok_i,
                                                              .nu_val = val}}}));
@@ -729,7 +729,7 @@ static void node_dump(const parser_t* parser, int no_i, int indent) {
             break;
         }
         case NODE_KEYWORD_BOOL:
-        case NODE_LONG:
+        case NODE_NUM:
         case NODE_CHAR: {
             log_debug_with_indent(
                 indent, "node #%d %s type=%s val=%lld", no_i,
@@ -879,7 +879,7 @@ static int node_first_token(const parser_t* parser, int node_i) {
             return node->no_n.no_string.st_tok_i;
         case NODE_KEYWORD_BOOL:
         case NODE_CHAR:
-        case NODE_LONG:
+        case NODE_NUM:
             return node->no_n.no_num.nu_tok_i;
         case NODE_LT:
         case NODE_LE:
@@ -935,7 +935,7 @@ static int node_last_token(const parser_t* parser, int node_i) {
         case NODE_STRING:
             return node->no_n.no_string.st_tok_i;
         case NODE_KEYWORD_BOOL:
-        case NODE_LONG:
+        case NODE_NUM:
         case NODE_CHAR:
             return node->no_n.no_num.nu_tok_i;
         case NODE_LT:
@@ -1534,7 +1534,7 @@ static mkt_res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
         // The source is either `true` or `false` hence the len is either 4
         // or 5
         const int8_t val = (memcmp("true", source, 4) == 0);
-        *new_node_i = node_make_long(parser, TYPE_BOOL_I, tok_i, val);
+        *new_node_i = node_make_num(parser, TYPE_BOOL_I, tok_i, val);
 
         return RES_OK;
     }
@@ -1559,13 +1559,13 @@ static mkt_res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
 
         return RES_OK;
     }
-    if (parser_match(parser, &tok_i, 1, TOK_ID_LONG)) {
+    if (parser_match(parser, &tok_i, 1, TOK_ID_NUM)) {
         int type_i = TYPE_ANY_I;
         const long long int val = parse_tok_to_num(parser, tok_i, &type_i);
         CHECK(type_i, >=, 0, "%d");
         CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
 
-        *new_node_i = node_make_long(parser, type_i, tok_i, val);
+        *new_node_i = node_make_num(parser, type_i, tok_i, val);
 
         return RES_OK;
     }

@@ -46,7 +46,7 @@ typedef enum {
     NODE_BUILTIN_PRINTLN,
     NODE_KEYWORD_BOOL,
     NODE_STRING,
-    NODE_LONG,
+    NODE_NUM,
     NODE_CHAR,
     NODE_ADD,
     NODE_SUBTRACT,
@@ -77,7 +77,7 @@ const char mkt_node_kind_to_str[NODE_COUNT][30] = {
     [NODE_BUILTIN_PRINTLN] = "Print",
     [NODE_KEYWORD_BOOL] = "Bool",
     [NODE_STRING] = "String",
-    [NODE_LONG] = "Long",
+    [NODE_NUM] = "Long",
     [NODE_CHAR] = "Char",
     [NODE_ADD] = "Plus",
     [NODE_SUBTRACT] = "Subtract",
@@ -171,7 +171,7 @@ typedef struct {
     union {
         mkt_builtin_println_t no_builtin_println;  // NODE_BUILTIN_PRINTLN
         mkt_string_t no_string;                    // NODE_STRING
-        mkt_number_t no_num;                       // NODE_LONG, NODE_CHAR
+        mkt_number_t no_num;                       // NODE_NUM, NODE_CHAR
         mkt_binary_t no_binary;  // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
         // NODE_DIVIDE, NODE_MODULO, NODE_MEMBER_GET
         unary_t no_unary;                // NODE_NOT, NODE_RETURN

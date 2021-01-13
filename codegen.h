@@ -330,7 +330,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             println("mov $%d, %s", (char)expr->no_n.no_num.nu_val, ax);
             return;
         }
-        case NODE_LONG: {
+        case NODE_NUM: {
             emit_loc(parser, expr_i);
             println("mov $%lld, %s", expr->no_n.no_num.nu_val, ax);
             return;
@@ -670,7 +670,7 @@ static void emit_stmt(const parser_t* parser, int stmt_i) {
         case NODE_BUILTIN_PRINTLN:
         case NODE_SYSCALL:
         case NODE_BLOCK:
-        case NODE_LONG:
+        case NODE_NUM:
         case NODE_CHAR:
         case NODE_STRING:
         case NODE_KEYWORD_BOOL:

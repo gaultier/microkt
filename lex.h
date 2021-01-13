@@ -13,7 +13,7 @@ typedef enum {
     TOK_ID_FALSE,
     TOK_ID_IDENTIFIER,
     TOK_ID_STRING,
-    TOK_ID_LONG,
+    TOK_ID_NUM,
     TOK_ID_COMMENT,
     TOK_ID_CHAR,
     TOK_ID_PLUS,
@@ -57,7 +57,7 @@ const char mkt_token_id_to_str[][30] = {
     [TOK_ID_STRING] = "String",
     [TOK_ID_COMMENT] = "Comment",
     [TOK_ID_CHAR] = "Char",
-    [TOK_ID_LONG] = "Int",
+    [TOK_ID_NUM] = "Int",
     [TOK_ID_PLUS] = "+",
     [TOK_ID_MINUS] = "-",
     [TOK_ID_STAR] = "*",
@@ -277,7 +277,7 @@ static mkt_res_t lex_number(lexer_t* lexer, mkt_token_t* result, int* col) {
         lex_advance(lexer, col);
     }
 
-    result->tok_id = TOK_ID_LONG;
+    result->tok_id = TOK_ID_NUM;
     return RES_OK;
 }
 
