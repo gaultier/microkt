@@ -64,6 +64,16 @@ static int node_make_block(parser_t* parser) {
     return buf_size(parser->par_nodes) - 1;
 }
 
+static int node_make_assign(parser_t* parser, int type_i, int lhs_i,
+                            int rhs_i) {
+    buf_push(parser->par_nodes,
+             ((mkt_node_t){.no_kind = NODE_ASSIGN,
+                           .no_type_i = type_i,
+                           .no_n = {.no_binary = {.bi_lhs_i = lhs_i,
+                                                  .bi_rhs_i = rhs_i}}}));
+    return buf_size(parser->par_nodes) - 1;
+}
+
 static mkt_node_t* parser_current_block(parser_t* parser) {
     CHECK((void*)parser, !=, NULL, "%p");
 
@@ -2041,12 +2051,7 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, int lhs_i,
                 return parser_err_non_matching_types(parser, decl_arg_i,
                                                      found_arg_i);
 
-            buf_push(parser->par_nodes,
-                     ((mkt_node_t){
-                         .no_kind = NODE_ASSIGN,
-                         .no_type_i = TYPE_UNIT_I,
-                         .no_n = {.no_binary = {.bi_lhs_i = decl_arg_i,
-                                                .bi_rhs_i = arg_nodes_i[i]}}}));
+            node_make_assign(parser, TYPE_UNIT_I, decl_arg_i, arg_nodes_i[i]);
         }
         parser_scope_end(parser, current_scope_i);
         buf_push(
@@ -2465,18 +2470,10 @@ static mkt_res_t parser_parse_assignment(parser_t* parser, int* new_node_i) {
     const mkt_type_kind_t rhs_type_kind = parser->par_types[rhs_type_i].ty_kind;
 
     // TODO: check size?
-    if (lhs_type_kind != rhs_type_kind) {
+    if (lhs_type_kind != rhs_type_kind)
         return parser_err_non_matching_types(parser, lhs_node_i, rhs_node_i);
-    }
 
-    buf_push(
-        parser->par_nodes,
-        ((mkt_node_t){
-            .no_kind = NODE_ASSIGN,
-            .no_type_i = rhs_type_i,
-            .no_n = {.no_binary = ((mkt_binary_t){.bi_lhs_i = lhs_node_i,
-                                                  .bi_rhs_i = rhs_node_i})}}));
-    *new_node_i = buf_size(parser->par_nodes) - 1;
+    *new_node_i = node_make_assign(parser, rhs_type_i, lhs_node_i, rhs_node_i);
 
     return RES_OK;
 }
@@ -2563,13 +2560,7 @@ static mkt_res_t parser_parse_property_declaration(parser_t* parser,
                                                .va_offset = offset,
                                                .va_flags = flags}}}));
     *new_node_i = buf_size(parser->par_nodes) - 1;
-    buf_push(parser->par_nodes,
-             ((mkt_node_t){.no_kind = NODE_ASSIGN,
-                           .no_type_i = type_i,
-                           .no_n = {.no_binary = {
-                                        .bi_lhs_i = *new_node_i,
-                                        .bi_rhs_i = init_node_i,
-                                    }}}));
+    node_make_assign(parser, type_i, *new_node_i, init_node_i);
     mkt_node_t* const block = parser_current_block(parser);
     CHECK((void*)block, !=, NULL, "%p");
     buf_push(block->no_n.no_block.bl_nodes_i, buf_size(parser->par_nodes) - 1);
