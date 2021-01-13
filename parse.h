@@ -539,8 +539,8 @@ static mkt_res_t parser_init(const char* file_name0, const char* source,
     return RES_OK;
 }
 
-static long long int parse_tok_to_long(const parser_t* parser, int tok_i,
-                                       int* type_i) {
+static long long int parse_tok_to_num(const parser_t* parser, int tok_i,
+                                      int* type_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)parser->par_lexer.lex_tok_pos_ranges, !=, NULL, "%p");
     CHECK((void*)parser->par_lexer.lex_source, !=, NULL, "%p");
@@ -1518,7 +1518,7 @@ static mkt_res_t parser_parse_primary_expr(parser_t* parser, int* new_node_i) {
     }
     if (parser_match(parser, &tok_i, 1, TOK_ID_LONG)) {
         int type_i = TYPE_ANY_I;
-        const long long int val = parse_tok_to_long(parser, tok_i, &type_i);
+        const long long int val = parse_tok_to_num(parser, tok_i, &type_i);
         CHECK(type_i, >=, 0, "%d");
         CHECK(type_i, <, (int)buf_size(parser->par_types), "%d");
 
