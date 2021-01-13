@@ -129,10 +129,9 @@ typedef struct {
     int wh_first_tok_i, wh_last_tok_i, wh_cond_i, wh_body_i;
 } mkt_while_t;
 
-static const unsigned short FN_FLAGS_SYNTHETIC = 0x1;
-static const unsigned short FN_FLAGS_PUBLIC = 0x2;
-static const unsigned short FN_FLAGS_PRIVATE = 0x4;
-static const unsigned short FN_FLAGS_SEEN_RETURN = 0x8;
+static const unsigned short FN_FLAGS_PUBLIC = 0x1;
+static const unsigned short FN_FLAGS_PRIVATE = 0x2;
+static const unsigned short FN_FLAGS_SEEN_RETURN = 0x4;
 
 typedef struct {
     int fd_first_tok_i, fd_last_tok_i, fd_name_tok_i, fd_return_type_tok_i,
