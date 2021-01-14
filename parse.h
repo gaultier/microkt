@@ -2736,6 +2736,7 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
     }
 
     const int body_node_i = parser_block_enter(parser, *new_node_i);
+    parser->par_nodes[*new_node_i].no_n.no_fn_decl.fd_body_node_i = body_node_i;
     const int parent_scope_i = parser_scope_begin(parser, body_node_i);
 
     TRY_OK(parser_parse_fn_value_params(parser, &arg_nodes_i));
@@ -2789,6 +2790,7 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
 
     mkt_fn_decl_t* const fn_decl =
         &parser->par_nodes[*new_node_i].no_n.no_fn_decl;
+    CHECK(fn_decl->fd_body_node_i, >=, 0, "%d");
     const int last_tok_i =
         parser->par_nodes[body_node_i].no_n.no_block.bl_last_tok_i;
     fn_decl->fd_last_tok_i = last_tok_i;
