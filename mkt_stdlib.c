@@ -1,4 +1,4 @@
-#include "probes.h"
+/* #include "probes.h" */
 
 #define u64 unsigned long long int
 #define i64 long long int
@@ -157,7 +157,7 @@ static void mkt_gc_trace_refs() {
 }
 
 static void mkt_gc_sweep() {
-    MKT_GC_SWEEP_START(gc_round, gc_allocated_bytes);
+    /* MKT_GC_SWEEP_START(gc_round, gc_allocated_bytes); */
     alloc_atom* atom = objs;
     alloc_atom* previous = NULL;
 
@@ -183,10 +183,10 @@ static void mkt_gc_sweep() {
         else
             objs = atom;
 
-        MKT_GC_SWEEP_FREE(gc_round, gc_allocated_bytes, (void*)to_free);
+        /* MKT_GC_SWEEP_FREE(gc_round, gc_allocated_bytes, (void*)to_free); */
         CHECK_NO_STDLIB(mkt_munmap(to_free, bytes), ==, 0, "%d");
     }
-    MKT_GC_SWEEP_DONE(gc_round, gc_allocated_bytes);
+    /* MKT_GC_SWEEP_DONE(gc_round, gc_allocated_bytes); */
 }
 
 static void mkt_gc() {
