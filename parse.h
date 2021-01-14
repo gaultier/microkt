@@ -162,8 +162,6 @@ static mkt_res_t parser_resolve_member(const parser_t* parser, int tok_i,
     CHECK((void*)def_node_i, !=, NULL, "%p");
     CHECK(tok_i, >=, 0, "%d");
 
-    UNIMPLEMENTED();
-
     const char* member_source = NULL;
     int member_source_len = 0;
     parser_tok_source(parser, tok_i, &member_source, &member_source_len);

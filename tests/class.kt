@@ -13,8 +13,8 @@ fun main(){
   println(Person()) // expect: Instance of size 25
 
 
-  // WIP
   var p : Person = Person()
-  // println(p.id)
+  p.id = 100L
+  println(p.id) // expect: 100
   
 }
