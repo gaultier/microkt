@@ -242,6 +242,7 @@ int main() {
         "./err/var_undefined.kt",
         "err/non_matching_fn_return_type.kt",
         "err/non_matching_fn_return_type_unit.kt",
+        "err/non_matching_type_class_member_assign.kt",
         "err/return_not_in_fn.kt",
     };
 
