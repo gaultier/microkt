@@ -84,7 +84,8 @@ check: mktc $(TESTS_EXE) test
 	@./test
 
 clean:
-	$(RM) mktc {tests,err}/*.{s,o,exe} mkt_stdlib.o
+	find . -name '*.s' -or -name '*.o' -or -name '*.exe' -type f | xargs $(RM)
+	$(RM) mktc
 	$(RM) -r ./*.dSYM
 
 install: mktc
