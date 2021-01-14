@@ -32,7 +32,21 @@ void* mkt_mmap(void* addr, u64 len, int prot, int flags, int fd, u64 offset);
 int mkt_munmap(void* addr, u64 len);
 i64 mkt_write(int fildes, const void* buf, u64 nbyte);
 int mkt_kill(i32 pid, int sig);
+
 void mkt_abort(void) { mkt_kill(0, MKT_SIGABRT); }
+
+void* memset(void* b, int c, u64 len) {
+    char* data = b;
+    for (u64 i = 0; i < len; i++) data[i] = (unsigned char)c;
+    return b;
+}
+
+void* memcpy(void* restrict dst, const void* restrict src, u64 n) {
+    char* data_dst = dst;
+    const char* data_src = src;
+    for (u64 i = 0; i < n; i++) data_dst[i] = data_src[i];
+    return dst;
+}
 
 #define STR(s) #s
 
