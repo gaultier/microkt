@@ -2,6 +2,7 @@
 
 #define u64 unsigned long long int
 #define i64 long long int
+#define i32 int
 
 static u64 gc_round = 0;
 static u64 gc_allocated_bytes = 0;
@@ -27,10 +28,10 @@ static i64* stack_top;
 #define mkt_stdout 1
 #define mkt_stderr 2
 
-void* mkt_mmap(void* addr, u64 len, int prot, int flags, int fd, off_t offset);
+void* mkt_mmap(void* addr, u64 len, int prot, int flags, int fd, u64 offset);
 int mkt_munmap(void* addr, u64 len);
 i64 mkt_write(int fildes, const void* buf, u64 nbyte);
-int mkt_kill(pid_t pid, int sig);
+int mkt_kill(i32 pid, int sig);
 void mkt_abort(void) { mkt_kill(0, MKT_SIGABRT); }
 
 #define STR(s) #s
@@ -47,7 +48,7 @@ void mkt_abort(void) { mkt_kill(0, MKT_SIGABRT); }
 
 // TODO: optimize
 static void* mkt_alloc(u64 len) {
-    void* p = mkt_mmap(NULL, len, MKT_PROT_READ | MKT_PROT_WRITE,
+    void* p = mkt_mmap(0, len, MKT_PROT_READ | MKT_PROT_WRITE,
                        MKT_MAP_ANON | MKT_MAP_PRIVATE, -1, 0);
     CHECK_NO_STDLIB(p, !=, 0, "%p");
     return p;
@@ -66,11 +67,11 @@ struct alloc_atom {
 };
 
 typedef struct alloc_atom alloc_atom;
-static alloc_atom* objs = NULL;  // In use
+static alloc_atom* objs = 0;  // In use
 
 void atom_cons(alloc_atom* item, alloc_atom** head) {
-    CHECK_NO_STDLIB((void*)item, !=, NULL, "%p");
-    CHECK_NO_STDLIB((void*)head, !=, NULL, "%p");
+    CHECK_NO_STDLIB((void*)item, !=, 0, "%p");
+    CHECK_NO_STDLIB((void*)head, !=, 0, "%p");
     CHECK_NO_STDLIB((void*)item, !=, (void*)head, "%p");  // Prevent cycles
 
     if (head) {
@@ -79,15 +80,15 @@ void atom_cons(alloc_atom* item, alloc_atom** head) {
     } else {
         *head = item;
     }
-    CHECK_NO_STDLIB((void*)*head, !=, NULL, "%p");
+    CHECK_NO_STDLIB((void*)*head, !=, 0, "%p");
 }
 
 static alloc_atom* mkt_alloc_atom_make(u64 size) {
     const u64 bytes = sizeof(runtime_val_header) + sizeof(alloc_atom*) + size;
     alloc_atom* atom = mkt_alloc(bytes);
-    CHECK_NO_STDLIB((void*)atom, !=, NULL, "%p");
+    CHECK_NO_STDLIB((void*)atom, !=, 0, "%p");
     atom->aa_header = (runtime_val_header){0};
-    atom->aa_next = NULL;
+    atom->aa_next = 0;
 
     atom_cons(atom, &objs);
 
@@ -102,7 +103,7 @@ void mkt_init() {
 }
 
 static void mkt_gc_obj_mark(runtime_val_header* header) {
-    CHECK_NO_STDLIB((void*)header, !=, NULL, "%p");
+    CHECK_NO_STDLIB((void*)header, !=, 0, "%p");
 
     if (header->rv_tag & RV_TAG_MARKED) return;  // Prevent cycles
     header->rv_tag |= RV_TAG_MARKED;
@@ -114,18 +115,18 @@ static void mkt_gc_obj_mark(runtime_val_header* header) {
 
 // TODO: optimize
 static alloc_atom* mkt_gc_atom_find_data_by_addr(u64 addr) {
-    if (addr == 0) return NULL;
+    if (addr == 0) return 0;
 
     alloc_atom* atom = objs;
     while (atom) {
         if (addr == (u64)&atom->aa_data) return atom;
         atom = atom->aa_next;
     }
-    return NULL;
+    return 0;
 }
 
 static void mkt_gc_scan_stack(const i64* stack_bottom) {
-    CHECK_NO_STDLIB((void*)stack_bottom, !=, NULL, "%p");
+    CHECK_NO_STDLIB((void*)stack_bottom, !=, 0, "%p");
 
     const char* s_bottom = (char*)stack_bottom;
     CHECK_NO_STDLIB((void*)stack_bottom, <=, (void*)stack_top, "%p");
@@ -134,7 +135,7 @@ static void mkt_gc_scan_stack(const i64* stack_bottom) {
     while (s_bottom < s_top - sizeof(i64)) {
         u64 addr = *(u64*)s_bottom;
         alloc_atom* atom = mkt_gc_atom_find_data_by_addr(addr);
-        if (atom == NULL) {
+        if (atom == 0) {
             s_bottom += 1;
             continue;
         }
@@ -146,7 +147,7 @@ static void mkt_gc_scan_stack(const i64* stack_bottom) {
 }
 
 static void mkt_gc_obj_blacken(runtime_val_header* header) {
-    CHECK_NO_STDLIB((void*)header, !=, NULL, "%p");
+    CHECK_NO_STDLIB((void*)header, !=, 0, "%p");
 
     // TODO: optimize to go from white -> black directly
     if (header->rv_tag & RV_TAG_STRING) return;
@@ -159,7 +160,7 @@ static void mkt_gc_trace_refs() {
 static void mkt_gc_sweep() {
     /* MKT_GC_SWEEP_START(gc_round, gc_allocated_bytes); */
     alloc_atom* atom = objs;
-    alloc_atom* previous = NULL;
+    alloc_atom* previous = 0;
 
     while (atom) {
         if (atom->aa_header.rv_tag & RV_TAG_MARKED) {  // Skip
@@ -203,7 +204,7 @@ void* mkt_string_make(u64 size) {
     mkt_gc();
 
     alloc_atom* atom = mkt_alloc_atom_make(size);
-    CHECK_NO_STDLIB((void*)atom, !=, NULL, "%p");
+    CHECK_NO_STDLIB((void*)atom, !=, 0, "%p");
     atom->aa_header =
         (runtime_val_header){.rv_size = size, .rv_tag = RV_TAG_STRING};
 
@@ -214,7 +215,7 @@ void* mkt_instance_make(u64 size) {
     mkt_gc();
 
     alloc_atom* atom = mkt_alloc_atom_make(size);
-    CHECK_NO_STDLIB((void*)atom, !=, NULL, "%p");
+    CHECK_NO_STDLIB((void*)atom, !=, 0, "%p");
     atom->aa_header =
         (runtime_val_header){.rv_size = size, .rv_tag = RV_TAG_INSTANCE};
 
@@ -266,8 +267,8 @@ void mkt_int_println(long long int n) {
 }
 
 void mkt_string_println(char* s, const runtime_val_header* s_header) {
-    CHECK_NO_STDLIB((void*)s, !=, NULL, "%p");
-    CHECK_NO_STDLIB((void*)s_header, !=, NULL, "%p");
+    CHECK_NO_STDLIB((void*)s, !=, 0, "%p");
+    CHECK_NO_STDLIB((void*)s_header, !=, 0, "%p");
 
     CHECK_NO_STDLIB(s_header->rv_tag & RV_TAG_STRING, !=, 0, "%u");
 
@@ -279,9 +280,9 @@ void mkt_string_println(char* s, const runtime_val_header* s_header) {
 char* mkt_string_concat(const char* a, const runtime_val_header* a_header,
                         const char* b, const runtime_val_header* b_header) {
     char* const ret = mkt_string_make(a_header->rv_size + b_header->rv_size);
-    CHECK_NO_STDLIB((void*)ret, !=, NULL, "%p");
-    CHECK_NO_STDLIB((void*)a, !=, NULL, "%p");
-    CHECK_NO_STDLIB((void*)b, !=, NULL, "%p");
+    CHECK_NO_STDLIB((void*)ret, !=, 0, "%p");
+    CHECK_NO_STDLIB((void*)a, !=, 0, "%p");
+    CHECK_NO_STDLIB((void*)b, !=, 0, "%p");
 
     for (u64 i = 0; i < a_header->rv_size; i++) ret[i] = a[i];
     for (u64 i = 0; i < b_header->rv_size; i++)
