@@ -1,6 +1,6 @@
 /* #include "probes.h" */
 
-#define u64 unsigned long long int
+#define u64 unsigned long int
 #define i64 long long int
 #define i32 int
 
