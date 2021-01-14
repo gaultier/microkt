@@ -875,10 +875,12 @@ static int node_first_token(const parser_t* parser, int node_i) {
             return node->no_n.no_syscall.sy_first_tok_i;
         case NODE_STRING:
             return node->no_n.no_string.st_tok_i;
+
         case NODE_KEYWORD_BOOL:
         case NODE_CHAR:
         case NODE_NUM:
             return node->no_n.no_num.nu_tok_i;
+
         case NODE_LT:
         case NODE_LE:
         case NODE_EQ:
@@ -893,9 +895,9 @@ static int node_first_token(const parser_t* parser, int node_i) {
             return node_first_token(parser, node->no_n.no_binary.bi_lhs_i);
 
         case NODE_RETURN:
-        case NODE_NOT: {
+        case NODE_NOT:
             return node->no_n.no_unary.un_first_tok_i;
-        }
+
         case NODE_IF:
             return node->no_n.no_if.if_first_tok_i;
         case NODE_BLOCK:
@@ -932,10 +934,12 @@ static int node_last_token(const parser_t* parser, int node_i) {
             return node->no_n.no_syscall.sy_last_tok_i;
         case NODE_STRING:
             return node->no_n.no_string.st_tok_i;
+
         case NODE_KEYWORD_BOOL:
         case NODE_NUM:
         case NODE_CHAR:
             return node->no_n.no_num.nu_tok_i;
+
         case NODE_LT:
         case NODE_LE:
         case NODE_EQ:
@@ -948,9 +952,11 @@ static int node_last_token(const parser_t* parser, int node_i) {
         case NODE_MEMBER:
         case NODE_ADD:
             return node_first_token(parser, node->no_n.no_binary.bi_rhs_i);
+
         case NODE_RETURN:
         case NODE_NOT:
             return node->no_n.no_unary.un_last_tok_i;
+
         case NODE_IF:
             return node->no_n.no_if.if_last_tok_i;
         case NODE_BLOCK:
