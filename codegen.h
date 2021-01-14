@@ -89,22 +89,26 @@ static void emit_addr(const parser_t* parser, int node_i) {
             return;
         }
         case NODE_MEMBER: {
-            /* const mkt_binary_t bin = node->no_n.no_binary; */
-            /* emit_addr(parser, bin.bi_lhs_i); */
+            const mkt_binary_t bin = node->no_n.no_binary;
 
-            /* const mkt_node_t* const rhs = &parser->par_nodes[bin.bi_rhs_i];
-             */
-            /* CHECK(rhs->no_kind, ==, NODE_VAR_DEF, "%d"); */
-            /* const mkt_var_def_t var_def = rhs->no_n.no_var_def; */
+            const mkt_node_t* const lhs = &parser->par_nodes[bin.bi_lhs_i];
+            const mkt_type_t* const lhs_type =
+                &parser->par_types[lhs->no_type_i];
+            CHECK(lhs_type->ty_kind, ==, TYPE_PTR, "%d");
+            emit_addr(parser, bin.bi_lhs_i);
 
-            /* const char* member_src = NULL; */
-            /* int member_src_len = 0; */
-            /* parser_tok_source(parser, var_def.vd_name_tok_i, &member_src, */
-            /*                   &member_src_len); */
-            /* println("add $%d, %%rax # get `%.*s`", var_def.vd_stack_offset,
-             */
-            /*         member_src_len, member_src); */
-            /* return; */
+            const mkt_node_t* const rhs = &parser->par_nodes[bin.bi_rhs_i];
+            CHECK(rhs->no_kind, ==, NODE_VAR, "%d");
+            const mkt_var_t var = rhs->no_n.no_var;
+            CHECK(var.va_var_node_i, ==, -1, "%d");
+
+            const char* member_src = NULL;
+            int member_src_len = 0;
+            parser_tok_source(parser, var.va_tok_i, &member_src,
+                              &member_src_len);
+            println("add $%d, %%rax # get `%.*s`", var.va_offset,
+                    member_src_len, member_src);
+            return;
         }
         case NODE_FN_DECL: {
             UNREACHABLE();
