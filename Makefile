@@ -28,7 +28,7 @@ endif
 
 CFLAGS_COMMON = -Wall -Wextra -pedantic -Wno-dollar-in-identifier-extension -g -std=c99 -march=native -fno-omit-frame-pointer -fstrict-aliasing -fPIC -D_POSIX_C_SOURCE=200809 -fno-stack-protector
 CFLAGS = $(CFLAGS_COMMON) -DLD='"$(LD)"' -DAS='"$(AS)"'
-CFLAGS_STDLIB = $(CFLAGS_COMMON) -nostdlib
+CFLAGS_STDLIB = $(CFLAGS_COMMON) -nostdlib -nostdinc
 
 ifeq "$(WITH_DTRACE)" "0"
 	CFLAGS_STDLIB += -DDTRACE_PROBES_DISABLED
