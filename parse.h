@@ -951,7 +951,7 @@ static int node_last_token(const parser_t* parser, int node_i) {
         case NODE_ASSIGN:
         case NODE_MEMBER:
         case NODE_ADD:
-            return node_first_token(parser, node->no_n.no_binary.bi_rhs_i);
+            return node_last_token(parser, node->no_n.no_binary.bi_rhs_i);
 
         case NODE_RETURN:
         case NODE_NOT:
@@ -1281,8 +1281,8 @@ static mkt_res_t parser_err_non_matching_types(const parser_t* parser,
     fprintf(stderr, "%s%s:%d:%d:%sTypes do not match. Expected %s, got %s\n",
             mkt_colors[is_tty][COL_GRAY], parser->par_file_name0,
             lhs_first_tok_loc.loc_line, lhs_first_tok_loc.loc_column,
-            mkt_colors[is_tty][COL_RESET], mkt_type_to_str[rhs_type_kind],
-            mkt_type_to_str[lhs_type_kind]);
+            mkt_colors[is_tty][COL_RESET], mkt_type_to_str[lhs_type_kind],
+            mkt_type_to_str[rhs_type_kind]);
 
     parser_print_source_on_error(parser, lhs_first_tok_i, rhs_last_tok_i);
 
