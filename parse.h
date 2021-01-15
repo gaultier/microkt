@@ -137,15 +137,16 @@ static mkt_res_t parser_node_find_callable(const parser_t* parser, int no_i,
     CHECK((void*)node_i, !=, NULL, "%p");
 
     const mkt_node_t* const node = &parser->par_nodes[no_i];
+
+    // TODO: maybe looking at types is enough and we do not need to recurse?
     switch (node->no_kind) {
         case NODE_VAR:
-            TRY_OK(parser_node_find_callable(
-                parser, node->no_n.no_var.va_var_node_i, node_i));
-            return RES_OK;
+            return parser_node_find_callable(
+                parser, node->no_n.no_var.va_var_node_i, node_i);
         case NODE_FN_DECL:
-            *node_i = no_i;
-            return RES_OK;
+            // Constructor invocation
         case NODE_CLASS_DECL:
+        case NODE_INSTANCE:
             *node_i = no_i;
             return RES_OK;
         default:
@@ -259,10 +260,18 @@ static mkt_res_t parser_resolve_var(const parser_t* parser, int tok_i,
             if (def_source_len == var_source_len &&
                 memcmp(def_source, var_source, var_source_len) == 0) {
                 *def_node_i = stmt_i;
+                CHECK(*def_node_i, >=, 0, "%d");
+                CHECK(*def_node_i, <, (int)buf_size(parser->par_nodes), "%d");
 
-                log_debug("resolved var: id=%d name=`%.*s` kind=%s scope=%d",
-                          *def_node_i, def_source_len, def_source,
-                          mkt_node_kind_to_str[stmt->no_kind], current_scope_i);
+                const mkt_node_t* const def_node =
+                    &parser->par_nodes[*def_node_i];
+                const mkt_type_t* const def_type =
+                    &parser->par_types[def_node->no_type_i];
+                log_debug(
+                    "resolved var: id=%d name=`%.*s` kind=%s scope=%d type=%s",
+                    *def_node_i, def_source_len, def_source,
+                    mkt_node_kind_to_str[stmt->no_kind], current_scope_i,
+                    mkt_type_to_str[def_type->ty_kind]);
 
                 return RES_OK;
             }
