@@ -18,5 +18,7 @@ fun main(){
   println(p.id) // expect: 100
   p.id = p.id + 1L
   println(p.id) // expect: 101
+
+  p.id = p.id
   
 }
