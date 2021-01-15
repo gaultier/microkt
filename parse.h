@@ -138,9 +138,10 @@ static mkt_res_t parser_node_find_callable(const parser_t* parser, int no_i,
 
     const mkt_node_t* const node = &parser->par_nodes[no_i];
 
-    // TODO: maybe looking at types is enough and we do not need to recurse?
     switch (node->no_kind) {
         case NODE_VAR:
+            // TODO: maybe looking at types is enough and we do not need to
+            // recurse?
             return parser_node_find_callable(
                 parser, node->no_n.no_var.va_var_node_i, node_i);
         case NODE_FN_DECL:
