@@ -228,17 +228,24 @@ static mkt_res_t parser_resolve_var(const parser_t* parser, int tok_i,
             int def_source_len = 0;
 
             int tok_i = -1;
-            if (stmt->no_kind == NODE_VAR) {
-                const mkt_var_t var = stmt->no_n.no_var;
-                if (var.va_var_node_i != -1)
-                    continue;  // Not a var definition, simply a var reference
-                tok_i = var.va_tok_i;
-            } else if (stmt->no_kind == NODE_FN_DECL)
-                tok_i = stmt->no_n.no_fn_decl.fd_name_tok_i;
-            else if (stmt->no_kind == NODE_CLASS_DECL)
-                tok_i = stmt->no_n.no_class_decl.cl_name_tok_i;
-            else
-                continue;
+            switch (stmt->no_kind) {
+                case NODE_VAR: {
+                    const mkt_var_t var = stmt->no_n.no_var;
+                    if (var.va_var_node_i != -1)
+                        continue;  // Not a var definition, simply a var
+                                   // reference
+                    tok_i = var.va_tok_i;
+                    break;
+                }
+                case NODE_FN_DECL:
+                    tok_i = stmt->no_n.no_fn_decl.fd_name_tok_i;
+                    break;
+                case NODE_CLASS_DECL:
+                    tok_i = stmt->no_n.no_class_decl.cl_name_tok_i;
+                    break;
+                default:
+                    continue;
+            }
 
             parser_tok_source(parser, tok_i, &def_source, &def_source_len);
 
@@ -2571,8 +2578,12 @@ static mkt_res_t parser_parse_property_declaration(parser_t* parser,
     }
 
     *new_node_i = node_make_var(parser, type_i, name_tok_i, -1, offset, flags);
+    mkt_node_t* block = parser_current_block(parser);
+    CHECK((void*)block, !=, NULL, "%p");
+    buf_push(block->no_n.no_block.bl_nodes_i, buf_size(parser->par_nodes) - 1);
+
     node_make_assign(parser, type_i, *new_node_i, init_node_i);
-    mkt_node_t* const block = parser_current_block(parser);
+    block = parser_current_block(parser);
     CHECK((void*)block, !=, NULL, "%p");
     buf_push(block->no_n.no_block.bl_nodes_i, buf_size(parser->par_nodes) - 1);
 
