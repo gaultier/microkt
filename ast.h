@@ -65,11 +65,11 @@ typedef enum {
     NODE_VAR,
     NODE_ASSIGN,
     NODE_WHILE,
-    NODE_FN_DECL,
+    NODE_FN,
     NODE_CALL,
     NODE_RETURN,
     NODE_SYSCALL,
-    NODE_CLASS_DECL,
+    NODE_CLASS,
     NODE_INSTANCE,
     NODE_MEMBER,
     NODE_COUNT,
@@ -96,11 +96,11 @@ const char mkt_node_kind_to_str[NODE_COUNT][30] = {
     [NODE_VAR] = "Var",
     [NODE_ASSIGN] = "Assign",
     [NODE_WHILE] = "While",
-    [NODE_FN_DECL] = "FnDecl",
+    [NODE_FN] = "FnDecl",
     [NODE_RETURN] = "Return",
     [NODE_CALL] = "Call",
     [NODE_SYSCALL] = "Syscall",
-    [NODE_CLASS_DECL] = "Class",
+    [NODE_CLASS] = "Class",
     [NODE_INSTANCE] = "Instance",
     [NODE_MEMBER] = "Member",
 };
@@ -180,10 +180,10 @@ typedef struct {
         mkt_block_t no_block;        // NODE_BLOCK
         mkt_var_t no_var;            // NODE_VAR
         mkt_while_t no_while;        // NODE_WHILE
-        mkt_fn_decl_t no_fn_decl;    // NODE_FN_DECL
+        mkt_fn_decl_t no_fn;    // NODE_FN
         mkt_call_t no_call;          // NODE_CALL
         mkt_syscall_t no_syscall;    // NODE_SYSCALL
-        mkt_class_t no_class;        // NODE_CLASS_DECL
+        mkt_class_t no_class;        // NODE_CLASS
         mkt_instance_t no_instance;  // NODE_INSTANCE
     } no_n;
 } mkt_node_t;

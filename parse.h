@@ -143,9 +143,9 @@ static mkt_res_t parser_node_find_callable(const parser_t* parser, i32 no_i,
             // recurse?
             return parser_node_find_callable(
                 parser, node->no_n.no_var.va_var_node_i, node_i);
-        case NODE_FN_DECL:
+        case NODE_FN:
             // Constructor invocation
-        case NODE_CLASS_DECL:
+        case NODE_CLASS:
         case NODE_INSTANCE:
             *node_i = no_i;
             return RES_OK;
@@ -238,10 +238,10 @@ static mkt_res_t parser_resolve_var(const parser_t* parser, i32 tok_i,
                     tok_i = var.va_tok_i;
                     break;
                 }
-                case NODE_FN_DECL:
-                    tok_i = stmt->no_n.no_fn_decl.fd_name_tok_i;
+                case NODE_FN:
+                    tok_i = stmt->no_n.no_fn.fd_name_tok_i;
                     break;
-                case NODE_CLASS_DECL:
+                case NODE_CLASS:
                     tok_i = stmt->no_n.no_class.cl_name_tok_i;
                     break;
                 default:
@@ -302,7 +302,7 @@ static void parser_class_begin(parser_t* parser, i32 first_tok_i,
 
     buf_push(parser->par_nodes,
              ((mkt_node_t){.no_type_i = type_i,
-                           .no_kind = NODE_CLASS_DECL,
+                           .no_kind = NODE_CLASS,
                            .no_n = {.no_class = {
                                         .cl_first_tok_i = first_tok_i,
                                         .cl_name_tok_i = name_tok_i,
@@ -798,11 +798,11 @@ static void node_dump(const parser_t* parser, i32 no_i, i32 indent) {
             node_dump(parser, node->no_n.no_while.wh_body_i, indent + 2);
             return;
         }
-        case NODE_FN_DECL: {
-            const mkt_fn_decl_t fn_decl = node->no_n.no_fn_decl;
-            const i32 arity = buf_size(fn_decl.fd_arg_nodes_i);
+        case NODE_FN: {
+            const mkt_fn_decl_t fn = node->no_n.no_fn;
+            const i32 arity = buf_size(fn.fd_arg_nodes_i);
             const mkt_pos_range_t pos_range =
-                parser->par_lexer.lex_tok_pos_ranges[fn_decl.fd_name_tok_i];
+                parser->par_lexer.lex_tok_pos_ranges[fn.fd_name_tok_i];
             const char* const name =
                 &parser->par_lexer.lex_source[pos_range.pr_start];
             const i32 name_len = pos_range.pr_end - pos_range.pr_start;
@@ -810,11 +810,11 @@ static void node_dump(const parser_t* parser, i32 no_i, i32 indent) {
                 indent,
                 "node #%d %s `%.*s` type=%s arity=%d stack_size=%d body_i=%d",
                 no_i, mkt_node_kind_to_str[node->no_kind], name_len, name,
-                mkt_type_to_str[type.ty_kind], arity, fn_decl.fd_stack_size,
-                fn_decl.fd_body_node_i);
+                mkt_type_to_str[type.ty_kind], arity, fn.fd_stack_size,
+                fn.fd_body_node_i);
 
             const mkt_node_t* const body_node =
-                &parser->par_nodes[fn_decl.fd_body_node_i];
+                &parser->par_nodes[fn.fd_body_node_i];
             CHECK(body_node->no_kind, ==, NODE_BLOCK, "%d");
             const mkt_block_t block = body_node->no_n.no_block;
             for (i32 i = 0; i < (i32)buf_size(block.bl_nodes_i); i++) {
@@ -833,7 +833,7 @@ static void node_dump(const parser_t* parser, i32 no_i, i32 indent) {
             node_dump(parser, call.ca_lhs_node_i, indent + 2);
             return;
         }
-        case NODE_CLASS_DECL: {
+        case NODE_CLASS: {
             const mkt_class_t class = node->no_n.no_class;
             const char* src = NULL;
             i32 src_len = 0;
@@ -919,9 +919,9 @@ static i32 node_first_token(const parser_t* parser, i32 node_i) {
             return node->no_n.no_var.va_tok_i;
         case NODE_WHILE:
             return node->no_n.no_while.wh_first_tok_i;
-        case NODE_FN_DECL:
-            return node->no_n.no_fn_decl.fd_first_tok_i;
-        case NODE_CLASS_DECL:
+        case NODE_FN:
+            return node->no_n.no_fn.fd_first_tok_i;
+        case NODE_CLASS:
             return node->no_n.no_class.cl_first_tok_i;
         case NODE_CALL:
             return node->no_n.no_call.ca_first_tok_i;
@@ -978,9 +978,9 @@ static i32 node_last_token(const parser_t* parser, i32 node_i) {
             return node->no_n.no_var.va_tok_i;
         case NODE_WHILE:
             return node->no_n.no_while.wh_last_tok_i;
-        case NODE_FN_DECL:
-            return node->no_n.no_fn_decl.fd_last_tok_i;
-        case NODE_CLASS_DECL:
+        case NODE_FN:
+            return node->no_n.no_fn.fd_last_tok_i;
+        case NODE_CLASS:
             return node->no_n.no_class.cl_last_tok_i;
         case NODE_CALL:
             return node->no_n.no_call.ca_last_tok_i;
@@ -1454,15 +1454,15 @@ static mkt_res_t parser_parse_jump_expr(parser_t* parser, i32* new_node_i) {
         CHECK(type_i, <, (i32)buf_size(parser->par_types), "%d");
 
         const mkt_type_t actual_return_type = parser->par_types[type_i];
-        const mkt_fn_decl_t fn_decl =
-            parser->par_nodes[parser->par_fn_i].no_n.no_fn_decl;
+        const mkt_fn_decl_t fn =
+            parser->par_nodes[parser->par_fn_i].no_n.no_fn;
         const mkt_type_t declared_return_type =
-            parser->par_types[fn_decl.fd_return_type_i];
+            parser->par_types[fn.fd_return_type_i];
         if (actual_return_type.ty_kind != declared_return_type.ty_kind) {
             const i32 declared_return_type_tok_i =
-                fn_decl.fd_return_type_tok_i >= 0
-                    ? fn_decl.fd_return_type_tok_i
-                    : node_first_token(parser, fn_decl.fd_body_node_i);
+                fn.fd_return_type_tok_i >= 0
+                    ? fn.fd_return_type_tok_i
+                    : node_first_token(parser, fn.fd_body_node_i);
             const mkt_loc_t declared_loc =
                 parser->par_lexer.lex_locs[declared_return_type_tok_i];
             const mkt_loc_t actual_loc = parser->par_lexer.lex_locs[tok_i];
@@ -1501,7 +1501,7 @@ static mkt_res_t parser_parse_jump_expr(parser_t* parser, i32* new_node_i) {
         log_debug("New return %d type=%s", *new_node_i,
                   mkt_type_to_str[parser->par_types[type_i].ty_kind]);
 
-        parser->par_nodes[parser->par_fn_i].no_n.no_fn_decl.fd_flags |=
+        parser->par_nodes[parser->par_fn_i].no_n.no_fn.fd_flags |=
             FN_FLAGS_SEEN_RETURN;
 
         return RES_OK;
@@ -1678,7 +1678,7 @@ static mkt_res_t parser_parse_navigation_suffix(parser_t* parser, i32 lhs_i,
     const mkt_node_t* const class_node =
         &parser->par_nodes[lhs_type.ty_class_i];
 
-    CHECK(class_node->no_kind, ==, NODE_CLASS_DECL, "%d");
+    CHECK(class_node->no_kind, ==, NODE_CLASS, "%d");
     const mkt_class_t class = class_node->no_n.no_class;
     if (parser_resolve_member(parser, member_tok_i, &class, &rhs_i) != RES_OK) {
         const char* src = NULL;
@@ -2027,10 +2027,10 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, i32 lhs_i,
     const mkt_node_t* const callable_decl_node =
         &parser->par_nodes[callable_node_i];
 
-    if (callable_decl_node->no_kind == NODE_FN_DECL) {
-        const mkt_fn_decl_t fn_decl = callable_decl_node->no_n.no_fn_decl;
-        type_i = fn_decl.fd_return_type_i;
-        const i32 declared_arity = buf_size(fn_decl.fd_arg_nodes_i);
+    if (callable_decl_node->no_kind == NODE_FN) {
+        const mkt_fn_decl_t fn = callable_decl_node->no_n.no_fn;
+        type_i = fn.fd_return_type_i;
+        const i32 declared_arity = buf_size(fn.fd_arg_nodes_i);
         const i32 found_arity = buf_size(arg_nodes_i);
         if (declared_arity != found_arity) {
             const mkt_loc_t call_loc = parser->par_lexer.lex_locs[first_tok_i];
@@ -2056,10 +2056,10 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, i32 lhs_i,
         }
 
         const i32 current_scope_i =
-            parser_scope_begin(parser, fn_decl.fd_body_node_i);
+            parser_scope_begin(parser, fn.fd_body_node_i);
 
-        for (i32 i = 0; i < (i32)buf_size(fn_decl.fd_arg_nodes_i); i++) {
-            const i32 decl_arg_i = fn_decl.fd_arg_nodes_i[i];
+        for (i32 i = 0; i < (i32)buf_size(fn.fd_arg_nodes_i); i++) {
+            const i32 decl_arg_i = fn.fd_arg_nodes_i[i];
             CHECK(decl_arg_i, >=, 0, "%d");
             CHECK(decl_arg_i, <, (i32)buf_size(parser->par_nodes), "%d");
             const mkt_node_t* const decl_arg = &parser->par_nodes[decl_arg_i];
@@ -2090,7 +2090,7 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, i32 lhs_i,
                           .no_kind = NODE_CALL,
                           .no_n = {.no_call = {.ca_arg_nodes_i = arg_nodes_i,
                                                .ca_lhs_node_i = lhs_i}}}));
-    } else if (callable_decl_node->no_kind == NODE_CLASS_DECL) {
+    } else if (callable_decl_node->no_kind == NODE_CLASS) {
         buf_push(parser->par_types,
                  ((mkt_type_t){
                      .ty_kind = TYPE_PTR,
@@ -2575,11 +2575,11 @@ static mkt_res_t parser_parse_property_declaration(parser_t* parser,
     i32 offset = 0;
     if (parser->par_fn_i >= 0) {
         CHECK(parser->par_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
-        parser->par_nodes[parser->par_fn_i].no_n.no_fn_decl.fd_stack_size +=
+        parser->par_nodes[parser->par_fn_i].no_n.no_fn.fd_stack_size +=
             type.ty_size;
 
         offset =
-            parser->par_nodes[parser->par_fn_i].no_n.no_fn_decl.fd_stack_size;
+            parser->par_nodes[parser->par_fn_i].no_n.no_fn.fd_stack_size;
     }
 
     *new_node_i = node_make_var(parser, type_i, name_tok_i, -1, offset, flags);
@@ -2628,11 +2628,11 @@ static mkt_res_t parser_parse_parameter(parser_t* parser, i32** new_nodes_i) {
 
         CHECK(parser->par_fn_i, >=, 0, "%d");
         CHECK(parser->par_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
-        parser->par_nodes[parser->par_fn_i].no_n.no_fn_decl.fd_stack_size +=
+        parser->par_nodes[parser->par_fn_i].no_n.no_fn.fd_stack_size +=
             type.ty_size;
 
         const i32 offset =
-            parser->par_nodes[parser->par_fn_i].no_n.no_fn_decl.fd_stack_size;
+            parser->par_nodes[parser->par_fn_i].no_n.no_fn.fd_stack_size;
 
         const i32 new_node_i = node_make_var(parser, type_i, identifier_tok_i,
                                              -1, offset, MKT_VAR_FLAGS_VAR);
@@ -2676,8 +2676,8 @@ static i32 parser_fn_begin(parser_t* parser, i32 first_tok_i, i32* new_node_i) {
     buf_push(
         parser->par_nodes,
         ((mkt_node_t){.no_type_i = TYPE_FN_I,
-                      .no_kind = NODE_FN_DECL,
-                      .no_n = {.no_fn_decl = {.fd_first_tok_i = first_tok_i,
+                      .no_kind = NODE_FN,
+                      .no_n = {.no_fn = {.fd_first_tok_i = first_tok_i,
                                               .fd_name_tok_i = -1,
                                               .fd_last_tok_i = -1,
                                               .fd_body_node_i = -1,
@@ -2701,7 +2701,7 @@ static i32 parser_block_enter(parser_t* parser, i32 current_fn_i) {
     CHECK((void*)parser, !=, NULL, "%p");
 
     const i32 body_node_i =
-        parser->par_nodes[current_fn_i].no_n.no_fn_decl.fd_body_node_i =
+        parser->par_nodes[current_fn_i].no_n.no_fn.fd_body_node_i =
             node_make_block(parser);
     return body_node_i;
 }
@@ -2721,19 +2721,19 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
 
     if (!parser_match(
             parser,
-            &parser->par_nodes[*new_node_i].no_n.no_fn_decl.fd_name_tok_i, 1,
+            &parser->par_nodes[*new_node_i].no_n.no_fn.fd_name_tok_i, 1,
             TOK_ID_IDENTIFIER))
         return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
 
     // Qualifies as entrypoint?
     {
         u16* const flags =
-            &parser->par_nodes[*new_node_i].no_n.no_fn_decl.fd_flags;
+            &parser->par_nodes[*new_node_i].no_n.no_fn.fd_flags;
 
         // TODO: validate flags
 
         const i32 name_tok_i =
-            parser->par_nodes[*new_node_i].no_n.no_fn_decl.fd_name_tok_i;
+            parser->par_nodes[*new_node_i].no_n.no_fn.fd_name_tok_i;
 
         const char* name;
         i32 name_len = 0;
@@ -2752,7 +2752,7 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
     }
 
     const i32 body_node_i = parser_block_enter(parser, *new_node_i);
-    parser->par_nodes[*new_node_i].no_n.no_fn_decl.fd_body_node_i = body_node_i;
+    parser->par_nodes[*new_node_i].no_n.no_fn.fd_body_node_i = body_node_i;
     const i32 parent_scope_i = parser_scope_begin(parser, body_node_i);
 
     TRY_OK(parser_parse_fn_value_params(parser, &arg_nodes_i));
@@ -2760,7 +2760,7 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
     parser->par_nodes[body_node_i].no_n.no_block.bl_nodes_i = arg_nodes_i;
 
     for (i32 i = 0; i < (i32)buf_size(arg_nodes_i); i++)
-        buf_push(parser->par_nodes[*new_node_i].no_n.no_fn_decl.fd_arg_nodes_i,
+        buf_push(parser->par_nodes[*new_node_i].no_n.no_fn.fd_arg_nodes_i,
                  arg_nodes_i[i]);
 
     i32 declared_type_tok_i = -1, declared_return_type_i = TYPE_UNIT_I;
@@ -2781,9 +2781,9 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
     }
     CHECK(declared_return_type_i, >=, 0, "%d");
     CHECK(declared_return_type_i, <, (i32)buf_size(parser->par_types), "%d");
-    parser->par_nodes[*new_node_i].no_n.no_fn_decl.fd_return_type_i =
+    parser->par_nodes[*new_node_i].no_n.no_fn.fd_return_type_i =
         declared_return_type_i;
-    parser->par_nodes[*new_node_i].no_n.no_fn_decl.fd_return_type_tok_i =
+    parser->par_nodes[*new_node_i].no_n.no_fn.fd_return_type_tok_i =
         declared_type_tok_i;
 
     if (!parser_match(
@@ -2804,21 +2804,21 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
     const mkt_type_kind_t declared_return_type =
         parser->par_types[declared_return_type_i].ty_kind;
 
-    mkt_fn_decl_t* const fn_decl =
-        &parser->par_nodes[*new_node_i].no_n.no_fn_decl;
-    CHECK(fn_decl->fd_body_node_i, >=, 0, "%d");
+    mkt_fn_decl_t* const fn =
+        &parser->par_nodes[*new_node_i].no_n.no_fn;
+    CHECK(fn->fd_body_node_i, >=, 0, "%d");
     const i32 last_tok_i =
         parser->par_nodes[body_node_i].no_n.no_block.bl_last_tok_i;
-    fn_decl->fd_last_tok_i = last_tok_i;
+    fn->fd_last_tok_i = last_tok_i;
 
     log_debug("new fn decl=%d flags=%d body_node_i=%d type=%s arity=%d",
-              *new_node_i, fn_decl->fd_flags, fn_decl->fd_body_node_i,
+              *new_node_i, fn->fd_flags, fn->fd_body_node_i,
               mkt_type_to_str[declared_return_type],
-              (i32)buf_size(fn_decl->fd_arg_nodes_i));
+              (i32)buf_size(fn->fd_arg_nodes_i));
 
     parser_scope_end(parser, parent_scope_i);
 
-    const bool seen_return = fn_decl->fd_flags & FN_FLAGS_SEEN_RETURN;
+    const bool seen_return = fn->fd_flags & FN_FLAGS_SEEN_RETURN;
     if (declared_return_type != TYPE_UNIT && !seen_return) {
         const mkt_loc_t loc = parser->par_lexer.lex_locs[last_tok_i];
 
