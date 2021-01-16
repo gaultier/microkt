@@ -175,6 +175,12 @@ static mkt_res_t parser_resolve_member(const parser_t* parser, i32 tok_i,
     CHECK((void*)member_source, !=, NULL, "%p");
     CHECK(member_source_len, >=, 0, "%d");
 
+    // First try members, then methods
+    // This means that members can shadow methods in some cases e.g.:
+    // `class Foo {var a: Long = 0; fun a() {}}`
+    // `var b = Foo().a`
+    // will resolve to the member, not the method
+
     for (i32 i = 0; i < (i32)buf_size(class->cl_members); i++) {
         const i32 m_i = class->cl_members[i];
         const mkt_node_t* const m_node = &parser->par_nodes[m_i];
@@ -185,6 +191,25 @@ static mkt_res_t parser_resolve_member(const parser_t* parser, i32 tok_i,
 
         const mkt_var_t var = m_node->no_n.no_var;
         const i32 tok_i = var.va_tok_i;
+        const char* m_source = NULL;
+        i32 m_source_len = 0;
+        parser_tok_source(parser, tok_i, &m_source, &m_source_len);
+        CHECK((void*)m_source, !=, NULL, "%p");
+        CHECK(m_source_len, >=, 0, "%d");
+
+        if (m_source_len == member_source_len &&
+            memcmp(m_source, member_source, m_source_len) == 0) {
+            *def_node_i = m_i;
+            return RES_OK;
+        }
+    }
+    for (i32 i = 0; i < (i32)buf_size(class->cl_methods); i++) {
+        const i32 m_i = class->cl_members[i];
+        const mkt_node_t* const m_node = &parser->par_nodes[m_i];
+        CHECK(m_node->no_kind, ==, NODE_FN, "%d");
+
+        const mkt_fn_t fn = m_node->no_n.no_fn;
+        const i32 tok_i = fn.fd_name_tok_i;
         const char* m_source = NULL;
         i32 m_source_len = 0;
         parser_tok_source(parser, tok_i, &m_source, &m_source_len);
