@@ -2703,7 +2703,8 @@ static i32 parser_block_enter(parser_t* parser, i32 current_fn_i) {
     return body_node_i;
 }
 
-static mkt_res_t parser_parse_fnaration(parser_t* parser, i32* new_node_i) {
+static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
+                                             i32* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
@@ -2898,7 +2899,7 @@ static mkt_res_t parser_parse_declaration(parser_t* parser, i32* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
-    TRY_NONE(parser_parse_fnaration(parser, new_node_i));
+    TRY_NONE(parser_parse_fn_declaration(parser, new_node_i));
     TRY_NONE(parser_parse_classaration(parser, new_node_i));
     TRY_NONE(parser_parse_property_declaration(parser, new_node_i));
 

@@ -9,3 +9,4 @@ META-INF
 **/*.o
 **/*.s
 **/*.exe
+.nvimlog
