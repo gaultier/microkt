@@ -111,6 +111,12 @@ static mkt_node_t* parser_current_block(parser_t* parser) {
     return &parser->par_nodes[parser->par_scope_i];
 }
 
+static mkt_node_t* parser_current_class(parser_t* parser) {
+    CHECK((void*)parser, !=, NULL, "%p");
+
+    return &parser->par_nodes[parser->par_class_i];
+}
+
 static i32 parser_scope_begin(parser_t* parser, i32 block_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
 
@@ -2715,6 +2721,10 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
     CHECK(parser_match(parser, &first_tok_i, 1, TOK_ID_FUN), ==, true, "%d");
 
     const i32 old_fn_i = parser_fn_begin(parser, first_tok_i, new_node_i);
+    CHECK(*new_node_i, >=, 0, "%d");
+    CHECK(parser->par_class_i, >=, 0, "%d");
+    mkt_node_t* const node_class = parser_current_class(parser);
+    buf_push(node_class->no_n.no_class.cl_methods, *new_node_i);
 
     if (!parser_match(parser,
                       &parser->par_nodes[*new_node_i].no_n.no_fn.fd_name_tok_i,
