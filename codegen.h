@@ -71,11 +71,10 @@ static void emit_addr(const parser_t* parser, i32 node_i) {
                 const i32 fn_decl_i = var.va_var_node_i;
                 const mkt_node_t* const fn_decl_node =
                     &parser->par_nodes[fn_decl_i];
-                const mkt_fn_decl_t fn = fn_decl_node->no_n.no_fn;
+                const mkt_fn_t fn = fn_decl_node->no_n.no_fn;
                 const char* name = NULL;
                 i32 name_len = 0;
-                parser_tok_source(parser, fn.fd_name_tok_i, &name,
-                                  &name_len);
+                parser_tok_source(parser, fn.fd_name_tok_i, &name, &name_len);
                 CHECK((void*)name, !=, NULL, "%p");
                 CHECK(name_len, >=, 0, "%d");
                 CHECK(name_len, <, parser->par_lexer.lex_source_len, "%d");
@@ -122,7 +121,7 @@ static void emit_addr(const parser_t* parser, i32 node_i) {
             CHECK(current_fn_i, >=, 0, "%d");
             CHECK(current_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
 
-            const mkt_fn_decl_t fn = node->no_n.no_fn;
+            const mkt_fn_t fn = node->no_n.no_fn;
             const char* name = NULL;
             i32 name_len = 0;
             parser_tok_source(parser, fn.fd_name_tok_i, &name, &name_len);
@@ -194,7 +193,7 @@ void emit_store(const mkt_type_t* type) {
         UNREACHABLE();
 }
 
-static void fn_prolog(const parser_t* parser, const mkt_fn_decl_t* fn,
+static void fn_prolog(const parser_t* parser, const mkt_fn_t* fn,
                       i32 aligned_stack_size) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)fn, !=, NULL, "%p");
@@ -820,7 +819,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
         const mkt_node_t* const node = &parser->par_nodes[no_i];
         if (node->no_kind != NODE_FN) continue;
 
-        const mkt_fn_decl_t fn = node->no_n.no_fn;
+        const mkt_fn_t fn = node->no_n.no_fn;
         CHECK(fn.fd_name_tok_i, >=, 0, "%d");
         CHECK(fn.fd_name_tok_i, <, parser->par_lexer.lex_source_len, "%d");
 

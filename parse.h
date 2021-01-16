@@ -799,7 +799,7 @@ static void node_dump(const parser_t* parser, i32 no_i, i32 indent) {
             return;
         }
         case NODE_FN: {
-            const mkt_fn_decl_t fn = node->no_n.no_fn;
+            const mkt_fn_t fn = node->no_n.no_fn;
             const i32 arity = buf_size(fn.fd_arg_nodes_i);
             const mkt_pos_range_t pos_range =
                 parser->par_lexer.lex_tok_pos_ranges[fn.fd_name_tok_i];
@@ -1454,7 +1454,7 @@ static mkt_res_t parser_parse_jump_expr(parser_t* parser, i32* new_node_i) {
         CHECK(type_i, <, (i32)buf_size(parser->par_types), "%d");
 
         const mkt_type_t actual_return_type = parser->par_types[type_i];
-        const mkt_fn_decl_t fn = parser->par_nodes[parser->par_fn_i].no_n.no_fn;
+        const mkt_fn_t fn = parser->par_nodes[parser->par_fn_i].no_n.no_fn;
         const mkt_type_t declared_return_type =
             parser->par_types[fn.fd_return_type_i];
         if (actual_return_type.ty_kind != declared_return_type.ty_kind) {
@@ -2027,7 +2027,7 @@ static mkt_res_t parser_parse_call_suffix(parser_t* parser, i32 lhs_i,
         &parser->par_nodes[callable_node_i];
 
     if (callable_decl_node->no_kind == NODE_FN) {
-        const mkt_fn_decl_t fn = callable_decl_node->no_n.no_fn;
+        const mkt_fn_t fn = callable_decl_node->no_n.no_fn;
         type_i = fn.fd_return_type_i;
         const i32 declared_arity = buf_size(fn.fd_arg_nodes_i);
         const i32 found_arity = buf_size(arg_nodes_i);
@@ -2799,7 +2799,7 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
     const mkt_type_kind_t declared_return_type =
         parser->par_types[declared_return_type_i].ty_kind;
 
-    mkt_fn_decl_t* const fn = &parser->par_nodes[*new_node_i].no_n.no_fn;
+    mkt_fn_t* const fn = &parser->par_nodes[*new_node_i].no_n.no_fn;
     CHECK(fn->fd_body_node_i, >=, 0, "%d");
     const i32 last_tok_i =
         parser->par_nodes[body_node_i].no_n.no_block.bl_last_tok_i;

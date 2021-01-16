@@ -139,7 +139,7 @@ typedef struct {
     i32 fd_first_tok_i, fd_last_tok_i, fd_name_tok_i, fd_return_type_tok_i,
         fd_body_node_i, fd_stack_size, *fd_arg_nodes_i, fd_return_type_i;
     u16 fd_flags;
-} mkt_fn_decl_t;
+} mkt_fn_t;
 
 typedef struct {
     i32 ca_first_tok_i, ca_last_tok_i, ca_lhs_node_i, *ca_arg_nodes_i;
@@ -180,7 +180,7 @@ typedef struct {
         mkt_block_t no_block;        // NODE_BLOCK
         mkt_var_t no_var;            // NODE_VAR
         mkt_while_t no_while;        // NODE_WHILE
-        mkt_fn_decl_t no_fn;    // NODE_FN
+        mkt_fn_t no_fn;              // NODE_FN
         mkt_call_t no_call;          // NODE_CALL
         mkt_syscall_t no_syscall;    // NODE_SYSCALL
         mkt_class_t no_class;        // NODE_CLASS
