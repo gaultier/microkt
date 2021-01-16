@@ -68,10 +68,9 @@ static void emit_addr(const parser_t* parser, i32 node_i) {
 
             if (type->ty_kind == TYPE_FN) {
                 CHECK(var.va_var_node_i, >=, 0, "%d");
-                const i32 fn_decl_i = var.va_var_node_i;
-                const mkt_node_t* const fn_decl_node =
-                    &parser->par_nodes[fn_decl_i];
-                const mkt_fn_t fn = fn_decl_node->no_n.no_fn;
+                const i32 fn_i = var.va_var_node_i;
+                const mkt_node_t* const fn_node = &parser->par_nodes[fn_i];
+                const mkt_fn_t fn = fn_node->no_n.no_fn;
                 const char* name = NULL;
                 i32 name_len = 0;
                 parser_tok_source(parser, fn.fd_name_tok_i, &name, &name_len);
