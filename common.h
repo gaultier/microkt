@@ -81,7 +81,7 @@ static bool is_tty = false;
 #define log_debug_with_indent(indent, fmt, ...)                              \
     do {                                                                     \
         fprintf(stderr, "[debug] %s:%s:%d: ", __FILE__, __func__, __LINE__); \
-        for (int i = 0; i < indent; i++) fprintf(stderr, " ");               \
+        for (i32 i = 0; i < indent; i++) fprintf(stderr, " ");               \
         fprintf(stderr, fmt "\n", __VA_ARGS__);                              \
     } while (0)
 #endif
@@ -105,7 +105,7 @@ static bool is_space(char c) {
     return c == ' ' || c == '\n' || c == '\t' || c == '\r';
 }
 
-static void trim_end(const char** string, int* string_len) {
+static void trim_end(const char** string, i32* string_len) {
     CHECK((void*)string, !=, NULL, "%p");
     CHECK((void*)string_len, !=, NULL, "%p");
 

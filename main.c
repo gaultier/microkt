@@ -9,8 +9,8 @@
 
 static bool is_file_name_valid(const char* file_name0) {
     const char suffix[] = ".kt";
-    const int suffix_len = sizeof(suffix) - 1;
-    const int len = strlen(file_name0);
+    const i32 suffix_len = sizeof(suffix) - 1;
+    const i32 len = strlen(file_name0);
 
     return (len > suffix_len) &&
            memcmp(&file_name0[len - suffix_len], suffix, suffix_len) == 0;
@@ -29,14 +29,14 @@ static void base_source_file_name(const char* file_name0,
                                   char* base_file_name0) {
     CHECK(is_file_name_valid(file_name0), ==, true, "%d");
 
-    const int len = strlen(file_name0);
+    const i32 len = strlen(file_name0);
 
     base_file_name0[len - 3] = 0;
     base_file_name0[len - 2] = 0;
     base_file_name0[len - 1] = 0;
 }
 
-static int run(const char* file_name0) {
+static i32 run(const char* file_name0) {
     CHECK((void*)file_name0, !=, NULL, "%p");
 
     static char base_file_name0[MAXPATHLEN + 1] = "";
@@ -57,12 +57,12 @@ static int run(const char* file_name0) {
         return errno;
     }
 
-    const int file_size = st.st_size;
+    const i32 file_size = st.st_size;
 
     char* const source = malloc(file_size);
     if (source == NULL) return ENOMEM;
 
-    int file = open(file_name0, O_RDONLY);
+    i32 file = open(file_name0, O_RDONLY);
     if (file == -1) {
         fprintf(stderr, "Failed to `open(2)` the source file %s: %s\n",
                 file_name0, strerror(errno));
@@ -89,12 +89,12 @@ static int run(const char* file_name0) {
 
     if ((res = parser_parse(&parser)) != RES_OK) return res;
 
-    for (int i = 0; i < (int)buf_size(parser.par_node_decls); i++)
+    for (i32 i = 0; i < (i32)buf_size(parser.par_node_decls); i++)
         node_dump(&parser, parser.par_node_decls[i], 0);
 
-    const int file_name_len = strlen(file_name0);
+    const i32 file_name_len = strlen(file_name0);
     char asm_file_name0[MAXPATHLEN + 1] = "";
-    snprintf(asm_file_name0, MAXPATHLEN, "%.*s.s", (int)(file_name_len - 3),
+    snprintf(asm_file_name0, MAXPATHLEN, "%.*s.s", (i32)(file_name_len - 3),
              file_name0);
     FILE* asm_file = fopen(asm_file_name0, "w");
     if (asm_file == NULL) {
@@ -190,13 +190,13 @@ static int run(const char* file_name0) {
     return RES_OK;
 }
 
-int main(int argc, char* argv[]) {
+i32 main(i32 argc, char* argv[]) {
     if (argc != 2) {
         printf("microkt: Tiny Kotlin compiler\nUsage: %s <file>\n", argv[0]);
         return 0;
     };
     is_tty = isatty(2);
 
-    int err = 0;
+    i32 err = 0;
     if ((err = run(argv[1])) != RES_OK) return err;
 }

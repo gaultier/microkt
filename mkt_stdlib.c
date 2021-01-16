@@ -1,8 +1,8 @@
 /* #include "probes.h" */
 
-#define u64 unsigned long int
-#define i64 long long int
 #define i32 int
+#define i64 long i32
+#define u64 unsigned i64
 
 static u64 gc_round = 0;
 static u64 gc_allocated_bytes = 0;
@@ -28,14 +28,14 @@ static i64* stack_top;
 #define mkt_stdout 1
 #define mkt_stderr 2
 
-void* mkt_mmap(void* addr, u64 len, int prot, int flags, int fd, u64 offset);
-int mkt_munmap(void* addr, u64 len);
-i64 mkt_write(int fildes, const void* buf, u64 nbyte);
-int mkt_kill(i32 pid, int sig);
+void* mkt_mmap(void* addr, u64 len, i32 prot, i32 flags, i32 fd, u64 offset);
+i32 mkt_munmap(void* addr, u64 len);
+i64 mkt_write(i32 fildes, const void* buf, u64 nbyte);
+i32 mkt_kill(i32 pid, i32 sig);
 
 void mkt_abort(void) { mkt_kill(0, MKT_SIGABRT); }
 
-void* memset(void* b, int c, u64 len) {
+void* memset(void* b, i32 c, u64 len) {
     char* data = b;
     for (u64 i = 0; i < len; i++) data[i] = (unsigned char)c;
     return b;
@@ -70,8 +70,8 @@ static void* mkt_alloc(u64 len) {
 
 typedef struct {
     u64 rv_size : 54;
-    unsigned int rv_color : 2;
-    unsigned int rv_tag : 8;
+    unsigned i32 rv_color : 2;
+    unsigned i32 rv_tag : 8;
 } runtime_val_header;
 
 struct alloc_atom {
@@ -236,7 +236,7 @@ void* mkt_instance_make(u64 size) {
     return &atom->aa_data;
 }
 
-void mkt_bool_println(int b) {
+void mkt_bool_println(i32 b) {
     if (b) {
         const char s[] = "true\n";
         mkt_write(mkt_stdout, s, sizeof(s) - 1);
@@ -251,11 +251,11 @@ void mkt_char_println(char c) {
     mkt_write(mkt_stdout, s, 2);
 }
 
-static void mkt_int_to_string(long long int n, char* s, int* s_len) {
+static void mkt_int_to_string(i64 n, char* s, i32* s_len) {
     CHECK_NO_STDLIB((void*)s_len, !=, 0, "%p");
 
     *s_len = 0;
-    const int neg = n < 0;
+    const i32 neg = n < 0;
     n = neg ? -n : n;
 
     do {
@@ -270,9 +270,9 @@ static void mkt_int_to_string(long long int n, char* s, int* s_len) {
     if (neg) s[22 - (*s_len)++] = '-';
 }
 
-void mkt_int_println(long long int n) {
+void mkt_int_println(long long i32 n) {
     char s[23] = "";
-    int s_len = 0;
+    i32 s_len = 0;
     mkt_int_to_string(n, s, &s_len);
 
     mkt_write(mkt_stdout, s + sizeof(s) - s_len, s_len);
@@ -317,7 +317,7 @@ void mkt_instance_println(void* addr) {
     CHECK_NO_STDLIB(header->rv_tag & RV_TAG_INSTANCE, !=, 0, "%d");
 
     char size_s[23] = "";
-    int size_s_len = 0;
+    i32 size_s_len = 0;
     mkt_int_to_string(header->rv_size, size_s, &size_s_len);
     mkt_write(mkt_stdout, size_s + sizeof(size_s) - size_s_len, size_s_len);
 

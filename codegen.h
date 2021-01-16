@@ -6,10 +6,10 @@
 // TODO: use platform headers for that?
 #ifdef __APPLE__
 #define MKT_NAME_PREFIX "_"
-static const long long int syscall_exit = 0x2000001;
+static const i32 syscall_exit = 0x2000001;
 #else
 #define MKT_NAME_PREFIX ""
-static const long long int syscall_exit = 60;
+static const i32 syscall_exit = 60;
 #endif
 
 #ifdef __APPLE__
@@ -26,14 +26,14 @@ static const long long int syscall_exit = 60;
 
 static FILE* output_file = NULL;
 
-static int current_fn_i = 0;
+static i32 current_fn_i = 0;
 
 static const char fn_args[6][5] = {
     [0] = "%rdi", [1] = "%rsi", [2] = "%rdx",
     [3] = "%rcx", [4] = "%r8",  [5] = "%r9",
 };
 
-static void emit_stmt(const parser_t* parser, int stmt_i);
+static void emit_stmt(const parser_t* parser, i32 stmt_i);
 
 #if defined(__clang__) || defined(__GNUC__) || defined(__GNUG__)
 __attribute__((format(printf, 1, 2)))
@@ -49,16 +49,16 @@ println(char* fmt, ...) {
 
 // The System V ABI requires a 16-bit aligned stack.
 // Round up to a multiple of 16
-static int emit_align_to_16(int stack_size) {
+static i32 emit_align_to_16(i32 stack_size) {
     CHECK(stack_size, >=, 0, "%d");
 
     return (stack_size + 16 - 1) / 16 * 16;
 }
 
-static void emit_addr(const parser_t* parser, int node_i) {
+static void emit_addr(const parser_t* parser, i32 node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK(node_i, >=, 0, "%d");
-    CHECK(node_i, <, (int)buf_size(parser->par_nodes), "%d");
+    CHECK(node_i, <, (i32)buf_size(parser->par_nodes), "%d");
 
     const mkt_node_t* const node = &parser->par_nodes[node_i];
     const mkt_type_t* const type = &parser->par_types[node->no_type_i];
@@ -69,12 +69,12 @@ static void emit_addr(const parser_t* parser, int node_i) {
 
             if (type->ty_kind == TYPE_FN) {
                 CHECK(var.va_var_node_i, >=, 0, "%d");
-                const int fn_decl_i = var.va_var_node_i;
+                const i32 fn_decl_i = var.va_var_node_i;
                 const mkt_node_t* const fn_decl_node =
                     &parser->par_nodes[fn_decl_i];
                 const mkt_fn_decl_t fn_decl = fn_decl_node->no_n.no_fn_decl;
                 const char* name = NULL;
-                int name_len = 0;
+                i32 name_len = 0;
                 parser_tok_source(parser, fn_decl.fd_name_tok_i, &name,
                                   &name_len);
                 CHECK((void*)name, !=, NULL, "%p");
@@ -103,7 +103,7 @@ static void emit_addr(const parser_t* parser, int node_i) {
             CHECK(var.va_var_node_i, ==, -1, "%d");
 
             const char* member_src = NULL;
-            int member_src_len = 0;
+            i32 member_src_len = 0;
             parser_tok_source(parser, var.va_tok_i, &member_src,
                               &member_src_len);
             println("add $%d, %%rax # get `%.*s`", var.va_offset,
@@ -114,18 +114,18 @@ static void emit_addr(const parser_t* parser, int node_i) {
             UNREACHABLE();
 
             CHECK(current_fn_i, >=, 0, "%d");
-            CHECK(current_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
-            const int caller_current_fn_i = current_fn_i;
+            CHECK(current_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
+            const i32 caller_current_fn_i = current_fn_i;
 
             CHECK(current_fn_i, >=, 0, "%d");
-            CHECK(current_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
+            CHECK(current_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
             current_fn_i = node_i;
             CHECK(current_fn_i, >=, 0, "%d");
-            CHECK(current_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
+            CHECK(current_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
 
             const mkt_fn_decl_t fn_decl = node->no_n.no_fn_decl;
             const char* name = NULL;
-            int name_len = 0;
+            i32 name_len = 0;
             parser_tok_source(parser, fn_decl.fd_name_tok_i, &name, &name_len);
             CHECK((void*)name, !=, NULL, "%p");
             CHECK(name_len, >=, 0, "%d");
@@ -134,10 +134,10 @@ static void emit_addr(const parser_t* parser, int node_i) {
             println("lea %.*s(%%rip), %%rax", name_len, name);
 
             CHECK(current_fn_i, >=, 0, "%d");
-            CHECK(current_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
+            CHECK(current_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
             current_fn_i = caller_current_fn_i;
             CHECK(current_fn_i, >=, 0, "%d");
-            CHECK(current_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
+            CHECK(current_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
 
             return;
         }
@@ -175,7 +175,7 @@ void emit_store(const mkt_type_t* type) {
 
     /* switch (type->ty_kind) { */
     /*     case TYPE_USER: */
-    /*         //     for (int i = 0; i < type->ty_size; i++) { */
+    /*         //     for (i32 i = 0; i < type->ty_size; i++) { */
     /*         //         println("  mov %d(%%rax), %%r8b", i); */
     /*         //         println("  mov %%r8b, %d(%%rdi)", i); */
     /*         //     } */
@@ -196,7 +196,7 @@ void emit_store(const mkt_type_t* type) {
 }
 
 static void fn_prolog(const parser_t* parser, const mkt_fn_decl_t* fn_decl,
-                      int aligned_stack_size) {
+                      i32 aligned_stack_size) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)fn_decl, !=, NULL, "%p");
     CHECK(aligned_stack_size, >=, 0, "%d");
@@ -211,13 +211,13 @@ static void fn_prolog(const parser_t* parser, const mkt_fn_decl_t* fn_decl,
 
     println("sub $%d, %%rsp\n", aligned_stack_size);
 
-    for (int i = 0; i < (int)buf_size(fn_decl->fd_arg_nodes_i); i++) {
-        const int arg_i = fn_decl->fd_arg_nodes_i[i];
+    for (i32 i = 0; i < (i32)buf_size(fn_decl->fd_arg_nodes_i); i++) {
+        const i32 arg_i = fn_decl->fd_arg_nodes_i[i];
         CHECK(arg_i, >=, 0, "%d");
-        CHECK(arg_i, <, (int)buf_size(parser->par_nodes), "%d");
+        CHECK(arg_i, <, (i32)buf_size(parser->par_nodes), "%d");
 
         const mkt_node_t* const arg = &parser->par_nodes[arg_i];
-        const int stack_offset = arg->no_n.no_var.va_offset;
+        const i32 stack_offset = arg->no_n.no_var.va_offset;
         CHECK(stack_offset, >=, 0, "%d");
 
         CHECK(i, <, 6, "%d");  // FIXME: stack args
@@ -228,7 +228,7 @@ static void fn_prolog(const parser_t* parser, const mkt_fn_decl_t* fn_decl,
     }
 }
 
-static void fn_epilog(int aligned_stack_size) {
+static void fn_epilog(i32 aligned_stack_size) {
     CHECK(aligned_stack_size, >=, 0, "%d");
     CHECK(aligned_stack_size % 16, ==, 0, "%d");
 
@@ -241,14 +241,14 @@ static void fn_epilog(int aligned_stack_size) {
 
 static void emit_program_epilog() {
     println("\n# exit");
-    println("mov $%lld, %%rax", syscall_exit);
+    println("mov $%d, %%rax", syscall_exit);
     println("mov $0, %%rdi");
     println("syscall");
 }
 
 static void emit_push() { println("push %%rax"); }
 
-static void emit_loc(const parser_t* parser, int node_i) {
+static void emit_loc(const parser_t* parser, i32 node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK(node_i, >=, 0, "%d");
 
@@ -258,15 +258,15 @@ static void emit_loc(const parser_t* parser, int node_i) {
             parser->par_file_name0, loc.loc_line, loc.loc_column);
 }
 
-static void emit_expr(const parser_t* parser, const int expr_i) {
+static void emit_expr(const parser_t* parser, const i32 expr_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     if (expr_i < 0) return;
-    CHECK(expr_i, <, (int)buf_size(parser->par_nodes), "%d");
+    CHECK(expr_i, <, (i32)buf_size(parser->par_nodes), "%d");
 
     const mkt_node_t* const expr = &parser->par_nodes[expr_i];
 
     CHECK(expr->no_type_i, >=, 0, "%d");
-    CHECK(expr->no_type_i, <, (int)buf_size(parser->par_types), "%d");
+    CHECK(expr->no_type_i, <, (i32)buf_size(parser->par_types), "%d");
     const mkt_type_t* const type = &parser->par_types[expr->no_type_i];
 
     const char *ax, *di /*, *dx */;
@@ -288,7 +288,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
         }
         case NODE_STRING: {
             const char* source = NULL;
-            int source_len = 0;
+            i32 source_len = 0;
             parser_tok_source(parser, expr->no_n.no_string.st_tok_i, &source,
                               &source_len);
             CHECK((void*)source, !=, NULL, "%p");
@@ -324,7 +324,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             println("pop %%r14");
             println("pop %%r15");
 
-            for (int i = 0; i < source_len; i++)
+            for (i32 i = 0; i < source_len; i++)
                 println("movb $%d, %d(%%rax) # string[%d]", source[i], i, i);
 
             return;
@@ -544,14 +544,14 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
         }
         case NODE_SYSCALL: {
             const mkt_syscall_t syscall = expr->no_n.no_syscall;
-            const int len = (int)buf_size(syscall.sy_arg_nodes_i);
+            const i32 len = (i32)buf_size(syscall.sy_arg_nodes_i);
             CHECK(len, >, 0, "%d");
 
-            for (int i = len - 1; i > 0; i--) {
+            for (i32 i = len - 1; i > 0; i--) {
                 emit_expr(parser, syscall.sy_arg_nodes_i[i]);
                 println("push %%rax");
             }
-            for (int i = 1; i < len; i++) println("pop %s", fn_args[i - 1]);
+            for (i32 i = 1; i < len; i++) println("pop %s", fn_args[i - 1]);
 
             emit_expr(parser, syscall.sy_arg_nodes_i[0]);
             println("syscall");
@@ -561,8 +561,8 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
         case NODE_BLOCK: {
             const mkt_block_t block = expr->no_n.no_block;
 
-            for (int i = 0; i < (int)buf_size(block.bl_nodes_i); i++) {
-                const int stmt_node_i = block.bl_nodes_i[i];
+            for (i32 i = 0; i < (i32)buf_size(block.bl_nodes_i); i++) {
+                const i32 stmt_node_i = block.bl_nodes_i[i];
                 emit_stmt(parser, stmt_node_i);
             }
 
@@ -578,7 +578,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             const mkt_call_t call = expr->no_n.no_call;
             CHECK(buf_size(call.ca_arg_nodes_i), <=, 6UL, "%zu");  // TODO
 
-            for (int i = 0; i < (int)buf_size(call.ca_arg_nodes_i); i++) {
+            for (i32 i = 0; i < (i32)buf_size(call.ca_arg_nodes_i); i++) {
                 emit_expr(parser, call.ca_arg_nodes_i[i]);
                 emit_loc(parser, expr_i);
                 println("mov %%rax, %s", fn_args[i]);
@@ -595,7 +595,7 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
         case NODE_INSTANCE: {
             CHECK(type->ty_kind, ==, TYPE_PTR, "%d");
             CHECK(type->ty_ptr_type_i, >=, 0, "%d");
-            CHECK(type->ty_ptr_type_i, <, (int)buf_size(parser->par_types),
+            CHECK(type->ty_ptr_type_i, <, (i32)buf_size(parser->par_types),
                   "%d");
 
             const mkt_type_t* const instance_type =
@@ -639,8 +639,8 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             // const mkt_node_t* const class_node =
             //    &parser->par_nodes[instance.in_class];
             // mkt_class_t class = class_node->no_n.no_class;
-            // for (int i = 0; i < (int)buf_size(class.cl_members); i++) {
-            //    const int m_i = class.cl_members[i];
+            // for (i32 i = 0; i < (i32)buf_size(class.cl_members); i++) {
+            //    const i32 m_i = class.cl_members[i];
             //    /* const mkt_type_t* const type = &parser->par_types[m_i]; */
             //    // FIXME
             //    emit_stmt(parser, m_i);
@@ -658,10 +658,10 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
     }
 }
 
-static void emit_stmt(const parser_t* parser, int stmt_i) {
+static void emit_stmt(const parser_t* parser, i32 stmt_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK(stmt_i, >=, 0, "%d");
-    CHECK(stmt_i, <, (int)buf_size(parser->par_nodes), "%d");
+    CHECK(stmt_i, <, (i32)buf_size(parser->par_nodes), "%d");
 
     const mkt_node_t* const stmt = &parser->par_nodes[stmt_i];
     const mkt_type_t* const type = &parser->par_types[stmt->no_type_i];
@@ -813,10 +813,10 @@ static void emit(const parser_t* parser, FILE* asm_file) {
     println(".cfi_endproc");
     println("ret\n");
 
-    for (int i = 0; i < (int)buf_size(parser->par_node_decls); i++) {
-        const int no_i = parser->par_node_decls[i];
+    for (i32 i = 0; i < (i32)buf_size(parser->par_node_decls); i++) {
+        const i32 no_i = parser->par_node_decls[i];
         CHECK(no_i, >=, 0, "%d");
-        CHECK(no_i, <, (int)buf_size(parser->par_nodes), "%d");
+        CHECK(no_i, <, (i32)buf_size(parser->par_nodes), "%d");
 
         const mkt_node_t* const node = &parser->par_nodes[no_i];
         if (node->no_kind != NODE_FN_DECL) continue;
@@ -833,7 +833,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
             parser->par_lexer.lex_tok_pos_ranges[fn_decl.fd_name_tok_i];
         const char* const name =
             &parser->par_lexer.lex_source[pos_range.pr_start];
-        const int name_len = pos_range.pr_end - pos_range.pr_start;
+        const i32 name_len = pos_range.pr_end - pos_range.pr_start;
         CHECK((void*)name, !=, NULL, "%p");
         CHECK(name_len, >=, 0, "%d");
         CHECK(name_len, <, parser->par_lexer.lex_source_len, "%d");
@@ -843,12 +843,12 @@ static void emit(const parser_t* parser, FILE* asm_file) {
 
         println("%.*s:", name_len, name);
 
-        const int caller_current_fn_i = current_fn_i;
+        const i32 caller_current_fn_i = current_fn_i;
         CHECK(current_fn_i, >=, 0, "%d");
-        CHECK(current_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
+        CHECK(current_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
         current_fn_i = no_i;
 
-        const int aligned_stack_size = emit_align_to_16(fn_decl.fd_stack_size);
+        const i32 aligned_stack_size = emit_align_to_16(fn_decl.fd_stack_size);
         log_debug("%.*s: stack_size=%d aligned_stack_size=%d", name_len, name,
                   fn_decl.fd_stack_size, aligned_stack_size);
         fn_prolog(parser, &fn_decl, aligned_stack_size);
@@ -860,6 +860,6 @@ static void emit(const parser_t* parser, FILE* asm_file) {
 
         current_fn_i = caller_current_fn_i;
         CHECK(current_fn_i, >=, 0, "%d");
-        CHECK(current_fn_i, <, (int)buf_size(parser->par_nodes), "%d");
+        CHECK(current_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
     }
 }

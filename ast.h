@@ -27,20 +27,20 @@ static const char mkt_type_to_str[TYPE_COUNT][20] = {
 
 typedef struct {
     mkt_type_kind_t ty_kind;
-    int ty_size, ty_class_i /* only for TYPE_CLASS */,
+    i32 ty_size, ty_class_i /* only for TYPE_CLASS */,
         ty_ptr_type_i /* only for TYPE_PTR */;
 } mkt_type_t;
 
 typedef struct {
-    int bp_arg_i, bp_keyword_print_i, bp_rparen_i;
+    i32 bp_arg_i, bp_keyword_print_i, bp_rparen_i;
 } mkt_builtin_println_t;
 
 typedef struct {
-    int bi_lhs_i, bi_rhs_i;
+    i32 bi_lhs_i, bi_rhs_i;
 } mkt_binary_t;
 
 typedef struct {
-    int st_tok_i;
+    i32 st_tok_i;
     bool st_multiline;
 } mkt_string_t;
 
@@ -106,29 +106,29 @@ const char mkt_node_kind_to_str[NODE_COUNT][30] = {
 };
 
 typedef struct {
-    long long int nu_val;
-    int nu_tok_i;
+    i64 nu_val;
+    i32 nu_tok_i;
 } mkt_number_t;
 
 typedef struct {
-    int if_first_tok_i, if_last_tok_i, if_node_cond_i, if_node_then_i,
+    i32 if_first_tok_i, if_last_tok_i, if_node_cond_i, if_node_then_i,
         if_node_else_i;
 } mkt_if_t;
 
 typedef struct {
-    int bl_first_tok_i, bl_last_tok_i, *bl_nodes_i, bl_parent_scope_i;
+    i32 bl_first_tok_i, bl_last_tok_i, *bl_nodes_i, bl_parent_scope_i;
 } mkt_block_t;
 
 static const u16 MKT_VAR_FLAGS_VAL = 0x1;
 static const u16 MKT_VAR_FLAGS_VAR = 0x2;
 
 typedef struct {
-    int va_tok_i, va_var_node_i /* Node the variable refers to */, va_offset;
+    i32 va_tok_i, va_var_node_i /* Node the variable refers to */, va_offset;
     u16 va_flags;
 } mkt_var_t;
 
 typedef struct {
-    int wh_first_tok_i, wh_last_tok_i, wh_cond_i, wh_body_i;
+    i32 wh_first_tok_i, wh_last_tok_i, wh_cond_i, wh_body_i;
 } mkt_while_t;
 
 static const u16 FN_FLAGS_PUBLIC = 0x1;
@@ -136,39 +136,39 @@ static const u16 FN_FLAGS_PRIVATE = 0x2;
 static const u16 FN_FLAGS_SEEN_RETURN = 0x4;
 
 typedef struct {
-    int fd_first_tok_i, fd_last_tok_i, fd_name_tok_i, fd_return_type_tok_i,
+    i32 fd_first_tok_i, fd_last_tok_i, fd_name_tok_i, fd_return_type_tok_i,
         fd_body_node_i, fd_stack_size, *fd_arg_nodes_i, fd_return_type_i;
     u16 fd_flags;
 } mkt_fn_decl_t;
 
 typedef struct {
-    int ca_first_tok_i, ca_last_tok_i, ca_lhs_node_i, *ca_arg_nodes_i;
+    i32 ca_first_tok_i, ca_last_tok_i, ca_lhs_node_i, *ca_arg_nodes_i;
 } mkt_call_t;
 
 typedef struct {
-    int un_first_tok_i, un_last_tok_i, un_node_i;
+    i32 un_first_tok_i, un_last_tok_i, un_node_i;
 } mkt_unary_t;
 
 typedef struct {
-    int sy_first_tok_i, sy_last_tok_i;
-    int* sy_arg_nodes_i;
+    i32 sy_first_tok_i, sy_last_tok_i;
+    i32* sy_arg_nodes_i;
 } mkt_syscall_t;
 
 static const unsigned char CLASS_FLAGS_PUBLIC = 0x1;
 
 typedef struct {
-    int cl_first_tok_i, cl_last_tok_i, cl_name_tok_i, cl_body_node_i,
+    i32 cl_first_tok_i, cl_last_tok_i, cl_name_tok_i, cl_body_node_i,
         *cl_members, *cl_methods;
     unsigned char cl_flags;
 } mkt_class_t;
 
 typedef struct {
-    int in_class, in_first_tok_i, in_last_tok_i;
+    i32 in_class, in_first_tok_i, in_last_tok_i;
 } mkt_instance_t;
 
 typedef struct {
     mkt_node_kind_t no_kind;
-    int no_type_i;
+    i32 no_type_i;
     union {
         mkt_builtin_println_t no_builtin_println;  // NODE_BUILTIN_PRINTLN
         mkt_string_t no_string;                    // NODE_STRING

@@ -18,7 +18,7 @@ typedef struct {
 } str;
 
 static mkt_res_t proc_run(const char* exe_name, char output[LENGTH],
-                          size_t* read_bytes, int* ret_code) {
+                          size_t* read_bytes, i32* ret_code) {
     CHECK((void*)exe_name, !=, NULL, "%p");
     CHECK((void*)read_bytes, !=, NULL, "%p");
     CHECK((void*)ret_code, !=, NULL, "%p");
@@ -31,7 +31,7 @@ static mkt_res_t proc_run(const char* exe_name, char output[LENGTH],
     }
 
     *read_bytes = fread(output, 1, LENGTH, exe_process);
-    const int err = ferror(exe_process);
+    const i32 err = ferror(exe_process);
     if (err) {
         fprintf(stderr, "Error reading output of `%s`: errno=%d err=%s\n",
                 exe_name, errno, strerror(errno));
@@ -87,7 +87,7 @@ static mkt_res_t simple_test_run(const char* source_file_name) {
             source_file_name, mkt_colors[is_tty][COL_RESET]);
 
     char argv[MAXPATHLEN] = "";
-    snprintf(argv, MAXPATHLEN, "%.*s.exe", (int)(source_file_name_len - 3),
+    snprintf(argv, MAXPATHLEN, "%.*s.exe", (i32)(source_file_name_len - 3),
              source_file_name);
 
     struct stat st = {0};
@@ -97,12 +97,12 @@ static mkt_res_t simple_test_run(const char* source_file_name) {
         return errno;
     }
 
-    const int file_size = st.st_size;
+    const i32 file_size = st.st_size;
 
     char* const source = malloc(file_size);
     if (source == NULL) return ENOMEM;
 
-    int file = open(source_file_name, O_RDONLY);
+    i32 file = open(source_file_name, O_RDONLY);
     if (file == -1) {
         fprintf(stderr, "Failed to `open(2)` the source file %s: %s\n",
                 source_file_name, strerror(errno));
@@ -128,7 +128,7 @@ static mkt_res_t simple_test_run(const char* source_file_name) {
     const size_t expects_count = buf_size(expects);
 
     char output[LENGTH] = "";
-    int ret_code = 0;
+    i32 ret_code = 0;
     size_t proc_read_bytes = 0;
     if (proc_run(argv, output, &proc_read_bytes, &ret_code) != RES_OK)
         return RES_ERR;
@@ -159,9 +159,9 @@ static mkt_res_t simple_test_run(const char* source_file_name) {
                     "✘ %s #%lu: [actual  ]%s len=%zu str=%.*s\n",
                     mkt_colors[is_tty][COL_RED], source_file_name, line + 1,
                     mkt_colors[is_tty][COL_RESET], expect_line.str_len,
-                    (int)expect_line.str_len, expect_line.str_s,
+                    (i32)expect_line.str_len, expect_line.str_s,
                     mkt_colors[is_tty][COL_RED], source_file_name, line + 1,
-                    mkt_colors[is_tty][COL_RESET], out_len, (int)out_len, out);
+                    mkt_colors[is_tty][COL_RESET], out_len, (i32)out_len, out);
             differed = true;
         }
         out = end + 1;
@@ -188,7 +188,7 @@ static mkt_res_t err_test_run(const char* source_file_name) {
 
     char output[LENGTH] = "";
     size_t read_bytes = 0;
-    int ret_code = 0;
+    i32 ret_code = 0;
     if (proc_run(argv, output, &read_bytes, &ret_code) != RES_OK)
         return RES_ERR;
     if (ret_code == 0) {
@@ -202,7 +202,7 @@ static mkt_res_t err_test_run(const char* source_file_name) {
     return RES_OK;
 }
 
-int main() {
+i32 main() {
     is_tty = isatty(2);
 
     const char simple_tests[][MAXPATHLEN] = {
