@@ -28,7 +28,7 @@ typedef struct {
     i32 par_tok_i, par_scope_i, par_fn_i, par_class_i,
         par_main_fn_i;      // Current token/scope/function/class/main function
     mkt_node_t* par_nodes;  // Arena of all nodes
-    lexer_t par_lexer;
+    mkt_lexer_t par_lexer;
     i32* par_node_decls;  // Declarations e.g. functions
     mkt_type_t* par_types;
     udf_t* par_udfs;
@@ -1454,8 +1454,7 @@ static mkt_res_t parser_parse_jump_expr(parser_t* parser, i32* new_node_i) {
         CHECK(type_i, <, (i32)buf_size(parser->par_types), "%d");
 
         const mkt_type_t actual_return_type = parser->par_types[type_i];
-        const mkt_fn_decl_t fn =
-            parser->par_nodes[parser->par_fn_i].no_n.no_fn;
+        const mkt_fn_decl_t fn = parser->par_nodes[parser->par_fn_i].no_n.no_fn;
         const mkt_type_t declared_return_type =
             parser->par_types[fn.fd_return_type_i];
         if (actual_return_type.ty_kind != declared_return_type.ty_kind) {
@@ -2578,8 +2577,7 @@ static mkt_res_t parser_parse_property_declaration(parser_t* parser,
         parser->par_nodes[parser->par_fn_i].no_n.no_fn.fd_stack_size +=
             type.ty_size;
 
-        offset =
-            parser->par_nodes[parser->par_fn_i].no_n.no_fn.fd_stack_size;
+        offset = parser->par_nodes[parser->par_fn_i].no_n.no_fn.fd_stack_size;
     }
 
     *new_node_i = node_make_var(parser, type_i, name_tok_i, -1, offset, flags);
@@ -2673,11 +2671,10 @@ static i32 parser_fn_begin(parser_t* parser, i32 first_tok_i, i32* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
-    buf_push(
-        parser->par_nodes,
-        ((mkt_node_t){.no_type_i = TYPE_FN_I,
-                      .no_kind = NODE_FN,
-                      .no_n = {.no_fn = {.fd_first_tok_i = first_tok_i,
+    buf_push(parser->par_nodes,
+             ((mkt_node_t){.no_type_i = TYPE_FN_I,
+                           .no_kind = NODE_FN,
+                           .no_n = {.no_fn = {.fd_first_tok_i = first_tok_i,
                                               .fd_name_tok_i = -1,
                                               .fd_last_tok_i = -1,
                                               .fd_body_node_i = -1,
@@ -2719,16 +2716,14 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
 
     const i32 old_fn_i = parser_fn_begin(parser, first_tok_i, new_node_i);
 
-    if (!parser_match(
-            parser,
-            &parser->par_nodes[*new_node_i].no_n.no_fn.fd_name_tok_i, 1,
-            TOK_ID_IDENTIFIER))
+    if (!parser_match(parser,
+                      &parser->par_nodes[*new_node_i].no_n.no_fn.fd_name_tok_i,
+                      1, TOK_ID_IDENTIFIER))
         return parser_err_unexpected_token(parser, TOK_ID_IDENTIFIER);
 
     // Qualifies as entrypoint?
     {
-        u16* const flags =
-            &parser->par_nodes[*new_node_i].no_n.no_fn.fd_flags;
+        u16* const flags = &parser->par_nodes[*new_node_i].no_n.no_fn.fd_flags;
 
         // TODO: validate flags
 
@@ -2804,8 +2799,7 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
     const mkt_type_kind_t declared_return_type =
         parser->par_types[declared_return_type_i].ty_kind;
 
-    mkt_fn_decl_t* const fn =
-        &parser->par_nodes[*new_node_i].no_n.no_fn;
+    mkt_fn_decl_t* const fn = &parser->par_nodes[*new_node_i].no_n.no_fn;
     CHECK(fn->fd_body_node_i, >=, 0, "%d");
     const i32 last_tok_i =
         parser->par_nodes[body_node_i].no_n.no_block.bl_last_tok_i;
