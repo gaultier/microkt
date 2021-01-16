@@ -145,7 +145,7 @@ typedef struct {
 
 typedef struct {
     int un_first_tok_i, un_last_tok_i, un_node_i;
-} unary_t;
+} mkt_unary_t;
 
 typedef struct {
     int sy_first_tok_i, sy_last_tok_i;
@@ -156,7 +156,7 @@ static const unsigned char CLASS_FLAGS_PUBLIC = 0x1;
 
 typedef struct {
     int cl_first_tok_i, cl_last_tok_i, cl_name_tok_i, cl_body_node_i,
-        *cl_members;
+        *cl_members, *cl_methods;
     unsigned char cl_flags;
 } mkt_class_decl_t;
 
@@ -173,7 +173,7 @@ typedef struct {
         mkt_number_t no_num;                       // NODE_NUM, NODE_CHAR
         mkt_binary_t no_binary;  // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
         // NODE_DIVIDE, NODE_MODULO, NODE_MEMBER_GET
-        unary_t no_unary;                // NODE_NOT, NODE_RETURN
+        mkt_unary_t no_unary;            // NODE_NOT, NODE_RETURN
         mkt_if_t no_if;                  // NODE_IF
         mkt_block_t no_block;            // NODE_BLOCK
         mkt_var_t no_var;                // NODE_VAR
