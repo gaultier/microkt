@@ -1,6 +1,8 @@
 #pragma once
 #include <stdbool.h>
 
+#include "common.h"
+
 typedef enum {
     TYPE_ANY,
     TYPE_UNIT,
@@ -117,26 +119,26 @@ typedef struct {
     int bl_first_tok_i, bl_last_tok_i, *bl_nodes_i, bl_parent_scope_i;
 } mkt_block_t;
 
-static const unsigned short MKT_VAR_FLAGS_VAL = 0x1;
-static const unsigned short MKT_VAR_FLAGS_VAR = 0x2;
+static const u16 MKT_VAR_FLAGS_VAL = 0x1;
+static const u16 MKT_VAR_FLAGS_VAR = 0x2;
 
 typedef struct {
     int va_tok_i, va_var_node_i /* Node the variable refers to */, va_offset;
-    unsigned short va_flags;
+    u16 va_flags;
 } mkt_var_t;
 
 typedef struct {
     int wh_first_tok_i, wh_last_tok_i, wh_cond_i, wh_body_i;
 } mkt_while_t;
 
-static const unsigned short FN_FLAGS_PUBLIC = 0x1;
-static const unsigned short FN_FLAGS_PRIVATE = 0x2;
-static const unsigned short FN_FLAGS_SEEN_RETURN = 0x4;
+static const u16 FN_FLAGS_PUBLIC = 0x1;
+static const u16 FN_FLAGS_PRIVATE = 0x2;
+static const u16 FN_FLAGS_SEEN_RETURN = 0x4;
 
 typedef struct {
     int fd_first_tok_i, fd_last_tok_i, fd_name_tok_i, fd_return_type_tok_i,
         fd_body_node_i, fd_stack_size, *fd_arg_nodes_i, fd_return_type_i;
-    unsigned short fd_flags;
+    u16 fd_flags;
 } mkt_fn_decl_t;
 
 typedef struct {
@@ -181,7 +183,7 @@ typedef struct {
         mkt_fn_decl_t no_fn_decl;    // NODE_FN_DECL
         mkt_call_t no_call;          // NODE_CALL
         mkt_syscall_t no_syscall;    // NODE_SYSCALL
-        mkt_class_t no_class;   // NODE_CLASS_DECL
+        mkt_class_t no_class;        // NODE_CLASS_DECL
         mkt_instance_t no_instance;  // NODE_INSTANCE
     } no_n;
 } mkt_node_t;

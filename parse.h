@@ -80,7 +80,7 @@ static int node_make_assign(parser_t* parser, int type_i, int lhs_i,
 }
 
 static int node_make_var(parser_t* parser, int type_i, int tok_i,
-                         int var_node_i, int offset, unsigned short flags) {
+                         int var_node_i, int offset, u16 flags) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK(type_i, >=, 0, "%d");
     CHECK(offset, >=, 0, "%d");
@@ -331,9 +331,8 @@ static void parser_class_begin(parser_t* parser, int first_tok_i,
             *new_node_i);
     }
 
-    *body_node_i =
-        parser->par_nodes[*new_node_i].no_n.no_class.cl_body_node_i =
-            node_make_block(parser);
+    *body_node_i = parser->par_nodes[*new_node_i].no_n.no_class.cl_body_node_i =
+        node_make_block(parser);
 
     *parent_scope_i = parser_scope_begin(parser, *body_node_i);
 }
@@ -841,8 +840,7 @@ static void node_dump(const parser_t* parser, int no_i, int indent) {
             const char* src = NULL;
             int src_len = 0;
             if (class.cl_name_tok_i >= 0)
-                parser_tok_source(parser, class.cl_name_tok_i, &src,
-                                  &src_len);
+                parser_tok_source(parser, class.cl_name_tok_i, &src, &src_len);
             else {
                 src_len = strlen(parser->par_file_name0);
                 src = parser->par_file_name0;
@@ -1684,8 +1682,7 @@ static mkt_res_t parser_parse_navigation_suffix(parser_t* parser, int lhs_i,
 
     CHECK(class_node->no_kind, ==, NODE_CLASS_DECL, "%d");
     const mkt_class_t class = class_node->no_n.no_class;
-    if (parser_resolve_member(parser, member_tok_i, &class, &rhs_i) !=
-        RES_OK) {
+    if (parser_resolve_member(parser, member_tok_i, &class, &rhs_i) != RES_OK) {
         const char* src = NULL;
         int src_len = 0;
         parser_tok_source(parser, member_tok_i, &src, &src_len);
@@ -2525,7 +2522,7 @@ static mkt_res_t parser_parse_property_declaration(parser_t* parser,
     int first_tok_i = -1, name_tok_i = -1, type_tok_i = -1, dummy = -1,
         init_node_i = -1;
 
-    unsigned short flags = 0;
+    u16 flags = 0;
     if (parser_match(parser, &first_tok_i, 1, TOK_ID_VAR))
         flags = MKT_VAR_FLAGS_VAR;
     else if (parser_match(parser, &first_tok_i, 1, TOK_ID_VAL))
@@ -2732,7 +2729,7 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
 
     // Qualifies as entrypoint?
     {
-        unsigned short* const flags =
+        u16* const flags =
             &parser->par_nodes[*new_node_i].no_n.no_fn_decl.fd_flags;
 
         // TODO: validate flags
@@ -2843,8 +2840,7 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
     return RES_OK;
 }
 
-static mkt_res_t parser_parse_classaration(parser_t* parser,
-                                                int* new_node_i) {
+static mkt_res_t parser_parse_classaration(parser_t* parser, int* new_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)new_node_i, !=, NULL, "%p");
 
@@ -2896,8 +2892,7 @@ static mkt_res_t parser_parse_classaration(parser_t* parser,
             1, TOK_ID_RCURLY))
         return parser_err_unexpected_token(parser, TOK_ID_RCURLY);
 
-    mkt_class_t* const class =
-        &parser->par_nodes[*new_node_i].no_n.no_class;
+    mkt_class_t* const class = &parser->par_nodes[*new_node_i].no_n.no_class;
     const int last_tok_i =
         parser->par_nodes[body_node_i].no_n.no_block.bl_last_tok_i;
     class->cl_last_tok_i = last_tok_i;
