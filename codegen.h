@@ -638,9 +638,9 @@ static void emit_expr(const parser_t* parser, const int expr_i) {
             // mkt_instance_t instance = expr->no_n.no_instance;
             // const mkt_node_t* const class_node =
             //    &parser->par_nodes[instance.in_class];
-            // mkt_class_decl_t class_decl = class_node->no_n.no_class_decl;
-            // for (int i = 0; i < (int)buf_size(class_decl.cl_members); i++) {
-            //    const int m_i = class_decl.cl_members[i];
+            // mkt_class_t class = class_node->no_n.no_class;
+            // for (int i = 0; i < (int)buf_size(class.cl_members); i++) {
+            //    const int m_i = class.cl_members[i];
             //    /* const mkt_type_t* const type = &parser->par_types[m_i]; */
             //    // FIXME
             //    emit_stmt(parser, m_i);

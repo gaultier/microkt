@@ -158,7 +158,7 @@ typedef struct {
     int cl_first_tok_i, cl_last_tok_i, cl_name_tok_i, cl_body_node_i,
         *cl_members, *cl_methods;
     unsigned char cl_flags;
-} mkt_class_decl_t;
+} mkt_class_t;
 
 typedef struct {
     int in_class, in_first_tok_i, in_last_tok_i;
@@ -173,16 +173,16 @@ typedef struct {
         mkt_number_t no_num;                       // NODE_NUM, NODE_CHAR
         mkt_binary_t no_binary;  // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
         // NODE_DIVIDE, NODE_MODULO, NODE_MEMBER_GET
-        mkt_unary_t no_unary;            // NODE_NOT, NODE_RETURN
-        mkt_if_t no_if;                  // NODE_IF
-        mkt_block_t no_block;            // NODE_BLOCK
-        mkt_var_t no_var;                // NODE_VAR
-        mkt_while_t no_while;            // NODE_WHILE
-        mkt_fn_decl_t no_fn_decl;        // NODE_FN_DECL
-        mkt_call_t no_call;              // NODE_CALL
-        mkt_syscall_t no_syscall;        // NODE_SYSCALL
-        mkt_class_decl_t no_class_decl;  // NODE_CLASS_DECL
-        mkt_instance_t no_instance;      // NODE_INSTANCE
+        mkt_unary_t no_unary;        // NODE_NOT, NODE_RETURN
+        mkt_if_t no_if;              // NODE_IF
+        mkt_block_t no_block;        // NODE_BLOCK
+        mkt_var_t no_var;            // NODE_VAR
+        mkt_while_t no_while;        // NODE_WHILE
+        mkt_fn_decl_t no_fn_decl;    // NODE_FN_DECL
+        mkt_call_t no_call;          // NODE_CALL
+        mkt_syscall_t no_syscall;    // NODE_SYSCALL
+        mkt_class_t no_class;   // NODE_CLASS_DECL
+        mkt_instance_t no_instance;  // NODE_INSTANCE
     } no_n;
 } mkt_node_t;
 
