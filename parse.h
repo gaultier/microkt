@@ -151,17 +151,6 @@ static mkt_res_t parser_node_find_callable(const parser_t* parser, i32 no_i,
     CHECK((void*)node_i, !=, NULL, "%p");
 
     const mkt_node_t* const node = &parser->par_nodes[no_i];
-    // const mkt_type_t* const type = &parser->par_types[node->no_type_i];
-
-    // if (type->ty_kind == TYPE_FN) {
-    //     *node_i = no_i;
-    //     return RES_OK;
-    // }
-    // if (type->ty_kind == TYPE_CLASS) {  // Constructor
-    //     *node_i = no_i;
-    //     return RES_OK;
-    // }
-    // return RES_ERR;
 
     switch (node->no_kind) {
         case NODE_VAR:
