@@ -441,11 +441,10 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             return;
         }
         case NODE_RETURN: {
-            if (expr->no_n.no_unary.un_node_i >= 0)
-                emit_expr(parser, expr->no_n.no_unary.un_node_i);
-
+            const mkt_return_t ret = expr->no_n.no_return;
+            emit_expr(parser, ret.re_node_i);
             emit_loc(parser, expr_i);
-            println("jmp .L.return.%d", current_fn_i);
+            println("jmp .L.return.%d", ret.re_fn_i);
             return;
         }
         case NODE_NOT: {

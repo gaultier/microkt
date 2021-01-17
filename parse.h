@@ -781,7 +781,16 @@ static void node_dump(const parser_t* parser, i32 no_i, i32 indent) {
 
             break;
         }
-        case NODE_RETURN:
+        case NODE_RETURN: {
+            log_debug_with_indent(
+                indent, "node #%d %s type=%s", no_i,
+                mkt_node_kind_to_str[node->no_kind],
+                mkt_type_to_str[parser->par_types[node->no_type_i].ty_kind]);
+            if (node->no_n.no_unary.re_node_i >= 0)
+                node_dump(parser, node->no_n.no_unary.re_node_i, indent + 2);
+
+            break;
+        }
         case NODE_NOT: {
             log_debug_with_indent(
                 indent, "node #%d %s type=%s", no_i,
@@ -963,6 +972,8 @@ static i32 node_first_token(const parser_t* parser, i32 node_i) {
             return node_first_token(parser, node->no_n.no_binary.bi_lhs_i);
 
         case NODE_RETURN:
+            return node->no_n.no_return.re_first_tok_i;
+
         case NODE_NOT:
             return node->no_n.no_unary.un_first_tok_i;
 
@@ -1022,8 +1033,10 @@ static i32 node_last_token(const parser_t* parser, i32 node_i) {
             return node_last_token(parser, node->no_n.no_binary.bi_rhs_i);
 
         case NODE_RETURN:
+            return node_last_token(parser, node->no_n.no_return.re_node_i);
+
         case NODE_NOT:
-            return node->no_n.no_unary.un_last_tok_i;
+            return node_last_token(parser, node->no_n.no_unary.un_node_i);
 
         case NODE_IF:
             return node->no_n.no_if.if_last_tok_i;
@@ -1543,14 +1556,13 @@ static mkt_res_t parser_parse_jump_expr(parser_t* parser, i32* new_node_i) {
             return RES_ERR;
         }
 
-        buf_push(parser->par_nodes,
-                 ((mkt_node_t){
-                     .no_type_i = type_i,
-                     .no_kind = NODE_RETURN,
-                     .no_n = {.no_unary = {.un_first_tok_i = tok_i,
-                                           .un_last_tok_i = node_last_token(
-                                               parser, expr_node_i),
-                                           .un_node_i = expr_node_i}}}));
+        buf_push(
+            parser->par_nodes,
+            ((mkt_node_t){.no_type_i = type_i,
+                          .no_kind = NODE_RETURN,
+                          .no_n = {.no_return = {.re_first_tok_i = tok_i,
+                                                 .re_fn_i = parser->par_fn_i,
+                                                 .re_node_i = expr_node_i}}}));
         *new_node_i = buf_size(parser->par_nodes) - 1;
         log_debug("New return %d type=%s", *new_node_i,
                   mkt_type_to_str[parser->par_types[type_i].ty_kind]);
@@ -1811,13 +1823,10 @@ static mkt_res_t parser_parse_prefix_unary_expr(parser_t* parser,
         CHECK(no_i, <, (i32)buf_size(parser->par_nodes), "%d");
 
         buf_push(parser->par_nodes,
-                 ((mkt_node_t){
-                     .no_type_i = type_i,
-                     .no_kind = NODE_NOT,
-                     .no_n = {.no_unary = {.un_first_tok_i = tok_i,
-                                           .un_last_tok_i =
-                                               node_last_token(parser, no_i),
-                                           .un_node_i = no_i}}}));
+                 ((mkt_node_t){.no_type_i = type_i,
+                               .no_kind = NODE_NOT,
+                               .no_n = {.no_unary = {.un_first_tok_i = tok_i,
+                                                     .un_node_i = no_i}}}));
         *new_node_i = no_i = (i32)buf_size(parser->par_nodes) - 1;
 
         return RES_OK;

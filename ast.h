@@ -147,8 +147,12 @@ typedef struct {
 } mkt_call_t;
 
 typedef struct {
-    i32 un_first_tok_i, un_last_tok_i, un_node_i;
+    i32 un_first_tok_i, un_node_i;
 } mkt_unary_t;
+
+typedef struct {
+    i32 re_first_tok_i, re_fn_i, re_node_i;
+} mkt_return_t;
 
 typedef struct {
     i32 sy_first_tok_i, sy_last_tok_i;
@@ -176,7 +180,7 @@ typedef struct {
         mkt_number_t no_num;                       // NODE_NUM, NODE_CHAR
         mkt_binary_t no_binary;  // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
         // NODE_DIVIDE, NODE_MODULO, NODE_MEMBER_GET
-        mkt_unary_t no_unary;        // NODE_NOT, NODE_RETURN
+        mkt_unary_t no_unary;        // NODE_NOT
         mkt_if_t no_if;              // NODE_IF
         mkt_block_t no_block;        // NODE_BLOCK
         mkt_var_t no_var;            // NODE_VAR
@@ -186,6 +190,7 @@ typedef struct {
         mkt_syscall_t no_syscall;    // NODE_SYSCALL
         mkt_class_t no_class;        // NODE_CLASS
         mkt_instance_t no_instance;  // NODE_INSTANCE
+        mkt_return_t no_return;      // NODE_RETURN
     } no_n;
 } mkt_node_t;
 
