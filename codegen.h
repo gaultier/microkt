@@ -26,8 +26,6 @@ static const i32 syscall_exit = 60;
 
 static FILE* output_file = NULL;
 
-static i32 current_fn_i = 0;
-
 static const char fn_args[6][5] = {
     [0] = "%rdi", [1] = "%rsi", [2] = "%rdx",
     [3] = "%rcx", [4] = "%r8",  [5] = "%r9",
@@ -195,11 +193,11 @@ static void fn_prolog(const parser_t* parser, const mkt_fn_t* fn,
     }
 }
 
-static void fn_epilog(i32 aligned_stack_size) {
+static void fn_epilog(i32 aligned_stack_size, i32 fn_i) {
     CHECK(aligned_stack_size, >=, 0, "%d");
     CHECK(aligned_stack_size % 16, ==, 0, "%d");
 
-    println(".L.return.%d:", current_fn_i);
+    println(".L.return.%d:", fn_i);
     println("addq $%d, %%rsp", aligned_stack_size);
     println("popq %%rbp");
     println(".cfi_endproc");
@@ -815,24 +813,15 @@ static void emit(const parser_t* parser, FILE* asm_file) {
 
             println("%.*s:", name_len, name);
 
-            const i32 caller_current_fn_i = current_fn_i;
-            CHECK(current_fn_i, >=, 0, "%d");
-            CHECK(current_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
-            current_fn_i = node_fn_i;
-
             const i32 aligned_stack_size = emit_align_to_16(fn.fd_stack_size);
             log_debug("%.*s: stack_size=%d aligned_stack_size=%d", name_len,
                       name, fn.fd_stack_size, aligned_stack_size);
             fn_prolog(parser, &fn, aligned_stack_size);
             emit_stmt(parser, fn.fd_body_node_i);
 
-            if (current_fn_i == parser->par_main_fn_i) emit_program_epilog();
+            if (node_fn_i == parser->par_main_fn_i) emit_program_epilog();
 
-            fn_epilog(aligned_stack_size);
-
-            current_fn_i = caller_current_fn_i;
-            CHECK(current_fn_i, >=, 0, "%d");
-            CHECK(current_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
+            fn_epilog(aligned_stack_size, node_fn_i);
         }
     }
 }
