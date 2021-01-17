@@ -237,7 +237,7 @@ static mkt_res_t parser_resolve_member(const parser_t* parser, i32 tok_i,
 
 // TODO: optimize, currently it is O(n*m) where n= # of stmt and m = # of var
 // def per scope
-static mkt_res_t parser_resolve_var(const parser_t* parser, i32 tok_i,
+static mkt_res_t parser_resolve_var(parser_t* parser, i32 tok_i,
                                     i32* def_node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK((void*)def_node_i, !=, NULL, "%p");
@@ -319,6 +319,10 @@ static mkt_res_t parser_resolve_var(const parser_t* parser, i32 tok_i,
 
         current_scope_i = b.bl_parent_scope_i;
     }
+    // FIXME
+    if (parser_resolve_member(parser, tok_i, parser_current_class(parser),
+                              def_node_i) == RES_OK)
+        return RES_OK;
 
     log_debug("var `%.*s` could not be resolved", var_source_len, var_source);
     return RES_NONE;
