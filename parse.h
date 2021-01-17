@@ -151,6 +151,17 @@ static mkt_res_t parser_node_find_callable(const parser_t* parser, i32 no_i,
     CHECK((void*)node_i, !=, NULL, "%p");
 
     const mkt_node_t* const node = &parser->par_nodes[no_i];
+    // const mkt_type_t* const type = &parser->par_types[node->no_type_i];
+
+    // if (type->ty_kind == TYPE_FN) {
+    //     *node_i = no_i;
+    //     return RES_OK;
+    // }
+    // if (type->ty_kind == TYPE_CLASS) {  // Constructor
+    //     *node_i = no_i;
+    //     return RES_OK;
+    // }
+    // return RES_ERR;
 
     switch (node->no_kind) {
         case NODE_VAR:
@@ -164,6 +175,14 @@ static mkt_res_t parser_node_find_callable(const parser_t* parser, i32 no_i,
         case NODE_INSTANCE:
             *node_i = no_i;
             return RES_OK;
+        case NODE_MEMBER: {
+            const mkt_type_t* const type = &parser->par_types[node->no_type_i];
+            if (type->ty_kind == TYPE_FN) {
+                const mkt_binary_t* const bin = &node->no_n.no_binary;
+                return parser_node_find_callable(parser, bin->bi_rhs_i, node_i);
+            }
+            return RES_ERR;
+        }
         default:
             log_debug("kind: %s", mkt_node_kind_to_str[node->no_kind]);
             return RES_ERR;
@@ -320,9 +339,9 @@ static mkt_res_t parser_resolve_var(parser_t* parser, i32 tok_i,
         current_scope_i = b.bl_parent_scope_i;
     }
     // FIXME
-    if (parser_resolve_member(parser, tok_i, parser_current_class(parser),
-                              def_node_i) == RES_OK)
-        return RES_OK;
+    //    if (parser_resolve_member(parser, tok_i, parser_current_class(parser),
+    //                              def_node_i) == RES_OK)
+    //        return RES_OK;
 
     log_debug("var `%.*s` could not be resolved", var_source_len, var_source);
     return RES_NONE;
