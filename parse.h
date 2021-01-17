@@ -891,6 +891,9 @@ static void node_dump(const parser_t* parser, i32 no_i, i32 indent) {
             for (i32 i = 0; i < (i32)buf_size(class.cl_members); i++)
                 node_dump(parser, class.cl_members[i], indent + 2);
 
+            for (i32 i = 0; i < (i32)buf_size(class.cl_methods); i++)
+                node_dump(parser, class.cl_methods[i], indent + 2);
+
             return;
         }
         case NODE_INSTANCE: {
