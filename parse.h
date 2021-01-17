@@ -1759,16 +1759,17 @@ static mkt_res_t parser_parse_navigation_suffix(parser_t* parser, i32 lhs_i,
     const mkt_node_t* const rhs = &parser->par_nodes[rhs_i];
     CHECK((void*)rhs, !=, NULL, "%p");
 
-    const i32 type_i = rhs->no_type_i;
-    CHECK(type_i, >=, 0, "%d");
-    CHECK(type_i, <, (i32)buf_size(parser->par_types), "%d");
+    const i32 rhs_type_i = rhs->no_type_i;
+    CHECK(rhs_type_i, >=, 0, "%d");
+    CHECK(rhs_type_i, <, (i32)buf_size(parser->par_types), "%d");
 
     buf_push(parser->par_nodes, ((mkt_node_t){.no_kind = NODE_MEMBER,
-                                              .no_type_i = rhs->no_type_i,
+                                              .no_type_i = rhs_type_i,
                                               .no_n = {.no_binary = {
                                                            .bi_lhs_i = lhs_i,
                                                            .bi_rhs_i = rhs_i,
                                                        }}}));
+
     *new_node_i = buf_size(parser->par_nodes) - 1;
 
     return RES_OK;
