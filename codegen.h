@@ -26,6 +26,8 @@ static const i32 syscall_exit = 60;
 
 static FILE* output_file = NULL;
 
+static i32 current_fn_i = 0;
+
 static const char fn_args[6][5] = {
     [0] = "%rdi", [1] = "%rsi", [2] = "%rdx",
     [3] = "%rcx", [4] = "%r8",  [5] = "%r9",
@@ -109,6 +111,16 @@ static void emit_addr(const parser_t* parser, i32 node_i) {
         case NODE_FN: {
             UNREACHABLE();
 
+            CHECK(current_fn_i, >=, 0, "%d");
+            CHECK(current_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
+            const i32 caller_current_fn_i = current_fn_i;
+
+            CHECK(current_fn_i, >=, 0, "%d");
+            CHECK(current_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
+            current_fn_i = node_i;
+            CHECK(current_fn_i, >=, 0, "%d");
+            CHECK(current_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
+
             const mkt_fn_t fn = node->no_n.no_fn;
             const char* name = NULL;
             i32 name_len = 0;
@@ -118,6 +130,12 @@ static void emit_addr(const parser_t* parser, i32 node_i) {
             CHECK(name_len, <, parser->par_lexer.lex_source_len, "%d");
 
             println("lea %.*s(%%rip), %%rax", name_len, name);
+
+            CHECK(current_fn_i, >=, 0, "%d");
+            CHECK(current_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
+            current_fn_i = caller_current_fn_i;
+            CHECK(current_fn_i, >=, 0, "%d");
+            CHECK(current_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
 
             return;
         }
@@ -208,11 +226,11 @@ static void fn_prolog(const parser_t* parser, const mkt_fn_t* fn,
     }
 }
 
-static void fn_epilog(i32 aligned_stack_size, i32 node_i) {
+static void fn_epilog(i32 aligned_stack_size) {
     CHECK(aligned_stack_size, >=, 0, "%d");
     CHECK(aligned_stack_size % 16, ==, 0, "%d");
 
-    println(".L.return.%d:", node_i);
+    println(".L.return.%d:", current_fn_i);
     println("addq $%d, %%rsp", aligned_stack_size);
     println("popq %%rbp");
     println(".cfi_endproc");
@@ -458,7 +476,7 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
                 emit_expr(parser, expr->no_n.no_unary.un_node_i);
 
             emit_loc(parser, expr_i);
-            println("jmp .L.return.%d", expr_i);
+            println("jmp .L.return.%d", current_fn_i);
             return;
         }
         case NODE_NOT: {
@@ -829,15 +847,24 @@ static void emit(const parser_t* parser, FILE* asm_file) {
 
             println("%.*s:", name_len, name);
 
+            const i32 caller_current_fn_i = current_fn_i;
+            CHECK(current_fn_i, >=, 0, "%d");
+            CHECK(current_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
+            current_fn_i = node_fn_i;
+
             const i32 aligned_stack_size = emit_align_to_16(fn.fd_stack_size);
             log_debug("%.*s: stack_size=%d aligned_stack_size=%d", name_len,
                       name, fn.fd_stack_size, aligned_stack_size);
             fn_prolog(parser, &fn, aligned_stack_size);
             emit_stmt(parser, fn.fd_body_node_i);
 
-            if (node_fn_i == parser->par_main_fn_i) emit_program_epilog();
+            if (current_fn_i == parser->par_main_fn_i) emit_program_epilog();
 
-            fn_epilog(aligned_stack_size, node_fn_i);
+            fn_epilog(aligned_stack_size);
+
+            current_fn_i = caller_current_fn_i;
+            CHECK(current_fn_i, >=, 0, "%d");
+            CHECK(current_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
         }
     }
 }
