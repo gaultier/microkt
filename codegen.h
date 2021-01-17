@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ast.h"
 #include "parse.h"
 
 // TODO: use platform headers for that?
@@ -24,8 +25,6 @@ static const i32 syscall_exit = 60;
 #endif
 
 static FILE* output_file = NULL;
-
-static i32 current_fn_i = 0;
 
 static const char fn_args[6][5] = {
     [0] = "%rdi", [1] = "%rsi", [2] = "%rdx",
@@ -110,16 +109,6 @@ static void emit_addr(const parser_t* parser, i32 node_i) {
         case NODE_FN: {
             UNREACHABLE();
 
-            CHECK(current_fn_i, >=, 0, "%d");
-            CHECK(current_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
-            const i32 caller_current_fn_i = current_fn_i;
-
-            CHECK(current_fn_i, >=, 0, "%d");
-            CHECK(current_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
-            current_fn_i = node_i;
-            CHECK(current_fn_i, >=, 0, "%d");
-            CHECK(current_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
-
             const mkt_fn_t fn = node->no_n.no_fn;
             const char* name = NULL;
             i32 name_len = 0;
@@ -129,12 +118,6 @@ static void emit_addr(const parser_t* parser, i32 node_i) {
             CHECK(name_len, <, parser->par_lexer.lex_source_len, "%d");
 
             println("lea %.*s(%%rip), %%rax", name_len, name);
-
-            CHECK(current_fn_i, >=, 0, "%d");
-            CHECK(current_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
-            current_fn_i = caller_current_fn_i;
-            CHECK(current_fn_i, >=, 0, "%d");
-            CHECK(current_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
 
             return;
         }
@@ -225,11 +208,11 @@ static void fn_prolog(const parser_t* parser, const mkt_fn_t* fn,
     }
 }
 
-static void fn_epilog(i32 aligned_stack_size) {
+static void fn_epilog(i32 aligned_stack_size, i32 node_i) {
     CHECK(aligned_stack_size, >=, 0, "%d");
     CHECK(aligned_stack_size % 16, ==, 0, "%d");
 
-    println(".L.return.%d:", current_fn_i);
+    println(".L.return.%d:", node_i);
     println("addq $%d, %%rsp", aligned_stack_size);
     println("popq %%rbp");
     println(".cfi_endproc");
@@ -475,7 +458,7 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
                 emit_expr(parser, expr->no_n.no_unary.un_node_i);
 
             emit_loc(parser, expr_i);
-            println("jmp .L.return.%d", current_fn_i);
+            println("jmp .L.return.%d", expr_i);
             return;
         }
         case NODE_NOT: {
@@ -721,7 +704,7 @@ static void emit_stmt(const parser_t* parser, i32 stmt_i) {
             println(".Lwhile_loop_end%d:", stmt_i);
             return;
         }
-            // No-op: Already generated base on `par_node_decls`
+            // No-op: Already generated in the `.data` section
         case NODE_FN:
 
             // No-op: Generated for NODE_INSTANCE, does not
@@ -810,53 +793,51 @@ static void emit(const parser_t* parser, FILE* asm_file) {
     println(".cfi_endproc");
     println("ret\n");
 
-    for (i32 i = 0; i < (i32)buf_size(parser->par_node_decls); i++) {
-        const i32 no_i = parser->par_node_decls[i];
-        CHECK(no_i, >=, 0, "%d");
-        CHECK(no_i, <, (i32)buf_size(parser->par_nodes), "%d");
+    for (i32 c = 0; c < (i32)buf_size(parser->par_class_decls); c++) {
+        const i32 node_class_i = parser->par_class_decls[c];
+        CHECK(node_class_i, >=, 0, "%d");
+        CHECK(node_class_i, <, (i32)buf_size(parser->par_nodes), "%d");
 
-        const mkt_node_t* const node = &parser->par_nodes[no_i];
-        if (node->no_kind != NODE_FN) continue;
+        const mkt_node_t* const node_class = &parser->par_nodes[node_class_i];
+        CHECK(node_class->no_kind, ==, NODE_CLASS, "%d");
+        const mkt_class_t* const class = &node_class->no_n.no_class;
 
-        const mkt_fn_t fn = node->no_n.no_fn;
-        CHECK(fn.fd_name_tok_i, >=, 0, "%d");
-        CHECK(fn.fd_name_tok_i, <, parser->par_lexer.lex_source_len, "%d");
+        for (i32 f = 0; f < (i32)buf_size(class->cl_methods); f++) {
+            const i32 node_fn_i = class->cl_methods[f];
+            CHECK(node_fn_i, >=, 0, "%d");
+            CHECK(node_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
 
-        const mkt_loc_t loc = parser->par_lexer.lex_locs[fn.fd_name_tok_i];
-        println(".loc 1 %d %d\t## %s:%d:%d", loc.loc_line, loc.loc_column,
-                parser->par_file_name0, loc.loc_line, loc.loc_column);
+            const mkt_fn_t fn = parser->par_nodes[node_fn_i].no_n.no_fn;
+            CHECK(fn.fd_name_tok_i, >=, 0, "%d");
+            CHECK(fn.fd_name_tok_i, <, parser->par_lexer.lex_source_len, "%d");
 
-        const mkt_pos_range_t pos_range =
-            parser->par_lexer.lex_tok_pos_ranges[fn.fd_name_tok_i];
-        const char* const name =
-            &parser->par_lexer.lex_source[pos_range.pr_start];
-        const i32 name_len = pos_range.pr_end - pos_range.pr_start;
-        CHECK((void*)name, !=, NULL, "%p");
-        CHECK(name_len, >=, 0, "%d");
-        CHECK(name_len, <, parser->par_lexer.lex_source_len, "%d");
+            const mkt_loc_t loc = parser->par_lexer.lex_locs[fn.fd_name_tok_i];
+            println(".loc 1 %d %d\t## %s:%d:%d", loc.loc_line, loc.loc_column,
+                    parser->par_file_name0, loc.loc_line, loc.loc_column);
 
-        if (fn.fd_flags & FN_FLAGS_PUBLIC)
-            println(".global %.*s", name_len, name);
+            const mkt_pos_range_t pos_range =
+                parser->par_lexer.lex_tok_pos_ranges[fn.fd_name_tok_i];
+            const char* const name =
+                &parser->par_lexer.lex_source[pos_range.pr_start];
+            const i32 name_len = pos_range.pr_end - pos_range.pr_start;
+            CHECK((void*)name, !=, NULL, "%p");
+            CHECK(name_len, >=, 0, "%d");
+            CHECK(name_len, <, parser->par_lexer.lex_source_len, "%d");
 
-        println("%.*s:", name_len, name);
+            if (fn.fd_flags & FN_FLAGS_PUBLIC)
+                println(".global %.*s", name_len, name);
 
-        const i32 caller_current_fn_i = current_fn_i;
-        CHECK(current_fn_i, >=, 0, "%d");
-        CHECK(current_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
-        current_fn_i = no_i;
+            println("%.*s:", name_len, name);
 
-        const i32 aligned_stack_size = emit_align_to_16(fn.fd_stack_size);
-        log_debug("%.*s: stack_size=%d aligned_stack_size=%d", name_len, name,
-                  fn.fd_stack_size, aligned_stack_size);
-        fn_prolog(parser, &fn, aligned_stack_size);
-        emit_stmt(parser, fn.fd_body_node_i);
+            const i32 aligned_stack_size = emit_align_to_16(fn.fd_stack_size);
+            log_debug("%.*s: stack_size=%d aligned_stack_size=%d", name_len,
+                      name, fn.fd_stack_size, aligned_stack_size);
+            fn_prolog(parser, &fn, aligned_stack_size);
+            emit_stmt(parser, fn.fd_body_node_i);
 
-        if (current_fn_i == parser->par_main_fn_i) emit_program_epilog();
+            if (node_fn_i == parser->par_main_fn_i) emit_program_epilog();
 
-        fn_epilog(aligned_stack_size);
-
-        current_fn_i = caller_current_fn_i;
-        CHECK(current_fn_i, >=, 0, "%d");
-        CHECK(current_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
+            fn_epilog(aligned_stack_size, node_fn_i);
+        }
     }
 }

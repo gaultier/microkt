@@ -89,8 +89,8 @@ static i32 run(const char* file_name0) {
 
     if ((res = parser_parse(&parser)) != RES_OK) return res;
 
-    for (i32 i = 0; i < (i32)buf_size(parser.par_node_decls); i++)
-        node_dump(&parser, parser.par_node_decls[i], 0);
+    for (i32 i = 0; i < (i32)buf_size(parser.par_class_decls); i++)
+        node_dump(&parser, parser.par_class_decls[i], 0);
 
     const i32 file_name_len = strlen(file_name0);
     char asm_file_name0[MAXPATHLEN + 1] = "";

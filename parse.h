@@ -29,7 +29,7 @@ typedef struct {
         par_main_fn_i;      // Current token/scope/function/class/main function
     mkt_node_t* par_nodes;  // Arena of all nodes
     mkt_lexer_t par_lexer;
-    i32* par_node_decls;  // Declarations e.g. functions
+    i32* par_class_decls;  // Class declarations
     mkt_type_t* par_types;
     udf_t* par_udfs;
 } parser_t;
@@ -111,10 +111,19 @@ static mkt_node_t* parser_current_block(parser_t* parser) {
     return &parser->par_nodes[parser->par_scope_i];
 }
 
-static mkt_node_t* parser_current_class(parser_t* parser) {
+static mkt_node_t* parser_current_class_node(parser_t* parser) {
     CHECK((void*)parser, !=, NULL, "%p");
+    CHECK(parser->par_class_i, >=, 0, "%d");
+    CHECK(parser->par_class_i, <, (i32)buf_size(parser->par_nodes), "%d");
 
     return &parser->par_nodes[parser->par_class_i];
+}
+
+static mkt_class_t* parser_current_class(parser_t* parser) {
+    CHECK((void*)parser, !=, NULL, "%p");
+    CHECK(parser_current_class_node(parser)->no_kind, ==, NODE_CLASS, "%d");
+
+    return &parser_current_class_node(parser)->no_n.no_class;
 }
 
 static i32 parser_scope_begin(parser_t* parser, i32 block_node_i) {
@@ -344,7 +353,7 @@ static void parser_class_begin(parser_t* parser, i32 first_tok_i,
     *old_class_i = parser->par_class_i;
     parser->par_class_i = *new_node_i = buf_size(parser->par_nodes) - 1;
     parser->par_types[type_i].ty_class_i = *new_node_i;
-    buf_push(parser->par_node_decls, *new_node_i);
+    buf_push(parser->par_class_decls, *new_node_i);
 
     i32 class_name_len = 0;
     const char* class_name = NULL;
@@ -561,8 +570,8 @@ static mkt_res_t parser_init(const char* file_name0, const char* source,
     parser->par_main_fn_i = parser->par_class_i = parser->par_scope_i =
         parser->par_fn_i = -1;
 
-    CHECK((void*)parser->par_node_decls, ==, NULL, "%p");
-    buf_grow(parser->par_node_decls, 10);
+    CHECK((void*)parser->par_class_decls, ==, NULL, "%p");
+    buf_grow(parser->par_class_decls, 10);
 
     CHECK((void*)parser->par_nodes, ==, NULL, "%p");
     buf_grow(parser->par_nodes, 100);
@@ -1601,8 +1610,6 @@ static mkt_res_t parser_parse_primary_expr(parser_t* parser, i32* new_node_i) {
                 .no_string = {.st_tok_i = tok_i, .st_multiline = multiline}}};
         buf_push(parser->par_nodes, node);
         *new_node_i = buf_size(parser->par_nodes) - 1;
-
-        buf_push(parser->par_node_decls, *new_node_i);
 
         return RES_OK;
     }
@@ -2715,7 +2722,7 @@ static i32 parser_fn_begin(parser_t* parser, i32 first_tok_i, i32* new_node_i) {
                                               .fd_return_type_tok_i = -1}}}));
     const i32 old_fn_i = parser->par_fn_i;
     parser->par_fn_i = *new_node_i = buf_size(parser->par_nodes) - 1;
-    buf_push(parser->par_node_decls, *new_node_i);
+    buf_push(parser_current_class(parser)->cl_methods, *new_node_i);
 
     CHECK(parser->par_scope_i, >=, 0, "%d");
     CHECK(parser->par_scope_i, <, (i32)buf_size(parser->par_nodes), "%d");
@@ -2747,9 +2754,6 @@ static mkt_res_t parser_parse_fn_declaration(parser_t* parser,
 
     const i32 old_fn_i = parser_fn_begin(parser, first_tok_i, new_node_i);
     CHECK(*new_node_i, >=, 0, "%d");
-    CHECK(parser->par_class_i, >=, 0, "%d");
-    mkt_node_t* const node_class = parser_current_class(parser);
-    buf_push(node_class->no_n.no_class.cl_methods, *new_node_i);
 
     if (!parser_match(parser,
                       &parser->par_nodes[*new_node_i].no_n.no_fn.fd_name_tok_i,

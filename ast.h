@@ -116,7 +116,8 @@ typedef struct {
 } mkt_if_t;
 
 typedef struct {
-    i32 bl_first_tok_i, bl_last_tok_i, *bl_nodes_i, bl_parent_scope_i;
+    i32 bl_first_tok_i, bl_last_tok_i, *bl_nodes_i, bl_parent_scope_i,
+        *bl_decls;
 } mkt_block_t;
 
 static const u16 MKT_VAR_FLAGS_VAL = 0x1;
