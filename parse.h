@@ -786,8 +786,8 @@ static void node_dump(const parser_t* parser, i32 no_i, i32 indent) {
                 indent, "node #%d %s type=%s", no_i,
                 mkt_node_kind_to_str[node->no_kind],
                 mkt_type_to_str[parser->par_types[node->no_type_i].ty_kind]);
-            if (node->no_n.no_unary.re_node_i >= 0)
-                node_dump(parser, node->no_n.no_unary.re_node_i, indent + 2);
+            if (node->no_n.no_return.re_node_i >= 0)
+                node_dump(parser, node->no_n.no_return.re_node_i, indent + 2);
 
             break;
         }
