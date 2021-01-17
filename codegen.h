@@ -108,37 +108,6 @@ static void emit_addr(const parser_t* parser, i32 node_i) {
                     member_src_len, member_src);
             return;
         }
-        case NODE_FN: {
-            UNREACHABLE();
-
-            CHECK(current_fn_i, >=, 0, "%d");
-            CHECK(current_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
-            const i32 caller_current_fn_i = current_fn_i;
-
-            CHECK(current_fn_i, >=, 0, "%d");
-            CHECK(current_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
-            current_fn_i = node_i;
-            CHECK(current_fn_i, >=, 0, "%d");
-            CHECK(current_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
-
-            const mkt_fn_t fn = node->no_n.no_fn;
-            const char* name = NULL;
-            i32 name_len = 0;
-            parser_tok_source(parser, fn.fd_name_tok_i, &name, &name_len);
-            CHECK((void*)name, !=, NULL, "%p");
-            CHECK(name_len, >=, 0, "%d");
-            CHECK(name_len, <, parser->par_lexer.lex_source_len, "%d");
-
-            println("lea %.*s(%%rip), %%rax", name_len, name);
-
-            CHECK(current_fn_i, >=, 0, "%d");
-            CHECK(current_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
-            current_fn_i = caller_current_fn_i;
-            CHECK(current_fn_i, >=, 0, "%d");
-            CHECK(current_fn_i, <, (i32)buf_size(parser->par_nodes), "%d");
-
-            return;
-        }
         default:
             UNREACHABLE();
     }

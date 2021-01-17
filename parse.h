@@ -232,7 +232,7 @@ static mkt_res_t parser_resolve_member(const parser_t* parser, i32 tok_i,
         }
     }
     for (i32 i = 0; i < (i32)buf_size(class->cl_methods); i++) {
-        const i32 m_i = class->cl_members[i];
+        const i32 m_i = class->cl_methods[i];
         const mkt_node_t* const m_node = &parser->par_nodes[m_i];
         CHECK(m_node->no_kind, ==, NODE_FN, "%d");
 
