@@ -717,10 +717,9 @@ static void node_dump(const parser_t* parser, i32 no_i, i32 indent) {
     static i32* seen_nodes_i = NULL;
     for (i32 i = 0; i < (i32)buf_size(seen_nodes_i); i++) {
         if (no_i == seen_nodes_i[i]) {
-            log_debug_with_indent(
-                indent, "node #%d %s type=%s", no_i,
-                mkt_node_kind_to_str[node->no_kind],
-                mkt_type_to_str[parser->par_types[node->no_type_i].ty_kind]);
+            log_debug_with_indent(indent, "(%s id=%d type=%s)",
+                                  mkt_node_kind_to_str[node->no_kind], no_i,
+                                  mkt_type_to_str[type.ty_kind]);
             return;
         }
     }
@@ -728,25 +727,26 @@ static void node_dump(const parser_t* parser, i32 no_i, i32 indent) {
 
     switch (node->no_kind) {
         case NODE_BUILTIN_PRINTLN: {
-            log_debug_with_indent(
-                indent, "node #%d %s type=%s", no_i,
-                mkt_node_kind_to_str[node->no_kind],
-                mkt_type_to_str[parser->par_types[node->no_type_i].ty_kind]);
+            log_debug_with_indent(indent, "(%s id=%d type=%s ",
+                                  mkt_node_kind_to_str[node->no_kind], no_i,
+                                  mkt_type_to_str[type.ty_kind]);
             node_dump(parser, node->no_n.no_builtin_println.bp_arg_i,
                       indent + 2);
-            break;
+
+            log_debug_with_indent(indent, "%c", ')');
+            return;
         }
         case NODE_SYSCALL: {
-            log_debug_with_indent(
-                indent, "node #%d %s type=%s", no_i,
-                mkt_node_kind_to_str[node->no_kind],
-                mkt_type_to_str[parser->par_types[node->no_type_i].ty_kind]);
+            log_debug_with_indent(indent, "(%s id=%d type=%s ",
+                                  mkt_node_kind_to_str[node->no_kind], no_i,
+                                  mkt_type_to_str[type.ty_kind]);
 
             const mkt_syscall_t syscall = node->no_n.no_syscall;
             for (i32 i = 0; i < (i32)buf_size(syscall.sy_arg_nodes_i); i++)
                 node_dump(parser, syscall.sy_arg_nodes_i[i], indent + 2);
 
-            break;
+            log_debug_with_indent(indent, "%c", ')');
+            return;
         }
         case NODE_LT:
         case NODE_LE:
@@ -759,77 +759,75 @@ static void node_dump(const parser_t* parser, i32 no_i, i32 indent) {
         case NODE_ASSIGN:
         case NODE_MEMBER:
         case NODE_ADD: {
-            log_debug_with_indent(
-                indent, "node #%d %s type=%s", no_i,
-                mkt_node_kind_to_str[node->no_kind],
-                mkt_type_to_str[parser->par_types[node->no_type_i].ty_kind]);
+            log_debug_with_indent(indent, "(%s id=%d type=%s ",
+                                  mkt_node_kind_to_str[node->no_kind], no_i,
+                                  mkt_type_to_str[type.ty_kind]);
             node_dump(parser, node->no_n.no_binary.bi_lhs_i, indent + 2);
             node_dump(parser, node->no_n.no_binary.bi_rhs_i, indent + 2);
 
-            break;
+            log_debug_with_indent(indent, "%c", ')');
+            return;
         }
         case NODE_IF: {
-            log_debug_with_indent(
-                indent, "node #%d %s type=%s", no_i,
-                mkt_node_kind_to_str[node->no_kind],
-                mkt_type_to_str[parser->par_types[node->no_type_i].ty_kind]);
+            log_debug_with_indent(indent, "(%s id=%d type=%s ",
+                                  mkt_node_kind_to_str[node->no_kind], no_i,
+                                  mkt_type_to_str[type.ty_kind]);
             node_dump(parser, node->no_n.no_if.if_node_cond_i, indent + 2);
             node_dump(parser, node->no_n.no_if.if_node_then_i, indent + 2);
 
             if (node->no_n.no_if.if_node_else_i >= 0)
                 node_dump(parser, node->no_n.no_if.if_node_else_i, indent + 2);
 
-            break;
+            log_debug_with_indent(indent, "%c", ')');
+            return;
         }
         case NODE_RETURN: {
-            log_debug_with_indent(
-                indent, "node #%d %s type=%s", no_i,
-                mkt_node_kind_to_str[node->no_kind],
-                mkt_type_to_str[parser->par_types[node->no_type_i].ty_kind]);
+            log_debug_with_indent(indent, "(%s id=%d type=%s ",
+                                  mkt_node_kind_to_str[node->no_kind], no_i,
+                                  mkt_type_to_str[type.ty_kind]);
             if (node->no_n.no_return.re_node_i >= 0)
                 node_dump(parser, node->no_n.no_return.re_node_i, indent + 2);
 
-            break;
+            log_debug_with_indent(indent, "%c", ')');
+            return;
         }
         case NODE_NOT: {
-            log_debug_with_indent(
-                indent, "node #%d %s type=%s", no_i,
-                mkt_node_kind_to_str[node->no_kind],
-                mkt_type_to_str[parser->par_types[node->no_type_i].ty_kind]);
+            log_debug_with_indent(indent, "(%s id=%d type=%s ",
+                                  mkt_node_kind_to_str[node->no_kind], no_i,
+                                  mkt_type_to_str[type.ty_kind]);
             if (node->no_n.no_unary.un_node_i >= 0)
                 node_dump(parser, node->no_n.no_unary.un_node_i, indent + 2);
 
-            break;
+            log_debug_with_indent(indent, "%c", ')');
+            return;
         }
         case NODE_KEYWORD_BOOL:
         case NODE_NUM:
         case NODE_CHAR: {
-            log_debug_with_indent(
-                indent, "node #%d %s type=%s val=%lld", no_i,
-                mkt_node_kind_to_str[node->no_kind],
-                mkt_type_to_str[parser->par_types[node->no_type_i].ty_kind],
-                node->no_n.no_num.nu_val);
-            break;
+            log_debug_with_indent(indent, "(%s id=%d type=%s val=%lld)",
+                                  mkt_node_kind_to_str[node->no_kind], no_i,
+                                  mkt_type_to_str[type.ty_kind],
+                                  node->no_n.no_num.nu_val);
+            return;
         }
         case NODE_STRING: {
-            log_debug_with_indent(
-                indent, "node #%d %s type=%s", no_i,
-                mkt_node_kind_to_str[node->no_kind],
-                mkt_type_to_str[parser->par_types[node->no_type_i].ty_kind]);
-            break;
+            log_debug_with_indent(indent, "(%s id=%d type=%s)",
+                                  mkt_node_kind_to_str[node->no_kind], no_i,
+                                  mkt_type_to_str[type.ty_kind]);
+            return;
         }
         case NODE_BLOCK: {
             const mkt_block_t block = node->no_n.no_block;
-            log_debug_with_indent(
-                indent, "node #%d %s type=%s parent_scope=%d", no_i,
-                mkt_node_kind_to_str[node->no_kind],
-                mkt_type_to_str[parser->par_types[node->no_type_i].ty_kind],
-                block.bl_parent_scope_i);
+            log_debug_with_indent(indent, "(%s id=%d type=%s parent=%d ",
+                                  mkt_node_kind_to_str[node->no_kind], no_i,
+                                  mkt_type_to_str[type.ty_kind],
+                                  block.bl_parent_scope_i);
 
             for (i32 i = 0; i < (i32)buf_size(block.bl_nodes_i); i++)
                 node_dump(parser, block.bl_nodes_i[i], indent + 2);
 
-            break;
+            log_debug_with_indent(indent, "%c", ')');
+            return;
         }
         case NODE_VAR: {
             const mkt_var_t var = node->no_n.no_var;
@@ -842,21 +840,20 @@ static void node_dump(const parser_t* parser, i32 no_i, i32 indent) {
 
             log_debug_with_indent(
                 indent,
-                "node #%d %s type=%s name=%.*s offset=%d flags=%hu ref=%d",
-                no_i, mkt_node_kind_to_str[node->no_kind],
+                "(%s id=%d type=%s name=%.*s offset=%d flags=%hu ref=%d)",
+                mkt_node_kind_to_str[node->no_kind], no_i,
                 mkt_type_to_str[type.ty_kind], name_len, name, var.va_offset,
                 var.va_flags, var.va_var_node_i);
-
-            break;
+            return;
         }
         case NODE_WHILE: {
-            log_debug_with_indent(
-                indent, "node #%d %s type=%s", no_i,
-                mkt_node_kind_to_str[node->no_kind],
-                mkt_type_to_str[parser->par_types[node->no_type_i].ty_kind]);
+            log_debug_with_indent(indent, "(%s id=%d type=%s ",
+                                  mkt_node_kind_to_str[node->no_kind], no_i,
+                                  mkt_type_to_str[type.ty_kind]);
 
             node_dump(parser, node->no_n.no_while.wh_cond_i, indent + 2);
             node_dump(parser, node->no_n.no_while.wh_body_i, indent + 2);
+            log_debug_with_indent(indent, "%c", ')');
             return;
         }
         case NODE_FN: {
@@ -869,29 +866,31 @@ static void node_dump(const parser_t* parser, i32 no_i, i32 indent) {
             const i32 name_len = pos_range.pr_end - pos_range.pr_start;
             log_debug_with_indent(
                 indent,
-                "node #%d %s `%.*s` type=%s arity=%d stack_size=%d body_i=%d",
-                no_i, mkt_node_kind_to_str[node->no_kind], name_len, name,
-                mkt_type_to_str[type.ty_kind], arity, fn.fd_stack_size,
-                fn.fd_body_node_i);
+                "(%s id=%d type=%s name=%.*s arity=%d stack_size=%d body=%d ",
+                mkt_node_kind_to_str[node->no_kind], no_i,
+                mkt_type_to_str[type.ty_kind], name_len, name, arity,
+                fn.fd_stack_size, fn.fd_body_node_i);
 
             const mkt_node_t* const body_node =
                 &parser->par_nodes[fn.fd_body_node_i];
             CHECK(body_node->no_kind, ==, NODE_BLOCK, "%d");
             const mkt_block_t block = body_node->no_n.no_block;
-            for (i32 i = 0; i < (i32)buf_size(block.bl_nodes_i); i++) {
+
+            for (i32 i = 0; i < (i32)buf_size(block.bl_nodes_i); i++)
                 node_dump(parser, block.bl_nodes_i[i], indent + 2);
-            }
+
+            log_debug_with_indent(indent, "%c", ')');
             return;
         }
         case NODE_CALL: {
             const mkt_call_t call = node->no_n.no_call;
-            log_debug_with_indent(
-                indent, "node #%d %s type=%s arity=%d", no_i,
-                mkt_node_kind_to_str[node->no_kind],
-                mkt_type_to_str[parser->par_types[node->no_type_i].ty_kind],
-                (i32)buf_size(call.ca_arg_nodes_i));
+            log_debug_with_indent(indent, "(%s id=%d type=%s arity=%d ",
+                                  mkt_node_kind_to_str[node->no_kind], no_i,
+                                  mkt_type_to_str[type.ty_kind],
+                                  (i32)buf_size(call.ca_arg_nodes_i));
 
             node_dump(parser, call.ca_lhs_node_i, indent + 2);
+            log_debug_with_indent(indent, "%c", ')');
             return;
         }
         case NODE_CLASS: {
@@ -905,9 +904,9 @@ static void node_dump(const parser_t* parser, i32 no_i, i32 indent) {
                 src = parser->par_file_name0;
             }
 
-            log_debug_with_indent(indent, "node #%d %s `%.*s`", no_i,
-                                  mkt_node_kind_to_str[node->no_kind], src_len,
-                                  src);
+            log_debug_with_indent(indent, "(%s id=%d type=%s name=%.*s ",
+                                  mkt_node_kind_to_str[node->no_kind], no_i,
+                                  mkt_type_to_str[type.ty_kind], src_len, src);
 
             for (i32 i = 0; i < (i32)buf_size(class.cl_members); i++)
                 node_dump(parser, class.cl_members[i], indent + 2);
@@ -915,6 +914,7 @@ static void node_dump(const parser_t* parser, i32 no_i, i32 indent) {
             for (i32 i = 0; i < (i32)buf_size(class.cl_methods); i++)
                 node_dump(parser, class.cl_methods[i], indent + 2);
 
+            log_debug_with_indent(indent, "%c", ')');
             return;
         }
         case NODE_INSTANCE: {
@@ -927,9 +927,10 @@ static void node_dump(const parser_t* parser, i32 no_i, i32 indent) {
             i32 src_len = 0;
             parser_tok_source(parser, class.cl_name_tok_i, &src, &src_len);
 
-            log_debug_with_indent(indent, "node #%d %s `%.*s` type=%s", no_i,
-                                  mkt_node_kind_to_str[node->no_kind], src_len,
-                                  src, mkt_type_to_str[type.ty_kind]);
+            log_debug_with_indent(indent, "(%s id=%d type=%s name=%.*s)",
+                                  mkt_node_kind_to_str[node->no_kind], no_i,
+                                  mkt_type_to_str[type.ty_kind], src_len, src);
+            log_debug_with_indent(indent, "%c", ')');
 
             return;
         }
