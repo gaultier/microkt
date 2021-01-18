@@ -179,7 +179,7 @@ typedef struct {
         mkt_string_t no_string;                    // NODE_STRING
         mkt_number_t no_num;                       // NODE_NUM, NODE_CHAR
         mkt_binary_t no_binary;  // NODE_ADD, NODE_SUBTRACT, NODE_MULTIPLY,
-        // NODE_DIVIDE, NODE_MODULO, NODE_MEMBER_GET
+        // NODE_DIVIDE, NODE_MODULO, NODE_MEMBER
         mkt_unary_t no_unary;        // NODE_NOT
         mkt_if_t no_if;              // NODE_IF
         mkt_block_t no_block;        // NODE_BLOCK
