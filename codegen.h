@@ -402,7 +402,8 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             return;
         }
         case NODE_MEMBER: {
-            emit_addr(parser, expr_i);
+            const mkt_binary_t bin = expr->no_n.no_binary;
+            emit_expr(parser, bin.bi_lhs_i);
             emit_load(type);
 
             return;
