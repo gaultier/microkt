@@ -404,6 +404,8 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
         case NODE_MEMBER: {
             const mkt_binary_t bin = expr->no_n.no_binary;
             emit_expr(parser, bin.bi_lhs_i);
+            // FIXME
+            emit_addr(parser, bin.bi_rhs_i);
             emit_load(type);
 
             return;
