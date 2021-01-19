@@ -151,7 +151,7 @@ static i32 run(const char* file_name0) {
         const char link_opts[] =
             " "
 #ifdef __APPLE__
-            "-lSystem "
+            " "
 #else
             "-static "
 #endif
