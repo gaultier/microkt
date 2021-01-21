@@ -1,4 +1,9 @@
 #include <sys/mman.h>
+// macOS Big Sur's mman.h header does not define MAP_ANONYMOUS for some reason
+#ifndef MAP_ANONYMOUS
+#define MAP_ANONYMOUS 0x1000
+#endif
+
 #include <unistd.h>
 
 #include "common.h"
@@ -18,8 +23,8 @@ static i64* stack_top;
 
 // TODO: optimize
 static void* mkt_alloc(u64 len) {
-    void* p =
-        mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+    void* p = mmap(NULL, len, PROT_READ | PROT_WRITE,
+                   MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
     CHECK(p, !=, NULL, "%p");
     return p;
 }
@@ -144,7 +149,7 @@ static void mkt_gc_sweep() {
         // Remove
         const u64 bytes = sizeof(runtime_val_header) + sizeof(alloc_atom*) +
                           atom->aa_header.rv_size;
-        CHECK(gc_allocated_bytes, >=, bytes, PRIu64);
+        CHECK(gc_allocated_bytes, >=, bytes, "%llu");
         gc_allocated_bytes -= bytes;
 
         alloc_atom* to_free = atom;

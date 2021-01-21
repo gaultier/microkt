@@ -153,7 +153,7 @@ static i32 run(const char* file_name0) {
 #ifdef __APPLE__
             " "
 #else
-            "-static "
+            "-static -lc"
 #endif
             ;
 

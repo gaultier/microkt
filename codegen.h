@@ -3,25 +3,10 @@
 #include "ast.h"
 #include "parse.h"
 
-// TODO: use platform headers for that?
 #ifdef __APPLE__
 #define MKT_NAME_PREFIX "_"
-static const i32 syscall_exit = 0x2000001;
 #else
 #define MKT_NAME_PREFIX ""
-static const i32 syscall_exit = 60;
-#endif
-
-#ifdef __APPLE__
-#define MKT_SYSCALL_MMAP 0x20000c5
-#define MKT_SYSCALL_MUNMAP 0x2000049
-#define MKT_SYSCALL_WRITE 0x2000004
-#define MKT_SYSCALL_KILL 0x2000025
-#else
-#define MKT_SYSCALL_MMAP 9
-#define MKT_SYSCALL_MUNMAP 11
-#define MKT_SYSCALL_WRITE 1
-#define MKT_SYSCALL_KILL 62
 #endif
 
 static FILE* output_file = NULL;
@@ -206,9 +191,8 @@ static void fn_epilog(i32 aligned_stack_size, i32 fn_i) {
 
 static void emit_program_epilog() {
     println("\n# exit");
-    println("mov $%d, %%rax", syscall_exit);
     println("mov $0, %%rdi");
-    println("syscall");
+    println("call " MKT_NAME_PREFIX "exit");
 }
 
 static void emit_push() { println("push %%rax"); }
@@ -716,52 +700,6 @@ static void emit(const parser_t* parser, FILE* asm_file) {
     output_file = asm_file;
 
     println(".file 1 \"%s\"", parser->par_file_name0);
-
-    println(".globl " MKT_NAME_PREFIX "mkt_mmap\n" MKT_NAME_PREFIX
-            "mkt_mmap:\n"
-            ".cfi_startproc\n"
-            "push %%rbp\n"
-            "mov $%d, %%eax\n"
-            "mov %%ecx, %%r10d\n"  // r10 is used for the fourth parameter
-                                   // instead of rcx for syscalls
-            "syscall\n"
-            "pop %%rbp\n"
-            ".cfi_endproc\n"
-            "ret\n",
-            MKT_SYSCALL_MMAP);
-
-    println(".globl " MKT_NAME_PREFIX "mkt_munmap\n" MKT_NAME_PREFIX
-            "mkt_munmap:\n"
-            ".cfi_startproc\n"
-            "push %%rbp\n"
-            "mov $%d, %%eax\n"
-            "syscall\n"
-            "pop %%rbp\n"
-            ".cfi_endproc\n"
-            "ret\n",
-            MKT_SYSCALL_MUNMAP);
-
-    println(".globl " MKT_NAME_PREFIX "mkt_write\n" MKT_NAME_PREFIX
-            "mkt_write:\n"
-            ".cfi_startproc\n"
-            "push %%rbp\n"
-            "mov $%d, %%eax\n"
-            "syscall\n"
-            "pop %%rbp\n"
-            ".cfi_endproc\n"
-            "ret\n",
-            MKT_SYSCALL_WRITE);
-
-    println(".globl " MKT_NAME_PREFIX "mkt_kill\n" MKT_NAME_PREFIX
-            "mkt_kill:\n"
-            ".cfi_startproc\n"
-            "push %%rbp\n"
-            "mov $%d, %%eax\n"
-            "syscall\n"
-            "pop %%rbp\n"
-            ".cfi_endproc\n"
-            "ret\n",
-            MKT_SYSCALL_KILL);
 
     println(".globl " MKT_NAME_PREFIX "start");
     println(MKT_NAME_PREFIX "start:");
