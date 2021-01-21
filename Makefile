@@ -13,10 +13,6 @@ WITH_DTRACE=1
 OS = $(shell uname)
 ARCH = $(shell uname -m)
 
-ifneq "$(ARCH)" "x86_64"
-	$(error Unsupported architecture, only x86_64 is supported, see README)
-endif
-
 ifeq "$(strip $(OS))" "Darwin"
 	ASAN_DIR=$(shell $(CC) -print-search-dirs | awk -F '=' '/libraries/{print $$2}')/lib/darwin/
 else ifeq "$(strip $(OS))" "Linux"
