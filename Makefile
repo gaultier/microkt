@@ -14,21 +14,18 @@ OS = $(shell uname)
 ARCH = $(shell uname -m)
 
 ifneq "$(ARCH)" "x86_64"
-	$(error Unsupported architecture, see README)
+	$(error Unsupported architecture, only x86_64 is supported, see README)
 endif
 
 ifeq "$(strip $(OS))" "Darwin"
 	ASAN_DIR=$(shell $(CC) -print-search-dirs | awk -F '=' '/libraries/{print $$2}')/lib/darwin/
 else ifeq "$(strip $(OS))" "Linux"
 	ASAN_DIR=$(shell $(CC) -print-search-dirs | awk -F '=' '/libraries/{split($$2, libs, ":"); printf("%s/lib/linux", libs[1])}')
-	WITH_DTRACE = 0
-else
-	$(error Unsupported OS, see README)
 endif
 
-CFLAGS_COMMON = -Wall -Wextra -pedantic -Wno-dollar-in-identifier-extension -g -std=c99 -march=native -fno-omit-frame-pointer -fstrict-aliasing -fPIC -D_POSIX_C_SOURCE=200809 -fno-stack-protector
+CFLAGS_COMMON = -Wall -Wextra -pedantic -Wno-dollar-in-identifier-extension -g -std=c99 -march=native -fno-omit-frame-pointer -fstrict-aliasing -fPIC -D_POSIX_C_SOURCE=200809
 CFLAGS = $(CFLAGS_COMMON) -DLD='"$(LD)"' -DAS='"$(AS)"'
-CFLAGS_STDLIB = $(CFLAGS_COMMON) -nostdlib -nostdinc
+CFLAGS_STDLIB = $(CFLAGS_COMMON) -fno-stack-protector
 
 ifeq "$(WITH_DTRACE)" "0"
 	CFLAGS_STDLIB += -DDTRACE_PROBES_DISABLED

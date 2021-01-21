@@ -1,8 +1,8 @@
-/* #include "probes.h" */
+#include <sys/mman.h>
+#include <unistd.h>
 
-#define i32 int
-#define i64 long i32
-#define u64 unsigned i64
+#include "common.h"
+#include "probes.h"
 
 static u64 gc_round = 0;
 static u64 gc_allocated_bytes = 0;
@@ -16,62 +16,18 @@ static i64* stack_top;
 #define READ_RBP() __asm__ volatile("movq %%rbp, %0" : "=r"(mkt_rbp))
 #define READ_RSP() __asm__ volatile("movq %%rsp, %0" : "=r"(mkt_rsp))
 
-#define MKT_PROT_READ 0x01
-#define MKT_PROT_WRITE 0x02
-#define MKT_MAP_PRIVATE 0x02
-#ifdef __APPLE__
-#define MKT_MAP_ANON 0x1000
-#else
-#define MKT_MAP_ANON 0x20
-#endif
-#define MKT_SIGABRT 6
-#define mkt_stdout 1
-#define mkt_stderr 2
-
-void* mkt_mmap(void* addr, u64 len, i32 prot, i32 flags, i32 fd, u64 offset);
-i32 mkt_munmap(void* addr, u64 len);
-i64 mkt_write(i32 fildes, const void* buf, u64 nbyte);
-i32 mkt_kill(i32 pid, i32 sig);
-
-void mkt_abort(void) { mkt_kill(0, MKT_SIGABRT); }
-
-void* memset(void* b, i32 c, u64 len) {
-    char* data = b;
-    for (u64 i = 0; i < len; i++) data[i] = (unsigned char)c;
-    return b;
-}
-
-void* memcpy(void* restrict dst, const void* restrict src, u64 n) {
-    char* data_dst = dst;
-    const char* data_src = src;
-    for (u64 i = 0; i < n; i++) data_dst[i] = data_src[i];
-    return dst;
-}
-
-#define STR(s) #s
-
-#define CHECK_NO_STDLIB(a, cond, b, fmt)                                \
-    do {                                                                \
-        if (!((a)cond(b))) {                                            \
-            const char s[] = __FILE__ ":CHECK failed: " STR(a) " " STR( \
-                cond) " " STR(b) " is false\n";                         \
-            mkt_write(mkt_stderr, s, sizeof(s));                        \
-            mkt_abort();                                                \
-        }                                                               \
-    } while (0)
-
 // TODO: optimize
 static void* mkt_alloc(u64 len) {
-    void* p = mkt_mmap(0, len, MKT_PROT_READ | MKT_PROT_WRITE,
-                       MKT_MAP_ANON | MKT_MAP_PRIVATE, -1, 0);
-    CHECK_NO_STDLIB(p, !=, 0, "%p");
+    void* p =
+        mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
+    CHECK(p, !=, NULL, "%p");
     return p;
 }
 
 typedef struct {
     u64 rv_size : 54;
-    unsigned i32 rv_color : 2;
-    unsigned i32 rv_tag : 8;
+    u32 rv_color : 2;
+    u32 rv_tag : 8;
 } runtime_val_header;
 
 struct alloc_atom {
@@ -81,12 +37,12 @@ struct alloc_atom {
 };
 
 typedef struct alloc_atom alloc_atom;
-static alloc_atom* objs = 0;  // In use
+static alloc_atom* objs = NULL;  // In use
 
 void atom_cons(alloc_atom* item, alloc_atom** head) {
-    CHECK_NO_STDLIB((void*)item, !=, 0, "%p");
-    CHECK_NO_STDLIB((void*)head, !=, 0, "%p");
-    CHECK_NO_STDLIB((void*)item, !=, (void*)head, "%p");  // Prevent cycles
+    CHECK((void*)item, !=, NULL, "%p");
+    CHECK((void*)head, !=, NULL, "%p");
+    CHECK((void*)item, !=, (void*)head, "%p");  // Prevent cycles
 
     if (head) {
         item->aa_next = *head;
@@ -94,15 +50,15 @@ void atom_cons(alloc_atom* item, alloc_atom** head) {
     } else {
         *head = item;
     }
-    CHECK_NO_STDLIB((void*)*head, !=, 0, "%p");
+    CHECK((void*)*head, !=, NULL, "%p");
 }
 
 static alloc_atom* mkt_alloc_atom_make(u64 size) {
     const u64 bytes = sizeof(runtime_val_header) + sizeof(alloc_atom*) + size;
     alloc_atom* atom = mkt_alloc(bytes);
-    CHECK_NO_STDLIB((void*)atom, !=, 0, "%p");
+    CHECK((void*)atom, !=, NULL, "%p");
     atom->aa_header = (runtime_val_header){0};
-    atom->aa_next = 0;
+    atom->aa_next = NULL;
 
     atom_cons(atom, &objs);
 
@@ -117,7 +73,7 @@ void mkt_init() {
 }
 
 static void mkt_gc_obj_mark(runtime_val_header* header) {
-    CHECK_NO_STDLIB((void*)header, !=, 0, "%p");
+    CHECK((void*)header, !=, NULL, "%p");
 
     if (header->rv_tag & RV_TAG_MARKED) return;  // Prevent cycles
     header->rv_tag |= RV_TAG_MARKED;
@@ -129,27 +85,27 @@ static void mkt_gc_obj_mark(runtime_val_header* header) {
 
 // TODO: optimize
 static alloc_atom* mkt_gc_atom_find_data_by_addr(u64 addr) {
-    if (addr == 0) return 0;
+    if (addr == 0) return NULL;
 
     alloc_atom* atom = objs;
     while (atom) {
         if (addr == (u64)&atom->aa_data) return atom;
         atom = atom->aa_next;
     }
-    return 0;
+    return NULL;
 }
 
 static void mkt_gc_scan_stack(const i64* stack_bottom) {
-    CHECK_NO_STDLIB((void*)stack_bottom, !=, 0, "%p");
+    CHECK((void*)stack_bottom, !=, NULL, "%p");
 
     const char* s_bottom = (char*)stack_bottom;
-    CHECK_NO_STDLIB((void*)stack_bottom, <=, (void*)stack_top, "%p");
+    CHECK((void*)stack_bottom, <=, (void*)stack_top, "%p");
 
     const char* s_top = (char*)stack_top;
     while (s_bottom < s_top - sizeof(i64)) {
         u64 addr = *(u64*)s_bottom;
         alloc_atom* atom = mkt_gc_atom_find_data_by_addr(addr);
-        if (atom == 0) {
+        if (atom == NULL) {
             s_bottom += 1;
             continue;
         }
@@ -161,7 +117,7 @@ static void mkt_gc_scan_stack(const i64* stack_bottom) {
 }
 
 static void mkt_gc_obj_blacken(runtime_val_header* header) {
-    CHECK_NO_STDLIB((void*)header, !=, 0, "%p");
+    CHECK((void*)header, !=, NULL, "%p");
 
     // TODO: optimize to go from white -> black directly
     if (header->rv_tag & RV_TAG_STRING) return;
@@ -174,7 +130,7 @@ static void mkt_gc_trace_refs() {
 static void mkt_gc_sweep() {
     /* MKT_GC_SWEEP_START(gc_round, gc_allocated_bytes); */
     alloc_atom* atom = objs;
-    alloc_atom* previous = 0;
+    alloc_atom* previous = NULL;
 
     while (atom) {
         if (atom->aa_header.rv_tag & RV_TAG_MARKED) {  // Skip
@@ -188,7 +144,7 @@ static void mkt_gc_sweep() {
         // Remove
         const u64 bytes = sizeof(runtime_val_header) + sizeof(alloc_atom*) +
                           atom->aa_header.rv_size;
-        CHECK_NO_STDLIB(gc_allocated_bytes, >=, (u64)bytes, "%zu");
+        CHECK(gc_allocated_bytes, >=, bytes, PRIu64);
         gc_allocated_bytes -= bytes;
 
         alloc_atom* to_free = atom;
@@ -199,7 +155,7 @@ static void mkt_gc_sweep() {
             objs = atom;
 
         /* MKT_GC_SWEEP_FREE(gc_round, gc_allocated_bytes, (void*)to_free); */
-        CHECK_NO_STDLIB(mkt_munmap(to_free, bytes), ==, 0, "%d");
+        CHECK(munmap(to_free, bytes), ==, 0, "%d");
     }
     /* MKT_GC_SWEEP_DONE(gc_round, gc_allocated_bytes); */
 }
@@ -218,7 +174,7 @@ void* mkt_string_make(u64 size) {
     mkt_gc();
 
     alloc_atom* atom = mkt_alloc_atom_make(size);
-    CHECK_NO_STDLIB((void*)atom, !=, 0, "%p");
+    CHECK((void*)atom, !=, NULL, "%p");
     atom->aa_header =
         (runtime_val_header){.rv_size = size, .rv_tag = RV_TAG_STRING};
 
@@ -229,7 +185,7 @@ void* mkt_instance_make(u64 size) {
     mkt_gc();
 
     alloc_atom* atom = mkt_alloc_atom_make(size);
-    CHECK_NO_STDLIB((void*)atom, !=, 0, "%p");
+    CHECK((void*)atom, !=, NULL, "%p");
     atom->aa_header =
         (runtime_val_header){.rv_size = size, .rv_tag = RV_TAG_INSTANCE};
 
@@ -239,20 +195,20 @@ void* mkt_instance_make(u64 size) {
 void mkt_bool_println(i32 b) {
     if (b) {
         const char s[] = "true\n";
-        mkt_write(mkt_stdout, s, sizeof(s) - 1);
+        write(1, s, sizeof(s) - 1);
     } else {
         const char s[] = "false\n";
-        mkt_write(mkt_stdout, s, sizeof(s) - 1);
+        write(1, s, sizeof(s) - 1);
     }
 }
 
 void mkt_char_println(char c) {
     char s[2] = {c, '\n'};
-    mkt_write(mkt_stdout, s, 2);
+    write(1, s, 2);
 }
 
 static void mkt_int_to_string(i64 n, char* s, i32* s_len) {
-    CHECK_NO_STDLIB((void*)s_len, !=, 0, "%p");
+    CHECK((void*)s_len, !=, NULL, "%p");
 
     *s_len = 0;
     const i32 neg = n < 0;
@@ -262,41 +218,41 @@ static void mkt_int_to_string(i64 n, char* s, i32* s_len) {
         const char rem = n % 10;
         n /= 10;
 
-        CHECK_NO_STDLIB(*s_len, >=, 0, "%d");
-        CHECK_NO_STDLIB(*s_len, <=, 22, "%d");
+        CHECK(*s_len, >=, 0, "%d");
+        CHECK(*s_len, <=, 22, "%d");
         s[22 - (*s_len)++] = rem + '0';
     } while (n != 0);
 
     if (neg) s[22 - (*s_len)++] = '-';
 }
 
-void mkt_int_println(long long i32 n) {
+void mkt_int_println(i64 n) {
     char s[23] = "";
     i32 s_len = 0;
     mkt_int_to_string(n, s, &s_len);
 
-    mkt_write(mkt_stdout, s + sizeof(s) - s_len, s_len);
+    write(1, s + sizeof(s) - s_len, s_len);
     const char newline = '\n';
-    mkt_write(mkt_stdout, &newline, 1);
+    write(1, &newline, 1);
 }
 
 void mkt_string_println(char* s, const runtime_val_header* s_header) {
-    CHECK_NO_STDLIB((void*)s, !=, 0, "%p");
-    CHECK_NO_STDLIB((void*)s_header, !=, 0, "%p");
+    CHECK((void*)s, !=, NULL, "%p");
+    CHECK((void*)s_header, !=, NULL, "%p");
 
-    CHECK_NO_STDLIB(s_header->rv_tag & RV_TAG_STRING, !=, 0, "%u");
+    CHECK(s_header->rv_tag & RV_TAG_STRING, !=, 0, "%u");
 
-    mkt_write(mkt_stdout, s, s_header->rv_size);
+    write(1, s, s_header->rv_size);
     const char newline = '\n';
-    mkt_write(mkt_stdout, &newline, 1);
+    write(1, &newline, 1);
 }
 
 char* mkt_string_concat(const char* a, const runtime_val_header* a_header,
                         const char* b, const runtime_val_header* b_header) {
     char* const ret = mkt_string_make(a_header->rv_size + b_header->rv_size);
-    CHECK_NO_STDLIB((void*)ret, !=, 0, "%p");
-    CHECK_NO_STDLIB((void*)a, !=, 0, "%p");
-    CHECK_NO_STDLIB((void*)b, !=, 0, "%p");
+    CHECK((void*)ret, !=, NULL, "%p");
+    CHECK((void*)a, !=, NULL, "%p");
+    CHECK((void*)b, !=, NULL, "%p");
 
     for (u64 i = 0; i < a_header->rv_size; i++) ret[i] = a[i];
     for (u64 i = 0; i < b_header->rv_size; i++)
@@ -307,20 +263,20 @@ char* mkt_string_concat(const char* a, const runtime_val_header* a_header,
 }
 
 void mkt_instance_println(void* addr) {
-    CHECK_NO_STDLIB(addr, !=, 0, "%p");
+    CHECK(addr, !=, NULL, "%p");
 
     const char s[] = "Instance of size ";
-    mkt_write(mkt_stdout, s, sizeof(s) - 1);
+    write(1, s, sizeof(s) - 1);
 
     const runtime_val_header* const header =
         (runtime_val_header*)((u64)addr - sizeof(runtime_val_header*));
-    CHECK_NO_STDLIB(header->rv_tag & RV_TAG_INSTANCE, !=, 0, "%d");
+    CHECK(header->rv_tag & RV_TAG_INSTANCE, !=, 0, "%d");
 
     char size_s[23] = "";
     i32 size_s_len = 0;
     mkt_int_to_string(header->rv_size, size_s, &size_s_len);
-    mkt_write(mkt_stdout, size_s + sizeof(size_s) - size_s_len, size_s_len);
+    write(1, size_s + sizeof(size_s) - size_s_len, size_s_len);
 
     const char newline = '\n';
-    mkt_write(mkt_stdout, &newline, 1);
+    write(1, &newline, 1);
 }
