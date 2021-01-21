@@ -24,6 +24,7 @@ fun main() {
 
 ```sh
 # Only requires a C99 compiler toolchain and GNU make
+# On Linux, you probably need to use `WITH_DTRACE=0`
 make
 
 # Run the tests
@@ -51,7 +52,7 @@ Hello, world!
 - Friendly error messages
 - Tiny memory usage
 - Simple mark and sweep garbage collector
-- The native executables produced by `mktc` do not use libc and are statically linked, a la Go
+- The native executables produced by `mktc` only use libc
 
 ## On the roadmap
 *Future features that are not yet implemented but are planned. In no particular order:*
@@ -88,7 +89,7 @@ Available Makefile flags:
 - WITH_LOGS=0|1 : disable/enable logs. Defaults to 0.
 - WITH_ASAN=0|1 : disable/enable AddressSanitizer (`clang` only). Defaults to 0.
 - WITH_OPTIMIZE=0|1 : optimization level. Corresponds to respectively -O0 and -O2
-- WITH_DTRACE=0|1 : disable/enable dtrace in generated executables. Defaults to 0 on Linux and 1 on other platforms.
+- WITH_DTRACE=0|1 : disable/enable dtrace in generated executables. Defaults to 1; on Linux, you will most likely not have dtrace so you need to pass `WITH_DTRACE=0`
 - CC, AS, LD: standard make variables
 
 ```sh
