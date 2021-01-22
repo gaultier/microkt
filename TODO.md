@@ -5,9 +5,12 @@
   - Dtrace probes/scripts
   - Custom allocator based on mmap
 
+* Respect the System V ABI in regards to caller/callee preserved registers
+* Generate synthetic ast nodes for calls to mkt runtime functions
 * Floats
 * Hex numbers
 * Binary numbers
 * Octal numbers
+* Class members
 * Class methods
 * Class constructor
