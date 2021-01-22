@@ -874,6 +874,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
             log_debug("%.*s: stack_size=%d aligned_stack_size=%d", name_len,
                       name, fn.fd_stack_size, aligned_stack_size);
             fn_prolog(parser, &fn, aligned_stack_size);
+            CHECK(stack_size, ==, 0, "%u");
             emit_stmt(parser, fn.fd_body_node_i);
 
             if (node_fn_i == parser->par_main_fn_i) emit_program_epilog();
