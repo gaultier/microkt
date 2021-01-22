@@ -281,9 +281,11 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             println("push %%r15");
             stack_size += 8;
 
-            if ((stack_size % 16) != 0) println("sub $8, %%rsp");
+            if ((stack_size % 16) != 0)
+                println("sub $8, %%rsp # Align to 16 bytes");
             println("call " MKT_NAME_PREFIX "mkt_string_make");
-            if ((stack_size % 16) != 0) println("add $8, %%rsp");
+            if ((stack_size % 16) != 0)
+                println("add $8, %%rsp # Align to 16 bytes");
 
             println("pop %%rbx");
             stack_size -= 8;
@@ -419,9 +421,11 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
                 stack_size += 8;
                 println("push %%r15");
                 stack_size += 8;
-                if ((stack_size % 16) != 0) println("sub $8, %%rsp");
+                if ((stack_size % 16) != 0)
+                    println("sub $8, %%rsp # Align to 16 bytes");
                 println("call " MKT_NAME_PREFIX "mkt_string_concat");
-                if ((stack_size % 16) != 0) println("add $8, %%rsp");
+                if ((stack_size % 16) != 0)
+                    println("add $8, %%rsp # Align to 16 bytes");
                 println("pop %%rbx");
                 stack_size -= 8;
                 println("pop %%rbx");  // For 16 bytes alignment
@@ -538,7 +542,8 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             emit_loc(parser, expr_i);
             println("mov %%rax, %s", fn_args[0]);
 
-            if ((stack_size % 16) != 0) println("sub $8, %%rsp");
+            if ((stack_size % 16) != 0)
+                println("sub $8, %%rsp # Align to 16 bytes");
 
             if (type == TYPE_LONG || type == TYPE_INT || type == TYPE_SHORT ||
                 type == TYPE_BYTE)
@@ -557,7 +562,8 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
                 log_debug("Type %s unimplemented", mkt_type_to_str[type]);
                 UNIMPLEMENTED();
             }
-            if ((stack_size % 16) != 0) println("add $8, %%rsp");
+            if ((stack_size % 16) != 0)
+                println("add $8, %%rsp # Align to 16 bytes");
             println("movq $0, %%rax");  // Return value 0
 
             return;
@@ -612,9 +618,11 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             }
             emit_expr(parser, call.ca_lhs_node_i);
             println("mov %%rax, %%r10");
-            if ((stack_size % 16) != 0) println("sub $8, %%rsp");
+            if ((stack_size % 16) != 0)
+                println("sub $8, %%rsp # Align to 16 bytes");
             println("call *%%r10");
-            if ((stack_size % 16) != 0) println("add $8, %%rsp");
+            if ((stack_size % 16) != 0)
+                println("add $8, %%rsp # Align to 16 bytes");
 
             return;
         }
@@ -655,9 +663,11 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             stack_size += 8;
             println("push %%r15");
             stack_size += 8;
-            if ((stack_size % 16) != 0) println("sub $8, %%rsp");
+            if ((stack_size % 16) != 0)
+                println("sub $8, %%rsp # Align to 16 bytes");
             println("call " MKT_NAME_PREFIX "mkt_instance_make");
-            if ((stack_size % 16) != 0) println("add $8, %%rsp");
+            if ((stack_size % 16) != 0)
+                println("add $8, %%rsp # Align to 16 bytes");
             println("pop %%rbx");
             stack_size -= 8;
             println("pop %%rbx");  // For alignment
