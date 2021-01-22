@@ -16,6 +16,8 @@ static const char fn_args[6][5] = {
     [3] = "%rcx", [4] = "%r8",  [5] = "%r9",
 };
 
+static u32 stack_size = 0;
+
 static void emit_stmt(const parser_t* parser, i32 stmt_i);
 
 #if defined(__clang__) || defined(__GNUC__) || defined(__GNUG__)
@@ -122,6 +124,7 @@ static void emit_load(const mkt_type_t* type) {
 // Pop the top of the stack and store it in rax
 void emit_store(const mkt_type_t* type) {
     println("pop %%rdi");
+    stack_size -= 8;
 
     /* switch (type->ty_kind) { */
     /*     case TYPE_USER: */
@@ -187,15 +190,21 @@ static void fn_epilog(i32 aligned_stack_size, i32 fn_i) {
     println("popq %%rbp");
     println(".cfi_endproc");
     println("ret\n");
+
+    stack_size = 0;
 }
 
 static void emit_program_epilog() {
     println("\n# exit");
     println("mov $0, %%rdi");
+    CHECK(stack_size % 16, ==, 0, "%u");
     println("call " MKT_NAME_PREFIX "exit");
 }
 
-static void emit_push() { println("push %%rax"); }
+static void emit_push() {
+    println("push %%rax");
+    stack_size += 8;
+}
 
 static void emit_loc(const parser_t* parser, i32 node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
@@ -248,30 +257,58 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             println("mov $%d, %s # string len=%d", source_len, fn_args[0],
                     source_len);
             println("push %%rbx");
+            stack_size += 8;
             println("push %%rcx");
+            stack_size += 8;
             println("push %%rdx");
+            stack_size += 8;
             println("push %%rsi");
+            stack_size += 8;
             println("push %%r8");
+            stack_size += 8;
             println("push %%r9");
+            stack_size += 8;
             println("push %%r10");
+            stack_size += 8;
             println("push %%r11");
+            stack_size += 8;
             println("push %%r12");
+            stack_size += 8;
             println("push %%r13");
+            stack_size += 8;
             println("push %%r14");
+            stack_size += 8;
             println("push %%r15");
+            stack_size += 8;
+
+            if ((stack_size % 16) != 0) println("sub $8, %%rsp");
             println("call " MKT_NAME_PREFIX "mkt_string_make");
+            if ((stack_size % 16) != 0) println("add $8, %%rsp");
+
             println("pop %%rbx");
+            stack_size -= 8;
             println("pop %%rcx");
+            stack_size -= 8;
             println("pop %%rdx");
+            stack_size -= 8;
             println("pop %%rsi");
+            stack_size -= 8;
             println("pop %%r8");
+            stack_size -= 8;
             println("pop %%r9");
+            stack_size -= 8;
             println("pop %%r10");
+            stack_size -= 8;
             println("pop %%r11");
+            stack_size -= 8;
             println("pop %%r12");
+            stack_size -= 8;
             println("pop %%r13");
+            stack_size -= 8;
             println("pop %%r14");
+            stack_size -= 8;
             println("pop %%r15");
+            stack_size -= 8;
 
             for (i32 i = 0; i < source_len; i++)
                 println("movb $%d, %d(%%rax) # string[%d]", source[i], i, i);
@@ -296,6 +333,7 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             emit_expr(parser, bin.bi_lhs_i);
             emit_loc(parser, expr_i);
             println("pop %%rdi");
+            stack_size -= 8;
             println("cqo");  // ?
             println("xor %%rdx, %%rdx");
             println("idiv %%rdi");
@@ -311,6 +349,7 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             emit_expr(parser, bin.bi_lhs_i);
             emit_loc(parser, expr_i);
             println("pop %%rdi");
+            stack_size -= 8;
             println("cqo");  // ?
             println("idiv %%rdi");
 
@@ -324,6 +363,7 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             emit_expr(parser, bin.bi_lhs_i);
             emit_loc(parser, expr_i);
             println("pop %%rdi");
+            stack_size -= 8;
             println("imul %%rdi, %%rax");
 
             return;
@@ -336,6 +376,7 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             emit_expr(parser, bin.bi_lhs_i);
             emit_loc(parser, expr_i);
             println("pop %%rdi");
+            stack_size -= 8;
             println("sub %%rdi, %%rax");
 
             return;
@@ -355,31 +396,55 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
                 println("movq %%rax, %s", fn_args[1]);
                 println("subq $8, %s", fn_args[1]);
                 println("popq %s", fn_args[2]);
+                stack_size -= 8;
                 println("movq %s, %s", fn_args[2], fn_args[3]);
                 println("subq $8, %s", fn_args[3]);
                 println("push %%rbx");
+                stack_size += 8;
                 println("push %%rbx");  // For 16 bytes alignment
+                stack_size += 8;
                 println("push %%r8");
+                stack_size += 8;
                 println("push %%r9");
+                stack_size += 8;
                 println("push %%r10");
+                stack_size += 8;
                 println("push %%r11");
+                stack_size += 8;
                 println("push %%r12");
+                stack_size += 8;
                 println("push %%r13");
+                stack_size += 8;
                 println("push %%r14");
+                stack_size += 8;
                 println("push %%r15");
+                stack_size += 8;
+                if ((stack_size % 16) != 0) println("sub $8, %%rsp");
                 println("call " MKT_NAME_PREFIX "mkt_string_concat");
+                if ((stack_size % 16) != 0) println("add $8, %%rsp");
                 println("pop %%rbx");
+                stack_size -= 8;
                 println("pop %%rbx");  // For 16 bytes alignment
+                stack_size -= 8;
                 println("pop %%r8");
+                stack_size -= 8;
                 println("pop %%r9");
+                stack_size -= 8;
                 println("pop %%r10");
+                stack_size -= 8;
                 println("pop %%r11");
+                stack_size -= 8;
                 println("pop %%r12");
+                stack_size -= 8;
                 println("pop %%r13");
+                stack_size -= 8;
                 println("pop %%r14");
+                stack_size -= 8;
                 println("pop %%r15");
+                stack_size -= 8;
             } else {
                 println("pop %%rdi");
+                stack_size -= 8;
                 println("add %s, %s", di, ax);
             }
 
@@ -407,6 +472,7 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             emit_expr(parser, bin.bi_lhs_i);
             emit_loc(parser, expr_i);
             println("pop %%rdi");
+            stack_size -= 8;
             println("cmp %%rdi, %%rax");
 
             if (expr->no_kind == NODE_LT)
@@ -472,6 +538,8 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             emit_loc(parser, expr_i);
             println("mov %%rax, %s", fn_args[0]);
 
+            if ((stack_size % 16) != 0) println("sub $8, %%rsp");
+
             if (type == TYPE_LONG || type == TYPE_INT || type == TYPE_SHORT ||
                 type == TYPE_BYTE)
                 println("call " MKT_NAME_PREFIX "mkt_int_println");
@@ -489,6 +557,7 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
                 log_debug("Type %s unimplemented", mkt_type_to_str[type]);
                 UNIMPLEMENTED();
             }
+            if ((stack_size % 16) != 0) println("add $8, %%rsp");
             println("movq $0, %%rax");  // Return value 0
 
             return;
@@ -501,8 +570,12 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             for (i32 i = len - 1; i > 0; i--) {
                 emit_expr(parser, syscall.sy_arg_nodes_i[i]);
                 println("push %%rax");
+                stack_size += 8;
             }
-            for (i32 i = 1; i < len; i++) println("pop %s", fn_args[i - 1]);
+            for (i32 i = 1; i < len; i++) {
+                println("pop %s", fn_args[i - 1]);
+                stack_size -= 8;
+            }
 
             emit_expr(parser, syscall.sy_arg_nodes_i[0]);
             println("syscall");
@@ -539,7 +612,9 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             }
             emit_expr(parser, call.ca_lhs_node_i);
             println("mov %%rax, %%r10");
+            if ((stack_size % 16) != 0) println("sub $8, %%rsp");
             println("call *%%r10");
+            if ((stack_size % 16) != 0) println("add $8, %%rsp");
 
             return;
         }
@@ -553,34 +628,64 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
                 &parser->par_types[type->ty_ptr_type_i];
             println("mov $%d, %s", instance_type->ty_size, fn_args[0]);
             println("push %%rbx");
+            stack_size += 8;
             println("push %%rbx");  // For alignment
+            stack_size += 8;
             println("push %%rcx");
+            stack_size += 8;
             println("push %%rdi");
+            stack_size += 8;
             println("push %%rdx");
+            stack_size += 8;
             println("push %%rsi");
+            stack_size += 8;
             println("push %%r8");
+            stack_size += 8;
             println("push %%r9");
+            stack_size += 8;
             println("push %%r10");
+            stack_size += 8;
             println("push %%r11");
+            stack_size += 8;
             println("push %%r12");
+            stack_size += 8;
             println("push %%r13");
+            stack_size += 8;
             println("push %%r14");
+            stack_size += 8;
             println("push %%r15");
+            stack_size += 8;
+            if ((stack_size % 16) != 0) println("sub $8, %%rsp");
             println("call " MKT_NAME_PREFIX "mkt_instance_make");
+            if ((stack_size % 16) != 0) println("add $8, %%rsp");
             println("pop %%rbx");
+            stack_size -= 8;
             println("pop %%rbx");  // For alignment
+            stack_size -= 8;
             println("pop %%rcx");
+            stack_size -= 8;
             println("pop %%rdi");
+            stack_size -= 8;
             println("pop %%rdx");
+            stack_size -= 8;
             println("pop %%rsi");
+            stack_size -= 8;
             println("pop %%r8");
+            stack_size -= 8;
             println("pop %%r9");
+            stack_size -= 8;
             println("pop %%r10");
+            stack_size -= 8;
             println("pop %%r11");
+            stack_size -= 8;
             println("pop %%r12");
+            stack_size -= 8;
             println("pop %%r13");
+            stack_size -= 8;
             println("pop %%r14");
+            stack_size -= 8;
             println("pop %%r15");
+            stack_size -= 8;
 
             // Push the pointer to the instance on the stack to avoid losing it
             // when handling the members
@@ -651,6 +756,7 @@ static void emit_stmt(const parser_t* parser, i32 stmt_i) {
 
             emit_addr(parser, binary.bi_lhs_i);
             println("push %%rax");
+            stack_size += 8;
             emit_expr(parser, binary.bi_rhs_i);
             emit_store(type);
 
