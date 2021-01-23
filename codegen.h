@@ -32,6 +32,16 @@ println(char* fmt, ...) {
     fprintf(output_file, "\n");
 }
 
+static void emit_push(const char* reg) {
+    println("push %s", reg);
+    stack_size += 8;
+}
+
+static void emit_pop(const char* reg) {
+    println("pop %s", reg);
+    stack_size -= 8;
+}
+
 // The System V ABI requires a 16-bit aligned stack.
 // Round up to a multiple of 16
 static i32 emit_align_to_16(i32 stack_size) {
@@ -123,8 +133,7 @@ static void emit_load(const mkt_type_t* type) {
 
 // Pop the top of the stack and store it in rax
 void emit_store(const mkt_type_t* type) {
-    println("pop %%rdi");
-    stack_size -= 8;
+    emit_pop("%rdi");
 
     /* switch (type->ty_kind) { */
     /*     case TYPE_USER: */
@@ -156,13 +165,14 @@ static void fn_prolog(const parser_t* parser, const mkt_fn_t* fn,
     CHECK(aligned_stack_size % 16, ==, 0, "%d");
 
     println(".cfi_startproc");
-    println("push %%rbp");
+    emit_push("%rbp");
     println(".cfi_def_cfa_offset 16");
     println(".cfi_offset %%rbp, -16");
     println("mov %%rsp, %%rbp");
     println(".cfi_def_cfa_register %%rbp");
 
     println("sub $%d, %%rsp\n", aligned_stack_size);
+    stack_size = aligned_stack_size;
 
     for (i32 i = 0; i < (i32)buf_size(fn->fd_arg_nodes_i); i++) {
         const i32 arg_i = fn->fd_arg_nodes_i[i];
@@ -187,16 +197,10 @@ static void fn_epilog(i32 aligned_stack_size, i32 fn_i) {
 
     println(".L.return.%d:", fn_i);
     println("addq $%d, %%rsp", aligned_stack_size);
-    println("popq %%rbp");
+    emit_pop("%rbp");
     println(".cfi_endproc");
     println("ret\n");
-
     stack_size = 0;
-}
-
-static void emit_push() {
-    println("push %%rax");
-    stack_size += 8;
 }
 
 static void emit_loc(const parser_t* parser, i32 node_i) {
@@ -249,30 +253,18 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             emit_loc(parser, expr_i);
             println("mov $%d, %s # string len=%d", source_len, fn_args[0],
                     source_len);
-            println("push %%rbx");
-            stack_size += 8;
-            println("push %%rcx");
-            stack_size += 8;
-            println("push %%rdx");
-            stack_size += 8;
-            println("push %%rsi");
-            stack_size += 8;
-            println("push %%r8");
-            stack_size += 8;
-            println("push %%r9");
-            stack_size += 8;
-            println("push %%r10");
-            stack_size += 8;
-            println("push %%r11");
-            stack_size += 8;
-            println("push %%r12");
-            stack_size += 8;
-            println("push %%r13");
-            stack_size += 8;
-            println("push %%r14");
-            stack_size += 8;
-            println("push %%r15");
-            stack_size += 8;
+            emit_push("%rbx");
+            emit_push("%rcx");
+            emit_push("%rdx");
+            emit_push("%rsi");
+            emit_push("%r8");
+            emit_push("%r9");
+            emit_push("%r10");
+            emit_push("%r11");
+            emit_push("%r12");
+            emit_push("%r13");
+            emit_push("%r14");
+            emit_push("%r15");
 
             if ((stack_size % 16) != 0)
                 println("sub $8, %%rsp # Align to 16 bytes");
@@ -280,30 +272,18 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             if ((stack_size % 16) != 0)
                 println("add $8, %%rsp # Align to 16 bytes");
 
-            println("pop %%rbx");
-            stack_size -= 8;
-            println("pop %%rcx");
-            stack_size -= 8;
-            println("pop %%rdx");
-            stack_size -= 8;
-            println("pop %%rsi");
-            stack_size -= 8;
-            println("pop %%r8");
-            stack_size -= 8;
-            println("pop %%r9");
-            stack_size -= 8;
-            println("pop %%r10");
-            stack_size -= 8;
-            println("pop %%r11");
-            stack_size -= 8;
-            println("pop %%r12");
-            stack_size -= 8;
-            println("pop %%r13");
-            stack_size -= 8;
-            println("pop %%r14");
-            stack_size -= 8;
-            println("pop %%r15");
-            stack_size -= 8;
+            emit_pop("%rbx");
+            emit_pop("%rcx");
+            emit_pop("%rdx");
+            emit_pop("%rsi");
+            emit_pop("%r8");
+            emit_pop("%r9");
+            emit_pop("%r10");
+            emit_pop("%r11");
+            emit_pop("%r12");
+            emit_pop("%r13");
+            emit_pop("%r14");
+            emit_pop("%r15");
 
             for (i32 i = 0; i < source_len; i++)
                 println("movb $%d, %d(%%rax) # string[%d]", source[i], i, i);
@@ -324,11 +304,10 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             const mkt_binary_t bin = expr->no_n.no_binary;
 
             emit_expr(parser, bin.bi_rhs_i);
-            emit_push();
+            emit_push("%rax");
             emit_expr(parser, bin.bi_lhs_i);
             emit_loc(parser, expr_i);
-            println("pop %%rdi");
-            stack_size -= 8;
+            emit_pop("%rdi");
             println("cqo");  // ?
             println("xor %%rdx, %%rdx");
             println("idiv %%rdi");
@@ -340,11 +319,10 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             const mkt_binary_t bin = expr->no_n.no_binary;
 
             emit_expr(parser, bin.bi_rhs_i);
-            emit_push();
+            emit_push("%rax");
             emit_expr(parser, bin.bi_lhs_i);
             emit_loc(parser, expr_i);
-            println("pop %%rdi");
-            stack_size -= 8;
+            emit_pop("%rdi");
             println("cqo");  // ?
             println("idiv %%rdi");
 
@@ -354,11 +332,10 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             const mkt_binary_t bin = expr->no_n.no_binary;
 
             emit_expr(parser, bin.bi_rhs_i);
-            emit_push();
+            emit_push("%rax");
             emit_expr(parser, bin.bi_lhs_i);
             emit_loc(parser, expr_i);
-            println("pop %%rdi");
-            stack_size -= 8;
+            emit_pop("%rdi");
             println("imul %%rdi, %%rax");
 
             return;
@@ -367,11 +344,10 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             const mkt_binary_t bin = expr->no_n.no_binary;
 
             emit_expr(parser, bin.bi_rhs_i);
-            emit_push();
+            emit_push("%rax");
             emit_expr(parser, bin.bi_lhs_i);
             emit_loc(parser, expr_i);
-            println("pop %%rdi");
-            stack_size -= 8;
+            emit_pop("%rdi");
             println("sub %%rdi, %%rax");
 
             return;
@@ -380,7 +356,7 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             const mkt_binary_t bin = expr->no_n.no_binary;
 
             emit_expr(parser, bin.bi_rhs_i);
-            emit_push();
+            emit_push("%rax");
             emit_expr(parser, bin.bi_lhs_i);
             emit_loc(parser, expr_i);
 
@@ -390,58 +366,36 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
                 println("movq %%rax, %s", fn_args[0]);
                 println("movq %%rax, %s", fn_args[1]);
                 println("subq $8, %s", fn_args[1]);
-                println("popq %s", fn_args[2]);
-                stack_size -= 8;
+                emit_pop(fn_args[2]);
                 println("movq %s, %s", fn_args[2], fn_args[3]);
                 println("subq $8, %s", fn_args[3]);
-                println("push %%rbx");
-                stack_size += 8;
-                println("push %%rbx");  // For 16 bytes alignment
-                stack_size += 8;
-                println("push %%r8");
-                stack_size += 8;
-                println("push %%r9");
-                stack_size += 8;
-                println("push %%r10");
-                stack_size += 8;
-                println("push %%r11");
-                stack_size += 8;
-                println("push %%r12");
-                stack_size += 8;
-                println("push %%r13");
-                stack_size += 8;
-                println("push %%r14");
-                stack_size += 8;
-                println("push %%r15");
-                stack_size += 8;
+                emit_push("%rbx");
+                emit_push("%rbx");  // For 16 bytes alignment
+                emit_push("%r8");
+                emit_push("%r9");
+                emit_push("%r10");
+                emit_push("%r11");
+                emit_push("%r12");
+                emit_push("%r13");
+                emit_push("%r14");
+                emit_push("%r15");
                 if ((stack_size % 16) != 0)
                     println("sub $8, %%rsp # Align to 16 bytes");
                 println("call " MKT_NAME_PREFIX "mkt_string_concat");
                 if ((stack_size % 16) != 0)
                     println("add $8, %%rsp # Align to 16 bytes");
-                println("pop %%rbx");
-                stack_size -= 8;
-                println("pop %%rbx");  // For 16 bytes alignment
-                stack_size -= 8;
-                println("pop %%r8");
-                stack_size -= 8;
-                println("pop %%r9");
-                stack_size -= 8;
-                println("pop %%r10");
-                stack_size -= 8;
-                println("pop %%r11");
-                stack_size -= 8;
-                println("pop %%r12");
-                stack_size -= 8;
-                println("pop %%r13");
-                stack_size -= 8;
-                println("pop %%r14");
-                stack_size -= 8;
-                println("pop %%r15");
-                stack_size -= 8;
+                emit_pop("%rbx");
+                emit_pop("%rbx");  // For 16 bytes alignment
+                emit_pop("%r8");
+                emit_pop("%r9");
+                emit_pop("%r10");
+                emit_pop("%r11");
+                emit_pop("%r12");
+                emit_pop("%r13");
+                emit_pop("%r14");
+                emit_pop("%r15");
             } else {
-                println("pop %%rdi");
-                stack_size -= 8;
+                emit_pop("%rdi");
                 println("add %s, %s", di, ax);
             }
 
@@ -465,11 +419,10 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             const mkt_binary_t bin = expr->no_n.no_binary;
 
             emit_expr(parser, bin.bi_rhs_i);
-            emit_push();
+            emit_push("%rax");
             emit_expr(parser, bin.bi_lhs_i);
             emit_loc(parser, expr_i);
-            println("pop %%rdi");
-            stack_size -= 8;
+            emit_pop("%rdi");
             println("cmp %%rdi, %%rax");
 
             if (expr->no_kind == NODE_LT)
@@ -568,12 +521,10 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
 
             for (i32 i = len - 1; i > 0; i--) {
                 emit_expr(parser, syscall.sy_arg_nodes_i[i]);
-                println("push %%rax");
-                stack_size += 8;
+                emit_push("%rax");
             }
             for (i32 i = 1; i < len; i++) {
-                println("pop %s", fn_args[i - 1]);
-                stack_size -= 8;
+                emit_pop(fn_args[i - 1]);
             }
 
             emit_expr(parser, syscall.sy_arg_nodes_i[0]);
@@ -628,71 +579,43 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             const mkt_type_t* const instance_type =
                 &parser->par_types[type->ty_ptr_type_i];
             println("mov $%d, %s", instance_type->ty_size, fn_args[0]);
-            println("push %%rbx");
-            stack_size += 8;
-            println("push %%rbx");  // For alignment
-            stack_size += 8;
-            println("push %%rcx");
-            stack_size += 8;
-            println("push %%rdi");
-            stack_size += 8;
-            println("push %%rdx");
-            stack_size += 8;
-            println("push %%rsi");
-            stack_size += 8;
-            println("push %%r8");
-            stack_size += 8;
-            println("push %%r9");
-            stack_size += 8;
-            println("push %%r10");
-            stack_size += 8;
-            println("push %%r11");
-            stack_size += 8;
-            println("push %%r12");
-            stack_size += 8;
-            println("push %%r13");
-            stack_size += 8;
-            println("push %%r14");
-            stack_size += 8;
-            println("push %%r15");
-            stack_size += 8;
+            emit_push("%rbx");
+            emit_push("%rbx");  // For alignment
+            emit_push("%rcx");
+            emit_push("%rdi");
+            emit_push("%rdx");
+            emit_push("%rsi");
+            emit_push("%r8");
+            emit_push("%r9");
+            emit_push("%r10");
+            emit_push("%r11");
+            emit_push("%r12");
+            emit_push("%r13");
+            emit_push("%r14");
+            emit_push("%r15");
             if ((stack_size % 16) != 0)
                 println("sub $8, %%rsp # Align to 16 bytes");
             println("call " MKT_NAME_PREFIX "mkt_instance_make");
             if ((stack_size % 16) != 0)
                 println("add $8, %%rsp # Align to 16 bytes");
-            println("pop %%rbx");
-            stack_size -= 8;
-            println("pop %%rbx");  // For alignment
-            stack_size -= 8;
-            println("pop %%rcx");
-            stack_size -= 8;
-            println("pop %%rdi");
-            stack_size -= 8;
-            println("pop %%rdx");
-            stack_size -= 8;
-            println("pop %%rsi");
-            stack_size -= 8;
-            println("pop %%r8");
-            stack_size -= 8;
-            println("pop %%r9");
-            stack_size -= 8;
-            println("pop %%r10");
-            stack_size -= 8;
-            println("pop %%r11");
-            stack_size -= 8;
-            println("pop %%r12");
-            stack_size -= 8;
-            println("pop %%r13");
-            stack_size -= 8;
-            println("pop %%r14");
-            stack_size -= 8;
-            println("pop %%r15");
-            stack_size -= 8;
+            emit_pop("%rbx");
+            emit_pop("%rbx");  // For alignment
+            emit_pop("%rcx");
+            emit_pop("%rdi");
+            emit_pop("%rdx");
+            emit_pop("%rsi");
+            emit_pop("%r8");
+            emit_pop("%r9");
+            emit_pop("%r10");
+            emit_pop("%r11");
+            emit_pop("%r12");
+            emit_pop("%r13");
+            emit_pop("%r14");
+            emit_pop("%r15");
 
             // Push the pointer to the instance on the stack to avoid losing it
             // when handling the members
-            // println("push %%rax");
+            // emit_push("%rax");
 
             // mkt_instance_t instance = expr->no_n.no_instance;
             // const mkt_node_t* const class_node =
@@ -758,8 +681,7 @@ static void emit_stmt(const parser_t* parser, i32 stmt_i) {
             const mkt_binary_t binary = stmt->no_n.no_binary;
 
             emit_addr(parser, binary.bi_lhs_i);
-            println("push %%rax");
-            stack_size += 8;
+            emit_push("%rax");
             emit_expr(parser, binary.bi_rhs_i);
             emit_store(type);
 
@@ -813,8 +735,8 @@ static void emit(const parser_t* parser, FILE* asm_file) {
     println(".globl " MKT_NAME_PREFIX "start");
     println(MKT_NAME_PREFIX "start:");
     println(".cfi_startproc");
+    emit_push("%rbp");
     println(
-        "push %%rbp\n"
         ".cfi_def_cfa_offset 16\n"
         ".cfi_offset %%rbp, -16\n"
         "mov %%rsp, %%rbp\n"
@@ -823,7 +745,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
     println("call " MKT_NAME_PREFIX "mkt_init");
     println("call main");
     println("movq $0, %%rax");  // Return value 0
-    println("popq %%rbp");
+    emit_pop("%rbp");
     println(".cfi_endproc");
     println("ret\n");
 
@@ -863,11 +785,12 @@ static void emit(const parser_t* parser, FILE* asm_file) {
 
             println("%.*s:", name_len, name);
 
-            const i32 aligned_stack_size = emit_align_to_16(fn.fd_stack_size);
+            const u32 aligned_stack_size = emit_align_to_16(fn.fd_stack_size);
             log_debug("%.*s: stack_size=%d aligned_stack_size=%d", name_len,
                       name, fn.fd_stack_size, aligned_stack_size);
             fn_prolog(parser, &fn, aligned_stack_size);
-            CHECK(stack_size, ==, 0, "%u");
+            CHECK(stack_size, >=, aligned_stack_size, "%u");
+
             emit_stmt(parser, fn.fd_body_node_i);
 
             if (node_fn_i == parser->par_main_fn_i) {
