@@ -194,13 +194,6 @@ static void fn_epilog(i32 aligned_stack_size, i32 fn_i) {
     stack_size = 0;
 }
 
-static void emit_program_epilog() {
-    println("\n# exit");
-    println("mov $0, %%rdi");
-    CHECK(stack_size % 16, ==, 0, "%u");
-    println("call " MKT_NAME_PREFIX "exit");
-}
-
 static void emit_push() {
     println("push %%rax");
     stack_size += 8;
@@ -877,7 +870,10 @@ static void emit(const parser_t* parser, FILE* asm_file) {
             CHECK(stack_size, ==, 0, "%u");
             emit_stmt(parser, fn.fd_body_node_i);
 
-            if (node_fn_i == parser->par_main_fn_i) emit_program_epilog();
+            if (node_fn_i == parser->par_main_fn_i) {
+                // In that case, no return means returning 0
+                println("mov $0, %%rax");
+            }
 
             fn_epilog(aligned_stack_size, node_fn_i);
         }
