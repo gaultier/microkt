@@ -266,11 +266,16 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             emit_push("%r14");
             emit_push("%r15");
 
-            if ((stack_size % 16) != 0)
+            const u32 old_stack_size = stack_size;
+            if ((stack_size % 16) != 0) {
                 println("sub $8, %%rsp # Align to 16 bytes");
+                stack_size += 8;
+            }
             println("call " MKT_NAME_PREFIX "mkt_string_make");
-            if ((stack_size % 16) != 0)
+            if ((old_stack_size % 16) != 0) {
                 println("add $8, %%rsp # Align to 16 bytes");
+                stack_size -= 8;
+            }
 
             emit_pop("%rbx");
             emit_pop("%rcx");
