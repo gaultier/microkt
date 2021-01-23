@@ -93,7 +93,8 @@ static void emit_addr(const parser_t* parser, i32 node_i) {
                 CHECK(name_len, >=, 0, "%d");
                 CHECK(name_len, <, parser->par_lexer.lex_source_len, "%d");
 
-                println("lea %.*s(%%rip), %%rax", name_len, name);
+                println("lea " MKT_NAME_PREFIX "%.*s(%%rip), %%rax", name_len,
+                        name);
                 return;
             }
 
@@ -731,25 +732,6 @@ static void emit(const parser_t* parser, FILE* asm_file) {
 
     println(".file 1 \"%s\"", parser->par_file_name0);
 
-    println(".globl " MKT_NAME_PREFIX "start");
-    println(MKT_NAME_PREFIX "start:");
-    println(".cfi_startproc");
-    emit_push("%rbp");
-    println(
-        ".cfi_def_cfa_offset 16\n"
-        ".cfi_offset %%rbp, -16\n"
-        "mov %%rsp, %%rbp\n"
-        ".cfi_def_cfa_register %%rbp\n");
-    emit_call(MKT_NAME_PREFIX "mkt_init");
-    // FIXME: emit_call?
-    println("call main");
-    //    emit_call(MKT_NAME_PREFIX "mkt_init");
-    //    emit_call("main");
-    println("movq $0, %%rax");  // Return value 0
-    emit_pop("%rbp");
-    println(".cfi_endproc");
-    println("ret\n");
-
     for (i32 c = 0; c < (i32)buf_size(parser->par_class_decls); c++) {
         const i32 node_class_i = parser->par_class_decls[c];
         CHECK(node_class_i, >=, 0, "%d");
@@ -782,13 +764,21 @@ static void emit(const parser_t* parser, FILE* asm_file) {
             CHECK(name_len, <, parser->par_lexer.lex_source_len, "%d");
 
             if (fn.fd_flags & FN_FLAGS_PUBLIC)
-                println(".global %.*s", name_len, name);
+                println(".global " MKT_NAME_PREFIX "%.*s", name_len, name);
 
-            println("%.*s:", name_len, name);
+            println(MKT_NAME_PREFIX "%.*s:", name_len, name);
 
             const u32 aligned_stack_size = emit_align_to_16(fn.fd_stack_size);
             log_debug("%.*s: stack_size=%d aligned_stack_size=%d", name_len,
                       name, fn.fd_stack_size, aligned_stack_size);
+
+            // Save the top of the stack for this program
+            if (node_fn_i == parser->par_main_fn_i) {
+                println("mov " MKT_NAME_PREFIX
+                        "mkt_stack_top@GOTPCREL(%%rip), %%rax");
+                println("mov %%rbp, (%%rax)");
+            }
+
             fn_prolog(parser, &fn, aligned_stack_size);
             CHECK(stack_size, >=, aligned_stack_size, "%u");
 
