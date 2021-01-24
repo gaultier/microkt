@@ -380,27 +380,9 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
                 emit_pop(fn_args[2]);
                 println("movq %s, %s", fn_args[2], fn_args[3]);
                 println("subq $8, %s", fn_args[3]);
-                emit_push("%rbx");
-                emit_push("%rbx");  // For 16 bytes alignment
-                emit_push("%r8");
-                emit_push("%r9");
-                emit_push("%r10");
-                emit_push("%r11");
-                emit_push("%r12");
-                emit_push("%r13");
-                emit_push("%r14");
-                emit_push("%r15");
+                emit_pusha();
                 emit_call(MKT_NAME_PREFIX "mkt_string_concat");
-                emit_pop("%rbx");
-                emit_pop("%rbx");  // For 16 bytes alignment
-                emit_pop("%r8");
-                emit_pop("%r9");
-                emit_pop("%r10");
-                emit_pop("%r11");
-                emit_pop("%r12");
-                emit_pop("%r13");
-                emit_pop("%r14");
-                emit_pop("%r15");
+                emit_popa();
             } else {
                 emit_pop("%rdi");
                 println("add %s, %s", di, ax);
@@ -578,35 +560,9 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             const mkt_type_t* const instance_type =
                 &parser->par_types[type->ty_ptr_type_i];
             println("mov $%d, %s", instance_type->ty_size, fn_args[0]);
-            emit_push("%rbx");
-            emit_push("%rbx");  // For alignment
-            emit_push("%rcx");
-            emit_push("%rdi");
-            emit_push("%rdx");
-            emit_push("%rsi");
-            emit_push("%r8");
-            emit_push("%r9");
-            emit_push("%r10");
-            emit_push("%r11");
-            emit_push("%r12");
-            emit_push("%r13");
-            emit_push("%r14");
-            emit_push("%r15");
+            emit_pusha();
             emit_call(MKT_NAME_PREFIX "mkt_instance_make");
-            emit_pop("%rbx");
-            emit_pop("%rbx");  // For alignment
-            emit_pop("%rcx");
-            emit_pop("%rdi");
-            emit_pop("%rdx");
-            emit_pop("%rsi");
-            emit_pop("%r8");
-            emit_pop("%r9");
-            emit_pop("%r10");
-            emit_pop("%r11");
-            emit_pop("%r12");
-            emit_pop("%r13");
-            emit_pop("%r14");
-            emit_pop("%r15");
+            emit_popa();
 
             // Push the pointer to the instance on the stack to avoid losing it
             // when handling the members
