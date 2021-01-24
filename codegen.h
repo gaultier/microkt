@@ -36,20 +36,6 @@ println(char* fmt, ...) {
     fprintf(output_file, "\n");
 }
 
-static void emit_pusha() {
-    for (u32 i = 1; i < sizeof(regs) / sizeof(regs[0]); i++) {
-        println("push %s", regs[i]);
-        stack_size += 8;
-    }
-}
-
-static void emit_popa() {
-    for (u32 i = 1; i < sizeof(regs) / sizeof(regs[0]); i++) {
-        println("pop %s", regs[i]);
-        stack_size -= 8;
-    }
-}
-
 static void emit_push(const char* reg) {
     CHECK((void*)reg, !=, NULL, "%p");
     println("push %s", reg);
@@ -60,6 +46,14 @@ static void emit_pop(const char* reg) {
     CHECK((void*)reg, !=, NULL, "%p");
     println("pop %s", reg);
     stack_size -= 8;
+}
+
+static void emit_pusha() {
+    for (u32 i = 1; i < sizeof(regs) / sizeof(regs[0]); i++) emit_push(regs[i]);
+}
+
+static void emit_popa() {
+    for (u32 i = 1; i < sizeof(regs) / sizeof(regs[0]); i++) emit_pop(regs[i]);
 }
 
 static void emit_call(const char* fn) {
