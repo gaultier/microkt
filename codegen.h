@@ -11,6 +11,11 @@
 
 static FILE* output_file = NULL;
 
+static const char regs[14][5] = {
+    [0] = "%rax",  [1] = "%rbx",  [2] = "%rcx",  [3] = "%rdx",  [4] = "%rdi",
+    [5] = "%rsi",  [6] = "%r8",   [7] = "%r9",   [8] = "%r10",  [9] = "%r11",
+    [10] = "%r12", [11] = "%r13", [12] = "%r14", [13] = "%r15",
+};
 static const char fn_args[6][5] = {
     [0] = "%rdi", [1] = "%rsi", [2] = "%rdx",
     [3] = "%rcx", [4] = "%r8",  [5] = "%r9",
@@ -30,6 +35,20 @@ println(char* fmt, ...) {
     vfprintf(output_file, fmt, ap);
     va_end(ap);
     fprintf(output_file, "\n");
+}
+
+static void emit_pusha() {
+    for (u32 i = 1; i < sizeof(regs) / sizeof(regs[0]); i++) {
+        println("push %s", regs[i]);
+        stack_size += 8;
+    }
+}
+
+static void emit_popa() {
+    for (u32 i = 1; i < sizeof(regs) / sizeof(regs[0]); i++) {
+        println("pop %s", regs[i]);
+        stack_size -= 8;
+    }
 }
 
 static void emit_push(const char* reg) {
@@ -273,33 +292,9 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             emit_loc(parser, expr_i);
             println("mov $%d, %s # string len=%d", source_len, fn_args[0],
                     source_len);
-            emit_push("%rbx");
-            emit_push("%rcx");
-            emit_push("%rdx");
-            emit_push("%rsi");
-            emit_push("%r8");
-            emit_push("%r9");
-            emit_push("%r10");
-            emit_push("%r11");
-            emit_push("%r12");
-            emit_push("%r13");
-            emit_push("%r14");
-            emit_push("%r15");
-
+            emit_pusha();
             emit_call(MKT_NAME_PREFIX "mkt_string_make");
-
-            emit_pop("%rbx");
-            emit_pop("%rcx");
-            emit_pop("%rdx");
-            emit_pop("%rsi");
-            emit_pop("%r8");
-            emit_pop("%r9");
-            emit_pop("%r10");
-            emit_pop("%r11");
-            emit_pop("%r12");
-            emit_pop("%r13");
-            emit_pop("%r14");
-            emit_pop("%r15");
+            emit_popa();
 
             for (i32 i = 0; i < source_len; i++)
                 println("movb $%d, %d(%%rax) # string[%d]", source[i], i, i);
