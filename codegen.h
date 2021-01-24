@@ -1,6 +1,5 @@
 #pragma once
 
-#include "ast.h"
 #include "parse.h"
 
 #ifdef __APPLE__
@@ -683,7 +682,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
 
     println(".file 1 \"%s\"", parser->par_file_name0);
 
-    for (i32 c = 0; c < (i32)buf_size(parser->par_class_decls); c++) {
+    for (u64 c = 0; c < buf_size(parser->par_class_decls); c++) {
         const i32 node_class_i = parser->par_class_decls[c];
         CHECK(node_class_i, >=, 0, "%d");
         CHECK(node_class_i, <, (i32)buf_size(parser->par_nodes), "%d");
