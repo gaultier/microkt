@@ -125,3 +125,5 @@ static void trim_end(const char** string, i32* string_len) {
         mkt_res_t res = expr;            \
         if (res != RES_NONE) return res; \
     } while (0)
+
+#define ARR_SIZE(arr) (sizeof(arr) / sizeof(arr[0]))

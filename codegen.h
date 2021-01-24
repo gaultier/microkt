@@ -15,10 +15,14 @@ static const char regs[14][5] = {
     [5] = "%rsi",  [6] = "%r8",   [7] = "%r9",   [8] = "%r10",  [9] = "%r11",
     [10] = "%r12", [11] = "%r13", [12] = "%r14", [13] = "%r15",
 };
+
 static const char fn_args[6][5] = {
     [0] = "%rdi", [1] = "%rsi", [2] = "%rdx",
     [3] = "%rcx", [4] = "%r8",  [5] = "%r9",
 };
+
+static const char fn_preserved_regs[5][5] = {
+    [0] = "%rbx", [1] = "%r12", [2] = "%r13", [3] = "%r14", [4] = "%r15"};
 
 static u32 stack_size = 0;
 
@@ -201,8 +205,11 @@ static void fn_prolog(const parser_t* parser, const mkt_fn_t* fn,
     println(".cfi_def_cfa_offset 16");
     println(".cfi_offset %%rbp, -16");
     println("mov %%rsp, %%rbp");
-    println(".cfi_def_cfa_register %%rbp");
 
+    for (i32 i = (i32)ARR_SIZE(fn_preserved_regs) - 1; i >= 0; i--)
+        emit_push(fn_preserved_regs[i]);
+
+    println(".cfi_def_cfa_register %%rbp");
     println("sub $%d, %%rsp\n", aligned_stack_size);
     stack_size = aligned_stack_size;
 
@@ -229,6 +236,8 @@ static void fn_epilog(i32 aligned_stack_size, i32 fn_i) {
 
     println(".L.return.%d:", fn_i);
     println("addq $%d, %%rsp", aligned_stack_size);
+    for (u32 i = 0; i < ARR_SIZE(fn_preserved_regs); i++)
+        emit_pop(fn_preserved_regs[i]);
     emit_pop("%rbp");
     println(".cfi_endproc");
     println("ret\n");
