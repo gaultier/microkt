@@ -21,10 +21,10 @@ static const char fn_args[6][5] = {
     [3] = "%rcx", [4] = "%r8",  [5] = "%r9",
 };
 
-static const char fn_preserved_regs[5][5] = {
-    [0] = "%rbx", [1] = "%r12", [2] = "%r13", [3] = "%r14", [4] = "%r15"};
+/* static const char fn_preserved_regs[5][5] = { */
+/*     [0] = "%rbx", [1] = "%r12", [2] = "%r13", [3] = "%r14", [4] = "%r15"}; */
 
-static u32 stack_size = 8;
+static i32 stack_size = 0;
 
 static void emit_stmt(const parser_t* parser, i32 stmt_i);
 
@@ -53,11 +53,11 @@ static void emit_pop(const char* reg) {
 }
 
 static void emit_pusha() {
-    for (u32 i = 1; i < sizeof(regs) / sizeof(regs[0]); i++) emit_push(regs[i]);
+    for (u32 i = 1; i < ARR_SIZE(regs); i++) emit_push(regs[i]);
 }
 
 static void emit_popa() {
-    for (u32 i = 1; i < sizeof(regs) / sizeof(regs[0]); i++) emit_pop(regs[i]);
+    for (u32 i = 1; i < ARR_SIZE(regs); i++) emit_pop(regs[i]);
 }
 
 static void emit_call(const char* fn) {
@@ -205,8 +205,8 @@ static u8 fn_prolog(const parser_t* parser, int node_fn_i) {
     println("mov %%rsp, %%rbp");
     println(".cfi_def_cfa_register %%rbp");
 
-    for (i32 i = (i32)ARR_SIZE(fn_preserved_regs) - 1; i >= 0; i--)
-        emit_push(fn_preserved_regs[i]);
+    /* for (i32 i = (i32)ARR_SIZE(fn_preserved_regs) - 1; i >= 0; i--) */
+    /*     emit_push(fn_preserved_regs[i]); */
 
     // Save the top of the stack for this program
     if (node_fn_i == parser->par_main_fn_i) {
@@ -241,8 +241,9 @@ static u8 fn_prolog(const parser_t* parser, int node_fn_i) {
 static void fn_epilog(i32 fn_i, u8 aligned_stack_size_rem) {
     println(".L.return.%d:", fn_i);
     println("addq $%d, %%rsp # Align to 16 bytes", aligned_stack_size_rem);
-    for (u32 i = 0; i < ARR_SIZE(fn_preserved_regs); i++)
-        emit_pop(fn_preserved_regs[i]);
+    stack_size += aligned_stack_size_rem;
+    /* for (u32 i = 0; i < ARR_SIZE(fn_preserved_regs); i++) */
+    /*     emit_pop(fn_preserved_regs[i]); */
     emit_pop("%rbp");
     println(".cfi_endproc");
     println("ret\n");
