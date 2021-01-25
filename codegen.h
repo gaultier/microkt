@@ -164,7 +164,7 @@ static void emit_load(const mkt_type_t* type) {
 }
 
 // Pop the top of the stack and store it in rax
-void emit_store(const mkt_type_t* type) {
+static void emit_store(const mkt_type_t* type) {
     emit_pop("%rdi");
 
     /* switch (type->ty_kind) { */

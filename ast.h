@@ -75,7 +75,7 @@ typedef enum {
     NODE_COUNT,
 } mkt_node_kind_t;
 
-const char mkt_node_kind_to_str[NODE_COUNT][30] = {
+static const char mkt_node_kind_to_str[NODE_COUNT][30] = {
     [NODE_BUILTIN_PRINTLN] = "Print",
     [NODE_KEYWORD_BOOL] = "Bool",
     [NODE_STRING] = "String",
