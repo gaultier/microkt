@@ -536,10 +536,13 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
 
             const mkt_type_t* const instance_type =
                 &parser->par_types[type->ty_ptr_type_i];
+
+            emit_push(fn_args[0]);
             println("mov $%d, %s", instance_type->ty_size, fn_args[0]);
             emit_pusha();
             emit_call(MKT_NAME_PREFIX "mkt_instance_make");
             emit_popa();
+            emit_pop(fn_args[0]);
 
             // Push the pointer to the instance on the stack to avoid losing it
             // when handling the members
