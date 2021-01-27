@@ -47,7 +47,6 @@ static void parser_print_source_on_error(const parser_t* parser,
                                          i32 first_tok_i, i32 last_tok_i);
 static mkt_res_t parser_parse_call_suffix(parser_t* parser, i32 lhs_i,
                                           i32* new_node_i);
-static mkt_res_t parser_parse_syscall(parser_t* parser, i32* new_node_i);
 static mkt_res_t parser_parse_declaration(parser_t* parser, i32* new_node_i);
 
 static i32 node_make_block(parser_t* parser) {
@@ -736,18 +735,6 @@ static void node_dump(const parser_t* parser, i32 no_i, i32 indent) {
             log_debug_with_indent(indent, "%c", ')');
             return;
         }
-        case NODE_SYSCALL: {
-            log_debug_with_indent(indent, "(%s id=%d type=%s ",
-                                  mkt_node_kind_to_str[node->no_kind], no_i,
-                                  mkt_type_to_str[type.ty_kind]);
-
-            const mkt_syscall_t syscall = node->no_n.no_syscall;
-            for (i32 i = 0; i < (i32)buf_size(syscall.sy_arg_nodes_i); i++)
-                node_dump(parser, syscall.sy_arg_nodes_i[i], indent + 2);
-
-            log_debug_with_indent(indent, "%c", ')');
-            return;
-        }
         case NODE_LT:
         case NODE_LE:
         case NODE_EQ:
@@ -949,8 +936,6 @@ static i32 node_first_token(const parser_t* parser, i32 node_i) {
     switch (node->no_kind) {
         case NODE_BUILTIN_PRINTLN:
             return node->no_n.no_builtin_println.bp_keyword_print_i;
-        case NODE_SYSCALL:
-            return node->no_n.no_syscall.sy_first_tok_i;
         case NODE_STRING:
             return node->no_n.no_string.st_tok_i;
 
@@ -1010,8 +995,6 @@ static i32 node_last_token(const parser_t* parser, i32 node_i) {
     switch (node->no_kind) {
         case NODE_BUILTIN_PRINTLN:
             return node->no_n.no_builtin_println.bp_rparen_i;
-        case NODE_SYSCALL:
-            return node->no_n.no_syscall.sy_last_tok_i;
         case NODE_STRING:
             return node->no_n.no_string.st_tok_i;
 
@@ -1587,9 +1570,6 @@ static mkt_res_t parser_parse_primary_expr(parser_t* parser, i32* new_node_i) {
     // FIXME: hack
     if (parser_peek(parser) == TOK_ID_BUILTIN_PRINTLN)
         return parser_parse_builtin_println(parser, new_node_i);
-
-    if (parser_peek(parser) == TOK_ID_SYSCALL)
-        return parser_parse_syscall(parser, new_node_i);
 
     i32 lparen_tok_i = -1, rparen_tok_i = -1;
     if (parser_match(parser, &lparen_tok_i, 1, TOK_ID_LPAREN)) {
@@ -2435,41 +2415,6 @@ static mkt_res_t parser_check_var_assignable(parser_t* parser, i32 var_i,
         return parser_err_assigning_val(parser, eq_tok_i, &var);
 
     return RES_OK;
-}
-
-static mkt_res_t parser_parse_syscall(parser_t* parser, i32* new_node_i) {
-    CHECK((void*)parser, !=, NULL, "%p");
-    CHECK((void*)new_node_i, !=, NULL, "%p");
-
-    i32 keyword_i = -1;
-    mkt_res_t res = RES_NONE;
-    if (parser_match(parser, &keyword_i, 1, TOK_ID_SYSCALL)) {
-        i32* arg_nodes_i = NULL;
-        i32 last_tok_i = 0;
-        res = parser_parse_value_args(parser, &last_tok_i, &arg_nodes_i);
-        if (res == RES_NONE) {
-            fprintf(stderr, "Missing syscall arguments");
-            return RES_MISSING_PARAM;
-        } else if (res != RES_OK)
-            return res;
-
-        if (buf_size(arg_nodes_i) == 0) {
-            fprintf(stderr, "Syscall without arguments invalid");
-            return RES_MISSING_PARAM;
-        }
-
-        buf_push(parser->par_nodes,
-                 ((mkt_node_t){
-                     .no_kind = NODE_SYSCALL,
-                     .no_type_i = TYPE_UNIT_I,  // FIXME
-                     .no_n = {.no_syscall = {.sy_first_tok_i = keyword_i,
-                                             .sy_last_tok_i = last_tok_i,
-                                             .sy_arg_nodes_i = arg_nodes_i}}}));
-        *new_node_i = (i32)buf_size(parser->par_nodes) - 1;
-
-        return RES_OK;
-    }
-    return RES_NONE;
 }
 
 static mkt_res_t parser_parse_builtin_println(parser_t* parser,

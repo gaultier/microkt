@@ -40,7 +40,6 @@ typedef enum {
     TOK_ID_FUN,
     TOK_ID_RETURN,
     TOK_ID_COMMA,
-    TOK_ID_SYSCALL,
     TOK_ID_CLASS,
     TOK_ID_DOT,
     TOK_ID_EOF,
@@ -82,7 +81,6 @@ const char mkt_token_id_to_str[][30] = {
     [TOK_ID_FUN] = "fun",
     [TOK_ID_RETURN] = "return",
     [TOK_ID_COMMA] = ",",
-    [TOK_ID_SYSCALL] = "syscall",
     [TOK_ID_CLASS] = "class",
     [TOK_ID_DOT] = ".",
     [TOK_ID_EOF] = "Eof",
@@ -120,7 +118,6 @@ static const mkt_keyword_t keywords[] = {
     {.key_id = TOK_ID_WHILE, .key_str = "while"},
     {.key_id = TOK_ID_FUN, .key_str = "fun"},
     {.key_id = TOK_ID_RETURN, .key_str = "return"},
-    {.key_id = TOK_ID_SYSCALL, .key_str = "syscall"},
     {.key_id = TOK_ID_CLASS, .key_str = "class"},
 };
 

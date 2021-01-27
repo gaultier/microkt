@@ -384,6 +384,8 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             return;
         }
         case NODE_MEMBER: {
+            emit_loc(parser, expr_i);
+
             const mkt_binary_t bin = expr->no_n.no_binary;
             emit_expr(parser, bin.bi_lhs_i);
             // FIXME
@@ -491,24 +493,6 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
 
             return;
         }
-        case NODE_SYSCALL: {
-            const mkt_syscall_t syscall = expr->no_n.no_syscall;
-            const i32 len = (i32)buf_size(syscall.sy_arg_nodes_i);
-            CHECK(len, >, 0, "%d");
-
-            for (i32 i = len - 1; i > 0; i--) {
-                emit_expr(parser, syscall.sy_arg_nodes_i[i]);
-                emit_push("%rax");
-            }
-            for (i32 i = 1; i < len; i++) {
-                emit_pop(fn_args[i - 1]);
-            }
-
-            emit_expr(parser, syscall.sy_arg_nodes_i[0]);
-            println("syscall");
-
-            return;
-        }
         case NODE_BLOCK: {
             const mkt_block_t block = expr->no_n.no_block;
 
@@ -598,7 +582,6 @@ static void emit_stmt(const parser_t* parser, i32 stmt_i) {
 
     switch (stmt->no_kind) {
         case NODE_BUILTIN_PRINTLN:
-        case NODE_SYSCALL:
         case NODE_BLOCK:
         case NODE_NUM:
         case NODE_CHAR:
@@ -622,6 +605,8 @@ static void emit_stmt(const parser_t* parser, i32 stmt_i) {
             return;
         }
         case NODE_ASSIGN: {
+            emit_loc(parser, stmt_i);
+
             const mkt_binary_t binary = stmt->no_n.no_binary;
 
             emit_addr(parser, binary.bi_lhs_i);

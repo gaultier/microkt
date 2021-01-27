@@ -68,7 +68,6 @@ typedef enum {
     NODE_FN,
     NODE_CALL,
     NODE_RETURN,
-    NODE_SYSCALL,
     NODE_CLASS,
     NODE_INSTANCE,
     NODE_MEMBER,
@@ -99,7 +98,6 @@ static const char mkt_node_kind_to_str[NODE_COUNT][30] = {
     [NODE_FN] = "Fn",
     [NODE_RETURN] = "Return",
     [NODE_CALL] = "Call",
-    [NODE_SYSCALL] = "Syscall",
     [NODE_CLASS] = "Class",
     [NODE_INSTANCE] = "Instance",
     [NODE_MEMBER] = "Member",
@@ -154,11 +152,6 @@ typedef struct {
     i32 re_first_tok_i, re_fn_i, re_node_i;
 } mkt_return_t;
 
-typedef struct {
-    i32 sy_first_tok_i, sy_last_tok_i;
-    i32* sy_arg_nodes_i;
-} mkt_syscall_t;
-
 static const unsigned char CLASS_FLAGS_PUBLIC = 0x1;
 
 typedef struct {
@@ -187,7 +180,6 @@ typedef struct {
         mkt_while_t no_while;        // NODE_WHILE
         mkt_fn_t no_fn;              // NODE_FN
         mkt_call_t no_call;          // NODE_CALL
-        mkt_syscall_t no_syscall;    // NODE_SYSCALL
         mkt_class_t no_class;        // NODE_CLASS
         mkt_instance_t no_instance;  // NODE_INSTANCE
         mkt_return_t no_return;      // NODE_RETURN
