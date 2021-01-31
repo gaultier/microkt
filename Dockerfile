@@ -1,4 +1,4 @@
-FROM alpine:3.12 as builder
+FROM alpine:3.13 as builder
 
 RUN apk add --no-cache make gcc musl-dev
 
@@ -6,7 +6,7 @@ WORKDIR /mktc
 
 COPY . .
 
-RUN make check
+RUN make check -j`nproc` -k
 
 FROM alpine:3.12
 RUN apk add --no-cache binutils

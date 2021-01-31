@@ -15,7 +15,7 @@ static const unsigned char RV_TAG_MARKED = 0x01;
 static const unsigned char RV_TAG_STRING = 0x02;
 static const unsigned char RV_TAG_INSTANCE = 0x04;
 static i64* mkt_rsp;
-i64* mkt_stack_top;
+volatile i64* mkt_stack_top;  // volatile needed?
 
 #define READ_RSP() __asm__ volatile("movq %%rsp, %0" : "=r"(mkt_rsp))
 
