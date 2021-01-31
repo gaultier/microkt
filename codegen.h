@@ -49,18 +49,22 @@ static void emit_pop(const char* reg) {
 }
 
 static void emit_pusha() {
+    println("# spill begin");
     for (u32 i = 1; i < sizeof(regs) / sizeof(regs[0]); i++) emit_push(regs[i]);
+    println("# spill end");
 }
 
 static void emit_popa() {
+    println("#unspill begin");
     for (u32 i = 1; i < sizeof(regs) / sizeof(regs[0]); i++) emit_pop(regs[i]);
+    println("#unspill end");
 }
 
 static void emit_call(const char* fn) {
     CHECK((void*)fn, !=, NULL, "%p");
     const u32 old_stack_size = stack_size;
     if ((stack_size % 16) != 0) {
-        println("sub $8, %%rsp # Align to 16 bytes");
+        println("sub $8, %%rsp # Align to 16 bytes before call");
         stack_size += 8;
     }
 
@@ -68,7 +72,7 @@ static void emit_call(const char* fn) {
     println("call %s", fn);
 
     if ((old_stack_size % 16) != 0) {
-        println("add $8, %%rsp # Align to 16 bytes");
+        println("add $8, %%rsp # Reset alignement after call");
         stack_size -= 8;
     }
 }
@@ -105,12 +109,12 @@ static void emit_addr(const parser_t* parser, i32 node_i) {
                 CHECK(name_len, >=, 0, "%d");
                 CHECK(name_len, <, parser->par_lexer.lex_source_len, "%d");
 
-                println("lea " MKT_NAME_PREFIX "%.*s(%%rip), %%rax", name_len,
-                        name);
+                println("lea " MKT_NAME_PREFIX "%.*s(%%rip), %%rax # addr",
+                        name_len, name);
                 return;
             }
 
-            println("lea -%d(%%rbp), %%rax", var.va_offset);
+            println("lea -%d(%%rbp), %%rax # addr", var.va_offset);
             return;
         }
         case NODE_MEMBER: {
@@ -131,7 +135,7 @@ static void emit_addr(const parser_t* parser, i32 node_i) {
             i32 member_src_len = 0;
             parser_tok_source(parser, var.va_tok_i, &member_src,
                               &member_src_len);
-            println("add $%d, %%rax # get `%.*s`", var.va_offset,
+            println("add $%d, %%rax # addr, get `%.*s`", var.va_offset,
                     member_src_len, member_src);
             return;
         }
@@ -154,18 +158,18 @@ static void emit_load(const mkt_type_t* type) {
     }
 
     if (type->ty_size == 1)
-        println("movsbl (%%rax), %%eax");
+        println("movsbl (%%rax), %%eax # load");
     else if (type->ty_size == 2)
-        println("movswl (%%rax), %%eax");
+        println("movswl (%%rax), %%eax # load");
     else if (type->ty_size == 4)
-        println("mov (%%rax), %%eax");
+        println("mov (%%rax), %%eax # load");
     else
-        println("mov (%%rax), %%rax");
+        println("mov (%%rax), %%rax # load");
 }
 
 // Pop the top of the stack and store it in rax
 static void emit_store(const mkt_type_t* type) {
-    emit_pop("%rdi");
+    emit_pop("%rdi # store");
 
     /* switch (type->ty_kind) { */
     /*     case TYPE_USER: */
@@ -178,13 +182,13 @@ static void emit_store(const mkt_type_t* type) {
     /* } */
 
     if (type->ty_size == 1)
-        println("mov %%al, (%%rdi)");
+        println("mov %%al, (%%rdi) # store");
     else if (type->ty_size == 2)
-        println("mov %%ax, (%%rdi)");
+        println("mov %%ax, (%%rdi) # store");
     else if (type->ty_size == 4)
-        println("mov %%eax, (%%rdi)");
+        println("mov %%eax, (%%rdi) # store");
     else if (type->ty_size == 8)
-        println("mov %%rax, (%%rdi)");
+        println("mov %%rax, (%%rdi) # store");
     else
         UNREACHABLE();
 }
@@ -388,6 +392,7 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
 
             const mkt_binary_t bin = expr->no_n.no_binary;
             emit_expr(parser, bin.bi_lhs_i);
+
             // FIXME
             emit_addr(parser, bin.bi_rhs_i);
             emit_load(type);
