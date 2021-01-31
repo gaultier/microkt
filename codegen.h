@@ -85,6 +85,31 @@ static i32 emit_align_to_16(i32 stack_size) {
     return (stack_size + 16 - 1) / 16 * 16;
 }
 
+static void emit_load(const mkt_type_t* type) {
+    CHECK((void*)type, !=, NULL, "%p");
+
+    switch (type->ty_kind) {
+        case TYPE_FN:
+        case TYPE_CLASS:
+            // Do not try to load the value into a register since it likely
+            // would not fit. So we 'decay' to the address of the array and
+            // hence also of the  first element
+            return;
+        default:;
+    }
+
+    if (type->ty_size == 1)
+        println("movsbl (%%rax), %%eax # load");
+    else if (type->ty_size == 2)
+        println("movswl (%%rax), %%eax # load");
+    else if (type->ty_size == 4)
+        println("mov (%%rax), %%eax # load");
+    else
+        println("mov (%%rax), %%rax # load");
+}
+
+// Pop the top of the stack and store it in rax
+
 static void emit_addr(const parser_t* parser, i32 node_i) {
     CHECK((void*)parser, !=, NULL, "%p");
     CHECK(node_i, >=, 0, "%d");
@@ -125,6 +150,7 @@ static void emit_addr(const parser_t* parser, i32 node_i) {
                 &parser->par_types[lhs->no_type_i];
             CHECK(lhs_type->ty_kind, ==, TYPE_PTR, "%d");
             emit_addr(parser, bin.bi_lhs_i);
+            emit_load(lhs_type);
 
             const mkt_node_t* const rhs = &parser->par_nodes[bin.bi_rhs_i];
             CHECK(rhs->no_kind, ==, NODE_VAR, "%d");
@@ -135,8 +161,8 @@ static void emit_addr(const parser_t* parser, i32 node_i) {
             i32 member_src_len = 0;
             parser_tok_source(parser, var.va_tok_i, &member_src,
                               &member_src_len);
-            println("add $%d, %%rax # addr, get `%.*s`", var.va_offset,
-                    member_src_len, member_src);
+            println("add $%d, %%rax # addr, get `%.*s` at offset %d",
+                    var.va_offset, member_src_len, member_src, var.va_offset);
             return;
         }
         default:
@@ -144,30 +170,6 @@ static void emit_addr(const parser_t* parser, i32 node_i) {
     }
 }
 
-static void emit_load(const mkt_type_t* type) {
-    CHECK((void*)type, !=, NULL, "%p");
-
-    switch (type->ty_kind) {
-        case TYPE_FN:
-        case TYPE_CLASS:
-            // Do not try to load the value into a register since it likely
-            // would not fit. So we 'decay' to the address of the array and
-            // hence also of the  first element
-            return;
-        default:;
-    }
-
-    if (type->ty_size == 1)
-        println("movsbl (%%rax), %%eax # load");
-    else if (type->ty_size == 2)
-        println("movswl (%%rax), %%eax # load");
-    else if (type->ty_size == 4)
-        println("mov (%%rax), %%eax # load");
-    else
-        println("mov (%%rax), %%rax # load");
-}
-
-// Pop the top of the stack and store it in rax
 static void emit_store(const mkt_type_t* type) {
     emit_pop("%rdi # store");
 
@@ -389,14 +391,8 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
         }
         case NODE_MEMBER: {
             emit_loc(parser, expr_i);
-
-            const mkt_binary_t bin = expr->no_n.no_binary;
-            emit_expr(parser, bin.bi_lhs_i);
-
-            // FIXME
-            emit_addr(parser, bin.bi_rhs_i);
+            emit_addr(parser, expr_i);
             emit_load(type);
-
             return;
         }
         case NODE_ASSIGN:
