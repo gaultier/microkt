@@ -20,6 +20,6 @@ fun main(){
   p.id = p.id + 1L
   println(p.id) // expect: 101
 
-  //p.id = p.id
-  
+  p.id = p.id
+  println(p.id) // expect: 101
 }
