@@ -11,6 +11,6 @@
 * Hex numbers
 * Binary numbers
 * Octal numbers
-* Class members
+* Class padding
 * Class methods
 * Class constructor
