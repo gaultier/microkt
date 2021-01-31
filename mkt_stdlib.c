@@ -95,9 +95,9 @@ static alloc_atom* mkt_gc_atom_find_data_by_addr(u64 addr) {
 
 static void mkt_gc_scan_stack(const i64* stack_bottom) {
     CHECK((void*)stack_bottom, !=, NULL, "%p");
+    CHECK((void*)stack_bottom, <=, (void*)mkt_stack_top, "%p");
 
     const char* s_bottom = (char*)stack_bottom;
-    CHECK((void*)stack_bottom, <=, (void*)mkt_stack_top, "%p");
 
     const char* s_top = (char*)mkt_stack_top;
     while (s_bottom < s_top - sizeof(i64)) {
@@ -126,7 +126,7 @@ static void mkt_gc_trace_refs() {
 }
 
 static void mkt_gc_sweep() {
-    /* MKT_GC_SWEEP_START(gc_round, gc_allocated_bytes); */
+    MKT_GC_SWEEP_START(gc_round, gc_allocated_bytes);
     alloc_atom* atom = objs;
     alloc_atom* previous = NULL;
 
@@ -152,14 +152,15 @@ static void mkt_gc_sweep() {
         else
             objs = atom;
 
-        /* MKT_GC_SWEEP_FREE(gc_round, gc_allocated_bytes, (void*)to_free); */
+        MKT_GC_SWEEP_FREE(gc_round, gc_allocated_bytes, (void*)to_free);
         CHECK(munmap(to_free, bytes), ==, 0, "%d");
     }
-    /* MKT_GC_SWEEP_DONE(gc_round, gc_allocated_bytes); */
+    MKT_GC_SWEEP_DONE(gc_round, gc_allocated_bytes);
 }
 
 static void mkt_gc() {
     READ_RSP();
+    CHECK((void*)mkt_rsp, <=, (void*)mkt_stack_top, "%p");
 
     gc_round += 1;
 
