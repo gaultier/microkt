@@ -49,15 +49,15 @@ static void emit_pop(const char* reg) {
 }
 
 static void emit_pusha() {
-    println("# spill begin");
+    println("#  spill begin");
     for (u32 i = 1; i < sizeof(regs) / sizeof(regs[0]); i++) emit_push(regs[i]);
-    println("# spill end");
+    println("#  spill end");
 }
 
 static void emit_popa() {
-    println("#unspill begin");
+    println("# unspill begin");
     for (u32 i = 1; i < sizeof(regs) / sizeof(regs[0]); i++) emit_pop(regs[i]);
-    println("#unspill end");
+    println("# unspill end");
 }
 
 static void emit_call(const char* fn) {
