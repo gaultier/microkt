@@ -3,9 +3,9 @@
 #include "parse.h"
 
 #ifdef __APPLE__
-#define MKT_NAME_PREFIX "_"
+#define MKT_PUB_PREFIX "_"
 #else
-#define MKT_NAME_PREFIX ""
+#define MKT_PUB_PREFIX ""
 #endif
 
 static FILE* output_file = NULL;
@@ -134,7 +134,7 @@ static void emit_addr(const parser_t* parser, i32 node_i) {
                 CHECK(name_len, >=, 0, "%d");
                 CHECK(name_len, <, parser->par_lexer.lex_source_len, "%d");
 
-                println("lea " MKT_NAME_PREFIX "%.*s(%%rip), %%rax # addr",
+                println("lea " MKT_PUB_PREFIX "%.*s(%%rip), %%rax # addr",
                         name_len, name);
                 return;
             }
@@ -292,7 +292,7 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             println("mov $%d, %s # string len=%d", source_len, fn_args[0],
                     source_len);
             emit_pusha();
-            emit_call(MKT_NAME_PREFIX "mkt_string_make");
+            emit_call(MKT_PUB_PREFIX "mkt_string_make");
             emit_popa();
 
             for (i32 i = 0; i < source_len; i++)
@@ -380,7 +380,7 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
                 println("movq %s, %s", fn_args[2], fn_args[3]);
                 println("subq $8, %s", fn_args[3]);
                 emit_pusha();
-                emit_call(MKT_NAME_PREFIX "mkt_string_concat");
+                emit_call(MKT_PUB_PREFIX "mkt_string_concat");
                 emit_popa();
             } else {
                 emit_pop("%rdi");
@@ -475,17 +475,17 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
 
             if (type == TYPE_LONG || type == TYPE_INT || type == TYPE_SHORT ||
                 type == TYPE_BYTE)
-                emit_call(MKT_NAME_PREFIX "mkt_int_println");
+                emit_call(MKT_PUB_PREFIX "mkt_int_println");
             else if (type == TYPE_CHAR)
-                emit_call(MKT_NAME_PREFIX "mkt_char_println");
+                emit_call(MKT_PUB_PREFIX "mkt_char_println");
             else if (type == TYPE_BOOL)
-                emit_call(MKT_NAME_PREFIX "mkt_bool_println");
+                emit_call(MKT_PUB_PREFIX "mkt_bool_println");
             else if (type == TYPE_STRING) {
                 println("mov %%rax, %s", fn_args[1]);
                 println("sub $8, %s", fn_args[1]);
-                emit_call(MKT_NAME_PREFIX "mkt_string_println");
+                emit_call(MKT_PUB_PREFIX "mkt_string_println");
             } else if (type == TYPE_PTR) {
-                emit_call(MKT_NAME_PREFIX "mkt_instance_println");
+                emit_call(MKT_PUB_PREFIX "mkt_instance_println");
             } else {
                 log_debug("Type %s unimplemented", mkt_type_to_str[type]);
                 UNIMPLEMENTED();
@@ -541,7 +541,7 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             emit_push(fn_args[0]);
             println("mov $%d, %s", instance_type->ty_size, fn_args[0]);
             emit_pusha();
-            emit_call(MKT_NAME_PREFIX "mkt_instance_make");
+            emit_call(MKT_PUB_PREFIX "mkt_instance_make");
             emit_popa();
             emit_pop(fn_args[0]);
 
@@ -697,9 +697,9 @@ static void emit(const parser_t* parser, FILE* asm_file) {
             CHECK(name_len, <, parser->par_lexer.lex_source_len, "%d");
 
             if (fn.fd_flags & FN_FLAGS_PUBLIC)
-                println(".global " MKT_NAME_PREFIX "%.*s", name_len, name);
+                println(".global " MKT_PUB_PREFIX "%.*s", name_len, name);
 
-            println(MKT_NAME_PREFIX "%.*s:", name_len, name);
+            println(MKT_PUB_PREFIX "%.*s:", name_len, name);
 
             const u32 aligned_stack_size = emit_align_to_16(fn.fd_stack_size);
             log_debug("%.*s: stack_size=%d aligned_stack_size=%d", name_len,
@@ -707,7 +707,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
 
             // Save the top of the stack for this program
             if (node_fn_i == parser->par_main_fn_i) {
-                println("mov " MKT_NAME_PREFIX
+                println("mov " MKT_PUB_PREFIX
                         "mkt_stack_top@GOTPCREL(%%rip), %%rax");
                 println("mov %%rbp, (%%rax)");
             }
