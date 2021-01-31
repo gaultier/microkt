@@ -1,7 +1,7 @@
 class Empty{}
 class Person{
   var id: Long = 99
-  var age: Byte = 0
+  var age: Int = 0
 }
 
 fun main(){ 
@@ -10,7 +10,7 @@ fun main(){
   val e : Empty = Empty()
   println(e) // expect: Instance of size 0
 
-  println(Person()) // expect: Instance of size 25
+  println(Person()) // expect: Instance of size 28
 
 
   var p : Person = Person()
@@ -22,4 +22,7 @@ fun main(){
 
   p.id = p.id
   println(p.id) // expect: 101
+
+  p.age = 42
+  println(p.age) // expect: 42
 }
