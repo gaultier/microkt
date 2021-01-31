@@ -718,6 +718,8 @@ static void emit(const parser_t* parser, FILE* asm_file) {
             emit_stmt(parser, fn.fd_body_node_i);
 
             if (node_fn_i == parser->par_main_fn_i) {
+                println("call " MKT_PUB_PREFIX "mkt_gc");
+
                 // In that case, no return means returning 0
                 println("mov $0, %%rax");
             }

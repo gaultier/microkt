@@ -158,7 +158,7 @@ static void mkt_gc_sweep() {
     MKT_GC_SWEEP_DONE(gc_round, gc_allocated_bytes);
 }
 
-static void mkt_gc() {
+void mkt_gc() {
     READ_RSP();
     CHECK((void*)mkt_rsp, <=, (void*)mkt_stack_top, "%p");
 
