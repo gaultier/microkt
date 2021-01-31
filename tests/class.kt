@@ -15,10 +15,10 @@ fun main(){
 
   var p : Person = Person()
   println(p.id) // expect: 0
-  // p.id = 100L
-  //println(p.id) // expect: 100
-  //p.id = p.id + 1L
-  //println(p.id) // expect: 101
+  p.id = 100L
+  println(p.id) // expect: 100
+  p.id = p.id + 1L
+  println(p.id) // expect: 101
 
   //p.id = p.id
   
