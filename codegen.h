@@ -195,17 +195,24 @@ static void emit_store(const mkt_type_t* type) {
         UNREACHABLE();
 }
 
-static void fn_prolog(const parser_t* parser, const mkt_fn_t* fn,
+static void fn_prolog(const parser_t* parser, int node_fn_i,
                       i32 aligned_stack_size) {
     CHECK((void*)parser, !=, NULL, "%p");
-    CHECK((void*)fn, !=, NULL, "%p");
+    CHECK(node_fn_i, >=, 0, "%d");
     CHECK(aligned_stack_size, >=, 0, "%d");
     CHECK(aligned_stack_size % 16, ==, 0, "%d");
+
+    const mkt_fn_t* const fn = &parser->par_nodes[node_fn_i].no_n.no_fn;
 
     println(".cfi_startproc");
     emit_push("%rbp");
     println(".cfi_def_cfa_offset 16");
     println(".cfi_offset %%rbp, -16");
+    // Save the top of the stack for this program
+    if (node_fn_i == parser->par_main_fn_i) {
+        println("mov " MKT_PUB_PREFIX "mkt_stack_top@GOTPCREL(%%rip), %%rax");
+        println("mov %%rbp, (%%rax)");
+    }
     println("mov %%rsp, %%rbp");
     println(".cfi_def_cfa_register %%rbp");
 
@@ -705,14 +712,7 @@ static void emit(const parser_t* parser, FILE* asm_file) {
             log_debug("%.*s: stack_size=%d aligned_stack_size=%d", name_len,
                       name, fn.fd_stack_size, aligned_stack_size);
 
-            // Save the top of the stack for this program
-            if (node_fn_i == parser->par_main_fn_i) {
-                println("mov " MKT_PUB_PREFIX
-                        "mkt_stack_top@GOTPCREL(%%rip), %%rax");
-                println("mov %%rbp, (%%rax)");
-            }
-
-            fn_prolog(parser, &fn, aligned_stack_size);
+            fn_prolog(parser, node_fn_i, aligned_stack_size);
             CHECK(stack_size, >=, aligned_stack_size, "%u");
 
             emit_stmt(parser, fn.fd_body_node_i);
