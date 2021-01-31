@@ -148,7 +148,7 @@ static i32 run(const char* file_name0) {
 #endif
             ;
 
-        const char link_opts[] = " ";
+        const char link_opts[] = "-fPIC ";
 
         const char* const stdlib = stdlib_obj_path();
         CHECK((void*)stdlib, !=, NULL, "%p");
