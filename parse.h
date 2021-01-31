@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "ast.h"
+#include "common.h"
 #include "lex.h"
 
 static const i32 TYPE_UNIT_I = 1;    // see parser_init
@@ -314,6 +315,7 @@ static mkt_res_t parser_resolve_var(parser_t* parser, i32 tok_i,
                     &parser->par_nodes[*def_node_i];
                 const mkt_type_t* const def_type =
                     &parser->par_types[def_node->no_type_i];
+                IGNORE(def_type);  // When logs are disabled
                 log_debug(
                     "resolved var: id=%d name=`%.*s` kind=%s scope=%d type=%s",
                     *def_node_i, def_source_len, def_source,
