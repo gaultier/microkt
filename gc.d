@@ -16,7 +16,15 @@ pid$target::mkt_instance_make:entry {
 }
 
 pid$target::mkt_instance_make:return {
-    printf("ptr alloced=%p returned=%p\n",arg1, arg1-16)
+    printf("ptr allocated=%p returned=%p\n",arg1, arg1-16)
+}
+
+pid$target::mkt_string_make:entry {
+    printf("size=%lld", arg0)
+}
+
+pid$target::mkt_string_make:return {
+    printf("ptr allocated=%p returned=%p\n",arg1, arg1-16)
 }
 
 pid$target::mkt_instance_println:entry {

@@ -383,11 +383,15 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             const mkt_type_kind_t type_kind =
                 parser->par_types[expr->no_type_i].ty_kind;
             if (type_kind == TYPE_STRING) {
+                emit_push(fn_args[0]);  // Preserve register
+                emit_push(fn_args[1]);  // Preserve register
                 println("movq %%rax, %s", fn_args[0]);
                 emit_pop(fn_args[1]);
                 emit_pusha();
                 emit_call(MKT_PUB_PREFIX "mkt_string_concat");
                 emit_popa();
+                emit_pop(fn_args[0]);  // Preserve register
+                emit_pop(fn_args[1]);  // Preserve register
             } else {
                 emit_pop("%rdi");
                 println("add %s, %s", di, ax);

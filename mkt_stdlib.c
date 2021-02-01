@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <string.h>
 #include <sys/mman.h>
 // macOS Big Sur's mman.h header does not define MAP_ANONYMOUS for some reason
 #ifndef MAP_ANONYMOUS
@@ -260,9 +261,8 @@ char* mkt_string_concat(const char* a, const char* b) {
     CHECK((void*)a, !=, NULL, "%p");
     CHECK((void*)b, !=, NULL, "%p");
 
-    for (u64 i = 0; i < a_header->rv_size; i++) ret[i] = a[i];
-    for (u64 i = 0; i < b_header->rv_size; i++)
-        ret[a_header->rv_size + i] = b[i];
+    memcpy(ret, a, a_header->rv_size);
+    memcpy(ret + a_header->rv_size, b, b_header->rv_size);
     *(ret - 8) = a_header->rv_size + b_header->rv_size;
 
     return ret;
