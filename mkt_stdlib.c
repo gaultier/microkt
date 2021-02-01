@@ -147,7 +147,7 @@ static void mkt_gc_sweep() {
         CHECK(gc_allocated_bytes, >=, bytes, "%llu");
         gc_allocated_bytes -= bytes;
 
-        alloc_atom** to_free = &atom;
+        alloc_atom* to_free = atom;
         atom = atom->aa_next;
         if (previous)
             previous->aa_next = atom;
@@ -155,7 +155,7 @@ static void mkt_gc_sweep() {
             objs = atom;
 
         MKT_GC_SWEEP_FREE(gc_round, gc_allocated_bytes, (void*)to_free);
-        CHECK(munmap(*to_free, bytes), ==, 0, "%d");
+        CHECK(munmap(to_free, bytes), ==, 0, "%d");
     }
     MKT_GC_SWEEP_DONE(gc_round, gc_allocated_bytes);
 }
