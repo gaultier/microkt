@@ -208,6 +208,9 @@ static void fn_prolog(const parser_t* parser, int node_fn_i,
     emit_push("%rbp");
     println(".cfi_def_cfa_offset 16");
     println(".cfi_offset %%rbp, -16");
+    println("mov %%rsp, %%rbp");
+    println(".cfi_def_cfa_register %%rbp");
+
     // Save the top of the stack for this program
     if (node_fn_i == parser->par_main_fn_i) {
         println("mov " MKT_PUB_PREFIX
@@ -215,9 +218,6 @@ static void fn_prolog(const parser_t* parser, int node_fn_i,
                 "stack for the GC");
         println("mov %%rbp, (%%rax)");
     }
-    println("mov %%rsp, %%rbp");
-    println(".cfi_def_cfa_register %%rbp");
-
     println("sub $%d, %%rsp\n", aligned_stack_size);
     stack_size = aligned_stack_size;
 
