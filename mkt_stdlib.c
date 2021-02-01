@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <sys/mman.h>
 // macOS Big Sur's mman.h header does not define MAP_ANONYMOUS for some reason
 #ifndef MAP_ANONYMOUS
@@ -15,7 +16,7 @@ static const unsigned char RV_TAG_MARKED = 0x01;
 static const unsigned char RV_TAG_STRING = 0x02;
 static const unsigned char RV_TAG_INSTANCE = 0x04;
 static i64* mkt_rsp;
-volatile i64* mkt_stack_top;  // volatile needed?
+i64* mkt_stack_top = INT64_MIN;
 
 #define READ_RSP() __asm__ volatile("movq %%rsp, %0" : "=r"(mkt_rsp))
 
