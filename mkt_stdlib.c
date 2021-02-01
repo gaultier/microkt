@@ -94,7 +94,7 @@ static alloc_atom* mkt_gc_atom_find_data_by_addr(u64 addr) {
     return NULL;
 }
 
-static void mkt_gc_scan_stack(const i64* stack_bottom) {
+static void mkt_gc_scan_stack(const intptr_t* stack_bottom) {
     CHECK((void*)stack_bottom, !=, NULL, "%p");
     CHECK((void*)stack_bottom, <=, (void*)mkt_stack_top, "%p");
 
