@@ -95,8 +95,8 @@ static alloc_atom* mkt_gc_atom_find_data_by_addr(u64 addr) {
 }
 
 static void mkt_gc_scan_stack(const intptr_t* stack_bottom) {
-    //    CHECK((void*)stack_bottom, !=, NULL, "%p");
-    //  CHECK((void*)stack_bottom, <=, (void*)mkt_stack_top, "%p");
+    CHECK((void*)stack_bottom, !=, NULL, "%p");
+    CHECK((void*)stack_bottom, <=, (void*)mkt_stack_top, "%p");
 
     const char* s_bottom = (char*)stack_bottom;
 
@@ -161,7 +161,7 @@ static void mkt_gc_sweep() {
 
 void mkt_gc() {
     READ_RSP();
-    // CHECK((void*)mkt_rsp, <=, (void*)mkt_stack_top, "%p");
+    CHECK((void*)mkt_rsp, <=, (void*)mkt_stack_top, "%p");
 
     gc_round += 1;
 
@@ -247,8 +247,14 @@ void mkt_string_println(char* s, const runtime_val_header* s_header) {
     write(1, &newline, 1);
 }
 
-char* mkt_string_concat(const char* a, const runtime_val_header* a_header,
-                        const char* b, const runtime_val_header* b_header) {
+char* mkt_string_concat(const char* a, const char* b) {
+    CHECK((void*)a, !=, NULL, "%p");
+    CHECK((void*)b, !=, NULL, "%p");
+    const runtime_val_header* a_header = (runtime_val_header*)a - 1;
+    const runtime_val_header* b_header = (runtime_val_header*)b - 1;
+    CHECK((void*)a_header, !=, NULL, "%p");
+    CHECK((void*)b_header, !=, NULL, "%p");
+
     char* const ret = mkt_string_make(a_header->rv_size + b_header->rv_size);
     CHECK((void*)ret, !=, NULL, "%p");
     CHECK((void*)a, !=, NULL, "%p");
