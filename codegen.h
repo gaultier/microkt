@@ -299,11 +299,13 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             CHECK(source_len, <, parser->par_lexer.lex_source_len, "%d");
 
             emit_loc(parser, expr_i);
+            emit_push(fn_args[0]);
             println("mov $%d, %s # string len=%d", source_len, fn_args[0],
                     source_len);
             emit_pusha();
             emit_call(MKT_PUB_PREFIX "mkt_string_make");
             emit_popa();
+            emit_pop(fn_args[0]);
 
             for (i32 i = 0; i < source_len; i++)
                 println("movb $%d, %d(%%rax) # string[%d]", source[i], i, i);
@@ -491,9 +493,11 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             else if (type == TYPE_BOOL)
                 emit_call(MKT_PUB_PREFIX "mkt_bool_println");
             else if (type == TYPE_STRING) {
+                emit_push(fn_args[1]);
                 println("mov %%rax, %s", fn_args[1]);
                 println("sub $8, %s", fn_args[1]);
                 emit_call(MKT_PUB_PREFIX "mkt_string_println");
+                emit_pop(fn_args[1]);
             } else if (type == TYPE_PTR) {
                 emit_call(MKT_PUB_PREFIX "mkt_instance_println");
             } else {
@@ -527,6 +531,7 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             for (i32 i = 0; i < (i32)buf_size(call.ca_arg_nodes_i); i++) {
                 emit_expr(parser, call.ca_arg_nodes_i[i]);
                 emit_loc(parser, expr_i);
+                emit_push(fn_args[i]);
                 println("mov %%rax, %s", fn_args[i]);
 
                 // TODO: preserver registers by spilling
@@ -536,6 +541,9 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             println("mov %%rax, %%r10");
 
             emit_call("*%r10");
+
+            for (i32 i = 0; i < (i32)buf_size(call.ca_arg_nodes_i); i++)
+                emit_pop(fn_args[i]);
 
             return;
         }
