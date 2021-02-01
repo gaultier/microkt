@@ -147,7 +147,7 @@ static void mkt_gc_sweep() {
         CHECK(gc_allocated_bytes, >=, bytes, "%llu");
         gc_allocated_bytes -= bytes;
 
-        alloc_atom* to_free = atom;
+        alloc_atom** to_free = &atom;
         atom = atom->aa_next;
         if (previous)
             previous->aa_next = atom;
@@ -155,7 +155,7 @@ static void mkt_gc_sweep() {
             objs = atom;
 
         MKT_GC_SWEEP_FREE(gc_round, gc_allocated_bytes, (void*)to_free);
-        CHECK(munmap(to_free, bytes), ==, 0, "%d");
+        CHECK(munmap(*to_free, bytes), ==, 0, "%d");
     }
     MKT_GC_SWEEP_DONE(gc_round, gc_allocated_bytes);
 }
@@ -255,6 +255,9 @@ char* mkt_string_concat(const char* a, const char* b) {
     const runtime_val_header* b_header = (runtime_val_header*)b - 1;
     CHECK((void*)a_header, !=, NULL, "%p");
     CHECK((void*)b_header, !=, NULL, "%p");
+
+    CHECK(a_header->rv_tag & RV_TAG_STRING, !=, 0, "%u");
+    CHECK(b_header->rv_tag & RV_TAG_STRING, !=, 0, "%u");
 
     char* const ret = mkt_string_make(a_header->rv_size + b_header->rv_size);
     CHECK((void*)ret, !=, NULL, "%p");
