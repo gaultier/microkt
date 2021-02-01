@@ -172,7 +172,7 @@ void mkt_gc() {
 }
 
 void* mkt_string_make(u64 size) {
-    mkt_gc();
+    /* mkt_gc(); */
 
     alloc_atom* atom = mkt_alloc_atom_make(size);
     CHECK((void*)atom, !=, NULL, "%p");

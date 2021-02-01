@@ -323,12 +323,12 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             return;
         }
         case NODE_MODULO: {
+            emit_loc(parser, expr_i);
             const mkt_binary_t bin = expr->no_n.no_binary;
 
             emit_expr(parser, bin.bi_rhs_i);
             emit_push("%rax");
             emit_expr(parser, bin.bi_lhs_i);
-            emit_loc(parser, expr_i);
             emit_pop("%rdi");
             println("cqo");  // ?
             println("xor %%rdx, %%rdx");
@@ -338,12 +338,12 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             return;
         }
         case NODE_DIVIDE: {
+            emit_loc(parser, expr_i);
             const mkt_binary_t bin = expr->no_n.no_binary;
 
             emit_expr(parser, bin.bi_rhs_i);
             emit_push("%rax");
             emit_expr(parser, bin.bi_lhs_i);
-            emit_loc(parser, expr_i);
             emit_pop("%rdi");
             println("cqo");  // ?
             println("idiv %%rdi");
@@ -351,49 +351,45 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             return;
         }
         case NODE_MULTIPLY: {
+            emit_loc(parser, expr_i);
             const mkt_binary_t bin = expr->no_n.no_binary;
 
             emit_expr(parser, bin.bi_rhs_i);
             emit_push("%rax");
             emit_expr(parser, bin.bi_lhs_i);
-            emit_loc(parser, expr_i);
             emit_pop("%rdi");
             println("imul %%rdi, %%rax");
 
             return;
         }
         case NODE_SUBTRACT: {
+            emit_loc(parser, expr_i);
             const mkt_binary_t bin = expr->no_n.no_binary;
 
             emit_expr(parser, bin.bi_rhs_i);
             emit_push("%rax");
             emit_expr(parser, bin.bi_lhs_i);
-            emit_loc(parser, expr_i);
             emit_pop("%rdi");
             println("sub %%rdi, %%rax");
 
             return;
         }
         case NODE_ADD: {
+            emit_loc(parser, expr_i);
             const mkt_binary_t bin = expr->no_n.no_binary;
 
             emit_expr(parser, bin.bi_rhs_i);
             emit_push("%rax");
             emit_expr(parser, bin.bi_lhs_i);
-            emit_loc(parser, expr_i);
 
             const mkt_type_kind_t type_kind =
                 parser->par_types[expr->no_type_i].ty_kind;
             if (type_kind == TYPE_STRING) {
-                emit_push(fn_args[0]);  // Preserve register
-                emit_push(fn_args[1]);  // Preserve register
                 println("movq %%rax, %s", fn_args[0]);
                 emit_pop(fn_args[1]);
                 emit_pusha();
                 emit_call(MKT_PUB_PREFIX "mkt_string_concat");
                 emit_popa();
-                emit_pop(fn_args[0]);  // Preserve register
-                emit_pop(fn_args[1]);  // Preserve register
             } else {
                 emit_pop("%rdi");
                 println("add %s, %s", di, ax);
