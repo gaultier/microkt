@@ -550,6 +550,7 @@ static bool parser_parse_identifier_to_type_kind(parser_t* parser, i32 tok_i,
                 default:
                     break;
             }
+            break;
         }
         default:
             break;

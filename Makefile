@@ -19,7 +19,29 @@ else ifeq "$(strip $(OS))" "Linux"
 	ASAN_DIR=$(shell $(CC) -print-search-dirs | awk -F '=' '/libraries/{split($$2, libs, ":"); printf("%s/lib/linux", libs[1])}')
 endif
 
-CFLAGS_COMMON = -Wall -Wextra -pedantic -Wno-dollar-in-identifier-extension -g -std=c99 -march=native -fno-omit-frame-pointer -fstrict-aliasing -fPIC -D_POSIX_C_SOURCE=200809L
+CFLAGS_COMMON = \
+-Wall \
+-Wextra \
+-Wimplicit-fallthrough \
+-Walloca \
+-Wparentheses \
+-Wignored-qualifiers \
+-Wunused-function \
+-Wunused \
+-Wunused-parameter \
+-Wuninitialized \
+-Wunreachable-code \
+-Wno-missing-field-initializers \
+-Wunused-const-variable \
+-Wno-dollar-in-identifier-extension \
+-g \
+-std=c99 \
+-march=native \
+-fno-omit-frame-pointer \
+-fstrict-aliasing \
+-fPIC \
+-D_POSIX_C_SOURCE=200809L
+
 CFLAGS = $(CFLAGS_COMMON) -DLD='"$(CC)"' -DAS='"$(AS)"'
 CFLAGS_STDLIB = $(CFLAGS_COMMON) -fno-stack-protector
 
