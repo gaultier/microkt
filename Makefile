@@ -44,22 +44,7 @@ CFLAGS_COMMON := \
 
 # If clang: more warnings
 ifneq "$(findstring clang,$(shell $(CC) --version))" ""
-	CFLAGS_COMMON += \
-  -Wunused-member-function \
-  -Wloop-analysis \
-  -Wkeyword-macro \
-  -Wcomma \
-  -Wstring-conversion \
-  -Wunused-member-function \
-  -Wcomma \
-  -Wimplicit \
-  -Wlogical-op-parentheses \
-  -Widiomatic-parentheses \
-  -Wheader-hygiene \
-  -Wconditional-uninitialized \
-  -Wthread-safety \
-  -Wmove \
-  -Wno-c++98-compat
+	CFLAGS_COMMON += -Weverything -Wno-padded
 endif
 
 CFLAGS = $(CFLAGS_COMMON) -DLD='"$(CC)"' -DAS='"$(AS)"'
