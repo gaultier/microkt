@@ -16,8 +16,8 @@ static u64 gc_allocated_bytes = 0;
 static const unsigned char RV_TAG_MARKED = 0x01;
 static const unsigned char RV_TAG_STRING = 0x02;
 static const unsigned char RV_TAG_INSTANCE = 0x04;
-static intptr_t* mkt_rsp = NULL;
-intptr_t* mkt_rbp = NULL;
+static void* mkt_rsp = NULL;
+void* mkt_rbp = NULL;
 
 #define READ_RSP() __asm__ volatile("movq %%rsp, %0" : "=r"(mkt_rsp))
 #define READ_RBP() __asm__ volatile("movq %%rbp, %0" : "=r"(mkt_rbp))
@@ -101,20 +101,12 @@ static alloc_atom* mkt_gc_atom_find_data_by_addr(u64 addr) {
 static void mkt_gc_scan_stack() {
     CHECK((void*)mkt_rsp, <=, (void*)mkt_rbp, "%p");
 
-    const char* s_bottom = (char*)mkt_rsp;
+    for (char* s_bottom = (char*)mkt_rsp;
+         s_bottom < (char*)mkt_rbp - sizeof(u64); s_bottom++) {
+        alloc_atom* atom = mkt_gc_atom_find_data_by_addr(*((u64*)s_bottom));
+        if (atom == NULL) continue;
 
-    const char* s_top = (char*)mkt_rbp;
-    while (s_bottom < s_top - sizeof(i64)) {
-        u64 addr = *(u64*)s_bottom;
-        alloc_atom* atom = mkt_gc_atom_find_data_by_addr(addr);
-        if (atom == NULL) {
-            s_bottom += 1;
-            continue;
-        }
-        runtime_val_header* header = &atom->aa_header;
-        mkt_gc_obj_mark(header);
-
-        s_bottom += sizeof(i64);
+        mkt_gc_obj_mark(&atom->aa_header);
     }
 }
 
