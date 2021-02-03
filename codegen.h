@@ -217,6 +217,7 @@ static void fn_prolog(const parser_t* parser, int node_fn_i,
     // Save the top of the stack for this program
     if (node_fn_i == parser->par_main_fn_i) {
         println("call " MKT_PUB_PREFIX "mkt_save_rbp");
+        println("mov $0, %%rax");
     }
 
     for (i32 i = 0; i < (i32)buf_size(fn->fd_arg_nodes_i); i++) {

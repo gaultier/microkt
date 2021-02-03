@@ -19,10 +19,21 @@ static const unsigned char RV_TAG_INSTANCE = 0x04;
 static void* mkt_rsp = NULL;
 void* mkt_rbp = NULL;
 
-#define READ_RSP() __asm__ volatile("movq %%rsp, %0" : "=r"(mkt_rsp))
+void* mkt_save_rbp() {
 #define READ_RBP() __asm__ volatile("movq %%rbp, %0" : "=r"(mkt_rbp))
+    READ_RBP();
+#undef READ_RBP
 
-void mkt_save_rbp() { READ_RBP(); }
+    return mkt_rbp;
+}
+
+void* mkt_save_rsp() {
+#define READ_RSP() __asm__ volatile("movq %%rsp, %0" : "=r"(mkt_rsp))
+    READ_RSP();
+#undef READ_RSP
+
+    return mkt_rsp;
+}
 
 // TODO: optimize
 static void* mkt_alloc(u64 len) {
@@ -155,7 +166,7 @@ static void mkt_gc_sweep() {
 }
 
 void mkt_gc() {
-    READ_RSP();
+    mkt_save_rsp();
     CHECK((void*)mkt_rsp, <=, (void*)mkt_rbp, "%p");
 
     gc_round += 1;
