@@ -98,12 +98,12 @@ static void mkt_gc_obj_mark(runtime_val_header* header) {
 }
 
 // TODO: optimize
-static alloc_atom* mkt_gc_atom_find_data_by_addr(u64 addr) {
-    if (addr == 0) return NULL;
+static alloc_atom* mkt_gc_atom_find_data_by_addr(void* ptr) {
+    if (ptr == NULL) return NULL;
 
     alloc_atom* atom = objs;
     while (atom) {
-        if (addr == (u64)&atom->aa_data) return atom;
+        if (ptr == &atom->aa_data) return atom;
         atom = atom->aa_next;
     }
     return NULL;
@@ -112,9 +112,8 @@ static alloc_atom* mkt_gc_atom_find_data_by_addr(u64 addr) {
 static void mkt_gc_scan_stack() {
     CHECK((void*)mkt_rsp, <=, (void*)mkt_rbp, "%p");
 
-    for (char* s_bottom = (char*)mkt_rsp;
-         s_bottom < (char*)mkt_rbp - sizeof(u64); s_bottom++) {
-        alloc_atom* atom = mkt_gc_atom_find_data_by_addr(*((u64*)s_bottom));
+    for (char* p = (char*)mkt_rsp; p < (char*)mkt_rbp - sizeof(void*); p++) {
+        alloc_atom* atom = mkt_gc_atom_find_data_by_addr(*((void**)p));
         if (atom == NULL) continue;
 
         mkt_gc_obj_mark(&atom->aa_header);
