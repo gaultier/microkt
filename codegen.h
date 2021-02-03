@@ -489,11 +489,7 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             else if (type == TYPE_BOOL)
                 emit_call(MKT_PUB_PREFIX "mkt_bool_println");
             else if (type == TYPE_STRING) {
-                emit_push(fn_args[1]);
-                println("mov %%rax, %s", fn_args[1]);
-                println("sub $8, %s", fn_args[1]);
                 emit_call(MKT_PUB_PREFIX "mkt_string_println");
-                emit_pop(fn_args[1]);
             } else if (type == TYPE_PTR) {
                 emit_call(MKT_PUB_PREFIX "mkt_instance_println");
             } else {

@@ -237,9 +237,9 @@ void mkt_int_println(i64 n) {
     write(1, &newline, 1);
 }
 
-void mkt_string_println(char* s, const runtime_val_header* s_header) {
+void mkt_string_println(char* s) {
     CHECK((void*)s, !=, NULL, "%p");
-    CHECK((void*)s_header, !=, NULL, "%p");
+    const runtime_val_header* const s_header = ((runtime_val_header*)s) - 1;
 
     CHECK(s_header->rv_tag & RV_TAG_STRING, !=, 0, "%u");
 
