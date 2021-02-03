@@ -216,10 +216,7 @@ static void fn_prolog(const parser_t* parser, int node_fn_i,
 
     // Save the top of the stack for this program
     if (node_fn_i == parser->par_main_fn_i) {
-        println("mov " MKT_PUB_PREFIX
-                "mkt_stack_top@GOTPCREL(%%rip), %%rax # Save the top of the "
-                "stack for the GC");
-        println("mov %%rbp, (%%rax)");
+        println("call " MKT_PUB_PREFIX "mkt_save_rbp");
     }
 
     for (i32 i = 0; i < (i32)buf_size(fn->fd_arg_nodes_i); i++) {

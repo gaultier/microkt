@@ -17,9 +17,12 @@ static const unsigned char RV_TAG_MARKED = 0x01;
 static const unsigned char RV_TAG_STRING = 0x02;
 static const unsigned char RV_TAG_INSTANCE = 0x04;
 static intptr_t* mkt_rsp = NULL;
-intptr_t* mkt_stack_top = NULL;
+intptr_t* mkt_rbp = NULL;
 
 #define READ_RSP() __asm__ volatile("movq %%rsp, %0" : "=r"(mkt_rsp))
+#define READ_RBP() __asm__ volatile("movq %%rbp, %0" : "=r"(mkt_rbp))
+
+void mkt_save_rbp() { READ_RBP(); }
 
 // TODO: optimize
 static void* mkt_alloc(u64 len) {
@@ -95,13 +98,12 @@ static alloc_atom* mkt_gc_atom_find_data_by_addr(u64 addr) {
     return NULL;
 }
 
-static void mkt_gc_scan_stack(const intptr_t* stack_bottom) {
-    CHECK((void*)stack_bottom, !=, NULL, "%p");
-    CHECK((void*)stack_bottom, <=, (void*)mkt_stack_top, "%p");
+static void mkt_gc_scan_stack() {
+    CHECK((void*)mkt_rsp, <=, (void*)mkt_rbp, "%p");
 
-    const char* s_bottom = (char*)stack_bottom;
+    const char* s_bottom = (char*)mkt_rsp;
 
-    const char* s_top = (char*)mkt_stack_top;
+    const char* s_top = (char*)mkt_rbp;
     while (s_bottom < s_top - sizeof(i64)) {
         u64 addr = *(u64*)s_bottom;
         alloc_atom* atom = mkt_gc_atom_find_data_by_addr(addr);
@@ -162,11 +164,11 @@ static void mkt_gc_sweep() {
 
 void mkt_gc() {
     READ_RSP();
-    CHECK((void*)mkt_rsp, <=, (void*)mkt_stack_top, "%p");
+    CHECK((void*)mkt_rsp, <=, (void*)mkt_rbp, "%p");
 
     gc_round += 1;
 
-    mkt_gc_scan_stack(mkt_rsp);
+    mkt_gc_scan_stack();
     mkt_gc_trace_refs();
     mkt_gc_sweep();
 }
