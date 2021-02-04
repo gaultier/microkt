@@ -149,7 +149,6 @@ static void mkt_gc_sweep() {
         const u64 bytes = sizeof(runtime_val_header) + sizeof(alloc_atom*) +
                           atom->aa_header.rv_size;
         CHECK(gc_allocated_bytes, >=, bytes, "%llu");
-        gc_allocated_bytes -= bytes;
 
         alloc_atom* to_free = atom;
         atom = atom->aa_next;
@@ -160,6 +159,7 @@ static void mkt_gc_sweep() {
 
         MKT_GC_SWEEP_FREE(gc_round, gc_allocated_bytes, (void*)to_free);
         CHECK(munmap(to_free, bytes), ==, 0, "%d");
+        gc_allocated_bytes -= bytes;
     }
     MKT_GC_SWEEP_DONE(gc_round, gc_allocated_bytes);
 }

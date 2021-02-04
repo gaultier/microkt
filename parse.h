@@ -719,7 +719,7 @@ static void node_dump(const parser_t* parser, i32 no_i, i32 indent) {
     static i32* seen_nodes_i = NULL;
     for (i32 i = 0; i < (i32)buf_size(seen_nodes_i); i++) {
         if (no_i == seen_nodes_i[i]) {
-            log_debug_with_indent(indent, "(%s id=%d type=%s)",
+            log_debug_with_indent(indent, "(#%s id=%d type=%s)",
                                   mkt_node_kind_to_str[node->no_kind], no_i,
                                   mkt_type_to_str[type.ty_kind]);
             return;
