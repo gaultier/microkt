@@ -98,14 +98,16 @@ static void emit_load(const mkt_type_t* type) {
         default:;
     }
 
+    const char* const type_s = mkt_type_to_str[type->ty_kind];
+
     if (type->ty_size == 1)
-        println("movsbl (%%rax), %%eax # load");
+        println("movsbl (%%rax), %%eax # load type %s", type_s);
     else if (type->ty_size == 2)
-        println("movswl (%%rax), %%eax # load");
+        println("movswl (%%rax), %%eax # load type %s", type_s);
     else if (type->ty_size == 4)
-        println("mov (%%rax), %%eax # load");
+        println("mov (%%rax), %%eax # load type %s", type_s);
     else
-        println("mov (%%rax), %%rax # load");
+        println("mov (%%rax), %%rax # load type %s", type_s);
 }
 
 // Pop the top of the stack and store it in rax
@@ -117,6 +119,7 @@ static void emit_addr(const parser_t* parser, i32 node_i) {
 
     const mkt_node_t* const node = &parser->par_nodes[node_i];
     const mkt_type_t* const type = &parser->par_types[node->no_type_i];
+    const char* const node_kind_s = mkt_node_kind_to_str[node->no_kind];
 
     switch (node->no_kind) {
         case NODE_VAR: {
@@ -134,12 +137,14 @@ static void emit_addr(const parser_t* parser, i32 node_i) {
                 CHECK(name_len, >=, 0, "%d");
                 CHECK(name_len, <, parser->par_lexer.lex_source_len, "%d");
 
-                println("lea " MKT_PUB_PREFIX "%.*s(%%rip), %%rax # addr",
-                        name_len, name);
+                println("lea " MKT_PUB_PREFIX
+                        "%.*s(%%rip), %%rax # address of node %s",
+                        name_len, name, node_kind_s);
                 return;
             }
 
-            println("lea -%d(%%rbp), %%rax # addr", var.va_offset);
+            println("lea -%d(%%rbp), %%rax # address of node %s", var.va_offset,
+                    node_kind_s);
             return;
         }
         case NODE_MEMBER: {
@@ -161,8 +166,9 @@ static void emit_addr(const parser_t* parser, i32 node_i) {
             i32 member_src_len = 0;
             parser_tok_source(parser, var.va_tok_i, &member_src,
                               &member_src_len);
-            println("add $%d, %%rax # addr, get `%.*s` at offset %d",
-                    var.va_offset, member_src_len, member_src, var.va_offset);
+            println("add $%d, %%rax # address of node %s `%.*s` at offset %d",
+                    var.va_offset, node_kind_s, member_src_len, member_src,
+                    var.va_offset);
             return;
         }
         default:
@@ -183,14 +189,16 @@ static void emit_store(const mkt_type_t* type) {
     /*     default:; */
     /* } */
 
+    const char* const type_s = mkt_type_to_str[type->ty_kind];
+
     if (type->ty_size == 1)
-        println("mov %%al, (%%rdi) # store");
+        println("mov %%al, (%%rdi) # store %s", type_s);
     else if (type->ty_size == 2)
-        println("mov %%ax, (%%rdi) # store");
+        println("mov %%ax, (%%rdi) # store %s", type_s);
     else if (type->ty_size == 4)
-        println("mov %%eax, (%%rdi) # store");
+        println("mov %%eax, (%%rdi) # store %s", type_s);
     else if (type->ty_size == 8)
-        println("mov %%rax, (%%rdi) # store");
+        println("mov %%rax, (%%rdi) # store %s", type_s);
     else
         UNREACHABLE();
 }
