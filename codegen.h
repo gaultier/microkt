@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ast.h"
 #include "parse.h"
 
 #ifdef __APPLE__
@@ -210,7 +211,12 @@ static void fn_prolog(const parser_t* parser, int node_fn_i,
     CHECK(aligned_stack_size, >=, 0, "%d");
     CHECK(aligned_stack_size % 16, ==, 0, "%d");
 
-    const mkt_fn_t* const fn = &parser->par_nodes[node_fn_i].no_n.no_fn;
+    const mkt_node_t* const node = &parser->par_nodes[node_fn_i];
+    const mkt_fn_t* const fn = &node->no_n.no_fn;
+    const char* const node_kind_s = mkt_node_kind_to_str[node->no_kind];
+    const char* fn_name = NULL;
+    i32 fn_name_len = 0;
+    parser_tok_source(parser, fn->fd_name_tok_i, &fn_name, &fn_name_len);
 
     println(".cfi_startproc");
     emit_push("%rbp");
@@ -228,6 +234,8 @@ static void fn_prolog(const parser_t* parser, int node_fn_i,
     stack_size = aligned_stack_size;
 
     for (i32 i = 0; i < (i32)buf_size(fn->fd_arg_nodes_i); i++) {
+        CHECK(i, <, 6, "%d");  // FIXME: stack args
+
         const i32 arg_i = fn->fd_arg_nodes_i[i];
         CHECK(arg_i, >=, 0, "%d");
         CHECK(arg_i, <, (i32)buf_size(parser->par_nodes), "%d");
@@ -236,11 +244,10 @@ static void fn_prolog(const parser_t* parser, int node_fn_i,
         const i32 stack_offset = arg->no_n.no_var.va_offset;
         CHECK(stack_offset, >=, 0, "%d");
 
-        CHECK(i, <, 6, "%d");  // FIXME: stack args
-
-        println("movq %%rax, -%d(%%rbp)", stack_offset);
-
-        println("mov %s, -%d(%%rbp)", fn_args[i], stack_offset);
+        println(
+            "mov %s, -%d(%%rbp) # save argument %d of function %.*s to "
+            "the stack",
+            fn_args[i], stack_offset, i, fn_name_len, fn_name);
     }
 }
 
