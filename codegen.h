@@ -416,6 +416,7 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
         }
         case NODE_MEMBER: {
             emit_loc(parser, expr_i);
+            println("# node %s of type %s", node_s, type_s);
             emit_addr(parser, expr_i);
             emit_load(type);
             return;
@@ -461,7 +462,7 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
         case NODE_NOT: {
             emit_expr(parser, expr->no_n.no_unary.un_node_i);
             emit_loc(parser, expr_i);
-            println("cmp $0, %%rax");
+            println("cmp $0, %%rax # node %s of type %s", node_s, type_s);
             println("sete %%al");
             return;
         }
