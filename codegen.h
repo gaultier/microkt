@@ -213,7 +213,6 @@ static void fn_prolog(const parser_t* parser, int node_fn_i,
 
     const mkt_node_t* const node = &parser->par_nodes[node_fn_i];
     const mkt_fn_t* const fn = &node->no_n.no_fn;
-    const char* const node_kind_s = mkt_node_kind_to_str[node->no_kind];
     const char* fn_name = NULL;
     i32 fn_name_len = 0;
     parser_tok_source(parser, fn->fd_name_tok_i, &fn_name, &fn_name_len);
@@ -279,10 +278,12 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
     CHECK(expr_i, <, (i32)buf_size(parser->par_nodes), "%d");
 
     const mkt_node_t* const expr = &parser->par_nodes[expr_i];
+    const char* const node_s = mkt_node_kind_to_str[expr->no_kind];
 
     CHECK(expr->no_type_i, >=, 0, "%d");
     CHECK(expr->no_type_i, <, (i32)buf_size(parser->par_types), "%d");
     const mkt_type_t* const type = &parser->par_types[expr->no_type_i];
+    const char* const type_s = mkt_type_to_str[type->ty_kind];
 
     const char *ax, *di /*, *dx */;
     if (type->ty_size == 8) {
@@ -298,7 +299,8 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
     switch (expr->no_kind) {
         case NODE_KEYWORD_BOOL: {
             emit_loc(parser, expr_i);
-            println("mov $%d, %s", (int8_t)expr->no_n.no_num.nu_val, ax);
+            println("mov $%d, %s # node %s of type %s",
+                    (int8_t)expr->no_n.no_num.nu_val, ax, node_s, type_s);
             return;
         }
         case NODE_STRING: {
@@ -312,26 +314,29 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
 
             emit_loc(parser, expr_i);
             emit_push(fn_args[0]);
-            println("mov $%d, %s # string len=%d", source_len, fn_args[0],
-                    source_len);
+            println("mov $%d, %s # node %s of type %s len=%d", source_len,
+                    fn_args[0], node_s, type_s, source_len);
             emit_pusha();
             emit_call(MKT_PUB_PREFIX "mkt_string_make");
             emit_popa();
             emit_pop(fn_args[0]);
 
             for (i32 i = 0; i < source_len; i++)
-                println("movb $%d, %d(%%rax) # string[%d]", source[i], i, i);
+                println("movb $%d, %d(%%rax) # set string[%d]", source[i], i,
+                        i);
 
             return;
         }
         case NODE_CHAR: {
             emit_loc(parser, expr_i);
-            println("mov $%d, %s", (char)expr->no_n.no_num.nu_val, ax);
+            println("mov $%d, %s # node %s of type %s",
+                    (char)expr->no_n.no_num.nu_val, ax, node_s, type_s);
             return;
         }
         case NODE_NUM: {
             emit_loc(parser, expr_i);
-            println("mov $%lld, %s", expr->no_n.no_num.nu_val, ax);
+            println("mov $%lld, %s # node %s of type %s",
+                    expr->no_n.no_num.nu_val, ax, node_s, type_s);
             return;
         }
         case NODE_MODULO: {
