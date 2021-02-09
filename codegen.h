@@ -120,7 +120,8 @@ static void emit_addr(const parser_t* parser, i32 node_i) {
 
     const mkt_node_t* const node = &parser->par_nodes[node_i];
     const mkt_type_t* const type = &parser->par_types[node->no_type_i];
-    const char* const node_kind_s = mkt_node_kind_to_str[node->no_kind];
+    const char* const type_s = mkt_type_to_str[type->ty_kind];
+    const char* const node_s = mkt_node_kind_to_str[node->no_kind];
 
     switch (node->no_kind) {
         case NODE_VAR: {
@@ -139,13 +140,16 @@ static void emit_addr(const parser_t* parser, i32 node_i) {
                 CHECK(name_len, <, parser->par_lexer.lex_source_len, "%d");
 
                 println("lea " MKT_PUB_PREFIX
-                        "%.*s(%%rip), %%rax # address of node %s",
-                        name_len, name, node_kind_s);
+                        "%.*s(%%rip), %%rax # address of node %s of type %s of "
+                        "id %d",
+                        name_len, name, node_s, type_s, node_i);
                 return;
             }
 
-            println("lea -%d(%%rbp), %%rax # address of node %s", var.va_offset,
-                    node_kind_s);
+            println(
+                "lea -%d(%%rbp), %%rax # address of node %s of type %s of id "
+                "%d",
+                var.va_offset, node_s, type_s, node_i);
             return;
         }
         case NODE_MEMBER: {
@@ -167,9 +171,12 @@ static void emit_addr(const parser_t* parser, i32 node_i) {
             i32 member_src_len = 0;
             parser_tok_source(parser, var.va_tok_i, &member_src,
                               &member_src_len);
-            println("add $%d, %%rax # address of node %s `%.*s` at offset %d",
-                    var.va_offset, node_kind_s, member_src_len, member_src,
-                    var.va_offset);
+            println(
+                "add $%d, %%rax # address of node %s of type %s of id %d of "
+                "value `%.*s` at "
+                "offset %d",
+                var.va_offset, node_s, type_s, node_i, member_src_len,
+                member_src, var.va_offset);
             return;
         }
         default:
