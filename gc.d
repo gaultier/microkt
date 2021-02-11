@@ -41,6 +41,10 @@ pid$target::mkt_save_rsp:return {
     printf("rsp=%p stack_size=%d\n", this->rsp, this->rbp - this->rsp)
 }
 
+pid$target::mkt_gc_obj_mark:entry {
+    printf("ptr=%p\n", arg0)
+}
+
 mkt*:::gc_sweep-free {
     this->atom = (struct alloc_atom*) copyin(arg2, sizeof(struct alloc_atom));
     this->header = (struct runtime_val_header) this->atom->aa_header;

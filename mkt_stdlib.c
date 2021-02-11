@@ -24,7 +24,16 @@ void* mkt_save_rbp() {
     READ_RBP();
 #undef READ_RBP
 
+    fprintf(stderr, "mkt_rbp=%p\n", mkt_rbp);
     return mkt_rbp;
+}
+
+void mkt_print_rsp() {
+#define READ_RSP() __asm__ volatile("movq %%rsp, %0" : "=r"(mkt_rsp))
+    READ_RSP();
+#undef READ_RSP
+    fprintf(stderr, "%s mkt_rsp=%p stack_size=%ld\n", __func__, mkt_rsp,
+            mkt_rbp - mkt_rsp);
 }
 
 void* mkt_save_rsp() {
@@ -86,7 +95,7 @@ static alloc_atom* mkt_alloc_atom_make(u64 size) {
     return atom;
 }
 
-static void mkt_gc_obj_mark(runtime_val_header* header) {
+void mkt_gc_obj_mark(runtime_val_header* header) {
     CHECK((void*)header, !=, NULL, "%p");
 
     if (header->rv_tag & RV_TAG_MARKED) return;  // Prevent cycles
@@ -112,8 +121,13 @@ static alloc_atom* mkt_gc_atom_find_data_by_addr(void* ptr) {
 static void mkt_gc_scan_stack() {
     CHECK((void*)mkt_rsp, <=, (void*)mkt_rbp, "%p");
 
+    fprintf(stderr, "%s mkt_rbp=%p mkt_rsp=%p stack_size=%ld\n", __func__,
+            mkt_rbp, mkt_rsp, mkt_rbp - mkt_rsp);
+
     for (char* p = (char*)mkt_rsp; p < (char*)mkt_rbp - sizeof(void*); p++) {
-        alloc_atom* atom = mkt_gc_atom_find_data_by_addr(*((void**)p));
+        void* ptr = *((void**)p);
+        printf("%s ptr=%p needle=%p\n", __func__, ptr, mkt_rbp - 1);
+        alloc_atom* atom = mkt_gc_atom_find_data_by_addr(ptr);
         if (atom == NULL) continue;
 
         mkt_gc_obj_mark(&atom->aa_header);
@@ -165,7 +179,7 @@ static void mkt_gc_sweep() {
 }
 
 void mkt_gc() {
-    mkt_save_rsp();
+    /* mkt_save_rsp(); */
     CHECK((void*)mkt_rsp, <=, (void*)mkt_rbp, "%p");
 
     gc_round += 1;

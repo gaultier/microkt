@@ -320,13 +320,14 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             CHECK(source_len, <, parser->par_lexer.lex_source_len, "%d");
 
             emit_loc(parser, expr_i);
-            emit_push(fn_args[0]);
+            /* emit_push(fn_args[0]); */
             println("mov $%d, %s # node %s of type %s len=%d", source_len,
                     fn_args[0], node_s, type_s, source_len);
-            emit_pusha();
+            /* emit_pusha(); */
+            emit_call(MKT_PUB_PREFIX "mkt_save_rsp");
             emit_call(MKT_PUB_PREFIX "mkt_string_make");
-            emit_popa();
-            emit_pop(fn_args[0]);
+            /* emit_popa(); */
+            /* emit_pop(fn_args[0]); */
 
             for (i32 i = 0; i < source_len; i++)
                 println("movb $%d, %d(%%rax) # set string[%d]", source[i], i,
@@ -548,7 +549,7 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
             for (i32 i = 0; i < (i32)buf_size(call.ca_arg_nodes_i); i++) {
                 emit_expr(parser, call.ca_arg_nodes_i[i]);
                 emit_loc(parser, expr_i);
-                emit_push(fn_args[i]);
+                /* emit_push(fn_args[i]); */
                 println("mov %%rax, %s", fn_args[i]);
 
                 // TODO: preserver registers by spilling
@@ -559,8 +560,8 @@ static void emit_expr(const parser_t* parser, const i32 expr_i) {
 
             emit_call("*%r10");
 
-            for (i32 i = 0; i < (i32)buf_size(call.ca_arg_nodes_i); i++)
-                emit_pop(fn_args[i]);
+            // for (i32 i = 0; i < (i32)buf_size(call.ca_arg_nodes_i); i++)
+            //     emit_pop(fn_args[i]);
 
             return;
         }
